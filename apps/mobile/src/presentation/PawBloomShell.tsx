@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../contexts/medication/domain/medication";
-import { AppIcon } from "../design-system/iconography";
-import { colors, iconSize, layout, radius, spacing, type } from "../design-system/tokens";
+import { useAuth } from "../contexts/identity/application/authContext";
+import { colors, layout } from "../design-system/tokens";
 import { t } from "../i18n/translations";
 import { DiaryEntryScreen } from "./screens/DiaryEntryScreen";
 import { CareModeScreen } from "./screens/CareModeScreen";
@@ -21,21 +21,42 @@ import {
   type DraftDiaryEntry,
   type ReportStage,
 } from "./mockUiState";
+import { type PetProfile } from "../contexts/pet/domain/pet";
+import { CareHeader, DiaryHeader, HomeHeader, ReportsHeader } from "./shell/ShellHeaders";
 
-export function PawBloomShell() {
+type PawBloomShellProps = {
+  activePet?: PetProfile | null;
+  pets?: PetProfile[];
+  onPetNext?: () => void;
+};
+
+export function PawBloomShell({ activePet: externalActivePet, pets: externalPets, onPetNext }: PawBloomShellProps = {}) {
+  const { activePet: authActivePet, pets: authPets, selectNextPet, signOut } = useAuth();
+
+  const shellPets = externalPets ?? authPets;
+  const activePet = useMemo(() => externalActivePet ?? authActivePet ?? mockPets[0], [authActivePet, externalActivePet]);
+  const canCyclePet = shellPets.length > 1;
+
   const [activeTab, setActiveTab] = useState<MainTab>("today");
-  const [activePetIndex, setActivePetIndex] = useState(0);
   const [checklist, setChecklist] = useState(initialChecklist);
   const [entries, setEntries] = useState<DiaryEntry[]>(initialDiaryEntries);
   const [doses, setDoses] = useState<DoseRecord[]>(initialDoses);
   const [reportStage, setReportStage] = useState<ReportStage>("draft");
   const [notice, setNotice] = useState(t("en", "today.previewNotice"));
-  const activePet = mockPets[activePetIndex];
 
-  function togglePet() {
-    setActivePetIndex((index) => (index + 1) % mockPets.length);
+  const activeEntries = useMemo(() => entries.filter((entry) => entry.petId === activePet.id), [entries, activePet.id]);
+  const activeDoses = useMemo(() => doses.filter((dose) => dose.petId === activePet.id), [doses, activePet.id]);
+
+  const handlePetPress = () => {
+    if (canCyclePet) {
+      if (onPetNext) {
+        onPetNext();
+      } else {
+        selectNextPet();
+      }
+    }
     setNotice(t("en", "today.petSwitched"));
-  }
+  };
 
   function toggleChecklist(key: ChecklistKey) {
     setChecklist((current) => ({ ...current, [key]: !current[key] }));
@@ -56,13 +77,17 @@ export function PawBloomShell() {
     setNotice(t("en", "today.medicationUpdated"));
   }
 
+  function handleSignOut() {
+    void signOut();
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.appFrame}>
-        {activeTab === "today" ? <HomeHeader petName={activePet.name} onPetPress={togglePet} /> : null}
+        {activeTab === "today" ? <HomeHeader petName={activePet.name} onPetPress={handlePetPress} canSwitchPet={canCyclePet} /> : null}
         {activeTab === "diary" ? <DiaryHeader onBack={() => setActiveTab("today")} /> : null}
         {activeTab === "care" ? <CareHeader /> : null}
-        {activeTab === "reports" ? <ReportsHeader /> : null}
+        {activeTab === "reports" ? <ReportsHeader onSignOut={handleSignOut} /> : null}
 
         <ScrollView
           style={styles.scroll}
@@ -70,10 +95,10 @@ export function PawBloomShell() {
           showsVerticalScrollIndicator={false}
         >
           {activeTab === "today" ? (
-            <HomeScreen pet={activePet} checklist={checklist} entries={entries} notice={notice} onChecklistToggle={toggleChecklist} />
+            <HomeScreen pet={activePet} checklist={checklist} entries={activeEntries} notice={notice} onChecklistToggle={toggleChecklist} />
           ) : null}
           {activeTab === "diary" ? <DiaryEntryScreen onSave={saveDiaryEntry} /> : null}
-          {activeTab === "care" ? <CareModeScreen doses={doses} onDosePress={cycleDoseStatus} onGenerateReport={() => setActiveTab("reports")} /> : null}
+          {activeTab === "care" ? <CareModeScreen doses={activeDoses} onDosePress={cycleDoseStatus} onGenerateReport={() => setActiveTab("reports")} /> : null}
           {activeTab === "reports" ? (
             <ReportsScreen reportStage={reportStage} onReportStageChange={setReportStage} onNewDiary={() => setActiveTab("diary")} />
           ) : null}
@@ -82,72 +107,6 @@ export function PawBloomShell() {
         <BottomNav activeTab={activeTab} onChange={setActiveTab} />
       </View>
     </SafeAreaView>
-  );
-}
-
-function HomeHeader({ petName, onPetPress }: { petName: string; onPetPress: () => void }) {
-  return (
-    <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <AppIcon name="logo" size={34} color={colors.orange} />
-        <Text style={styles.brandText}>PawBloom</Text>
-      </View>
-      <View style={styles.headerActions}>
-        <Pressable style={styles.petSwitch} onPress={onPetPress}>
-          <AppIcon name="pet" size={iconSize.sm} color={colors.orangeDeep} />
-          <Text style={styles.petSwitchText}>{petName}</Text>
-        </Pressable>
-        <View style={styles.bellWrap}>
-          <AppIcon name="bell" size={iconSize.lg} color={colors.text} />
-          <View style={styles.notificationDot} />
-        </View>
-        <AppIcon name="menu" size={iconSize.lg} color={colors.text} />
-      </View>
-    </View>
-  );
-}
-
-function DiaryHeader({ onBack }: { onBack: () => void }) {
-  return (
-    <View style={styles.header}>
-      <AppIconButton iconName="back" onPress={onBack} />
-      <Text style={styles.screenTitle}>{t("en", "diary.title")}</Text>
-      <AppIcon name="calendar" size={iconSize.lg} color={colors.text} />
-    </View>
-  );
-}
-
-function CareHeader() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.careTitleRow}>
-        <View style={styles.careBadge}>
-          <AppIcon name="care" size={iconSize.lg} color={colors.white} />
-        </View>
-        <Text style={styles.screenTitle}>{t("en", "care.eyebrow")}</Text>
-      </View>
-      <AppIcon name="settings" size={iconSize.lg} color={colors.text} />
-    </View>
-  );
-}
-
-function ReportsHeader() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.careTitleRow}>
-        <AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("en", "tabs.reports")}</Text>
-      </View>
-      <AppIcon name="settings" size={iconSize.lg} color={colors.text} />
-    </View>
-  );
-}
-
-function AppIconButton({ iconName, onPress }: { iconName: "back"; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={styles.headerIconTouch}>
-      <AppIcon name={iconName} size={iconSize.lg} color={colors.text} />
-    </Pressable>
   );
 }
 
@@ -163,85 +122,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     backgroundColor: colors.appBackground,
   },
-  header: {
-    minHeight: 70,
-    paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  brandText: {
-    ...type.brand,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  petSwitch: {
-    minHeight: 34,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  petSwitchText: {
-    ...type.caption,
-    color: colors.text,
-    fontWeight: "600",
-  },
-  bellWrap: {
-    position: "relative",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: 2,
-    right: 1,
-    width: 8,
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.coral,
-    borderWidth: 1,
-    borderColor: colors.appBackground,
-  },
-  screenTitle: {
-    ...type.screenTitle,
-  },
-  careTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  careBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.sm,
-    backgroundColor: colors.salmon,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerIconTouch: {
-    width: 44,
-    height: 44,
-    justifyContent: "center",
-  },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: layout.screenPadding,
-    paddingBottom: layout.bottomNavHeight + spacing.xl,
+    paddingBottom: layout.bottomNavHeight + 24,
   },
   homeScrollContent: {
     paddingTop: 0,

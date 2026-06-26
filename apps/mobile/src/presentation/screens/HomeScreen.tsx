@@ -62,6 +62,7 @@ export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle 
       <SurfaceCard>
         <SectionHeader title={t("en", "today.timeline.full")} action={t("en", "today.seeAll")} />
         <View style={styles.timeline}>
+          {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("en", "today.noTimeline")}</Text> : null}
           {timeline.map((entry) => {
             const item = categoryVisuals[entry.category];
             return (
@@ -185,5 +186,9 @@ const styles = StyleSheet.create({
     ...type.caption,
     maxWidth: 116,
     textAlign: "right",
+  },
+  emptyTimeline: {
+    ...type.caption,
+    color: colors.textMuted,
   },
 });
