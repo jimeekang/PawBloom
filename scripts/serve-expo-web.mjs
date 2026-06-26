@@ -61,6 +61,6 @@ const server = createServer((request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`PetBloom app preview running at http://${host}:${port}/`);
+  console.log(`PawBloom app preview running at http://${host}:${port}/`);
 });
 

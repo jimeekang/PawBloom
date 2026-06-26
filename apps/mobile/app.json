@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "PetBloom",
-    "slug": "petbloom",
+    "name": "PawBloom",
+    "slug": "pawbloom",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.petbloom.app"
+      "bundleIdentifier": "com.pawbloom.app"
     },
     "android": {
-      "package": "com.petbloom.app",
+      "package": "com.pawbloom.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
-import { PetBloomShell } from "./src/presentation/PetBloomShell";
+import { PawBloomShell } from "./src/presentation/PawBloomShell";
 import { configureNetworkSync } from "./src/contexts/sync/application/syncStatus";
 
 configureNetworkSync();
@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PetBloomShell />
+      <PawBloomShell />
       <StatusBar style="dark" />
     </QueryClientProvider>
   );

@@ -60,7 +60,7 @@ for (const file of sourceFiles) {
 }
 
 const appJson = readFileSync(join(root, "apps/mobile/app.json"), "utf8");
-if (!appJson.includes("com.petbloom.app")) {
+if (!appJson.includes("com.pawbloom.app")) {
   failures.push("apps/mobile/app.json must declare iOS and Android application identifiers.");
 }
 

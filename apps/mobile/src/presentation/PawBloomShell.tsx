@@ -22,7 +22,7 @@ import {
   type ReportStage,
 } from "./mockUiState";
 
-export function PetBloomShell() {
+export function PawBloomShell() {
   const [activeTab, setActiveTab] = useState<MainTab>("today");
   const [activePetIndex, setActivePetIndex] = useState(0);
   const [checklist, setChecklist] = useState(initialChecklist);
@@ -90,7 +90,7 @@ function HomeHeader({ petName, onPetPress }: { petName: string; onPetPress: () =
     <View style={styles.header}>
       <View style={styles.brandRow}>
         <AppIcon name="logo" size={34} color={colors.orange} />
-        <Text style={styles.brandText}>PetBloom</Text>
+        <Text style={styles.brandText}>PawBloom</Text>
       </View>
       <View style={styles.headerActions}>
         <Pressable style={styles.petSwitch} onPress={onPetPress}>

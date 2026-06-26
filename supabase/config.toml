@@ -1,4 +1,4 @@
-project_id = "petbloom"
+project_id = "pawbloom"
 
 [api]
 enabled = true
@@ -10,8 +10,8 @@ major_version = 17
 
 [auth]
 enabled = true
-site_url = "petbloom://auth"
-additional_redirect_urls = ["exp://127.0.0.1:8081", "petbloom://auth"]
+site_url = "pawbloom://auth"
+additional_redirect_urls = ["exp://127.0.0.1:8081", "pawbloom://auth"]
 
 [storage]
 enabled = true

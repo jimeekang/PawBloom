@@ -1,6 +1,6 @@
-# PetBloom 아키텍처
+# PawBloom 아키텍처
 
-PetBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도메인은 자기 규칙을 소유하고, 외부에는 use case를 통해 기능을 제공한다. 다른 도메인과 협력해야 할 때는 application use case나 명시적인 domain event를 사용한다.
+PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도메인은 자기 규칙을 소유하고, 외부에는 use case를 통해 기능을 제공한다. 다른 도메인과 협력해야 할 때는 application use case나 명시적인 domain event를 사용한다.
 
 ## 기술 스택
 

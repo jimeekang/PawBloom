@@ -1,4 +1,4 @@
-# PetBloom 포지셔닝 및 기능 전략 설계
+# PawBloom 포지셔닝 및 기능 전략 설계
 
 날짜: 2026-06-25
 상태: 브레인스토밍에서 승인된 방향
@@ -6,11 +6,11 @@
 
 ## 1. 제품 포지션
 
-PetBloom는 일반적인 반려동물 다이어리 앱으로 포지셔닝하지 않는다.
+PawBloom는 일반적인 반려동물 다이어리 앱으로 포지셔닝하지 않는다.
 
 제품 포지션은 다음과 같다.
 
-> PetBloom는 가족이 함께 일상/케어 관찰 기록을 남기고, 그 기록을 안전한 병원용 briefing으로 정리해주는 앱이다.
+> PawBloom는 가족이 함께 일상/케어 관찰 기록을 남기고, 그 기록을 안전한 병원용 briefing으로 정리해주는 앱이다.
 
 주요 사용 상황:
 
@@ -18,7 +18,7 @@ PetBloom는 일반적인 반려동물 다이어리 앱으로 포지셔닝하지 
 - 질병/치료 기간: 구조화된 Care Mode 기록
 - 병원 방문: 기록 기반 요약, 누락 기록 확인, 수의사 질문 제안, 공유 가능한 report
 
-이 방향은 단순 pet diary, 일반 reminder, GPS 산책 tracker, pet sitter marketplace처럼 경쟁이 심한 영역에서 PetBloom를 분리한다.
+이 방향은 단순 pet diary, 일반 reminder, GPS 산책 tracker, pet sitter marketplace처럼 경쟁이 심한 영역에서 PawBloom를 분리한다.
 
 ## 2. 시장 판단
 
@@ -40,7 +40,7 @@ PetBloom는 일반적인 반려동물 다이어리 앱으로 포지셔닝하지 
 - 일반 pet profile과 photo timeline
 - Community, ranking, challenge, marketplace
 
-PetBloom의 차별화는 아래 연결 흐름이다.
+PawBloom의 차별화는 아래 연결 흐름이다.
 
 > 가족 기록 -> 누락 증거 확인 -> 병원 방문 준비 -> 안전한 report 공유
 
@@ -376,7 +376,7 @@ MVP에서 제외한다.
 - 모든 종에 대한 깊은 template
 - 실제 subscription payment
 
-이 제외 항목은 core care/reporting loop가 검증되기 전에 PetBloom가 넓은 pet platform으로 퍼지는 것을 막기 위한 결정이다.
+이 제외 항목은 core care/reporting loop가 검증되기 전에 PawBloom가 넓은 pet platform으로 퍼지는 것을 막기 위한 결정이다.
 
 ## 13. 성공 기준
 

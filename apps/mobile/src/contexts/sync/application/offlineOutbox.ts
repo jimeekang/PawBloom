@@ -8,7 +8,7 @@ type OutboxRow = {
 let database: SQLite.SQLiteDatabase | null = null;
 
 function db() {
-  database ??= SQLite.openDatabaseSync("petbloom_outbox.db");
+  database ??= SQLite.openDatabaseSync("pawbloom_outbox.db");
   return database;
 }
 

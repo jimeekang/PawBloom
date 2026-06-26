@@ -2,10 +2,10 @@ import type { Language } from "../shared-kernel/types";
 
 export const translations = {
   en: {
-    "app.title": "PetBloom",
+    "app.title": "PawBloom",
     "app.kicker": "Diary to vet-ready care",
     "auth.title": "Account required",
-    "auth.copy": "PetBloom syncs sensitive care records through Supabase with row-level access controls.",
+    "auth.copy": "PawBloom syncs sensitive care records through Supabase with row-level access controls.",
     "auth.envMissing": "Supabase env vars are missing. Sign in will use local preview until .env is configured.",
     "auth.signIn": "Sign in",
     "auth.signUp": "Create account",
@@ -98,10 +98,10 @@ export const translations = {
     "settings.plan": "Subscription plan",
   },
   ko: {
-    "app.title": "PetBloom",
+    "app.title": "PawBloom",
     "app.kicker": "다이어리에서 병원용 케어까지",
     "auth.title": "계정이 필요합니다",
-    "auth.copy": "PetBloom는 민감한 케어 기록을 Supabase와 RLS 권한 구조로 동기화합니다.",
+    "auth.copy": "PawBloom는 민감한 케어 기록을 Supabase와 RLS 권한 구조로 동기화합니다.",
     "auth.envMissing": "Supabase 환경 변수가 없습니다. .env 설정 전에는 로컬 미리보기로 열립니다.",
     "auth.signIn": "로그인",
     "auth.signUp": "계정 만들기",
