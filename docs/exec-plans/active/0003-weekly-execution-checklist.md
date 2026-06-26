@@ -84,14 +84,14 @@
 - Modify: `apps/mobile/src/presentation/screens/PetOnboardingScreen.tsx`
 - Modify: `apps/mobile/src/i18n/translations.ts`
 
-- [ ] `updatePet` application API를 추가한다.
-- [ ] Supabase `pets` update query를 membership/RLS 기준으로 실행한다.
-- [ ] Pet onboarding 화면에서 이름, species, breed, 생년월일, 체중 수정 UI를 추가한다.
-- [ ] 수정 저장 후 TanStack/Auth state의 `pets`와 `activePet`이 갱신되게 한다.
-- [ ] sample pet fallback이 로그인 사용자 flow에 섞이지 않는지 확인한다.
-- [ ] `npm --prefix apps/mobile run typecheck`를 실행한다.
-- [ ] `npm run verify`를 실행한다.
-- [ ] `feat: add pet profile editing` 커밋을 만든다.
+- [x] `updatePet` application API를 추가한다.
+- [x] Supabase `pets` update query를 membership/RLS 기준으로 실행한다.
+- [x] Pet onboarding 화면에서 이름, species, breed, 생년월일, 체중 수정 UI를 추가한다.
+- [x] 수정 저장 후 TanStack/Auth state의 `pets`와 `activePet`이 갱신되게 한다.
+- [x] sample pet fallback이 로그인 사용자 flow에 섞이지 않는지 확인한다.
+- [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
+- [x] `npm run verify`를 실행한다.
+- [x] `feat: add pet profile editing` 커밋을 만든다.
 
 ### Day 3: Diary list를 날짜 기준으로 확장
 

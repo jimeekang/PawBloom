@@ -9,6 +9,10 @@ export type CreatePetInput = {
   weightKg?: number;
 };
 
+export type UpdatePetInput = CreatePetInput & {
+  id: string;
+};
+
 export type PersistedPet = PetProfile;
 
 type QueryClient = {
@@ -40,17 +44,12 @@ export async function loadPetRows(client: QueryClient): Promise<PetRecord[]> {
 }
 
 export async function createPetRow(client: QueryClient, userId: string, input: CreatePetInput): Promise<PersistedPet> {
-  const species = normalizeSpecies(input.species);
-  const weightKg = input.weightKg !== undefined && !Number.isNaN(input.weightKg) ? input.weightKg : null;
+  const payload = toPetPayload(input);
 
   const { error: insertError } = (await (client.from("pets") as any)
     .insert({
       owner_id: userId,
-      name: input.name.trim(),
-      species,
-      breed: input.breed?.trim() || null,
-      birthdate: input.birthdate?.trim() || null,
-      weight_kg: weightKg,
+      ...payload,
     }) as any);
 
   if (insertError) {
@@ -72,4 +71,33 @@ export async function createPetRow(client: QueryClient, userId: string, input: C
   }
 
   return mapDbPet(data);
+}
+
+export async function updatePetRow(client: QueryClient, input: UpdatePetInput): Promise<PersistedPet> {
+  const { data, error } = (await (client.from("pets") as any)
+    .update(toPetPayload(input))
+    .eq("id", input.id)
+    .select("id,name,species,breed,birthdate,weight_kg")
+    .single()) as {
+    data: PetRecord | null;
+    error: { message: string } | null;
+  };
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Could not update pet.");
+  }
+
+  return mapDbPet(data);
+}
+
+function toPetPayload(input: CreatePetInput) {
+  const weightKg = input.weightKg !== undefined && !Number.isNaN(input.weightKg) ? input.weightKg : null;
+
+  return {
+    name: input.name.trim(),
+    species: normalizeSpecies(input.species),
+    breed: input.breed?.trim() || null,
+    birthdate: input.birthdate?.trim() || null,
+    weight_kg: weightKg,
+  };
 }

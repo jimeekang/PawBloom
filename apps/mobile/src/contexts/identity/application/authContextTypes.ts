@@ -1,6 +1,6 @@
 import { type Session, type User } from "@supabase/supabase-js";
 import { type PetProfile } from "../../pet/domain/pet";
-import { type CreatePetInput } from "./authContextQueries";
+import { type CreatePetInput, type UpdatePetInput } from "./authContextQueries";
 
 export type AppAuthState = {
   configured: boolean;
@@ -16,6 +16,7 @@ export type AppAuthState = {
   signUp: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   createPet: (input: CreatePetInput) => Promise<string | null>;
+  updatePet: (input: UpdatePetInput) => Promise<string | null>;
   selectPet: (petId: string) => void;
   selectNextPet: () => void;
   resetMessage: () => void;

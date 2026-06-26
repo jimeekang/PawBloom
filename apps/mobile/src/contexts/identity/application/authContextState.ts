@@ -4,12 +4,8 @@ import { isSupabaseConfigured as configuredFromEnv } from "../../../shared-kerne
 import { supabase } from "../infrastructure/supabaseClient";
 import { mapDbPet, type PetProfile } from "../../pet/domain/pet";
 import type { AppAuthState } from "./authContextTypes";
-import {
-  createPetRow,
-  CreatePetInput,
-  ensureProfileRow,
-  loadPetRows,
-} from "./authContextQueries";
+import { useAuthPetMutations } from "./authPetMutations";
+import { ensureProfileRow, loadPetRows } from "./authContextQueries";
 
 export function useAuthState() {
   const [initialized, setInitialized] = useState(false);
@@ -179,35 +175,15 @@ export function useAuthState() {
     setActivePetId(null);
   }, [clearMessages]);
 
-  const createPet = useCallback(
-    async (input: CreatePetInput) => {
-      if (!supabase || !user) {
-        return "Authentication required.";
-      }
-
-      if (!input.name.trim()) {
-        return "Pet name is required.";
-      }
-
-      setLoading(true);
-      clearMessages();
-
-      try {
-        const nextPet = await createPetRow(supabase, user.id, input);
-        setPets((current) => [nextPet, ...current.filter((pet) => pet.id !== nextPet.id)]);
-        setActivePetId(nextPet.id);
-        setAuthMessage("Pet added.");
-        return null;
-      } catch (rawError) {
-        const nextError = rawError instanceof Error ? rawError.message : "Could not create pet.";
-        setError(nextError);
-        return nextError;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [clearMessages, user],
-  );
+  const { createPet, updatePet } = useAuthPetMutations({
+    user,
+    clearMessages,
+    setLoading,
+    setPets,
+    setActivePetId,
+    setAuthMessage,
+    setError,
+  });
 
   const selectPet = useCallback((petId: string) => {
     setActivePetId(petId);
@@ -240,6 +216,7 @@ export function useAuthState() {
     signUp,
     signOut,
     createPet,
+    updatePet,
     selectPet,
     selectNextPet,
     resetMessage: clearMessages,

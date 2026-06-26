@@ -7,6 +7,7 @@ export type PetProfile = {
   name: string;
   species: Species;
   breed: string;
+  birthdate: string;
   ageLabel: string;
   weightKg: number;
   careMode: boolean;
@@ -27,6 +28,7 @@ export function mapDbPet(record: PetRecord): PetProfile {
     name: record.name,
     species: normalizeSpecies(record.species),
     breed: record.breed ?? "",
+    birthdate: record.birthdate ?? "",
     ageLabel: humanizeAgeLabel(record.birthdate),
     weightKg: record.weight_kg ?? 0,
     careMode: true,

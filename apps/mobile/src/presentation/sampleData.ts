@@ -9,6 +9,7 @@ export const samplePet: PetProfile = {
   name: "Milo",
   species: "dog",
   breed: "Cavoodle",
+  birthdate: "2021-05-12",
   ageLabel: "4y",
   weightKg: 8.4,
   careMode: true,
@@ -86,4 +87,3 @@ export const sampleReport: VetReport = {
   confirmedByOwner: false,
   disclaimer: sampleBrief.disclaimer,
 };
-

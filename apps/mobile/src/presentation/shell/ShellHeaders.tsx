@@ -6,6 +6,7 @@ import { t } from "../../i18n/translations";
 type HomeHeaderProps = {
   petName: string;
   onPetPress: () => void;
+  onManagePets: () => void;
   canSwitchPet: boolean;
 };
 
@@ -17,7 +18,7 @@ type ReportsHeaderProps = {
   onSignOut: () => void;
 };
 
-export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProps) {
+export function HomeHeader({ petName, onPetPress, onManagePets, canSwitchPet }: HomeHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
@@ -33,7 +34,9 @@ export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProp
           <AppIcon name="bell" size={iconSize.lg} color={colors.text} />
           <View style={styles.notificationDot} />
         </View>
-        <AppIcon name="menu" size={iconSize.lg} color={colors.text} />
+        <Pressable onPress={onManagePets} style={styles.headerIconTouch}>
+          <AppIcon name="menu" size={iconSize.lg} color={colors.text} />
+        </Pressable>
       </View>
     </View>
   );
@@ -45,6 +48,16 @@ export function DiaryHeader({ onBack }: DiaryHeaderProps) {
       <AppIconButton iconName="back" onPress={onBack} />
       <Text style={styles.screenTitle}>{t("en", "diary.title")}</Text>
       <AppIcon name="calendar" size={iconSize.lg} color={colors.text} />
+    </View>
+  );
+}
+
+export function PetSettingsHeader({ onBack }: DiaryHeaderProps) {
+  return (
+    <View style={styles.header}>
+      <AppIconButton iconName="back" onPress={onBack} />
+      <Text style={styles.screenTitle}>{t("ko", "pet.manageTitle")}</Text>
+      <AppIcon name="settings" size={iconSize.lg} color={colors.text} />
     </View>
   );
 }

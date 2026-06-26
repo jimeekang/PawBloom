@@ -15,6 +15,7 @@ import { t } from "../i18n/translations";
 import { DiaryEntryScreen } from "./screens/DiaryEntryScreen";
 import { CareModeScreen } from "./screens/CareModeScreen";
 import { HomeScreen } from "./screens/HomeScreen";
+import { PetOnboardingScreen } from "./screens/PetOnboardingScreen";
 import { ReportsScreen } from "./screens/ReportsScreen";
 import { BottomNav, type MainTab } from "./ui/BottomNav";
 import {
@@ -29,7 +30,7 @@ import {
 } from "./mockUiState";
 import { checklistSummary, createChecklistFromRecords } from "./liveUiState";
 import { type PetProfile } from "../contexts/pet/domain/pet";
-import { CareHeader, DiaryHeader, HomeHeader, ReportsHeader } from "./shell/ShellHeaders";
+import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader } from "./shell/ShellHeaders";
 
 type PawBloomShellProps = {
   activePet?: PetProfile | null;
@@ -54,6 +55,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const updateMedicationDose = useUpdateMedicationDoseStatus(livePetId);
 
   const [activeTab, setActiveTab] = useState<MainTab>("today");
+  const [showPetSettings, setShowPetSettings] = useState(false);
   const [localChecklist, setLocalChecklist] = useState(initialChecklist);
   const [entries, setEntries] = useState<DiaryEntry[]>(initialDiaryEntries);
   const [doses, setDoses] = useState<DoseRecord[]>(initialDoses);
@@ -177,10 +179,23 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     void signOut();
   }
 
+  if (showPetSettings) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.appFrame}>
+          <PetSettingsHeader onBack={() => setShowPetSettings(false)} />
+          <PetOnboardingScreen />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.appFrame}>
-        {activeTab === "today" ? <HomeHeader petName={activePet.name} onPetPress={handlePetPress} canSwitchPet={canCyclePet} /> : null}
+        {activeTab === "today" ? (
+          <HomeHeader petName={activePet.name} onPetPress={handlePetPress} onManagePets={() => setShowPetSettings(true)} canSwitchPet={canCyclePet} />
+        ) : null}
         {activeTab === "diary" ? <DiaryHeader onBack={() => setActiveTab("today")} /> : null}
         {activeTab === "care" ? <CareHeader /> : null}
         {activeTab === "reports" ? <ReportsHeader onSignOut={handleSignOut} /> : null}
