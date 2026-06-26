@@ -12,11 +12,15 @@ type Segment = "care" | "reports";
 export function CareModeScreen({
   doses,
   onDosePress,
+  onAddDose,
   onGenerateReport,
+  conditionScore,
 }: {
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
+  onAddDose: () => void;
   onGenerateReport: () => void;
+  conditionScore?: number;
 }) {
   const [segment, setSegment] = useState<Segment>("care");
 
@@ -31,7 +35,17 @@ export function CareModeScreen({
         ]}
       />
 
-      {segment === "care" ? <CarePanel doses={doses} onDosePress={onDosePress} onGenerateReport={onGenerateReport} /> : <ReportPanel onShare={onGenerateReport} />}
+      {segment === "care" ? (
+        <CarePanel
+          doses={doses}
+          onDosePress={onDosePress}
+          onAddDose={onAddDose}
+          onGenerateReport={onGenerateReport}
+          conditionScore={conditionScore}
+        />
+      ) : (
+        <ReportPanel onShare={onGenerateReport} />
+      )}
     </View>
   );
 }
@@ -39,11 +53,15 @@ export function CareModeScreen({
 function CarePanel({
   doses,
   onDosePress,
+  onAddDose,
   onGenerateReport,
+  conditionScore,
 }: {
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
+  onAddDose: () => void;
   onGenerateReport: () => void;
+  conditionScore?: number;
 }) {
   return (
     <>
@@ -51,9 +69,10 @@ function CarePanel({
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("en", "care.medicationToday")}</Text>
-        <OutlineIconButton icon="add" />
+        <OutlineIconButton icon="add" onPress={onAddDose} />
       </View>
       <View style={styles.medList}>
+        {doses.length === 0 ? <Text style={styles.emptyText}>{t("en", "care.noMedicationToday")}</Text> : null}
         {doses.map((dose) => (
           <MedicationRow key={dose.id} dose={dose} onPress={() => onDosePress(dose.id)} />
         ))}
@@ -64,9 +83,11 @@ function CarePanel({
         <Text style={styles.linkText}>{t("en", "care.seeHistory")}</Text>
       </View>
       <SurfaceCard>
-        <ScoreRow label={t("en", "care.bodyCondition")} color={colors.salmon} value={4} />
-        <View style={styles.scoreDivider} />
-        <ScoreRow label={t("en", "care.energyLevel")} color={colors.mint} value={3} />
+        {conditionScore ? (
+          <ScoreRow label={t("en", "care.latestCondition")} color={colors.salmon} value={conditionScore} />
+        ) : (
+          <Text style={styles.emptyText}>{t("en", "care.noConditionScore")}</Text>
+        )}
       </SurfaceCard>
 
       <SummaryCard />
@@ -152,6 +173,10 @@ const styles = StyleSheet.create({
   medList: {
     gap: spacing.md,
   },
+  emptyText: {
+    ...type.body,
+    color: colors.textMuted,
+  },
   medRow: {
     minHeight: 70,
     borderRadius: radius.md,
@@ -211,11 +236,6 @@ const styles = StyleSheet.create({
     ...type.body,
     width: 40,
     textAlign: "right",
-  },
-  scoreDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.sm,
   },
   reportCopy: {
     ...type.body,

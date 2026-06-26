@@ -10,6 +10,7 @@ export type DraftDiaryEntry = {
   category: DiaryCategory;
   summary: string;
   occurredAt: string;
+  conditionScore?: 1 | 2 | 3 | 4 | 5;
 };
 
 export const mockPets: PetProfile[] = [
@@ -49,7 +50,7 @@ export function createMockDiaryEntry(petId: string, draft: DraftDiaryEntry): Dia
     category: draft.category,
     occurredAt: draft.occurredAt,
     summary: draft.summary || defaultSummary[draft.category],
-    conditionScore: draft.category === "condition" ? 3 : undefined,
+    conditionScore: draft.category === "condition" ? draft.conditionScore ?? 3 : undefined,
   };
 }
 

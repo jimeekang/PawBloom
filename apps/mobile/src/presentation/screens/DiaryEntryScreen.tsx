@@ -12,12 +12,13 @@ const categories: DiaryCategory[] = ["food", "water", "walk", "stool", "conditio
 
 export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) => void }) {
   const [selected, setSelected] = useState<DiaryCategory>("food");
+  const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [memo, setMemo] = useState("");
   const [photoAdded, setPhotoAdded] = useState(false);
   const [notice, setNotice] = useState(t("en", "diary.localDraft"));
 
   function saveEntry() {
-    onSave({ category: selected, summary: memo.trim(), occurredAt: t("en", "diary.time") });
+    onSave({ category: selected, summary: memo.trim(), occurredAt: t("en", "diary.time"), conditionScore });
     setMemo("");
     setPhotoAdded(false);
   }
@@ -44,6 +45,23 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
           );
         })}
       </View>
+
+      {selected === "condition" ? (
+        <>
+          <Text style={styles.sectionTitle}>{t("en", "diary.conditionScore")}</Text>
+          <View style={styles.scorePicker}>
+            {[1, 2, 3, 4, 5].map((score) => (
+              <Pressable
+                key={score}
+                style={[styles.scoreButton, conditionScore === score && styles.scoreButtonActive]}
+                onPress={() => setConditionScore(score as 1 | 2 | 3 | 4 | 5)}
+              >
+                <Text style={[styles.scoreText, conditionScore === score && styles.scoreTextActive]}>{score}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
 
       <Text style={styles.sectionTitle}>
         {t("en", "diary.addPhotos")} <Text style={styles.optional}>{t("en", "diary.optional")}</Text>
@@ -148,6 +166,31 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     ...type.bodyStrong,
+  },
+  scorePicker: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  scoreButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scoreButtonActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.surfacePeach,
+  },
+  scoreText: {
+    ...type.bodyStrong,
+    color: colors.textMuted,
+  },
+  scoreTextActive: {
+    color: colors.orangeDeep,
   },
   photoDrop: {
     minHeight: 168,
