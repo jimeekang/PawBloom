@@ -59,7 +59,7 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
   return useMutation({
     mutationFn: async (input: CreateDiaryEntryInput) => {
       if (!supabase || !petId || !userId) {
-        throw new Error("Authentication required.");
+        throw new Error("로그인이 필요합니다.");
       }
 
       const payload: DiaryInsert = {
@@ -87,12 +87,12 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
 
 function defaultSummary(category: CreateDiaryEntryInput["category"]) {
   const labels: Record<CreateDiaryEntryInput["category"], string> = {
-    food: "Food recorded.",
-    water: "Water recorded.",
-    walk: "Walk recorded.",
-    stool: "Stool recorded.",
-    condition: "Condition check recorded.",
-    memo: "Memo recorded.",
+    food: "식사가 기록되었습니다.",
+    water: "물 섭취가 기록되었습니다.",
+    walk: "산책이 기록되었습니다.",
+    stool: "배변이 기록되었습니다.",
+    condition: "컨디션 체크가 기록되었습니다.",
+    memo: "메모가 기록되었습니다.",
   };
   return labels[category];
 }

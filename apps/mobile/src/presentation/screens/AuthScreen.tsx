@@ -21,12 +21,12 @@ export function AuthScreen() {
     setLocalError(null);
 
     if (!email || !password || (isSignUp && !passwordConfirm)) {
-      setLocalError("Please fill in all required fields.");
+      setLocalError("필수 항목을 모두 입력해 주세요.");
       return;
     }
 
     if (isSignUp && password !== passwordConfirm) {
-      setLocalError("Password confirmation does not match.");
+      setLocalError("비밀번호 확인이 일치하지 않습니다.");
       return;
     }
 
@@ -40,13 +40,13 @@ export function AuthScreen() {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{t("en", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
-      <Text style={styles.copy}>{t("en", "auth.copy")}</Text>
+      <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
+      <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
 
       <SegmentedControl
         items={[
-          { label: t("en", "auth.signIn"), value: "signIn" },
-          { label: t("en", "auth.signUp"), value: "signUp" },
+          { label: t("ko", "auth.signIn"), value: "signIn" },
+          { label: t("ko", "auth.signUp"), value: "signUp" },
         ]}
         value={mode}
         onChange={setMode}
@@ -57,7 +57,7 @@ export function AuthScreen() {
           style={styles.input}
           autoCapitalize="none"
           keyboardType="email-address"
-          placeholder={t("en", "auth.email")}
+          placeholder={t("ko", "auth.email")}
           placeholderTextColor={colors.textMuted}
           value={email}
           onChangeText={setEmail}
@@ -66,7 +66,7 @@ export function AuthScreen() {
         <TextInput
           style={styles.input}
           secureTextEntry
-          placeholder={t("en", "auth.password")}
+          placeholder={t("ko", "auth.password")}
           placeholderTextColor={colors.textMuted}
           value={password}
           onChangeText={setPassword}
@@ -76,21 +76,21 @@ export function AuthScreen() {
           <TextInput
             style={styles.input}
             secureTextEntry
-            placeholder={t("en", "auth.passwordConfirm")}
+            placeholder={t("ko", "auth.passwordConfirm")}
             placeholderTextColor={colors.textMuted}
             value={passwordConfirm}
             onChangeText={setPasswordConfirm}
           />
         ) : null}
 
-        <PrimaryButton label={t("en", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} />
+        <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} />
 
       {error || localError ? <NoticeBanner text={error ?? localError ?? ""} icon="close" /> : null}
       {authMessage ? <NoticeBanner text={authMessage} icon="check" /> : null}
 
-        {isSignUp && <Text style={styles.hint}>{t("en", "auth.signUpHint")}</Text>}
-        {isSignUp && loading ? <Text style={styles.notice}>{t("en", "auth.wait")}</Text> : null}
-        {!isSignUp && loading ? <Text style={styles.notice}>{t("en", "auth.wait")}</Text> : null}
+        {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
+        {isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+        {!isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
       </View>
     </View>
   );

@@ -1,27 +1,46 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { useAuth } from "../../contexts/identity/application/authContext";
+import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
+import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
+import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
 import { styles } from "./PetOnboardingScreen.styles";
 
 const speciesOptions = ["dog", "cat", "other"] as const;
+const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
+  dog: "개",
+  cat: "고양이",
+  other: "기타",
+};
 
 export function PetOnboardingScreen() {
-  const { pets, activePet, selectPet, createPet, updatePet, error, authMessage, loading, signOut } = useAuth();
+  const { pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
 
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
   const [birthdate, setBirthdate] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [species, setSpecies] = useState<(typeof speciesOptions)[number]>("dog");
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBreed, setEditBreed] = useState("");
   const [editBirthdate, setEditBirthdate] = useState("");
   const [editWeightKg, setEditWeightKg] = useState("");
   const [editSpecies, setEditSpecies] = useState<(typeof speciesOptions)[number]>("dog");
+  const [photo, setPhoto] = useState<PetProfilePhotoInput | undefined>();
+  const [editPhoto, setEditPhoto] = useState<PetProfilePhotoInput | undefined>();
+  const activePhoto = usePetProfilePhotoUrl(activePet?.id);
+  const hasPets = pets.length > 0;
+  const shouldShowPetSelector = pets.length > 1 && !showCreateForm;
+
+  useEffect(() => {
+    setShowCreateForm(pets.length === 0);
+  }, [pets.length]);
 
   useEffect(() => {
     if (!activePet) {
@@ -33,21 +52,39 @@ export function PetOnboardingScreen() {
     setEditBirthdate(activePet.birthdate);
     setEditWeightKg(activePet.weightKg ? String(activePet.weightKg) : "");
     setEditSpecies(activePet.species);
+    setEditPhoto(undefined);
   }, [activePet]);
 
   const onCreate = async () => {
-    await createPet({
+    const createError = await createPet({
       name,
       species,
       breed,
       birthdate,
       weightKg: Number.parseFloat(weightKg),
+      profilePhoto: photo,
     });
 
+    if (createError) {
+      return;
+    }
+
+    resetCreateForm();
+    setShowCreateForm(false);
+  };
+
+  const resetCreateForm = () => {
     setName("");
     setBreed("");
     setBirthdate("");
     setWeightKg("");
+    setSpecies("dog");
+    setPhoto(undefined);
+  };
+
+  const onAddAnother = () => {
+    resetCreateForm();
+    setShowCreateForm(true);
   };
 
   const onUpdate = async () => {
@@ -62,7 +99,42 @@ export function PetOnboardingScreen() {
       breed: editBreed,
       birthdate: editBirthdate,
       weightKg: Number.parseFloat(editWeightKg),
+      profilePhoto: editPhoto,
     });
+  };
+
+  const onDelete = () => {
+    if (!activePet) {
+      return;
+    }
+
+    Alert.alert(t("ko", "pet.deleteTitle"), `${activePet.name} ${t("ko", "pet.deleteCopy")}`, [
+      { text: t("ko", "pet.deleteCancel"), style: "cancel" },
+      { text: t("ko", "pet.deleteConfirm"), style: "destructive", onPress: () => void deletePet(activePet.id) },
+    ]);
+  };
+
+  const pickPhoto = async (onPicked: (nextPhoto: PetProfilePhotoInput) => void) => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t("ko", "pet.photoPermissionTitle"), t("ko", "pet.photoPermissionCopy"));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    onPicked({ uri: asset.uri, fileName: asset.fileName, mimeType: asset.mimeType, base64: asset.base64 });
   };
 
   return (
@@ -70,30 +142,38 @@ export function PetOnboardingScreen() {
       <Text style={styles.title}>{t("ko", "pet.onboardingTitle")}</Text>
       <Text style={styles.copy}>{t("ko", "pet.onboardingCopy")}</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>{t("ko", "pet.selectTitle")}</Text>
-        {pets.length === 0 ? <Text style={styles.helpText}>{t("ko", "pet.empty")}</Text> : null}
-        {pets.map((pet) => (
-          <Pressable key={pet.id} style={[styles.petRow, pet.id === activePet?.id && styles.petRowActive]} onPress={() => selectPet(pet.id)}>
-            <View style={styles.petTextWrap}>
-              <Text style={styles.petName}>{pet.name}</Text>
-              <Text style={styles.petMeta}>
-                {pet.breed || "-"} · {pet.ageLabel} · {pet.weightKg ? `${pet.weightKg}kg` : "-"}
-              </Text>
-            </View>
-            <AppIcon name="check" size={iconSize.sm} color={pet.id === activePet?.id ? colors.orangeDeep : colors.textMuted} />
-          </Pressable>
-        ))}
-      </View>
+      {hasPets && !showCreateForm ? <SecondaryButton label={t("ko", "pet.create")} icon="add" onPress={onAddAnother} /> : null}
 
-      {activePet ? (
+      {shouldShowPetSelector ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t("ko", "pet.selectTitle")}</Text>
+          {pets.map((pet) => (
+            <Pressable key={pet.id} style={[styles.petRow, pet.id === activePet?.id && styles.petRowActive]} onPress={() => selectPet(pet.id)}>
+              <View style={styles.petTextWrap}>
+                <Text style={styles.petName}>{pet.name}</Text>
+                <Text style={styles.petMeta}>
+                  {pet.breed || "-"} · {pet.ageLabel} · {pet.weightKg ? `${pet.weightKg}kg` : "-"}
+                </Text>
+              </View>
+              <AppIcon name="check" size={iconSize.sm} color={pet.id === activePet?.id ? colors.orangeDeep : colors.textMuted} />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
+      {activePet && !showCreateForm ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.editTitle")}</Text>
           <View style={styles.row}>
             {speciesOptions.map((option) => (
-              <SpeciesPill key={option} value={option} selected={editSpecies === option} onPress={() => setEditSpecies(option)} />
+              <SpeciesPill key={option} label={speciesLabel[option]} selected={editSpecies === option} onPress={() => setEditSpecies(option)} />
             ))}
           </View>
+          <PhotoPicker
+            imageUri={editPhoto?.uri ?? activePhoto.data ?? undefined}
+            onPress={() => void pickPhoto(setEditPhoto)}
+            label={t("ko", "pet.photoUpdate")}
+          />
 
           <TextInput style={styles.input} value={editName} onChangeText={setEditName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
           <TextInput style={styles.input} value={editBreed} onChangeText={setEditBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
@@ -115,34 +195,46 @@ export function PetOnboardingScreen() {
           />
 
           <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} />
+          <Pressable style={styles.dangerButton} onPress={onDelete}>
+            <AppIcon name="close" size={iconSize.sm} color={colors.coral} />
+            <Text style={styles.dangerButtonText}>{t("ko", "pet.delete")}</Text>
+          </Pressable>
         </View>
       ) : null}
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>{t("ko", "pet.addTitle")}</Text>
-        <View style={styles.row}>{speciesOptions.map((option) => <SpeciesPill key={option} value={option} selected={species === option} onPress={() => setSpecies(option)} />)}</View>
+      {showCreateForm ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t("ko", "pet.addTitle")}</Text>
+          {!hasPets ? <Text style={styles.helpText}>{t("ko", "pet.empty")}</Text> : null}
+          <View style={styles.row}>
+            {speciesOptions.map((option) => (
+              <SpeciesPill key={option} label={speciesLabel[option]} selected={species === option} onPress={() => setSpecies(option)} />
+            ))}
+          </View>
+          <PhotoPicker imageUri={photo?.uri} onPress={() => void pickPhoto(setPhoto)} label={t("ko", "pet.photoAdd")} />
 
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
-        <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-        <TextInput
-          style={styles.input}
-          value={birthdate}
-          onChangeText={setBirthdate}
-          placeholder={t("ko", "pet.birthdatePlaceholder")}
-          placeholderTextColor={colors.textMuted}
-          keyboardType="numbers-and-punctuation"
-        />
-        <TextInput
-          style={styles.input}
-          value={weightKg}
-          onChangeText={setWeightKg}
-          placeholder={t("ko", "pet.weightPlaceholder")}
-          placeholderTextColor={colors.textMuted}
-          keyboardType="decimal-pad"
-        />
+          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
+          <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
+          <TextInput
+            style={styles.input}
+            value={birthdate}
+            onChangeText={setBirthdate}
+            placeholder={t("ko", "pet.birthdatePlaceholder")}
+            placeholderTextColor={colors.textMuted}
+            keyboardType="numbers-and-punctuation"
+          />
+          <TextInput
+            style={styles.input}
+            value={weightKg}
+            onChangeText={setWeightKg}
+            placeholder={t("ko", "pet.weightPlaceholder")}
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+          />
 
-        <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} />
-      </View>
+          <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} />
+        </View>
+      ) : null}
 
       {(error ?? authMessage) ? (
         <NoticeBanner text={error || authMessage || ""} icon={error ? "close" : "check"} />
@@ -154,13 +246,5 @@ export function PetOnboardingScreen() {
 
       {loading ? <Text style={styles.loadingText}>{t("ko", "auth.wait")}</Text> : null}
     </ScrollView>
-  );
-}
-
-function SpeciesPill({ value, selected, onPress }: { value: string; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable style={[styles.speciesPill, selected && styles.speciesPillActive]} onPress={onPress}>
-      <Text style={[styles.speciesText, selected && styles.speciesTextActive]}>{value}</Text>
-    </Pressable>
   );
 }

@@ -15,10 +15,10 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
   const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [memo, setMemo] = useState("");
   const [photoAdded, setPhotoAdded] = useState(false);
-  const [notice, setNotice] = useState(t("en", "diary.localDraft"));
+  const [notice, setNotice] = useState(t("ko", "diary.localDraft"));
 
   function saveEntry() {
-    onSave({ category: selected, summary: memo.trim(), occurredAt: t("en", "diary.time"), conditionScore });
+    onSave({ category: selected, summary: memo.trim(), occurredAt: t("ko", "diary.time"), conditionScore });
     setMemo("");
     setPhotoAdded(false);
   }
@@ -28,11 +28,11 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
       <NoticeBanner text={notice} icon="shield" />
 
       <View style={styles.dateTimeRow}>
-        <ControlPill iconName="calendar" label={t("en", "diary.date")} wide />
-        <ControlPill iconName="time" label={t("en", "diary.time")} />
+        <ControlPill iconName="calendar" label={t("ko", "diary.date")} wide />
+        <ControlPill iconName="time" label={t("ko", "diary.time")} />
       </View>
 
-      <Text style={styles.sectionTitle}>{t("en", "diary.category")}</Text>
+      <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
       <View style={styles.categoryGrid}>
         {categories.map((key) => {
           const item = categoryVisuals[key];
@@ -48,7 +48,7 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
 
       {selected === "condition" ? (
         <>
-          <Text style={styles.sectionTitle}>{t("en", "diary.conditionScore")}</Text>
+          <Text style={styles.sectionTitle}>{t("ko", "diary.conditionScore")}</Text>
           <View style={styles.scorePicker}>
             {[1, 2, 3, 4, 5].map((score) => (
               <Pressable
@@ -64,27 +64,27 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
       ) : null}
 
       <Text style={styles.sectionTitle}>
-        {t("en", "diary.addPhotos")} <Text style={styles.optional}>{t("en", "diary.optional")}</Text>
+        {t("ko", "diary.addPhotos")} <Text style={styles.optional}>{t("ko", "diary.optional")}</Text>
       </Text>
       <Pressable
         style={[styles.photoDrop, photoAdded && styles.photoDropActive]}
         onPress={() => {
           setPhotoAdded((value) => !value);
-          setNotice(photoAdded ? t("en", "diary.photoRemovedNotice") : t("en", "diary.photoAddedNotice"));
+          setNotice(photoAdded ? t("ko", "diary.photoRemovedNotice") : t("ko", "diary.photoAddedNotice"));
         }}
       >
         <AppIcon name={photoAdded ? "check" : "addPhoto"} size={42} color={photoAdded ? colors.mintDeep : colors.textSoft} />
-        <Text style={styles.photoTitle}>{photoAdded ? t("en", "diary.photoAdded") : t("en", "diary.photoAdd")}</Text>
-        <Text style={styles.photoCopy}>{photoAdded ? t("en", "diary.photoLater") : t("en", "diary.photoDrop")}</Text>
+        <Text style={styles.photoTitle}>{photoAdded ? t("ko", "diary.photoAdded") : t("ko", "diary.photoAdd")}</Text>
+        <Text style={styles.photoCopy}>{photoAdded ? t("ko", "diary.photoLater") : t("ko", "diary.photoDrop")}</Text>
       </Pressable>
 
       <Text style={styles.sectionTitle}>
-        {t("en", "diary.memo")} <Text style={styles.optional}>{t("en", "diary.optional")}</Text>
+        {t("ko", "diary.memo")} <Text style={styles.optional}>{t("ko", "diary.optional")}</Text>
       </Text>
       <View style={styles.memoBox}>
         <TextInput
           multiline
-          placeholder={t("en", "diary.memoPlaceholder")}
+          placeholder={t("ko", "diary.memoPlaceholder")}
           placeholderTextColor={colors.textSoft}
           value={memo}
           onChangeText={(value) => setMemo(value.slice(0, 300))}
@@ -93,7 +93,7 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
         <Text style={styles.counter}>{memo.length}/300</Text>
       </View>
 
-      <PrimaryButton label={t("en", "diary.save")} onPress={saveEntry} />
+      <PrimaryButton label={t("ko", "diary.save")} onPress={saveEntry} />
     </View>
   );
 }

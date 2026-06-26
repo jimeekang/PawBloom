@@ -18,7 +18,7 @@ export function ReportsScreen({
 
   return (
     <View style={styles.screen}>
-      <NoticeBanner text={t("en", stage.noticeKey)} icon={reportStage === "shared" ? "share" : "shield"} />
+      <NoticeBanner text={t("ko", stage.noticeKey)} icon={reportStage === "shared" ? "share" : "shield"} />
 
       <SurfaceCard>
         <View style={styles.reportHeader}>
@@ -26,34 +26,34 @@ export function ReportsScreen({
             <AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} />
           </View>
           <View style={styles.reportHeading}>
-            <Text style={styles.title}>{t("en", stage.titleKey)}</Text>
-            <Text style={styles.caption}>{t("en", "reports.rangeLabel")}</Text>
+            <Text style={styles.title}>{t("ko", stage.titleKey)}</Text>
+            <Text style={styles.caption}>{t("ko", "reports.rangeLabel")}</Text>
           </View>
         </View>
         <Text style={styles.summary}>
-          {t("en", "reports.summaryCopy")}
+          {t("ko", "reports.summaryCopy")}
         </Text>
         <View style={styles.notice}>
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
-          <Text style={styles.noticeText}>{t("en", "briefing.disclaimer")}</Text>
+          <Text style={styles.noticeText}>{t("ko", "briefing.disclaimer")}</Text>
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
-        <Text style={styles.title}>{t("en", "reports.beforeSharing")}</Text>
+        <Text style={styles.title}>{t("ko", "reports.beforeSharing")}</Text>
         <View style={styles.checkRow}>
           <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
-          <Text style={styles.body}>{t("en", "reports.confirmMedication")}</Text>
+          <Text style={styles.body}>{t("ko", "reports.confirmMedication")}</Text>
         </View>
         <View style={styles.checkRow}>
           <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
-          <Text style={styles.body}>{t("en", "reports.reviewNotes")}</Text>
+          <Text style={styles.body}>{t("ko", "reports.reviewNotes")}</Text>
         </View>
       </SurfaceCard>
 
       <View style={styles.actions}>
-        <PrimaryButton label={t("en", stage.primaryLabelKey)} icon={stage.primaryIcon} onPress={() => onReportStageChange(stage.next)} />
-        <SecondaryButton label={t("en", "reports.addMoreRecords")} icon="diary" onPress={onNewDiary} />
+        <PrimaryButton label={t("ko", stage.primaryLabelKey)} icon={stage.primaryIcon} onPress={() => onReportStageChange(stage.next)} />
+        <SecondaryButton label={t("ko", "reports.addMoreRecords")} icon="diary" onPress={onNewDiary} />
       </View>
     </View>
   );

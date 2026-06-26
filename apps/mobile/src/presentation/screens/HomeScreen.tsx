@@ -1,5 +1,6 @@
 import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
+import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals, type CategoryKey } from "../../design-system/categoryVisuals";
 import { AppIcon } from "../../design-system/iconography";
@@ -22,17 +23,19 @@ type Props = {
 
 export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle }: Props) {
   const timeline = entries.slice(0, 4);
+  const profilePhoto = usePetProfilePhotoUrl(pet.id);
+  const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
 
   return (
     <View>
-      <ImageBackground source={mochiHero} resizeMode="cover" imageStyle={styles.heroImage} style={styles.heroCard}>
+      <ImageBackground source={heroSource} resizeMode="cover" imageStyle={styles.heroImage} style={styles.heroCard}>
         <View style={styles.heroOverlay}>
           <Text style={styles.heroName}>{pet.name}</Text>
           <Text style={styles.heroMeta}>{pet.breed} - {pet.ageLabel}</Text>
           {pet.careMode ? (
             <View style={styles.heroPill}>
               <AppIcon name="diary" size={iconSize.sm} color={colors.orangeDeep} />
-              <Text style={styles.heroPillText}>{t("en", "pet.diaryMode")}</Text>
+              <Text style={styles.heroPillText}>{t("ko", "pet.diaryMode")}</Text>
             </View>
           ) : null}
         </View>
@@ -42,7 +45,7 @@ export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle 
         <NoticeBanner text={notice} />
       </View>
 
-      <SectionHeader title={t("en", "today.checklist.full")} action={t("en", "today.seeAll")} />
+      <SectionHeader title={t("ko", "today.checklist.full")} action={t("ko", "today.seeAll")} />
       <View style={styles.checklist}>
         {checklistOrder.map((key) => {
           const item = categoryVisuals[key];
@@ -60,9 +63,9 @@ export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle 
       </View>
 
       <SurfaceCard>
-        <SectionHeader title={t("en", "today.timeline.full")} action={t("en", "today.seeAll")} />
+        <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} />
         <View style={styles.timeline}>
-          {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("en", "today.noTimeline")}</Text> : null}
+          {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", "today.noTimeline")}</Text> : null}
           {timeline.map((entry) => {
             const item = categoryVisuals[entry.category];
             return (

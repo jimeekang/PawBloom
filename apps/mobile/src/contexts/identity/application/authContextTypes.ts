@@ -17,6 +17,7 @@ export type AppAuthState = {
   signOut: () => Promise<void>;
   createPet: (input: CreatePetInput) => Promise<string | null>;
   updatePet: (input: UpdatePetInput) => Promise<string | null>;
+  deletePet: (petId: string) => Promise<string | null>;
   selectPet: (petId: string) => void;
   selectNextPet: () => void;
   resetMessage: () => void;

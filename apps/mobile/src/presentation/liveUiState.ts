@@ -17,14 +17,14 @@ export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRec
 
 export function checklistSummary(key: ChecklistKey) {
   const summaries: Record<ChecklistKey, string> = {
-    food: "Food checklist item recorded.",
-    water: "Water checklist item recorded.",
-    walk: "Walk checklist item recorded.",
-    stool: "Stool checklist item recorded.",
-    condition: "Condition checklist item recorded.",
-    memo: "Memo checklist item recorded.",
-    medication: "Medication checklist item recorded.",
-    night: "Night check recorded.",
+    food: "식사 체크리스트가 기록되었습니다.",
+    water: "물 섭취 체크리스트가 기록되었습니다.",
+    walk: "산책 체크리스트가 기록되었습니다.",
+    stool: "배변 체크리스트가 기록되었습니다.",
+    condition: "컨디션 체크리스트가 기록되었습니다.",
+    memo: "메모 체크리스트가 기록되었습니다.",
+    medication: "투약 체크리스트가 기록되었습니다.",
+    night: "야간 체크가 기록되었습니다.",
   };
   return summaries[key];
 }

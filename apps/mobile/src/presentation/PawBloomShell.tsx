@@ -60,7 +60,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const [entries, setEntries] = useState<DiaryEntry[]>(initialDiaryEntries);
   const [doses, setDoses] = useState<DoseRecord[]>(initialDoses);
   const [reportStage, setReportStage] = useState<ReportStage>("draft");
-  const [notice, setNotice] = useState<string>(databaseMode ? t("en", "today.databaseNotice") : t("en", "today.previewNotice"));
+  const [notice, setNotice] = useState<string>(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
 
   const activeEntries = useMemo(
     () => (databaseMode ? diaryQuery.data ?? [] : entries.filter((entry) => entry.petId === activePet.id)),
@@ -84,18 +84,18 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         selectNextPet();
       }
     }
-    setNotice(t("en", "today.petSwitched"));
+    setNotice(t("ko", "today.petSwitched"));
   };
 
   function toggleChecklist(key: ChecklistKey) {
     if (!databaseMode) {
       setLocalChecklist((current) => ({ ...current, [key]: !current[key] }));
-      setNotice(t("en", "today.checklistUpdated"));
+      setNotice(t("ko", "today.checklistUpdated"));
       return;
     }
 
     if (checklist[key]) {
-      setNotice(t("en", "today.checklistAlreadyRecorded"));
+      setNotice(t("ko", "today.checklistAlreadyRecorded"));
       return;
     }
 
@@ -111,7 +111,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
           conditionScore: draft.conditionScore,
         })
         .then(() => {
-          setNotice(t("en", "today.diarySavedRemote"));
+          setNotice(t("ko", "today.diarySavedRemote"));
           setActiveTab("today");
         })
         .catch((error: Error) => setNotice(error.message));
@@ -121,7 +121,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     const nextEntry = createMockDiaryEntry(activePet.id, draft);
     setEntries((current) => [nextEntry, ...current]);
     setLocalChecklist((current) => ({ ...current, [draft.category]: true }));
-    setNotice(t("en", "today.diarySaved"));
+    setNotice(t("ko", "today.diarySaved"));
     setActiveTab("today");
   }
 
@@ -133,14 +133,14 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       }
       void updateMedicationDose
         .mutateAsync({ id, status: nextDoseStatus(dose.status) })
-        .then(() => setNotice(t("en", "today.medicationUpdatedRemote")))
+        .then(() => setNotice(t("ko", "today.medicationUpdatedRemote")))
         .catch((error: Error) => setNotice(error.message));
       return;
     }
 
     setDoses((current) => current.map((dose) => (dose.id === id ? { ...dose, status: nextDoseStatus(dose.status) } : dose)));
     setLocalChecklist((current) => ({ ...current, medication: true }));
-    setNotice(t("en", "today.medicationUpdated"));
+    setNotice(t("ko", "today.medicationUpdated"));
   }
 
   function addMedicationDose() {
@@ -149,8 +149,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     }
 
     void createMedicationDose
-      .mutateAsync({ medicationName: t("en", "care.quickMedicationName") })
-      .then(() => setNotice(t("en", "care.medicationAdded")))
+      .mutateAsync({ medicationName: t("ko", "care.quickMedicationName") })
+      .then(() => setNotice(t("ko", "care.medicationAdded")))
       .catch((error: Error) => setNotice(error.message));
   }
 
@@ -160,9 +160,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       if (pendingDose) {
         await updateMedicationDose.mutateAsync({ id: pendingDose.id, status: "completed" });
       } else {
-        await createMedicationDose.mutateAsync({ medicationName: t("en", "care.quickMedicationName"), status: "completed" });
+        await createMedicationDose.mutateAsync({ medicationName: t("ko", "care.quickMedicationName"), status: "completed" });
       }
-      setNotice(t("en", "today.medicationUpdatedRemote"));
+      setNotice(t("ko", "today.medicationUpdatedRemote"));
       return;
     }
 
@@ -172,7 +172,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       summary: checklistSummary(key),
       conditionScore: category === "condition" ? 3 : undefined,
     });
-    setNotice(t("en", "today.checklistRecordedRemote"));
+    setNotice(t("ko", "today.checklistRecordedRemote"));
   }
 
   function handleSignOut() {

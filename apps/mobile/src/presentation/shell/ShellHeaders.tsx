@@ -46,7 +46,7 @@ export function DiaryHeader({ onBack }: DiaryHeaderProps) {
   return (
     <View style={styles.header}>
       <AppIconButton iconName="back" onPress={onBack} />
-      <Text style={styles.screenTitle}>{t("en", "diary.title")}</Text>
+      <Text style={styles.screenTitle}>{t("ko", "diary.title")}</Text>
       <AppIcon name="calendar" size={iconSize.lg} color={colors.text} />
     </View>
   );
@@ -69,7 +69,7 @@ export function CareHeader() {
         <View style={styles.careBadge}>
           <AppIcon name="care" size={iconSize.lg} color={colors.white} />
         </View>
-        <Text style={styles.screenTitle}>{t("en", "care.eyebrow")}</Text>
+        <Text style={styles.screenTitle}>{t("ko", "care.eyebrow")}</Text>
       </View>
       <AppIcon name="settings" size={iconSize.lg} color={colors.text} />
     </View>
@@ -81,10 +81,10 @@ export function ReportsHeader({ onSignOut }: ReportsHeaderProps) {
     <View style={styles.header}>
       <View style={styles.careTitleRow}>
         <AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("en", "tabs.reports")}</Text>
+        <Text style={styles.screenTitle}>{t("ko", "tabs.reports")}</Text>
       </View>
       <Pressable onPress={onSignOut}>
-        <Text style={styles.signOutText}>Sign out</Text>
+        <Text style={styles.signOutText}>{t("ko", "auth.signOut")}</Text>
       </Pressable>
     </View>
   );

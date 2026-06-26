@@ -14,8 +14,8 @@ export type DraftDiaryEntry = {
 };
 
 export const mockPets: PetProfile[] = [
-  { ...samplePet, id: "pet-demo-mochi", name: "Mochi", breed: "Shiba Inu", ageLabel: "2y 3m", weightKg: 9.2 },
-  { ...samplePet, id: "pet-demo-luna", name: "Luna", breed: "Korean shorthair", ageLabel: "5y", weightKg: 4.1, careMode: false },
+  { ...samplePet, id: "pet-demo-mochi", name: "모찌", breed: "시바", ageLabel: "2살 3개월", weightKg: 9.2 },
+  { ...samplePet, id: "pet-demo-luna", name: "루나", breed: "코리안 숏헤어", ageLabel: "5살", weightKg: 4.1, careMode: false },
 ];
 
 export const initialChecklist: Record<ChecklistKey, boolean> = {
@@ -39,7 +39,7 @@ export const initialDoses: DoseRecord[] = sampleDoses.map((dose, index) => ({
   ...dose,
   id: `dose-ui-${index + 1}`,
   petId: mockPets[0].id,
-  medicationName: index === 0 ? "Probiotic" : "Heartworm prevention",
+  medicationName: index === 0 ? "프로바이오틱스" : "심장사상충 예방약",
   scheduledAt: index === 0 ? "08:10" : "20:00",
 }));
 
@@ -62,10 +62,10 @@ export function nextDoseStatus(status: DoseStatus): DoseStatus {
 }
 
 const defaultSummary: Record<DiaryCategory, string> = {
-  food: "Ate well",
-  water: "Water intake recorded",
-  walk: "Walk completed",
-  stool: "Stool recorded",
-  condition: "Condition checked",
-  memo: "Memo added",
+  food: "잘 먹음",
+  water: "물 섭취 기록",
+  walk: "산책 완료",
+  stool: "배변 기록",
+  condition: "컨디션 확인",
+  memo: "메모 추가",
 };

@@ -30,8 +30,8 @@ export function CareModeScreen({
         value={segment}
         onChange={setSegment}
         items={[
-          { label: t("en", "care.segment.care"), value: "care" },
-          { label: t("en", "care.segment.reports"), value: "reports" },
+          { label: t("ko", "care.segment.care"), value: "care" },
+          { label: t("ko", "care.segment.reports"), value: "reports" },
         ]}
       />
 
@@ -65,33 +65,33 @@ function CarePanel({
 }) {
   return (
     <>
-      <NoticeBanner text={t("en", "care.tapMedication")} />
+      <NoticeBanner text={t("ko", "care.tapMedication")} />
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{t("en", "care.medicationToday")}</Text>
+        <Text style={styles.sectionTitle}>{t("ko", "care.medicationToday")}</Text>
         <OutlineIconButton icon="add" onPress={onAddDose} />
       </View>
       <View style={styles.medList}>
-        {doses.length === 0 ? <Text style={styles.emptyText}>{t("en", "care.noMedicationToday")}</Text> : null}
+        {doses.length === 0 ? <Text style={styles.emptyText}>{t("ko", "care.noMedicationToday")}</Text> : null}
         {doses.map((dose) => (
           <MedicationRow key={dose.id} dose={dose} onPress={() => onDosePress(dose.id)} />
         ))}
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{t("en", "care.conditionScore")}</Text>
-        <Text style={styles.linkText}>{t("en", "care.seeHistory")}</Text>
+        <Text style={styles.sectionTitle}>{t("ko", "care.conditionScore")}</Text>
+        <Text style={styles.linkText}>{t("ko", "care.seeHistory")}</Text>
       </View>
       <SurfaceCard>
         {conditionScore ? (
-          <ScoreRow label={t("en", "care.latestCondition")} color={colors.salmon} value={conditionScore} />
+          <ScoreRow label={t("ko", "care.latestCondition")} color={colors.salmon} value={conditionScore} />
         ) : (
-          <Text style={styles.emptyText}>{t("en", "care.noConditionScore")}</Text>
+          <Text style={styles.emptyText}>{t("ko", "care.noConditionScore")}</Text>
         )}
       </SurfaceCard>
 
       <SummaryCard />
-      <PrimaryButton label={t("en", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
+      <PrimaryButton label={t("ko", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
     </>
   );
 }
@@ -101,10 +101,10 @@ function ReportPanel({ onShare }: { onShare: () => void }) {
     <>
       <SummaryCard />
       <SurfaceCard>
-        <Text style={styles.sectionTitle}>{t("en", "care.readyForVetReview")}</Text>
-        <Text style={styles.reportCopy}>{t("en", "care.readyCopy")}</Text>
+        <Text style={styles.sectionTitle}>{t("ko", "care.readyForVetReview")}</Text>
+        <Text style={styles.reportCopy}>{t("ko", "care.readyCopy")}</Text>
       </SurfaceCard>
-      <PrimaryButton label={t("en", "care.shareReportLink")} icon="reports" onPress={onShare} />
+      <PrimaryButton label={t("ko", "care.shareReportLink")} icon="reports" onPress={onShare} />
     </>
   );
 }
@@ -147,10 +147,10 @@ function ScoreRow({ label, color, value }: { label: string; color: string; value
 }
 
 const statusVisual: Record<DoseStatus, { label: string; accent: string; icon: string }> = {
-  pending: { label: t("en", "care.status.pending"), accent: colors.salmon, icon: colors.salmon },
-  completed: { label: t("en", "care.status.completed"), accent: colors.mint, icon: colors.mintDeep },
-  partial: { label: t("en", "care.status.partial"), accent: colors.memo, icon: colors.orangeDeep },
-  skipped: { label: t("en", "care.status.skipped"), accent: colors.inactive, icon: colors.textSoft },
+  pending: { label: t("ko", "care.status.pending"), accent: colors.salmon, icon: colors.salmon },
+  completed: { label: t("ko", "care.status.completed"), accent: colors.mint, icon: colors.mintDeep },
+  partial: { label: t("ko", "care.status.partial"), accent: colors.memo, icon: colors.orangeDeep },
+  skipped: { label: t("ko", "care.status.skipped"), accent: colors.inactive, icon: colors.textSoft },
 };
 
 const styles = StyleSheet.create({

@@ -10,6 +10,9 @@ export type AiBrief = {
 };
 
 export function hasRequiredDisclaimer(brief: AiBrief) {
-  return brief.disclaimer.includes("record-based summary") && brief.disclaimer.includes("not a diagnosis");
+  const normalized = brief.disclaimer.trim();
+  return (
+    (normalized.includes("record-based summary") && normalized.includes("not a diagnosis")) ||
+    (normalized.includes("기록 기반 요약") && (normalized.includes("진단이") || normalized.includes("진단")) && normalized.includes("의학적 판단"))
+  );
 }
-

@@ -62,13 +62,13 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
   return useMutation({
     mutationFn: async ({ medicationName, status = "pending" }: { medicationName: string; status?: DoseStatus }) => {
       if (!supabase || !petId || !userId) {
-        throw new Error("Authentication required.");
+        throw new Error("로그인이 필요합니다.");
       }
 
       const payload: DoseInsert = {
         pet_id: petId,
         created_by: userId,
-        medication_name: medicationName.trim() || "Medication",
+        medication_name: medicationName.trim() || "투약",
         scheduled_at: new Date().toISOString(),
         status,
         recorded_at: status === "pending" ? null : new Date().toISOString(),
@@ -93,7 +93,7 @@ export function useUpdateMedicationDoseStatus(petId: string | null) {
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: DoseStatus }) => {
       if (!supabase) {
-        throw new Error("Supabase client is not configured.");
+        throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
       }
 
       const { data, error } = await supabase

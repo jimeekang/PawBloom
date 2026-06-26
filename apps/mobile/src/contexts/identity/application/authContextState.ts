@@ -47,7 +47,7 @@ export function useAuthState() {
         return nextPets[0]?.id ?? null;
       });
     } catch (rawError) {
-      setError(rawError instanceof Error ? rawError.message : "Could not load pets.");
+      setError(rawError instanceof Error ? rawError.message : "반려동물 목록을 불러오지 못했습니다.");
     }
   }, []);
 
@@ -99,7 +99,7 @@ export function useAuthState() {
 
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) {
-      return "Supabase client is not configured";
+      return "Supabase 클라이언트가 설정되어 있지 않습니다.";
     }
 
     setLoading(true);
@@ -116,13 +116,13 @@ export function useAuthState() {
       return error.message;
     }
 
-    setAuthMessage("Sign in successful.");
+    setAuthMessage("로그인되었습니다.");
     return null;
   }, [clearMessages]);
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) {
-      return "Supabase client is not configured";
+      return "Supabase 클라이언트가 설정되어 있지 않습니다.";
     }
 
     setLoading(true);
@@ -144,12 +144,12 @@ export function useAuthState() {
     }
 
     if (data.user && data.session) {
-      setAuthMessage("Sign up complete.");
+      setAuthMessage("회원가입이 완료되었습니다.");
       return null;
     }
 
     if (data.user) {
-      setAuthMessage("Check your email to confirm signup.");
+      setAuthMessage("회원가입 확인을 위해 이메일을 확인해 주세요.");
     }
 
     return null;
@@ -175,7 +175,7 @@ export function useAuthState() {
     setActivePetId(null);
   }, [clearMessages]);
 
-  const { createPet, updatePet } = useAuthPetMutations({
+  const { createPet, updatePet, deletePet } = useAuthPetMutations({
     user,
     clearMessages,
     setLoading,
@@ -217,6 +217,7 @@ export function useAuthState() {
     signOut,
     createPet,
     updatePet,
+    deletePet,
     selectPet,
     selectNextPet,
     resetMessage: clearMessages,

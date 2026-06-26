@@ -20,7 +20,7 @@ export function BottomNav({ activeTab, onChange }: { activeTab: MainTab; onChang
         return (
           <Pressable key={item.key} style={styles.item} onPress={() => onChange(item.key)}>
             <AppIcon name={active && item.activeIcon ? item.activeIcon : item.icon} size={iconSize.md} color={active ? colors.orangeDeep : colors.textMuted} />
-            <Text style={[styles.label, active && styles.labelActive]}>{t("en", item.labelKey)}</Text>
+            <Text style={[styles.label, active && styles.labelActive]}>{t("ko", item.labelKey)}</Text>
           </Pressable>
         );
       })}
