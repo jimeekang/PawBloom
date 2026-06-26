@@ -1,0 +1,27 @@
+project_id = "petbloom"
+
+[api]
+enabled = true
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "petbloom://auth"
+additional_redirect_urls = ["exp://127.0.0.1:8081", "petbloom://auth"]
+
+[storage]
+enabled = true
+
+[functions.generate-ai-brief]
+verify_jwt = true
+
+[functions.generate-vet-report]
+verify_jwt = true
+
+[functions.get-vet-report]
+verify_jwt = false
+

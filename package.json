@@ -1,0 +1,25 @@
+{
+  "name": "petbloom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-first PetBloom mobile app repository.",
+  "scripts": {
+    "mobile:start": "npm --prefix apps/mobile run start",
+    "mobile:android": "npm --prefix apps/mobile run android",
+    "mobile:ios": "npm --prefix apps/mobile run ios",
+    "mobile:web": "npm --prefix apps/mobile run web",
+    "mobile:export-web": "npm --prefix apps/mobile run export:web",
+    "mobile:preview-web": "node scripts/serve-expo-web.mjs --host 127.0.0.1 --port 8082",
+    "typecheck": "npm --prefix apps/mobile run typecheck",
+    "verify:architecture": "node scripts/verify-architecture.mjs",
+    "verify:i18n": "node scripts/verify-i18n.mjs",
+    "verify:ai-safety": "node scripts/verify-ai-safety.mjs",
+    "verify:supabase": "node scripts/verify-supabase.mjs",
+    "verify:offline": "node scripts/verify-offline-sync.mjs",
+    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:ai-safety && npm run verify:supabase && npm run verify:offline"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

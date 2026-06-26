@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+dist-web/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+google-service-account.json
+AuthKey_*.p8
+.DS_Store
+Thumbs.db
