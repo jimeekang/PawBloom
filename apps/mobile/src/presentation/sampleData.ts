@@ -4,6 +4,8 @@ import type { DoseRecord } from "../contexts/medication/domain/medication";
 import type { PetProfile } from "../contexts/pet/domain/pet";
 import type { VetReport } from "../contexts/report/domain/vetReport";
 
+const todayKey = getLocalDateKey();
+
 export const samplePet: PetProfile = {
   id: "pet-demo-milo",
   name: "밀로",
@@ -20,25 +22,25 @@ export const sampleEntries: DiaryEntry[] = [
     id: "entry-food",
     petId: samplePet.id,
     category: "food",
+    entryDate: todayKey,
     occurredAt: "08:15",
     summary: "아침식사 반만 먹음",
-    conditionScore: 3,
   },
   {
     id: "entry-water",
     petId: samplePet.id,
     category: "water",
+    entryDate: todayKey,
     occurredAt: "10:40",
     summary: "평소보다 물 섭취량이 적음",
-    conditionScore: 3,
   },
   {
     id: "entry-stool",
     petId: samplePet.id,
     category: "stool",
+    entryDate: todayKey,
     occurredAt: "18:20",
     summary: "대변 한 번 묽음",
-    conditionScore: 2,
   },
 ];
 
@@ -87,3 +89,10 @@ export const sampleReport: VetReport = {
   confirmedByOwner: false,
   disclaimer: sampleBrief.disclaimer,
 };
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

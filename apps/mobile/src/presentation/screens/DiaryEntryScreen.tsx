@@ -1,36 +1,77 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import type { DiaryCategory } from "../../contexts/diary/domain/diaryEntry";
+import type { DiaryCategory, DiaryEntry, DiaryPhotoInput } from "../../contexts/diary/domain/diaryEntry";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
+import { NoticeBanner, PrimaryButton, SegmentedControl } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
-import { NoticeBanner, PrimaryButton } from "../../design-system/components";
-import { colors, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
+import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import type { DraftDiaryEntry } from "../mockUiState";
+import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
+import { DiaryEntryList } from "./DiaryEntryList";
+import { DiaryPhotoPicker } from "./DiaryPhotoPicker";
 
-const categories: DiaryCategory[] = ["food", "water", "walk", "stool", "condition", "memo"];
+type DiaryMode = "daily" | "care";
 
-export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) => void }) {
+const dailyCategories: DiaryCategory[] = ["food", "water", "walk", "stool", "condition", "memo"];
+const careCategories: DiaryCategory[] = ["food", "water", "condition"];
+
+export function DiaryEntryScreen({
+  entries,
+  selectedDateKey,
+  filter,
+  onDateChange,
+  onFilterChange,
+  onSave,
+}: {
+  entries: DiaryEntry[];
+  selectedDateKey: string;
+  filter: DiaryFilter;
+  onDateChange: (dateKey: string) => void;
+  onFilterChange: (filter: DiaryFilter) => void;
+  onSave: (entry: DraftDiaryEntry) => void;
+}) {
+  const [mode, setMode] = useState<DiaryMode>("daily");
   const [selected, setSelected] = useState<DiaryCategory>("food");
   const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [memo, setMemo] = useState("");
-  const [photoAdded, setPhotoAdded] = useState(false);
-  const [notice, setNotice] = useState(t("ko", "diary.localDraft"));
+  const [photos, setPhotos] = useState<DiaryPhotoInput[]>([]);
+  const [notice, setNotice] = useState<string>(t("ko", "diary.localDraft"));
+  const categories = mode === "care" ? careCategories : dailyCategories;
+
+  useEffect(() => {
+    if (!categories.includes(selected)) {
+      setSelected(categories[0]);
+    }
+  }, [categories, selected]);
 
   function saveEntry() {
-    onSave({ category: selected, summary: memo.trim(), occurredAt: t("ko", "diary.time"), conditionScore });
+    onSave({
+      category: selected,
+      summary: memo.trim(),
+      entryDate: selectedDateKey,
+      occurredAt: formatCurrentTime(),
+      conditionScore: selected === "condition" ? conditionScore : undefined,
+      photos,
+    });
     setMemo("");
-    setPhotoAdded(false);
+    setPhotos([]);
+    setNotice(t("ko", "diary.savedForDate"));
   }
 
   return (
     <View style={styles.screen}>
+      <DiaryCalendar selectedDateKey={selectedDateKey} filter={filter} onSelectDate={onDateChange} onFilterChange={onFilterChange} />
       <NoticeBanner text={notice} icon="shield" />
 
-      <View style={styles.dateTimeRow}>
-        <ControlPill iconName="calendar" label={t("ko", "diary.date")} wide />
-        <ControlPill iconName="time" label={t("ko", "diary.time")} />
-      </View>
+      <SegmentedControl
+        value={mode}
+        onChange={setMode}
+        items={[
+          { label: t("ko", "diary.mode.daily"), value: "daily" },
+          { label: t("ko", "diary.mode.care"), value: "care" },
+        ]}
+      />
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
       <View style={styles.categoryGrid}>
@@ -46,94 +87,54 @@ export function DiaryEntryScreen({ onSave }: { onSave: (entry: DraftDiaryEntry) 
         })}
       </View>
 
-      {selected === "condition" ? (
-        <>
-          <Text style={styles.sectionTitle}>{t("ko", "diary.conditionScore")}</Text>
-          <View style={styles.scorePicker}>
-            {[1, 2, 3, 4, 5].map((score) => (
-              <Pressable
-                key={score}
-                style={[styles.scoreButton, conditionScore === score && styles.scoreButtonActive]}
-                onPress={() => setConditionScore(score as 1 | 2 | 3 | 4 | 5)}
-              >
-                <Text style={[styles.scoreText, conditionScore === score && styles.scoreTextActive]}>{score}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </>
-      ) : null}
+      {selected === "condition" ? <ConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
 
       <Text style={styles.sectionTitle}>
         {t("ko", "diary.addPhotos")} <Text style={styles.optional}>{t("ko", "diary.optional")}</Text>
       </Text>
-      <Pressable
-        style={[styles.photoDrop, photoAdded && styles.photoDropActive]}
-        onPress={() => {
-          setPhotoAdded((value) => !value);
-          setNotice(photoAdded ? t("ko", "diary.photoRemovedNotice") : t("ko", "diary.photoAddedNotice"));
-        }}
-      >
-        <AppIcon name={photoAdded ? "check" : "addPhoto"} size={42} color={photoAdded ? colors.mintDeep : colors.textSoft} />
-        <Text style={styles.photoTitle}>{photoAdded ? t("ko", "diary.photoAdded") : t("ko", "diary.photoAdd")}</Text>
-        <Text style={styles.photoCopy}>{photoAdded ? t("ko", "diary.photoLater") : t("ko", "diary.photoDrop")}</Text>
-      </Pressable>
+      <DiaryPhotoPicker photos={photos} onChange={setPhotos} onNotice={setNotice} />
 
-      <Text style={styles.sectionTitle}>
-        {t("ko", "diary.memo")} <Text style={styles.optional}>{t("ko", "diary.optional")}</Text>
-      </Text>
+      <Text style={styles.sectionTitle}>{mode === "care" ? t("ko", "diary.careMemo") : t("ko", "diary.memo")}</Text>
       <View style={styles.memoBox}>
         <TextInput
           multiline
-          placeholder={t("ko", "diary.memoPlaceholder")}
+          placeholder={mode === "care" ? t("ko", "diary.careMemoPlaceholder") : t("ko", "diary.memoPlaceholder")}
           placeholderTextColor={colors.textSoft}
           value={memo}
-          onChangeText={(value) => setMemo(value.slice(0, 300))}
+          onChangeText={(value) => setMemo(value.slice(0, 500))}
           style={styles.memoInput}
         />
-        <Text style={styles.counter}>{memo.length}/300</Text>
+        <Text style={styles.counter}>{memo.length}/500</Text>
       </View>
 
       <PrimaryButton label={t("ko", "diary.save")} onPress={saveEntry} />
+      <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} />
     </View>
   );
 }
 
-function ControlPill({ iconName, label, wide = false }: { iconName: "calendar" | "time"; label: string; wide?: boolean }) {
+function ConditionScore({ value, onChange }: { value: 1 | 2 | 3 | 4 | 5; onChange: (value: 1 | 2 | 3 | 4 | 5) => void }) {
   return (
-    <View style={[styles.controlPill, wide && styles.controlPillWide]}>
-      <AppIcon name={iconName} size={iconSize.sm} color={colors.text} />
-      <Text style={styles.controlLabel}>{label}</Text>
-      {wide ? <AppIcon name="chevronDown" size={iconSize.sm} color={colors.text} /> : null}
-    </View>
+    <>
+      <Text style={styles.sectionTitle}>{t("ko", "diary.conditionScore")}</Text>
+      <View style={styles.scorePicker}>
+        {[1, 2, 3, 4, 5].map((score) => (
+          <Pressable key={score} style={[styles.scoreButton, value === score && styles.scoreButtonActive]} onPress={() => onChange(score as 1 | 2 | 3 | 4 | 5)}>
+            <Text style={[styles.scoreText, value === score && styles.scoreTextActive]}>{score}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </>
   );
+}
+
+function formatCurrentTime() {
+  return new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
 }
 
 const styles = StyleSheet.create({
   screen: {
     gap: spacing.lg,
-  },
-  dateTimeRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  controlPill: {
-    minHeight: layout.inputHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  controlPillWide: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  controlLabel: {
-    ...type.body,
   },
   sectionTitle: {
     ...type.sectionTitle,
@@ -192,31 +193,8 @@ const styles = StyleSheet.create({
   scoreTextActive: {
     color: colors.orangeDeep,
   },
-  photoDrop: {
-    minHeight: 168,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.borderDashed,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  photoDropActive: {
-    borderStyle: "solid",
-    borderColor: colors.mint,
-    backgroundColor: colors.surfaceWarm,
-  },
-  photoTitle: {
-    ...type.bodyStrong,
-    color: colors.textMuted,
-  },
-  photoCopy: {
-    ...type.caption,
-  },
   memoBox: {
-    minHeight: 86,
+    minHeight: 108,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -225,7 +203,7 @@ const styles = StyleSheet.create({
   },
   memoInput: {
     ...type.body,
-    minHeight: 46,
+    minHeight: 68,
     textAlignVertical: "top",
   },
   counter: {

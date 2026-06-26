@@ -6,6 +6,8 @@ import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { SummaryCard } from "../ui/SummaryCard";
+import type { DraftDiaryEntry } from "../mockUiState";
+import { CareRecordPanel } from "./CareRecordPanel";
 
 type Segment = "care" | "reports";
 
@@ -13,12 +15,14 @@ export function CareModeScreen({
   doses,
   onDosePress,
   onAddDose,
+  onSaveCareEntry,
   onGenerateReport,
   conditionScore,
 }: {
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
   onAddDose: () => void;
+  onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
 }) {
@@ -40,6 +44,7 @@ export function CareModeScreen({
           doses={doses}
           onDosePress={onDosePress}
           onAddDose={onAddDose}
+          onSaveCareEntry={onSaveCareEntry}
           onGenerateReport={onGenerateReport}
           conditionScore={conditionScore}
         />
@@ -54,12 +59,14 @@ function CarePanel({
   doses,
   onDosePress,
   onAddDose,
+  onSaveCareEntry,
   onGenerateReport,
   conditionScore,
 }: {
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
   onAddDose: () => void;
+  onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
 }) {
@@ -90,6 +97,7 @@ function CarePanel({
         )}
       </SurfaceCard>
 
+      <CareRecordPanel onSave={onSaveCareEntry} />
       <SummaryCard />
       <PrimaryButton label={t("ko", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
     </>

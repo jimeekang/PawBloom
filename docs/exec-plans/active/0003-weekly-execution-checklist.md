@@ -101,14 +101,18 @@
 - Modify: `apps/mobile/src/presentation/screens/DiaryEntryScreen.tsx`
 - Modify: `apps/mobile/src/i18n/translations.ts`
 
-- [ ] `useDiaryEntriesByDate(petId, dateKey)` hook을 추가한다.
-- [ ] Today 전용 조회와 날짜별 조회가 같은 mapper를 공유하게 정리한다.
-- [ ] Diary 화면에서 오늘 기록 목록을 저장 직후 바로 보여준다.
-- [ ] condition score가 없는 category는 score를 저장하지 않도록 확인한다.
-- [ ] 저장 실패 시 사용자에게 짧은 오류 notice를 보여준다.
-- [ ] `npm --prefix apps/mobile run typecheck`를 실행한다.
-- [ ] `npm run verify`를 실행한다.
-- [ ] `feat: show persisted diary entries by date` 커밋을 만든다.
+- [x] `useDiaryEntriesByDate(petId, dateKey)` hook을 추가한다.
+- [x] Today 전용 조회와 날짜별 조회가 같은 mapper를 공유하게 정리한다.
+- [x] Diary 화면에서 오늘 기록 목록을 저장 직후 바로 보여준다.
+- [x] condition score가 없는 category는 score를 저장하지 않도록 확인한다.
+- [x] 저장 실패 시 사용자에게 짧은 오류 notice를 보여준다.
+- [x] 달력 기반 날짜 선택과 일별/주별 필터를 추가한다.
+- [x] 일상 다이어리 사진을 최대 5장까지 선택/저장하도록 연결한다.
+- [x] Care 화면에서 식사, 음수, 컨디션 기록을 메모/사진과 함께 저장할 수 있게 한다.
+- [x] 다이어리 사진 5장 제한과 condition score 무결성을 migration으로 추가한다.
+- [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
+- [x] `npm run verify`를 실행한다.
+- [x] `feat: show persisted diary entries by date` 커밋을 만든다.
 
 ### Day 4: Care quick dose를 실제 medication model로 정리
 

@@ -1,4 +1,4 @@
-import type { DiaryCategory, DiaryEntry } from "../contexts/diary/domain/diaryEntry";
+import type { DiaryCategory, DiaryEntry, DiaryPhotoInput } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord, DoseStatus } from "../contexts/medication/domain/medication";
 import type { PetProfile } from "../contexts/pet/domain/pet";
 import { sampleDoses, sampleEntries, samplePet } from "./sampleData";
@@ -9,8 +9,10 @@ export type ReportStage = "empty" | "draft" | "confirmed" | "shared";
 export type DraftDiaryEntry = {
   category: DiaryCategory;
   summary: string;
+  entryDate?: string;
   occurredAt: string;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
+  photos?: DiaryPhotoInput[];
 };
 
 export const mockPets: PetProfile[] = [
@@ -48,9 +50,11 @@ export function createMockDiaryEntry(petId: string, draft: DraftDiaryEntry): Dia
     id: `entry-local-${Date.now()}`,
     petId,
     category: draft.category,
+    entryDate: draft.entryDate ?? getLocalDateKey(),
     occurredAt: draft.occurredAt,
     summary: draft.summary || defaultSummary[draft.category],
     conditionScore: draft.category === "condition" ? draft.conditionScore ?? 3 : undefined,
+    photoCount: draft.photos?.length ?? 0,
   };
 }
 
@@ -69,3 +73,10 @@ const defaultSummary: Record<DiaryCategory, string> = {
   condition: "컨디션 확인",
   memo: "메모 추가",
 };
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

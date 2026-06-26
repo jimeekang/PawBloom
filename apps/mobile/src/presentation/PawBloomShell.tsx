@@ -1,16 +1,10 @@
 import { useMemo, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView, ScrollView, View } from "react-native";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../contexts/medication/domain/medication";
 import { useAuth } from "../contexts/identity/application/authContext";
-import { useCreateDiaryEntry, useTodayDiaryEntries } from "../contexts/diary/application/diaryRecords";
-import {
-  nextDoseStatus,
-  useCreateMedicationDose,
-  useTodayMedicationDoses,
-  useUpdateMedicationDoseStatus,
-} from "../contexts/medication/application/medicationDoseRecords";
-import { colors, layout } from "../design-system/tokens";
+import { getLocalDateKey, getWeekDateRange, useCreateDiaryEntry, useDiaryEntriesByDate, useDiaryEntriesByDateRange, useTodayDiaryEntries } from "../contexts/diary/application/diaryRecords";
+import { nextDoseStatus, useCreateMedicationDose, useTodayMedicationDoses, useUpdateMedicationDoseStatus } from "../contexts/medication/application/medicationDoseRecords";
 import { t } from "../i18n/translations";
 import { DiaryEntryScreen } from "./screens/DiaryEntryScreen";
 import { CareModeScreen } from "./screens/CareModeScreen";
@@ -18,19 +12,12 @@ import { HomeScreen } from "./screens/HomeScreen";
 import { PetOnboardingScreen } from "./screens/PetOnboardingScreen";
 import { ReportsScreen } from "./screens/ReportsScreen";
 import { BottomNav, type MainTab } from "./ui/BottomNav";
-import {
-  createMockDiaryEntry,
-  initialChecklist,
-  initialDiaryEntries,
-  initialDoses,
-  mockPets,
-  type ChecklistKey,
-  type DraftDiaryEntry,
-  type ReportStage,
-} from "./mockUiState";
+import { createMockDiaryEntry, initialChecklist, initialDiaryEntries, initialDoses, mockPets, type ChecklistKey, type DraftDiaryEntry, type ReportStage } from "./mockUiState";
 import { checklistSummary, createChecklistFromRecords } from "./liveUiState";
 import { type PetProfile } from "../contexts/pet/domain/pet";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader } from "./shell/ShellHeaders";
+import type { DiaryFilter } from "./screens/DiaryCalendar";
+import { styles } from "./PawBloomShell.styles";
 
 type PawBloomShellProps = {
   activePet?: PetProfile | null;
@@ -60,12 +47,28 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const [entries, setEntries] = useState<DiaryEntry[]>(initialDiaryEntries);
   const [doses, setDoses] = useState<DoseRecord[]>(initialDoses);
   const [reportStage, setReportStage] = useState<ReportStage>("draft");
+  const [selectedDiaryDate, setSelectedDiaryDate] = useState(getLocalDateKey());
+  const [diaryFilter, setDiaryFilter] = useState<DiaryFilter>("day");
   const [notice, setNotice] = useState<string>(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
+  const selectedWeekRange = useMemo(() => getWeekDateRange(selectedDiaryDate), [selectedDiaryDate]);
 
   const activeEntries = useMemo(
-    () => (databaseMode ? diaryQuery.data ?? [] : entries.filter((entry) => entry.petId === activePet.id)),
+    () => (databaseMode ? diaryQuery.data ?? [] : entries.filter((entry) => entry.petId === activePet.id && entry.entryDate === getLocalDateKey())),
     [activePet.id, databaseMode, diaryQuery.data, entries],
   );
+  const diaryDateQuery = useDiaryEntriesByDate(livePetId, selectedDiaryDate);
+  const diaryWeekQuery = useDiaryEntriesByDateRange(livePetId, selectedWeekRange.fromDateKey, selectedWeekRange.toDateKey);
+  const selectedDiaryEntries = useMemo(() => {
+    if (databaseMode) {
+      return diaryFilter === "day" ? diaryDateQuery.data ?? [] : diaryWeekQuery.data ?? [];
+    }
+
+    return entries.filter((entry) => {
+      if (entry.petId !== activePet.id) return false;
+      if (diaryFilter === "day") return entry.entryDate === selectedDiaryDate;
+      return entry.entryDate >= selectedWeekRange.fromDateKey && entry.entryDate <= selectedWeekRange.toDateKey;
+    });
+  }, [activePet.id, databaseMode, diaryDateQuery.data, diaryFilter, diaryWeekQuery.data, entries, selectedDiaryDate, selectedWeekRange.fromDateKey, selectedWeekRange.toDateKey]);
   const activeDoses = useMemo(
     () => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePet.id)),
     [activePet.id, databaseMode, doses, dosesQuery.data],
@@ -108,11 +111,12 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         .mutateAsync({
           category: draft.category,
           summary: draft.summary,
+          entryDate: draft.entryDate,
           conditionScore: draft.conditionScore,
+          photos: draft.photos,
         })
         .then(() => {
           setNotice(t("ko", "today.diarySavedRemote"));
-          setActiveTab("today");
         })
         .catch((error: Error) => setNotice(error.message));
       return;
@@ -122,7 +126,10 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     setEntries((current) => [nextEntry, ...current]);
     setLocalChecklist((current) => ({ ...current, [draft.category]: true }));
     setNotice(t("ko", "today.diarySaved"));
-    setActiveTab("today");
+  }
+
+  function saveCareEntry(draft: DraftDiaryEntry) {
+    saveDiaryEntry({ ...draft, entryDate: getLocalDateKey(), occurredAt: draft.occurredAt });
   }
 
   function cycleDoseStatus(id: string) {
@@ -208,12 +215,22 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
           {activeTab === "today" ? (
             <HomeScreen pet={activePet} checklist={checklist} entries={activeEntries} notice={notice} onChecklistToggle={toggleChecklist} />
           ) : null}
-          {activeTab === "diary" ? <DiaryEntryScreen onSave={saveDiaryEntry} /> : null}
+          {activeTab === "diary" ? (
+            <DiaryEntryScreen
+              entries={selectedDiaryEntries}
+              selectedDateKey={selectedDiaryDate}
+              filter={diaryFilter}
+              onDateChange={setSelectedDiaryDate}
+              onFilterChange={setDiaryFilter}
+              onSave={saveDiaryEntry}
+            />
+          ) : null}
           {activeTab === "care" ? (
             <CareModeScreen
               doses={activeDoses}
               onDosePress={cycleDoseStatus}
               onAddDose={addMedicationDose}
+              onSaveCareEntry={saveCareEntry}
               onGenerateReport={() => setActiveTab("reports")}
               conditionScore={latestConditionScore}
             />
@@ -228,27 +245,3 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.appBackground,
-  },
-  appFrame: {
-    flex: 1,
-    width: "100%",
-    maxWidth: 430,
-    alignSelf: "center",
-    backgroundColor: colors.appBackground,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: layout.screenPadding,
-    paddingBottom: layout.bottomNavHeight + 24,
-  },
-  homeScrollContent: {
-    paddingTop: 0,
-  },
-});
