@@ -1,15 +1,28 @@
 import type { UUID } from "../../../shared-kernel/types";
 
-export type CarePlan = {
+export type CareDoseStatus = "pending" | "completed" | "skipped" | "partial";
+
+export type CareMedicationSchedule = {
   id: UUID;
-  petId: UUID;
-  conditionName: string;
-  instructions: string;
-  startsOn: string;
-  endsOn?: string;
+  medicationId: UUID;
+  medicationName: string;
+  dosageLabel: string;
+  conditionName?: string;
+  localTime: string;
 };
 
-export function isActiveCarePlan(plan: CarePlan, today: string) {
-  return plan.startsOn <= today && (!plan.endsOn || plan.endsOn >= today);
-}
+export type ActiveCareSetup = {
+  conditionName?: string;
+  planTitle?: string;
+  instructions?: string;
+  schedules: CareMedicationSchedule[];
+};
 
+export type CareSetupInput = {
+  conditionName: string;
+  planTitle: string;
+  medicationName: string;
+  dosageLabel: string;
+  localTime: string;
+  instructions?: string;
+};

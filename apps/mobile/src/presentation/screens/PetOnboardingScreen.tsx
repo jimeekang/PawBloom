@@ -8,7 +8,9 @@ import { t } from "../../i18n/translations";
 import { useAuth } from "../../contexts/identity/application/authContext";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
+import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
 import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
+import { RoutineSettingsPanel } from "./RoutineSettingsPanel";
 import { styles } from "./PetOnboardingScreen.styles";
 
 const speciesOptions = ["dog", "cat", "other"] as const;
@@ -18,7 +20,7 @@ const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
   other: "기타",
 };
 
-export function PetOnboardingScreen() {
+export function PetOnboardingScreen({ routine, onSaveRoutine }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void } = {}) {
   const { pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
 
   const [name, setName] = useState("");
@@ -201,6 +203,8 @@ export function PetOnboardingScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      {activePet && !showCreateForm && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
 
       {showCreateForm ? (
         <View style={styles.card}>

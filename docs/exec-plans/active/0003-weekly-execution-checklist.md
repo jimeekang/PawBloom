@@ -127,8 +127,34 @@
 - [ ] dose status 변경 후 Today checklist medication 상태가 즉시 반영되는지 확인한다.
 - [ ] recorded time이 update 시점에 저장되는지 확인한다.
 - [ ] `npm --prefix apps/mobile run typecheck`를 실행한다.
-- [ ] `npm run verify`를 실행한다.
+- [x] `npm run verify`를 실행한다.
 - [ ] `feat: stabilize quick medication records` 커밋을 만든다.
+
+### Day 4A: 기본 루틴과 care plan 불러오기 선행 구현
+
+**Files:**
+- Create: `supabase/migrations/20260627000000_pet_routines.sql`
+- Create: `apps/mobile/src/contexts/routine/**`
+- Create: `apps/mobile/src/contexts/care/application/carePlanRecords.ts`
+- Create: `apps/mobile/src/contexts/care/domain/carePlan.ts`
+- Create: `apps/mobile/src/presentation/screens/RoutineSettingsPanel.tsx`
+- Create: `apps/mobile/src/presentation/screens/CareSetupPanel.tsx`
+- Create: `apps/mobile/src/contexts/routine/application/petRoutineSpecies.test.ts`
+- Modify: `apps/mobile/src/presentation/screens/DiaryEntryScreen.tsx`
+- Modify: `apps/mobile/src/presentation/screens/PetOnboardingScreen.tsx`
+- Modify: `apps/mobile/src/presentation/screens/CareModeScreen.tsx`
+- Modify: `apps/mobile/src/presentation/PawBloomShell.tsx`
+- Modify: `apps/mobile/src/i18n/translations.ts`
+
+- [x] 반려동물 프로필에서 기본 식사량, 물, 선택형 산책, 배변, 컨디션 기준값을 저장한다.
+- [x] Diary 입력에서 저장된 기본 루틴을 카테고리별 초깃값으로 불러온다.
+- [x] 산책은 강아지 기본 ON, 고양이/기타 기본 OFF로 두고 프로필에서 수정할 수 있게 한다.
+- [x] Diary는 일상 기록만 쓰고 Care Mode가 care plan, 약, 용량, 투약 상태, 반응을 담당한다.
+- [x] 상태/진단명, care plan, 약 이름, 용량, 복용 시간을 한 번 저장한다.
+- [x] Care 화면에서 저장된 약 정보를 오늘 투약 기록 초깃값으로 불러온다.
+- [x] 실제 오늘 기록은 `diary_entries`와 `medication_doses`에 별도로 저장한다.
+- [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
+- [ ] `npm run verify`를 실행한다.
 
 ### Day 5: Reports 탭 실데이터 skeleton 연결
 

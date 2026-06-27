@@ -477,6 +477,41 @@ export type Database = {
           },
         ]
       }
+      pet_routines: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          pet_id: string
+          routine: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          pet_id: string
+          routine?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          pet_id?: string
+          routine?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_routines_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_members: {
         Row: {
           created_at: string

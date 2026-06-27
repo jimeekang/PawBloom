@@ -1,4 +1,4 @@
-import type { DiaryCategory, DiaryEntry, DiaryPhotoInput } from "../contexts/diary/domain/diaryEntry";
+import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord, DoseStatus } from "../contexts/medication/domain/medication";
 import type { PetProfile } from "../contexts/pet/domain/pet";
 import { sampleDoses, sampleEntries, samplePet } from "./sampleData";
@@ -11,6 +11,7 @@ export type DraftDiaryEntry = {
   summary: string;
   entryDate?: string;
   occurredAt: string;
+  detail?: DiaryDetailInput;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photos?: DiaryPhotoInput[];
 };
@@ -53,6 +54,7 @@ export function createMockDiaryEntry(petId: string, draft: DraftDiaryEntry): Dia
     entryDate: draft.entryDate ?? getLocalDateKey(),
     occurredAt: draft.occurredAt,
     summary: draft.summary || defaultSummary[draft.category],
+    detail: draft.detail,
     conditionScore: draft.category === "condition" ? draft.conditionScore ?? 3 : undefined,
     photoCount: draft.photos?.length ?? 0,
   };

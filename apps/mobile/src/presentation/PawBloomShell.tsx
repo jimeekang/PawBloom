@@ -4,7 +4,7 @@ import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../contexts/medication/domain/medication";
 import { useAuth } from "../contexts/identity/application/authContext";
 import { getLocalDateKey, getWeekDateRange, useCreateDiaryEntry, useDiaryEntriesByDate, useDiaryEntriesByDateRange, useTodayDiaryEntries } from "../contexts/diary/application/diaryRecords";
-import { nextDoseStatus, useCreateMedicationDose, useTodayMedicationDoses, useUpdateMedicationDoseStatus } from "../contexts/medication/application/medicationDoseRecords";
+import { nextDoseStatus, type QuickMedicationDoseInput, useCreateMedicationDose, useTodayMedicationDoses, useUpdateMedicationDoseStatus } from "../contexts/medication/application/medicationDoseRecords";
 import { t } from "../i18n/translations";
 import { DiaryEntryScreen } from "./screens/DiaryEntryScreen";
 import { CareModeScreen } from "./screens/CareModeScreen";
@@ -16,8 +16,10 @@ import { createMockDiaryEntry, initialChecklist, initialDiaryEntries, initialDos
 import { checklistSummary, createChecklistFromRecords } from "./liveUiState";
 import { type PetProfile } from "../contexts/pet/domain/pet";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader } from "./shell/ShellHeaders";
+import { useShellCareDefaults } from "./shell/useShellCareDefaults";
 import type { DiaryFilter } from "./screens/DiaryCalendar";
 import { styles } from "./PawBloomShell.styles";
+import { createLocalDoseRecord, shouldMarkMedicationChecklist } from "./localMedicationState";
 
 type PawBloomShellProps = {
   activePet?: PetProfile | null;
@@ -78,6 +80,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     [activeDoses, activeEntries, databaseMode, localChecklist],
   );
   const latestConditionScore = activeEntries.find((entry) => entry.category === "condition" && entry.conditionScore)?.conditionScore;
+  const { activeRoutine, activeCareSetup, saveRoutine, saveCareSetup, useCareSchedule } = useShellCareDefaults({ activePet, databaseMode, livePetId, userId, addMedicationDose, setNotice });
 
   const handlePetPress = () => {
     if (canCyclePet) {
@@ -111,6 +114,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         .mutateAsync({
           category: draft.category,
           summary: draft.summary,
+          detail: draft.detail,
           entryDate: draft.entryDate,
           conditionScore: draft.conditionScore,
           photos: draft.photos,
@@ -150,13 +154,18 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     setNotice(t("ko", "today.medicationUpdated"));
   }
 
-  function addMedicationDose() {
+  function addMedicationDose(input: QuickMedicationDoseInput) {
     if (!databaseMode) {
+      setDoses((current) => [createLocalDoseRecord(activePet.id, input, t("ko", "care.quickMedicationName")), ...current]);
+      if (shouldMarkMedicationChecklist(input)) {
+        setLocalChecklist((current) => ({ ...current, medication: true }));
+      }
+      setNotice(t("ko", "care.medicationAdded"));
       return;
     }
 
     void createMedicationDose
-      .mutateAsync({ medicationName: t("ko", "care.quickMedicationName") })
+      .mutateAsync(input)
       .then(() => setNotice(t("ko", "care.medicationAdded")))
       .catch((error: Error) => setNotice(error.message));
   }
@@ -191,7 +200,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.appFrame}>
           <PetSettingsHeader onBack={() => setShowPetSettings(false)} />
-          <PetOnboardingScreen />
+          <PetOnboardingScreen routine={activeRoutine} onSaveRoutine={saveRoutine} />
         </View>
       </SafeAreaView>
     );
@@ -216,24 +225,10 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
             <HomeScreen pet={activePet} checklist={checklist} entries={activeEntries} notice={notice} onChecklistToggle={toggleChecklist} />
           ) : null}
           {activeTab === "diary" ? (
-            <DiaryEntryScreen
-              entries={selectedDiaryEntries}
-              selectedDateKey={selectedDiaryDate}
-              filter={diaryFilter}
-              onDateChange={setSelectedDiaryDate}
-              onFilterChange={setDiaryFilter}
-              onSave={saveDiaryEntry}
-            />
+            <DiaryEntryScreen entries={selectedDiaryEntries} selectedDateKey={selectedDiaryDate} filter={diaryFilter} onDateChange={setSelectedDiaryDate} onFilterChange={setDiaryFilter} onSave={saveDiaryEntry} routine={activeRoutine} petSpecies={activePet.species} />
           ) : null}
           {activeTab === "care" ? (
-            <CareModeScreen
-              doses={activeDoses}
-              onDosePress={cycleDoseStatus}
-              onAddDose={addMedicationDose}
-              onSaveCareEntry={saveCareEntry}
-              onGenerateReport={() => setActiveTab("reports")}
-              conditionScore={latestConditionScore}
-            />
+            <CareModeScreen doses={activeDoses} onDosePress={cycleDoseStatus} onAddDose={addMedicationDose} onSaveCareEntry={saveCareEntry} onGenerateReport={() => setActiveTab("reports")} conditionScore={latestConditionScore} careSetup={activeCareSetup} onSaveCareSetup={saveCareSetup} onUseCareSchedule={useCareSchedule} />
           ) : null}
           {activeTab === "reports" ? (
             <ReportsScreen reportStage={reportStage} onReportStageChange={setReportStage} onNewDiary={() => setActiveTab("diary")} />

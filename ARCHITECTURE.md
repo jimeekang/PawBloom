@@ -15,6 +15,7 @@ PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도
 
 - `identity`: Auth profile, 언어, 계정 설정
 - `pet`: 반려동물 프로필, 종, 품종, 나이, 체중
+- `routine`: 반려동물별 기본 식사량, 물, 산책, 배변, 컨디션 기준값
 - `diary`: 식사, 물, 산책, 배변, 컨디션, 메모
 - `care`: 질병/상태, Care Mode, care plan
 - `medication`: 약 일정, 복용량, 누락, 부분 투약, 완료

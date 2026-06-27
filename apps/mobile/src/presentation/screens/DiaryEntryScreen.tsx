@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import type { DiaryCategory, DiaryEntry, DiaryPhotoInput } from "../../contexts/diary/domain/diaryEntry";
+import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput } from "../../contexts/diary/domain/diaryEntry";
+import { buildRoutineDiaryDetail, getDiaryCategoriesForSpecies } from "../../contexts/routine/application/petRoutineRecords";
+import type { Species } from "../../contexts/pet/domain/pet";
+import type { PetRoutine } from "../../contexts/routine/domain/petRoutine";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
-import { NoticeBanner, PrimaryButton, SegmentedControl } from "../../design-system/components";
+import { NoticeBanner, PrimaryButton } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import type { DraftDiaryEntry } from "../mockUiState";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
+import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
 import { DiaryEntryList } from "./DiaryEntryList";
 import { DiaryPhotoPicker } from "./DiaryPhotoPicker";
-
-type DiaryMode = "daily" | "care";
-
-const dailyCategories: DiaryCategory[] = ["food", "water", "walk", "stool", "condition", "memo"];
-const careCategories: DiaryCategory[] = ["food", "water", "condition"];
 
 export function DiaryEntryScreen({
   entries,
@@ -23,6 +22,8 @@ export function DiaryEntryScreen({
   onDateChange,
   onFilterChange,
   onSave,
+  routine,
+  petSpecies,
 }: {
   entries: DiaryEntry[];
   selectedDateKey: string;
@@ -30,14 +31,16 @@ export function DiaryEntryScreen({
   onDateChange: (dateKey: string) => void;
   onFilterChange: (filter: DiaryFilter) => void;
   onSave: (entry: DraftDiaryEntry) => void;
+  routine?: PetRoutine;
+  petSpecies: Species;
 }) {
-  const [mode, setMode] = useState<DiaryMode>("daily");
   const [selected, setSelected] = useState<DiaryCategory>("food");
   const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
+  const [detail, setDetail] = useState<DiaryDetailInput>(createDefaultDiaryDetail("food"));
   const [memo, setMemo] = useState("");
   const [photos, setPhotos] = useState<DiaryPhotoInput[]>([]);
   const [notice, setNotice] = useState<string>(t("ko", "diary.localDraft"));
-  const categories = mode === "care" ? careCategories : dailyCategories;
+  const categories = useMemo(() => getDiaryCategoriesForSpecies(petSpecies, routine?.walk.enabled) as DiaryCategory[], [petSpecies, routine?.walk.enabled]);
 
   useEffect(() => {
     if (!categories.includes(selected)) {
@@ -45,16 +48,23 @@ export function DiaryEntryScreen({
     }
   }, [categories, selected]);
 
+  useEffect(() => {
+    setDetail(createDetailForCategory(selected, routine));
+  }, [routine, selected]);
+
   function saveEntry() {
+    const activeDetail = detail.category === selected ? detail : createDetailForCategory(selected, routine);
     onSave({
       category: selected,
       summary: memo.trim(),
+      detail: selected === "memo" ? undefined : activeDetail,
       entryDate: selectedDateKey,
       occurredAt: formatCurrentTime(),
       conditionScore: selected === "condition" ? conditionScore : undefined,
       photos,
     });
     setMemo("");
+    setDetail(createDetailForCategory(selected, routine));
     setPhotos([]);
     setNotice(t("ko", "diary.savedForDate"));
   }
@@ -63,15 +73,6 @@ export function DiaryEntryScreen({
     <View style={styles.screen}>
       <DiaryCalendar selectedDateKey={selectedDateKey} filter={filter} onSelectDate={onDateChange} onFilterChange={onFilterChange} />
       <NoticeBanner text={notice} icon="shield" />
-
-      <SegmentedControl
-        value={mode}
-        onChange={setMode}
-        items={[
-          { label: t("ko", "diary.mode.daily"), value: "daily" },
-          { label: t("ko", "diary.mode.care"), value: "care" },
-        ]}
-      />
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
       <View style={styles.categoryGrid}>
@@ -88,17 +89,18 @@ export function DiaryEntryScreen({
       </View>
 
       {selected === "condition" ? <ConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
+      <DiaryDetailPanel category={selected} detail={detail} onChange={setDetail} />
 
       <Text style={styles.sectionTitle}>
         {t("ko", "diary.addPhotos")} <Text style={styles.optional}>{t("ko", "diary.optional")}</Text>
       </Text>
       <DiaryPhotoPicker photos={photos} onChange={setPhotos} onNotice={setNotice} />
 
-      <Text style={styles.sectionTitle}>{mode === "care" ? t("ko", "diary.careMemo") : t("ko", "diary.memo")}</Text>
+      <Text style={styles.sectionTitle}>{t("ko", "diary.memo")}</Text>
       <View style={styles.memoBox}>
         <TextInput
           multiline
-          placeholder={mode === "care" ? t("ko", "diary.careMemoPlaceholder") : t("ko", "diary.memoPlaceholder")}
+          placeholder={t("ko", "diary.memoPlaceholder")}
           placeholderTextColor={colors.textSoft}
           value={memo}
           onChangeText={(value) => setMemo(value.slice(0, 500))}
@@ -111,6 +113,11 @@ export function DiaryEntryScreen({
       <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} />
     </View>
   );
+}
+
+function createDetailForCategory(category: DiaryCategory, routine?: PetRoutine): DiaryDetailInput {
+  if (routine && category !== "memo") return buildRoutineDiaryDetail(category, routine);
+  return createDefaultDiaryDetail(category);
 }
 
 function ConditionScore({ value, onChange }: { value: 1 | 2 | 3 | 4 | 5; onChange: (value: 1 | 2 | 3 | 4 | 5) => void }) {

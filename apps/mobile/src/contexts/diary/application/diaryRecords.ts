@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { uploadDiaryPhoto } from "../../media/application/mediaUpload";
-import type { CreateDiaryEntryInput, DiaryEntry } from "../domain/diaryEntry";
+import type { CreateDiaryEntryInput, DiaryCategory, DiaryDetailInput, DiaryEntry } from "../domain/diaryEntry";
 
 type DiaryRow = Database["public"]["Tables"]["diary_entries"]["Row"];
 type DiaryInsert = Database["public"]["Tables"]["diary_entries"]["Insert"];
@@ -32,16 +32,41 @@ export function getWeekDateRange(dateKey: string) {
 }
 
 export function mapDiaryRow(row: DiaryRowWithMedia): DiaryEntry {
+  const decoded = decodeDiarySummary(row.summary, row.category);
+
   return {
     id: row.id,
     petId: row.pet_id,
     category: row.category,
     entryDate: row.entry_date,
     occurredAt: formatTime(row.occurred_at),
-    summary: row.summary,
+    summary: decoded.summary,
+    detail: decoded.detail,
     conditionScore: normalizeScore(row.condition_score),
     photoCount: row.media_assets?.length ?? 0,
   };
+}
+
+export function encodeDiarySummary(input: { category: DiaryCategory; memo?: string; detail?: DiaryDetailInput }) {
+  const memo = input.memo?.trim() ?? "";
+  if (!input.detail) {
+    return memo;
+  }
+
+  return JSON.stringify({ version: 1, category: input.category, memo, detail: input.detail });
+}
+
+export function decodeDiarySummary(value: string, fallbackCategory: DiaryCategory): { summary: string; detail?: DiaryDetailInput } {
+  try {
+    const parsed = JSON.parse(value) as { version?: number; memo?: string; detail?: DiaryDetailInput };
+    if (parsed.version !== 1 || !parsed.detail) {
+      return { summary: value };
+    }
+
+    return { summary: buildDetailSummary(parsed.detail, parsed.memo), detail: parsed.detail };
+  } catch {
+    return { summary: value || defaultSummary(fallbackCategory) };
+  }
 }
 
 export function useDiaryEntriesByDate(petId: string | null, dateKey: string) {
@@ -94,7 +119,7 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
         pet_id: petId,
         created_by: userId,
         category: input.category,
-        summary: input.summary.trim() || defaultSummary(input.category),
+        summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultSummary(input.category),
         condition_score: input.category === "condition" ? input.conditionScore ?? 3 : null,
         entry_date: entryDate,
         occurred_at: buildOccurredAt(entryDate),
@@ -144,6 +169,46 @@ function defaultSummary(category: CreateDiaryEntryInput["category"]) {
     memo: "메모가 기록되었습니다.",
   };
   return labels[category];
+}
+
+function buildDetailSummary(detail: DiaryDetailInput, memo?: string) {
+  const memoPart = memo?.trim();
+  const detailPart = detailSummary(detail);
+  return [detailPart, memoPart].filter(Boolean).join(" · ");
+}
+
+function detailSummary(detail: DiaryDetailInput) {
+  if (detail.category === "food") {
+    const mealParts = (Object.entries(detail.meals) as [string, { offeredGrams?: string; eatenGrams?: string }][])
+      .filter(([, meal]) => meal.offeredGrams || meal.eatenGrams)
+      .map(([slot, meal]) => `${mealLabel(slot)} ${meal.eatenGrams || "-"}g/${meal.offeredGrams || "-"}g`);
+    return [...mealParts, detail.appetite ? `식욕 ${appetiteLabel(detail.appetite)}` : ""].filter(Boolean).join(", ");
+  }
+  if (detail.category === "water") return [`물 ${detail.amountMl || "-"}ml`, detail.intakeLevel ? levelLabel(detail.intakeLevel) : ""].filter(Boolean).join(", ");
+  if (detail.category === "walk") return [`산책 ${detail.durationMinutes || "-"}분`, detail.intensity ? intensityLabel(detail.intensity) : "", detail.observation].filter(Boolean).join(", ");
+  if (detail.category === "stool") return [`배변 ${detail.count || "-"}회`, detail.consistency ? stoolLabel(detail.consistency) : "", detail.hasBloodOrMucus ? "혈변/점액 관찰" : ""].filter(Boolean).join(", ");
+  if (detail.category === "condition") return [`에너지 ${detail.energyLevel ? levelLabel(detail.energyLevel) : "-"}`, detail.discomfortNote].filter(Boolean).join(", ");
+  return "";
+}
+
+function mealLabel(slot: string) {
+  return ({ breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" } as Record<string, string>)[slot] ?? slot;
+}
+
+function appetiteLabel(value: string) {
+  return ({ good: "좋음", normal: "보통", low: "적음", refused: "거부" } as Record<string, string>)[value] ?? value;
+}
+
+function levelLabel(value: string) {
+  return ({ less: "적음", normal: "정상", more: "많음" } as Record<string, string>)[value] ?? value;
+}
+
+function intensityLabel(value: string) {
+  return ({ low: "낮음", normal: "보통", high: "높음" } as Record<string, string>)[value] ?? value;
+}
+
+function stoolLabel(value: string) {
+  return ({ normal: "정상변", soft: "무른변", diarrhea: "설사", hard: "딱딱함" } as Record<string, string>)[value] ?? value;
 }
 
 function formatTime(value: string) {

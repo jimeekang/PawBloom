@@ -24,7 +24,7 @@ export function DiaryCalendar({
   onFilterChange: (filter: DiaryFilter) => void;
 }) {
   const selectedDate = parseDateKey(selectedDateKey);
-  const days = createMonthDays(selectedDate);
+  const weeks = createMonthWeeks(selectedDate);
 
   return (
     <SurfaceCard>
@@ -44,14 +44,18 @@ export function DiaryCalendar({
         ))}
       </View>
       <View style={styles.grid}>
-        {days.map((day) => {
-          const selected = day.dateKey === selectedDateKey;
-          return (
-            <Pressable key={day.dateKey} style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]} onPress={() => onSelectDate(day.dateKey)}>
-              <Text style={[styles.dayText, !day.inMonth && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
-            </Pressable>
-          );
-        })}
+        {weeks.map((week) => (
+          <View key={week.map((day) => day.dateKey).join("-")} style={styles.weekRow}>
+            {week.map((day) => {
+              const selected = day.dateKey === selectedDateKey;
+              return (
+                <Pressable key={day.dateKey} style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]} onPress={() => onSelectDate(day.dateKey)}>
+                  <Text style={[styles.dayText, !day.inMonth && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       <SegmentedControl
@@ -64,6 +68,11 @@ export function DiaryCalendar({
       />
     </SurfaceCard>
   );
+}
+
+export function createMonthWeeks(date: Date): CalendarDay[][] {
+  const days = createMonthDays(date);
+  return Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7));
 }
 
 function createMonthDays(date: Date): CalendarDay[] {
@@ -129,6 +138,7 @@ const styles = StyleSheet.create({
   },
   weekHeader: {
     flexDirection: "row",
+    gap: spacing.xs,
     marginBottom: spacing.xs,
   },
   weekLabel: {
@@ -137,13 +147,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: spacing.xs,
     marginBottom: spacing.lg,
   },
+  weekRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
   day: {
-    width: "13.45%",
+    flex: 1,
     aspectRatio: 1,
     borderRadius: radius.sm,
     alignItems: "center",

@@ -6,6 +6,9 @@ export type DoseRecord = {
   id: UUID;
   petId: UUID;
   medicationName: string;
+  conditionName?: string;
+  dosageLabel?: string;
+  administeredAmount?: string;
   scheduledAt: string;
   status: DoseStatus;
   recordedAt?: string;
@@ -15,4 +18,3 @@ export type DoseRecord = {
 export function isDoseActionable(dose: DoseRecord) {
   return dose.status === "pending" || dose.status === "partial";
 }
-
