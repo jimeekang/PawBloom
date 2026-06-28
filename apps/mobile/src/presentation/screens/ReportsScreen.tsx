@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import type { ReportDraftSummary } from "../../contexts/report/application/reportDraftRecords";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../design-system/components";
 import { AppIcon, type AppIconName } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
@@ -7,14 +8,17 @@ import type { ReportStage } from "../mockUiState";
 
 export function ReportsScreen({
   reportStage,
+  reportSummary,
   onReportStageChange,
   onNewDiary,
 }: {
   reportStage: ReportStage;
+  reportSummary: ReportDraftSummary;
   onReportStageChange: (stage: ReportStage) => void;
   onNewDiary: () => void;
 }) {
   const stage = stageCopy[reportStage];
+  const conditionTrend = conditionTrendCopy(reportSummary);
 
   return (
     <View style={styles.screen}>
@@ -31,7 +35,7 @@ export function ReportsScreen({
           </View>
         </View>
         <Text style={styles.summary}>
-          {t("ko", "reports.summaryCopy")}
+          {reportSummary.hasRecords ? buildReportSummaryCopy(reportSummary) : t("ko", "reports.emptyCopy")}
         </Text>
         <View style={styles.notice}>
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
@@ -39,17 +43,32 @@ export function ReportsScreen({
         </View>
       </SurfaceCard>
 
-      <SurfaceCard>
-        <Text style={styles.title}>{t("ko", "reports.beforeSharing")}</Text>
-        <View style={styles.checkRow}>
-          <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
-          <Text style={styles.body}>{t("ko", "reports.confirmMedication")}</Text>
-        </View>
-        <View style={styles.checkRow}>
-          <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
-          <Text style={styles.body}>{t("ko", "reports.reviewNotes")}</Text>
-        </View>
-      </SurfaceCard>
+      {reportSummary.hasRecords ? (
+        <>
+          <View style={styles.metricsGrid}>
+            <MetricCard icon="diary" label={t("ko", "reports.diaryCount")} value={`${reportSummary.diaryCount}`} />
+            <MetricCard icon="condition" label={t("ko", "reports.conditionTrend")} value={conditionTrend} />
+            <MetricCard icon="medication" label={t("ko", "reports.medicationAttention")} value={`${reportSummary.medicationAttentionCount}`} />
+          </View>
+
+          <SurfaceCard>
+            <Text style={styles.title}>{t("ko", "reports.beforeSharing")}</Text>
+            <View style={styles.checkRow}>
+              <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
+              <Text style={styles.body}>{t("ko", "reports.confirmMedication")}</Text>
+            </View>
+            <View style={styles.checkRow}>
+              <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
+              <Text style={styles.body}>{t("ko", "reports.reviewNotes")}</Text>
+            </View>
+          </SurfaceCard>
+        </>
+      ) : (
+        <SurfaceCard>
+          <Text style={styles.title}>{t("ko", "reports.emptyTitle")}</Text>
+          <Text style={styles.emptyText}>{t("ko", "reports.emptyState")}</Text>
+        </SurfaceCard>
+      )}
 
       <View style={styles.actions}>
         <PrimaryButton label={t("ko", stage.primaryLabelKey)} icon={stage.primaryIcon} onPress={() => onReportStageChange(stage.next)} />
@@ -58,6 +77,42 @@ export function ReportsScreen({
     </View>
   );
 }
+
+function MetricCard({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
+  return (
+    <SurfaceCard>
+      <View style={styles.metricHeader}>
+        <AppIcon name={icon} size={iconSize.sm} color={colors.orangeDeep} />
+        <Text style={styles.metricLabel}>{label}</Text>
+      </View>
+      <Text style={styles.metricValue}>{value}</Text>
+    </SurfaceCard>
+  );
+}
+
+function buildReportSummaryCopy(summary: ReportDraftSummary) {
+  return t("ko", "reports.realSummary")
+    .replace("{diaryCount}", `${summary.diaryCount}`)
+    .replace("{medicationCount}", `${summary.medicationCount}`)
+    .replace("{attentionCount}", `${summary.medicationAttentionCount}`);
+}
+
+function conditionTrendCopy(summary: ReportDraftSummary) {
+  const { latestScore, previousScore, direction } = summary.conditionTrend;
+  if (!latestScore) {
+    return t("ko", "reports.conditionTrend.none");
+  }
+
+  const scoreCopy = previousScore ? `${previousScore} -> ${latestScore}` : `${latestScore}/5`;
+  return `${scoreCopy} ${t("ko", conditionTrendKey[direction])}`;
+}
+
+const conditionTrendKey: Record<ReportDraftSummary["conditionTrend"]["direction"], TranslationKey> = {
+  none: "reports.conditionTrend.none",
+  stable: "reports.conditionTrend.stable",
+  improving: "reports.conditionTrend.improving",
+  declining: "reports.conditionTrend.declining",
+};
 
 const stageCopy: Record<
   ReportStage,
@@ -149,5 +204,26 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.md,
+  },
+  metricsGrid: {
+    gap: spacing.md,
+  },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  metricLabel: {
+    ...type.caption,
+    flex: 1,
+  },
+  metricValue: {
+    ...type.sectionTitle,
+    marginTop: spacing.sm,
+  },
+  emptyText: {
+    ...type.body,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
 });

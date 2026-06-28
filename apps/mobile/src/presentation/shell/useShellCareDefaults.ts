@@ -7,17 +7,19 @@ import { createDefaultPetRoutine, usePetRoutine, useUpsertPetRoutine } from "../
 import type { PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
 import { t } from "../../i18n/translations";
 import { mockPets } from "../mockUiState";
+import type { SaveFeedbackKind } from "./saveFeedback";
 
 type Params = {
   activePet: PetProfile;
   databaseMode: boolean;
   livePetId: string | null;
   userId: string | null;
-  addMedicationDose: (input: QuickMedicationDoseInput) => void;
+  addMedicationDose: (input: QuickMedicationDoseInput) => void | Promise<void>;
   setNotice: (notice: string) => void;
+  showSaveFeedback: (kind: SaveFeedbackKind) => void;
 };
 
-export function useShellCareDefaults({ activePet, databaseMode, livePetId, userId, addMedicationDose, setNotice }: Params) {
+export function useShellCareDefaults({ activePet, databaseMode, livePetId, userId, addMedicationDose, setNotice, showSaveFeedback }: Params) {
   const routineQuery = usePetRoutine(livePetId, activePet.species);
   const upsertRoutine = useUpsertPetRoutine(livePetId, userId, activePet.species);
   const careSetupQuery = useActiveCareSetup(livePetId);
@@ -35,9 +37,13 @@ export function useShellCareDefaults({ activePet, databaseMode, livePetId, userI
     if (!databaseMode) {
       setLocalRoutine({ ...input, petId: activePet.id });
       setNotice(t("ko", "routine.saved"));
+      showSaveFeedback("routine");
       return;
     }
-    void upsertRoutine.mutateAsync(input).then(() => setNotice(t("ko", "routine.saved"))).catch((error: Error) => setNotice(error.message));
+    void upsertRoutine.mutateAsync(input).then(() => {
+      setNotice(t("ko", "routine.saved"));
+      showSaveFeedback("routine");
+    }).catch((error: Error) => setNotice(error.message));
   }
 
   function saveCareSetup(input: CareSetupInput) {
@@ -45,13 +51,17 @@ export function useShellCareDefaults({ activePet, databaseMode, livePetId, userI
       const schedule: CareMedicationSchedule = { id: `local-schedule-${Date.now()}`, medicationId: `local-medication-${Date.now()}`, medicationName: input.medicationName || t("ko", "care.quickMedicationName"), dosageLabel: input.dosageLabel || "-", conditionName: input.conditionName, localTime: `${input.localTime || "08:00"}:00` };
       setLocalCareSetup({ conditionName: input.conditionName, planTitle: input.planTitle, schedules: [schedule, ...localCareSetup.schedules] });
       setNotice(t("ko", "care.setupSaved"));
+      showSaveFeedback("careSetup");
       return;
     }
-    void createCareSetup.mutateAsync(input).then(() => setNotice(t("ko", "care.setupSaved"))).catch((error: Error) => setNotice(error.message));
+    void createCareSetup.mutateAsync(input).then(() => {
+      setNotice(t("ko", "care.setupSaved"));
+      showSaveFeedback("careSetup");
+    }).catch((error: Error) => setNotice(error.message));
   }
 
   function useCareSchedule(schedule: CareMedicationSchedule) {
-    addMedicationDose(buildQuickDoseFromSchedule(schedule, "pending"));
+    void Promise.resolve(addMedicationDose(buildQuickDoseFromSchedule(schedule, "pending"))).catch((error: Error) => setNotice(error.message));
   }
 
   return { activeRoutine, activeCareSetup, saveRoutine, saveCareSetup, useCareSchedule };

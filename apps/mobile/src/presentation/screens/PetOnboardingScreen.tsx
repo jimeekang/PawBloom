@@ -20,7 +20,7 @@ const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
   other: "기타",
 };
 
-export function PetOnboardingScreen({ routine, onSaveRoutine }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void } = {}) {
+export function PetOnboardingScreen({ routine, onSaveRoutine, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void; onProfileSaved?: () => void } = {}) {
   const { pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
 
   const [name, setName] = useState("");
@@ -73,6 +73,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine }: { routine?: PetR
 
     resetCreateForm();
     setShowCreateForm(false);
+    onProfileSaved?.();
   };
 
   const resetCreateForm = () => {
@@ -94,7 +95,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine }: { routine?: PetR
       return;
     }
 
-    await updatePet({
+    const updateError = await updatePet({
       id: activePet.id,
       name: editName,
       species: editSpecies,
@@ -103,6 +104,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine }: { routine?: PetR
       weightKg: Number.parseFloat(editWeightKg),
       profilePhoto: editPhoto,
     });
+    if (!updateError) onProfileSaved?.();
   };
 
   const onDelete = () => {

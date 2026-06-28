@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../../contexts/care/domain/carePlan";
-import type { QuickMedicationDoseInput } from "../../contexts/medication/application/medicationDoseRecords";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { NoticeBanner, PrimaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
@@ -10,7 +9,7 @@ import { t } from "../../i18n/translations";
 import { SummaryCard } from "../ui/SummaryCard";
 import type { DraftDiaryEntry } from "../mockUiState";
 import { CareRecordPanel } from "./CareRecordPanel";
-import { MedicationRow, QuickMedicationForm } from "./CareMedicationPanel";
+import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
 import { CareSetupPanel } from "./CareSetupPanel";
 
 type Segment = "care" | "reports";
@@ -28,7 +27,7 @@ export function CareModeScreen({
 }: {
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
-  onAddDose: (input: QuickMedicationDoseInput) => void;
+  onAddDose: QuickMedicationSaveHandler;
   onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
@@ -81,7 +80,7 @@ function CarePanel({
 }: {
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
-  onAddDose: (input: QuickMedicationDoseInput) => void;
+  onAddDose: QuickMedicationSaveHandler;
   onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;

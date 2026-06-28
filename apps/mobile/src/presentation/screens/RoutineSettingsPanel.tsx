@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
+import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../../contexts/routine/domain/petRoutine";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
 import { colors, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
@@ -12,7 +12,7 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
     setDraft(routine);
   }, [routine]);
 
-  const updateMeal = (slot: "breakfast" | "dinner", offeredGrams: string) => {
+  const updateMeal = (slot: RoutineMealSlot, offeredGrams: string) => {
     setDraft((current) => ({ ...current, food: { ...current.food, meals: { ...current.food.meals, [slot]: { offeredGrams: offeredGrams.slice(0, 5) } } } }));
   };
 
@@ -28,6 +28,7 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
         <Text style={styles.copy}>{t("ko", "routine.copy")}</Text>
         <View style={styles.grid}>
           <TextInput style={styles.input} value={draft.food.meals.breakfast?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("breakfast", value)} placeholder={t("ko", "routine.breakfast")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput style={styles.input} value={draft.food.meals.lunch?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("lunch", value)} placeholder={t("ko", "routine.lunch")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
           <TextInput style={styles.input} value={draft.food.meals.dinner?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("dinner", value)} placeholder={t("ko", "routine.dinner")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
           <TextInput style={styles.input} value={draft.water.amountMl ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, water: { ...current.water, amountMl: value.slice(0, 5) } }))} placeholder={t("ko", "routine.water")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
           <TextInput style={styles.input} value={draft.stool.count ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, stool: { ...current.stool, count: value.slice(0, 3) } }))} placeholder={t("ko", "routine.stool")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />

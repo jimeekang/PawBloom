@@ -20,7 +20,7 @@ export const petRoutineKeys = {
 };
 
 export function createDefaultPetRoutine(petId: string, species: Species = "dog"): PetRoutine {
-  return { petId, food: { meals: { breakfast: {}, dinner: {} }, appetite: "normal" }, water: { intakeLevel: "normal" }, walk: { enabled: species === "dog", intensity: "normal" }, stool: { consistency: "normal" }, condition: { energyLevel: "normal" } };
+  return { petId, food: { meals: { breakfast: {}, lunch: {}, dinner: {} }, appetite: "normal" }, water: { intakeLevel: "normal" }, walk: { enabled: species === "dog", intensity: "normal" }, stool: { consistency: "normal" }, condition: { energyLevel: "normal" } };
 }
 
 export function getDiaryCategoriesForSpecies(species: Species, walkEnabled = species === "dog"): RoutineCategory[] {
@@ -74,7 +74,7 @@ function mapRoutineRow(row: RoutineRow, species: Species): PetRoutine {
   return {
     ...defaults,
     ...routine,
-    food: { ...defaults.food, ...routine.food },
+    food: { ...defaults.food, ...routine.food, meals: { ...defaults.food.meals, ...routine.food?.meals } },
     water: { ...defaults.water, ...routine.water },
     walk: { ...defaults.walk, ...routine.walk },
     stool: { ...defaults.stool, ...routine.stool },

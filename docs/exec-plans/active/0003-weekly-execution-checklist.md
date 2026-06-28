@@ -122,11 +122,11 @@
 - Modify: `apps/mobile/src/presentation/PawBloomShell.tsx`
 - Modify: `apps/mobile/src/i18n/translations.ts`
 
-- [ ] 임시 이름의 quick medication 생성 흐름을 명확한 “빠른 투약 기록” UI로 바꾼다.
-- [ ] `pending`, `completed`, `skipped`, `partial` 상태 표시를 사용자가 이해하기 쉬운 문구로 정리한다.
-- [ ] dose status 변경 후 Today checklist medication 상태가 즉시 반영되는지 확인한다.
-- [ ] recorded time이 update 시점에 저장되는지 확인한다.
-- [ ] `npm --prefix apps/mobile run typecheck`를 실행한다.
+- [x] 임시 이름의 quick medication 생성 흐름을 명확한 “빠른 투약 기록” UI로 바꾼다.
+- [x] `pending`, `completed`, `skipped`, `partial` 상태 표시를 사용자가 이해하기 쉬운 문구로 정리한다.
+- [x] dose status 변경 후 Today checklist medication 상태가 즉시 반영되는지 확인한다.
+- [x] recorded time이 update 시점에 저장되는지 확인한다.
+- [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
 - [x] `npm run verify`를 실행한다.
 - [ ] `feat: stabilize quick medication records` 커밋을 만든다.
 
@@ -154,7 +154,7 @@
 - [x] Care 화면에서 저장된 약 정보를 오늘 투약 기록 초깃값으로 불러온다.
 - [x] 실제 오늘 기록은 `diary_entries`와 `medication_doses`에 별도로 저장한다.
 - [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
-- [ ] `npm run verify`를 실행한다.
+- [x] `npm run verify`를 실행한다.
 
 ### Day 5: Reports 탭 실데이터 skeleton 연결
 
@@ -164,12 +164,12 @@
 - Modify: `apps/mobile/src/presentation/screens/ReportsScreen.tsx`
 - Modify: `apps/mobile/src/i18n/translations.ts`
 
-- [ ] 최근 7일 `diary_entries`와 `medication_doses`를 pet 기준으로 조회하는 report draft hook을 만든다.
-- [ ] Reports 화면의 mock summary를 실제 기록 개수, condition trend, missed medication count 기반으로 바꾼다.
-- [ ] 기록이 없는 경우 empty state를 보여준다.
-- [ ] AI 생성 전 단계에서는 “기록 기반 초안”만 표시한다.
-- [ ] `npm --prefix apps/mobile run typecheck`를 실행한다.
-- [ ] `npm run verify`를 실행한다.
+- [x] 최근 7일 `diary_entries`와 `medication_doses`를 pet 기준으로 조회하는 report draft hook을 만든다.
+- [x] Reports 화면의 mock summary를 실제 기록 개수, condition trend, missed medication count 기반으로 바꾼다.
+- [x] 기록이 없는 경우 empty state를 보여준다.
+- [x] AI 생성 전 단계에서는 “기록 기반 초안”만 표시한다.
+- [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
+- [x] `npm run verify`를 실행한다.
 - [ ] `feat: bind reports draft to records` 커밋을 만든다.
 
 ### Day 6: Week 1 모바일 smoke test
@@ -182,9 +182,9 @@
 - [ ] Today checklist 기록이 DB에 저장되고 reload 후 유지되는지 확인한다.
 - [ ] Diary 저장 후 Today timeline과 Diary 목록에 반영되는지 확인한다.
 - [ ] Care quick dose 추가와 상태 변경이 DB에 저장되는지 확인한다.
-- [ ] Reports draft가 실제 기록 기반으로 표시되는지 확인한다.
+- [x] Reports draft가 실제 기록 기반으로 표시되는지 확인한다.
 - [ ] 발견한 오류를 먼저 수정한다.
-- [ ] `npm run verify`를 실행한다.
+- [x] `npm run verify`를 실행한다.
 - [ ] `test: complete week 1 smoke fixes` 커밋을 만든다.
 
 ### Day 7: Week 1 보안/RLS checkpoint

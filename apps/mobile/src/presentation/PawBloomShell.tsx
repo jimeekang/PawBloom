@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { SafeAreaView, ScrollView, View } from "react-native";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../contexts/medication/domain/medication";
 import { useAuth } from "../contexts/identity/application/authContext";
 import { getLocalDateKey, getWeekDateRange, useCreateDiaryEntry, useDiaryEntriesByDate, useDiaryEntriesByDateRange, useTodayDiaryEntries } from "../contexts/diary/application/diaryRecords";
-import { nextDoseStatus, type QuickMedicationDoseInput, useCreateMedicationDose, useTodayMedicationDoses, useUpdateMedicationDoseStatus } from "../contexts/medication/application/medicationDoseRecords";
+import { buildDoseRecordedAt, nextDoseStatus, type QuickMedicationDoseInput, shouldCountDoseAsMedicationRecorded, useCreateMedicationDose, useTodayMedicationDoses, useUpdateMedicationDoseStatus } from "../contexts/medication/application/medicationDoseRecords";
+import { useReportDraftSummary } from "../contexts/report/application/reportDraftRecords";
 import { t } from "../i18n/translations";
 import { DiaryEntryScreen } from "./screens/DiaryEntryScreen";
 import { CareModeScreen } from "./screens/CareModeScreen";
@@ -17,6 +18,8 @@ import { checklistSummary, createChecklistFromRecords } from "./liveUiState";
 import { type PetProfile } from "../contexts/pet/domain/pet";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader } from "./shell/ShellHeaders";
 import { useShellCareDefaults } from "./shell/useShellCareDefaults";
+import { SaveFeedbackBar } from "./shell/SaveFeedbackBar";
+import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./shell/saveFeedback";
 import type { DiaryFilter } from "./screens/DiaryCalendar";
 import { styles } from "./PawBloomShell.styles";
 import { createLocalDoseRecord, shouldMarkMedicationChecklist } from "./localMedicationState";
@@ -52,7 +55,10 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const [selectedDiaryDate, setSelectedDiaryDate] = useState(getLocalDateKey());
   const [diaryFilter, setDiaryFilter] = useState<DiaryFilter>("day");
   const [notice, setNotice] = useState<string>(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
   const selectedWeekRange = useMemo(() => getWeekDateRange(selectedDiaryDate), [selectedDiaryDate]);
+  const showSaveFeedback = useCallback((kind: SaveFeedbackKind) => setSaveFeedback(createSaveFeedback(kind)), []);
+  const hideSaveFeedback = useCallback(() => setSaveFeedback(null), []);
 
   const activeEntries = useMemo(
     () => (databaseMode ? diaryQuery.data ?? [] : entries.filter((entry) => entry.petId === activePet.id && entry.entryDate === getLocalDateKey())),
@@ -64,31 +70,23 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (databaseMode) {
       return diaryFilter === "day" ? diaryDateQuery.data ?? [] : diaryWeekQuery.data ?? [];
     }
-
-    return entries.filter((entry) => {
-      if (entry.petId !== activePet.id) return false;
-      if (diaryFilter === "day") return entry.entryDate === selectedDiaryDate;
-      return entry.entryDate >= selectedWeekRange.fromDateKey && entry.entryDate <= selectedWeekRange.toDateKey;
-    });
+    return entries.filter((entry) => entry.petId === activePet.id && (diaryFilter === "day" ? entry.entryDate === selectedDiaryDate : entry.entryDate >= selectedWeekRange.fromDateKey && entry.entryDate <= selectedWeekRange.toDateKey));
   }, [activePet.id, databaseMode, diaryDateQuery.data, diaryFilter, diaryWeekQuery.data, entries, selectedDiaryDate, selectedWeekRange.fromDateKey, selectedWeekRange.toDateKey]);
   const activeDoses = useMemo(
     () => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePet.id)),
     [activePet.id, databaseMode, doses, dosesQuery.data],
   );
+  const reportSummary = useReportDraftSummary({ activePetId: activePet.id, databaseMode, livePetId, entries, doses });
   const checklist = useMemo(
     () => (databaseMode ? createChecklistFromRecords(activeEntries, activeDoses) : localChecklist),
     [activeDoses, activeEntries, databaseMode, localChecklist],
   );
   const latestConditionScore = activeEntries.find((entry) => entry.category === "condition" && entry.conditionScore)?.conditionScore;
-  const { activeRoutine, activeCareSetup, saveRoutine, saveCareSetup, useCareSchedule } = useShellCareDefaults({ activePet, databaseMode, livePetId, userId, addMedicationDose, setNotice });
+  const { activeRoutine, activeCareSetup, saveRoutine, saveCareSetup, useCareSchedule } = useShellCareDefaults({ activePet, databaseMode, livePetId, userId, addMedicationDose, setNotice, showSaveFeedback });
 
   const handlePetPress = () => {
     if (canCyclePet) {
-      if (onPetNext) {
-        onPetNext();
-      } else {
-        selectNextPet();
-      }
+      onPetNext ? onPetNext() : selectNextPet();
     }
     setNotice(t("ko", "today.petSwitched"));
   };
@@ -97,6 +95,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (!databaseMode) {
       setLocalChecklist((current) => ({ ...current, [key]: !current[key] }));
       setNotice(t("ko", "today.checklistUpdated"));
+      showSaveFeedback("checklist");
       return;
     }
 
@@ -108,7 +107,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     void recordChecklistItem(key).catch((error: Error) => setNotice(error.message));
   }
 
-  function saveDiaryEntry(draft: DraftDiaryEntry) {
+  function saveDiaryEntry(draft: DraftDiaryEntry, feedbackKind: SaveFeedbackKind = "diary") {
     if (databaseMode) {
       void createDiaryEntry
         .mutateAsync({
@@ -121,6 +120,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         })
         .then(() => {
           setNotice(t("ko", "today.diarySavedRemote"));
+          showSaveFeedback(feedbackKind);
         })
         .catch((error: Error) => setNotice(error.message));
       return;
@@ -130,10 +130,11 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     setEntries((current) => [nextEntry, ...current]);
     setLocalChecklist((current) => ({ ...current, [draft.category]: true }));
     setNotice(t("ko", "today.diarySaved"));
+    showSaveFeedback(feedbackKind);
   }
 
   function saveCareEntry(draft: DraftDiaryEntry) {
-    saveDiaryEntry({ ...draft, entryDate: getLocalDateKey(), occurredAt: draft.occurredAt });
+    saveDiaryEntry({ ...draft, entryDate: getLocalDateKey(), occurredAt: draft.occurredAt }, "careRecord");
   }
 
   function cycleDoseStatus(id: string) {
@@ -144,30 +145,46 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       }
       void updateMedicationDose
         .mutateAsync({ id, status: nextDoseStatus(dose.status) })
-        .then(() => setNotice(t("ko", "today.medicationUpdatedRemote")))
+        .then(() => {
+          setNotice(t("ko", "today.medicationUpdatedRemote"));
+          showSaveFeedback("medicationStatus");
+        })
         .catch((error: Error) => setNotice(error.message));
       return;
     }
 
-    setDoses((current) => current.map((dose) => (dose.id === id ? { ...dose, status: nextDoseStatus(dose.status) } : dose)));
-    setLocalChecklist((current) => ({ ...current, medication: true }));
+    const nextDoses = doses.map((dose) => {
+      if (dose.id !== id) return dose;
+      const status = nextDoseStatus(dose.status);
+      return { ...dose, status, recordedAt: buildDoseRecordedAt(status) ?? undefined };
+    });
+    setDoses(nextDoses);
+    setLocalChecklist((currentChecklist) => ({
+      ...currentChecklist,
+      medication: nextDoses.some((dose) => dose.petId === activePet.id && shouldCountDoseAsMedicationRecorded(dose.status)),
+    }));
     setNotice(t("ko", "today.medicationUpdated"));
+    showSaveFeedback("medicationStatus");
   }
 
-  function addMedicationDose(input: QuickMedicationDoseInput) {
+  async function addMedicationDose(input: QuickMedicationDoseInput) {
     if (!databaseMode) {
       setDoses((current) => [createLocalDoseRecord(activePet.id, input, t("ko", "care.quickMedicationName")), ...current]);
-      if (shouldMarkMedicationChecklist(input)) {
-        setLocalChecklist((current) => ({ ...current, medication: true }));
-      }
+      if (shouldMarkMedicationChecklist(input)) setLocalChecklist((current) => ({ ...current, medication: true }));
       setNotice(t("ko", "care.medicationAdded"));
+      showSaveFeedback("medication");
       return;
     }
 
-    void createMedicationDose
-      .mutateAsync(input)
-      .then(() => setNotice(t("ko", "care.medicationAdded")))
-      .catch((error: Error) => setNotice(error.message));
+    try {
+      await createMedicationDose.mutateAsync(input);
+      setNotice(t("ko", "care.medicationAdded"));
+      showSaveFeedback("medication");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("ko", "care.quickDoseNotice");
+      setNotice(message);
+      throw new Error(message);
+    }
   }
 
   async function recordChecklistItem(key: ChecklistKey) {
@@ -179,6 +196,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         await createMedicationDose.mutateAsync({ medicationName: t("ko", "care.quickMedicationName"), status: "completed" });
       }
       setNotice(t("ko", "today.medicationUpdatedRemote"));
+      showSaveFeedback("medicationStatus");
       return;
     }
 
@@ -189,6 +207,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       conditionScore: category === "condition" ? 3 : undefined,
     });
     setNotice(t("ko", "today.checklistRecordedRemote"));
+    showSaveFeedback("checklist");
   }
 
   function handleSignOut() {
@@ -200,7 +219,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.appFrame}>
           <PetSettingsHeader onBack={() => setShowPetSettings(false)} />
-          <PetOnboardingScreen routine={activeRoutine} onSaveRoutine={saveRoutine} />
+          <PetOnboardingScreen routine={activeRoutine} onSaveRoutine={saveRoutine} onProfileSaved={() => showSaveFeedback("petProfile")} />
+          <SaveFeedbackBar feedback={saveFeedback} onDismiss={hideSaveFeedback} />
         </View>
       </SafeAreaView>
     );
@@ -216,11 +236,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         {activeTab === "care" ? <CareHeader /> : null}
         {activeTab === "reports" ? <ReportsHeader onSignOut={handleSignOut} /> : null}
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, activeTab === "today" && styles.homeScrollContent]}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, activeTab === "today" && styles.homeScrollContent]} showsVerticalScrollIndicator={false}>
           {activeTab === "today" ? (
             <HomeScreen pet={activePet} checklist={checklist} entries={activeEntries} notice={notice} onChecklistToggle={toggleChecklist} />
           ) : null}
@@ -231,11 +247,12 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
             <CareModeScreen doses={activeDoses} onDosePress={cycleDoseStatus} onAddDose={addMedicationDose} onSaveCareEntry={saveCareEntry} onGenerateReport={() => setActiveTab("reports")} conditionScore={latestConditionScore} careSetup={activeCareSetup} onSaveCareSetup={saveCareSetup} onUseCareSchedule={useCareSchedule} />
           ) : null}
           {activeTab === "reports" ? (
-            <ReportsScreen reportStage={reportStage} onReportStageChange={setReportStage} onNewDiary={() => setActiveTab("diary")} />
+            <ReportsScreen reportStage={reportStage} reportSummary={reportSummary} onReportStageChange={setReportStage} onNewDiary={() => setActiveTab("diary")} />
           ) : null}
         </ScrollView>
 
         <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+        <SaveFeedbackBar feedback={saveFeedback} onDismiss={hideSaveFeedback} />
       </View>
     </SafeAreaView>
   );

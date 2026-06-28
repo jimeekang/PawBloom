@@ -40,6 +40,7 @@ export function DiaryEntryScreen({
   const [memo, setMemo] = useState("");
   const [photos, setPhotos] = useState<DiaryPhotoInput[]>([]);
   const [notice, setNotice] = useState<string>(t("ko", "diary.localDraft"));
+  const [isDetailPanelOpen, setDetailPanelOpen] = useState(true);
   const categories = useMemo(() => getDiaryCategoriesForSpecies(petSpecies, routine?.walk.enabled) as DiaryCategory[], [petSpecies, routine?.walk.enabled]);
 
   useEffect(() => {
@@ -51,6 +52,11 @@ export function DiaryEntryScreen({
   useEffect(() => {
     setDetail(createDetailForCategory(selected, routine));
   }, [routine, selected]);
+
+  function selectCategory(category: DiaryCategory) {
+    setSelected(category);
+    setDetailPanelOpen(true);
+  }
 
   function saveEntry() {
     const activeDetail = detail.category === selected ? detail : createDetailForCategory(selected, routine);
@@ -66,6 +72,7 @@ export function DiaryEntryScreen({
     setMemo("");
     setDetail(createDetailForCategory(selected, routine));
     setPhotos([]);
+    setDetailPanelOpen(isDiaryDetailPanelOpenAfterSave(isDetailPanelOpen));
     setNotice(t("ko", "diary.savedForDate"));
   }
 
@@ -80,7 +87,7 @@ export function DiaryEntryScreen({
           const item = categoryVisuals[key];
           const active = selected === key;
           return (
-            <Pressable key={key} style={[styles.categoryTile, active && styles.categoryTileActive]} onPress={() => setSelected(key)}>
+            <Pressable key={key} style={[styles.categoryTile, active && styles.categoryTileActive]} onPress={() => selectCategory(key)}>
               <AppIcon name={item.icon} size={iconSize.xl} color={item.color} />
               <Text style={styles.categoryLabel}>{item.label}</Text>
             </Pressable>
@@ -88,8 +95,8 @@ export function DiaryEntryScreen({
         })}
       </View>
 
-      {selected === "condition" ? <ConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
-      <DiaryDetailPanel category={selected} detail={detail} onChange={setDetail} />
+      {isDetailPanelOpen && selected === "condition" ? <ConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
+      {isDetailPanelOpen ? <DiaryDetailPanel category={selected} detail={detail} onChange={setDetail} /> : null}
 
       <Text style={styles.sectionTitle}>
         {t("ko", "diary.addPhotos")} <Text style={styles.optional}>{t("ko", "diary.optional")}</Text>
@@ -118,6 +125,10 @@ export function DiaryEntryScreen({
 function createDetailForCategory(category: DiaryCategory, routine?: PetRoutine): DiaryDetailInput {
   if (routine && category !== "memo") return buildRoutineDiaryDetail(category, routine);
   return createDefaultDiaryDetail(category);
+}
+
+export function isDiaryDetailPanelOpenAfterSave(_wasOpen: boolean) {
+  return false;
 }
 
 function ConditionScore({ value, onChange }: { value: 1 | 2 | 3 | 4 | 5; onChange: (value: 1 | 2 | 3 | 4 | 5) => void }) {

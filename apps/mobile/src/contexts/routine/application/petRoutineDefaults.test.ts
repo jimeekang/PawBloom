@@ -9,7 +9,12 @@ const waterDetail = buildRoutineDiaryDetail("water", {
 });
 
 const breakfastTarget: string | undefined = foodDetail.category === "food" ? foodDetail.meals.breakfast?.offeredGrams : undefined;
+const lunchTarget: string | undefined = foodDetail.category === "food" ? foodDetail.meals.lunch?.offeredGrams : undefined;
 const waterTarget: string | undefined = waterDetail.category === "water" ? waterDetail.amountMl : undefined;
 
 void breakfastTarget;
+if (foodDetail.category !== "food" || !("lunch" in foodDetail.meals)) {
+  throw new Error("food routine defaults must include lunch so profile and diary meal slots match");
+}
+void lunchTarget;
 void waterTarget;

@@ -1,33 +1,53 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { QuickMedicationDoseInput } from "../../contexts/medication/application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../../contexts/medication/domain/medication";
 import { NoticeBanner, PrimaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
-import { t } from "../../i18n/translations";
+import { t, type TranslationKey } from "../../i18n/translations";
 
-export function QuickMedicationForm({ onSave }: { onSave: (input: QuickMedicationDoseInput) => void }) {
+export type QuickMedicationSaveHandler = (input: QuickMedicationDoseInput) => void | Promise<void>;
+
+export function QuickMedicationForm({ onSave }: { onSave: QuickMedicationSaveHandler }) {
   const [conditionName, setConditionName] = useState("");
   const [medicationName, setMedicationName] = useState("");
   const [dosageLabel, setDosageLabel] = useState("");
   const [administeredAmount, setAdministeredAmount] = useState("");
   const [reactionNote, setReactionNote] = useState("");
   const [status, setStatus] = useState<DoseStatus>("completed");
-  const [notice, setNotice] = useState(t("ko", "care.quickDoseNotice"));
+  const [notice, setNotice] = useState<string>(t("ko", "care.quickDoseNotice"));
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
-  function saveDose() {
+  async function saveDose() {
+    if (savingRef.current) {
+      return;
+    }
+
     if (!medicationName.trim()) {
       setNotice(t("ko", "care.quickDoseMedicationRequired"));
       return;
     }
 
-    onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status });
-    setMedicationName("");
-    setDosageLabel("");
-    setAdministeredAmount("");
-    setReactionNote("");
-    setNotice(t("ko", "care.quickDoseSaved"));
+    savingRef.current = true;
+    setIsSaving(true);
+
+    try {
+      await onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status });
+      setConditionName("");
+      setMedicationName("");
+      setDosageLabel("");
+      setAdministeredAmount("");
+      setReactionNote("");
+      setStatus("completed");
+      setNotice(t("ko", quickDoseSavedNoticeKey(status)));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : t("ko", "care.quickDoseNotice"));
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -59,10 +79,17 @@ export function QuickMedicationForm({ onSave }: { onSave: (input: QuickMedicatio
           placeholder={t("ko", "care.reactionPlaceholder")}
           placeholderTextColor={colors.textSoft}
         />
-        <PrimaryButton label={t("ko", "care.quickDoseSave")} icon="medication" onPress={saveDose} />
+        <PrimaryButton label={t("ko", "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} />
       </View>
     </SurfaceCard>
   );
+}
+
+function quickDoseSavedNoticeKey(status: DoseStatus): TranslationKey {
+  if (status === "pending") return "care.quickDoseSaved.pending";
+  if (status === "completed") return "care.quickDoseSaved.completed";
+  if (status === "partial") return "care.quickDoseSaved.partial";
+  return "care.quickDoseSaved.skipped";
 }
 
 export function MedicationRow({ dose, onPress }: { dose: DoseRecord; onPress: () => void }) {
