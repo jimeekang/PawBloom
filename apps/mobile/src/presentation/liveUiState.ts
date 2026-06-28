@@ -15,6 +15,31 @@ export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRec
   };
 }
 
+export type DashboardSummary = {
+  completedCount: number;
+  totalCount: number;
+  pendingMedicationCount: number;
+  attentionSignals: string[];
+};
+
+export function createDashboardSummary(checklist: Record<ChecklistKey, boolean>, entries: DiaryEntry[], doses: DoseRecord[]): DashboardSummary {
+  const completedCount = Object.values(checklist).filter(Boolean).length;
+  const pendingMedicationCount = doses.filter((dose) => dose.status === "pending").length;
+  const attentionSignals = [
+    entries.some((entry) => entry.category === "condition" && (entry.conditionScore ?? 5) <= 2) ? "컨디션 점수가 낮아요." : null,
+    !entries.some((entry) => entry.category === "water") ? "오늘 물 기록이 아직 없어요." : null,
+    doses.some((dose) => dose.status === "partial" || dose.status === "skipped") ? "일부 또는 건너뜬 투약이 있어요." : null,
+    entries.some((entry) => entry.category === "stool" && entry.detail?.category === "stool" && (entry.detail.consistency === "diarrhea" || entry.detail.hasBloodOrMucus)) ? "배변 상태 확인이 필요해요." : null,
+  ].filter((signal): signal is string => Boolean(signal));
+
+  return {
+    completedCount,
+    totalCount: Object.keys(checklist).length,
+    pendingMedicationCount,
+    attentionSignals,
+  };
+}
+
 export function checklistSummary(key: ChecklistKey) {
   const summaries: Record<ChecklistKey, string> = {
     food: "식사 체크리스트가 기록되었습니다.",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../../contexts/care/domain/carePlan";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
@@ -13,11 +13,14 @@ import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } f
 import { CareSetupPanel } from "./CareSetupPanel";
 
 type Segment = "care" | "reports";
+type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
 
 export function CareModeScreen({
   doses,
   onDosePress,
   onAddDose,
+  onUpdateDose,
+  onDeleteDose,
   onSaveCareEntry,
   onGenerateReport,
   conditionScore,
@@ -28,6 +31,8 @@ export function CareModeScreen({
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
   onAddDose: QuickMedicationSaveHandler;
+  onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
+  onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
   onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
@@ -53,6 +58,8 @@ export function CareModeScreen({
           doses={doses}
           onDosePress={onDosePress}
           onAddDose={onAddDose}
+          onUpdateDose={onUpdateDose}
+          onDeleteDose={onDeleteDose}
           onSaveCareEntry={onSaveCareEntry}
           onGenerateReport={onGenerateReport}
           conditionScore={conditionScore}
@@ -71,6 +78,8 @@ function CarePanel({
   doses,
   onDosePress,
   onAddDose,
+  onUpdateDose,
+  onDeleteDose,
   onSaveCareEntry,
   onGenerateReport,
   conditionScore,
@@ -81,6 +90,8 @@ function CarePanel({
   doses: DoseRecord[];
   onDosePress: (id: string) => void;
   onAddDose: QuickMedicationSaveHandler;
+  onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
+  onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
   onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
@@ -88,12 +99,15 @@ function CarePanel({
   onSaveCareSetup: (input: CareSetupInput) => void;
   onUseCareSchedule: (schedule: CareMedicationSchedule) => void;
 }) {
+  const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
+  const editingDose = useMemo(() => doses.find((dose) => dose.id === editingDoseId) ?? null, [doses, editingDoseId]);
+
   return (
     <>
       <NoticeBanner text={t("ko", "care.tapMedication")} />
 
       <CareSetupPanel setup={careSetup} onSave={onSaveCareSetup} onUseSchedule={onUseCareSchedule} />
-      <QuickMedicationForm onSave={onAddDose} />
+      <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.medicationToday")}</Text>
@@ -101,7 +115,7 @@ function CarePanel({
       <View style={styles.medList}>
         {doses.length === 0 ? <Text style={styles.emptyText}>{t("ko", "care.noMedicationToday")}</Text> : null}
         {doses.map((dose) => (
-          <MedicationRow key={dose.id} dose={dose} onPress={() => onDosePress(dose.id)} />
+          <MedicationRow key={dose.id} dose={dose} onEdit={() => setEditingDoseId(dose.id)} onStatusPress={() => onDosePress(dose.id)} />
         ))}
       </View>
 

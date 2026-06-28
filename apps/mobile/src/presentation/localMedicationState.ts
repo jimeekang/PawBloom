@@ -18,6 +18,22 @@ export function createLocalDoseRecord(petId: string, input: QuickMedicationDoseI
   };
 }
 
+export function updateLocalDoseRecord(current: DoseRecord, input: QuickMedicationDoseInput & { scheduledTime?: string }): DoseRecord {
+  const status = input.status ?? current.status;
+
+  return {
+    ...current,
+    medicationName: input.medicationName.trim() || current.medicationName,
+    conditionName: input.conditionName?.trim() || undefined,
+    dosageLabel: input.dosageLabel?.trim() || undefined,
+    administeredAmount: input.administeredAmount?.trim() || undefined,
+    scheduledAt: input.scheduledTime || current.scheduledAt,
+    status,
+    recordedAt: status === "pending" ? undefined : new Date().toISOString(),
+    reactionNote: input.reactionNote?.trim() || undefined,
+  };
+}
+
 export function shouldMarkMedicationChecklist(input: QuickMedicationDoseInput) {
   return (input.status ?? "pending") !== "pending";
 }

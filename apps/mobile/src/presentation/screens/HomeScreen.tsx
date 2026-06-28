@@ -1,13 +1,16 @@
 import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
+import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
-import { categoryVisuals, type CategoryKey } from "../../design-system/categoryVisuals";
+import { categoryVisuals } from "../../design-system/categoryVisuals";
 import { AppIcon } from "../../design-system/iconography";
 import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard } from "../../design-system/components";
 import { colors, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { createDashboardSummary } from "../liveUiState";
 import type { ChecklistKey } from "../mockUiState";
+import { AttentionStrip, CareSummaryCard, QuickActionRow } from "./HomeDashboardPanel";
 
 const mochiHero = require("../../../assets/mochi-hero.png");
 
@@ -17,14 +20,20 @@ type Props = {
   pet: PetProfile;
   checklist: Record<ChecklistKey, boolean>;
   entries: DiaryEntry[];
+  doses: DoseRecord[];
   notice: string;
   onChecklistToggle: (key: ChecklistKey) => void;
+  onAddDiary: () => void;
+  onRecordMedication: () => void;
+  onViewReport: () => void;
+  onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle }: Props) {
+export function HomeScreen({ pet, checklist, entries, doses, notice, onChecklistToggle, onAddDiary, onRecordMedication, onViewReport, onTimelineEntryPress }: Props) {
   const timeline = entries.slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
+  const dashboard = createDashboardSummary(checklist, entries, doses);
 
   return (
     <View>
@@ -38,12 +47,18 @@ export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle 
               <Text style={styles.heroPillText}>{t("ko", "pet.diaryMode")}</Text>
             </View>
           ) : null}
+          <View style={styles.heroSummary}>
+            <Text style={styles.heroSummaryText}>{t("ko", "today.dashboardCompletion")} {dashboard.completedCount}/{dashboard.totalCount}</Text>
+            <Text style={styles.heroSummaryText}>{t("ko", "today.dashboardMedicationPending")} {dashboard.pendingMedicationCount}</Text>
+          </View>
         </View>
       </ImageBackground>
 
       <View style={styles.noticeWrap}>
         <NoticeBanner text={notice} />
       </View>
+
+      <AttentionStrip signals={dashboard.attentionSignals} />
 
       <SectionHeader title={t("ko", "today.checklist.full")} action={t("ko", "today.seeAll")} />
       <View style={styles.checklist}>
@@ -62,14 +77,16 @@ export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle 
         })}
       </View>
 
+      <CareSummaryCard dashboard={dashboard} doses={doses} />
+
       <SurfaceCard>
         <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} />
         <View style={styles.timeline}>
           {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", "today.noTimeline")}</Text> : null}
           {timeline.map((entry) => {
             const item = categoryVisuals[entry.category];
-            return (
-              <View key={entry.id} style={styles.timelineRow}>
+            const row = (
+              <>
                 <View style={styles.timelineStem}>
                   <View style={styles.timelineDot} />
                 </View>
@@ -77,11 +94,22 @@ export function HomeScreen({ pet, checklist, entries, notice, onChecklistToggle 
                 <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
                 <Text style={styles.timelineTitle}>{item.label}</Text>
                 <Text style={styles.timelineValue} numberOfLines={1}>{entry.summary}</Text>
+              </>
+            );
+            return onTimelineEntryPress ? (
+              <Pressable key={entry.id} style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]} onPress={() => onTimelineEntryPress(entry)}>
+                {row}
+              </Pressable>
+            ) : (
+              <View key={entry.id} style={styles.timelineRow}>
+                {row}
               </View>
             );
           })}
         </View>
       </SurfaceCard>
+
+      <QuickActionRow onAddDiary={onAddDiary} onRecordMedication={onRecordMedication} onViewReport={onViewReport} />
     </View>
   );
 }
@@ -126,6 +154,20 @@ const styles = StyleSheet.create({
     color: colors.orangeDeep,
     fontWeight: "600",
   },
+  heroSummary: {
+    alignSelf: "flex-start",
+    borderRadius: radius.md,
+    backgroundColor: "rgba(255, 255, 255, 0.82)",
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xxs,
+  },
+  heroSummaryText: {
+    ...type.caption,
+    color: colors.text,
+    fontWeight: "700",
+  },
   noticeWrap: {
     marginTop: spacing.md,
   },
@@ -166,6 +208,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+  },
+  timelineRowPressed: {
+    opacity: 0.72,
   },
   timelineStem: {
     width: 8,

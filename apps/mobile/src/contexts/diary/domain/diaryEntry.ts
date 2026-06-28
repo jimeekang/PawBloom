@@ -22,6 +22,7 @@ export type DiaryEntry = {
   entryDate: string;
   occurredAt: string;
   summary: string;
+  memo?: string;
   detail?: DiaryDetailInput;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photoCount?: number;
@@ -32,6 +33,7 @@ export type CreateDiaryEntryInput = {
   summary: string;
   detail?: DiaryDetailInput;
   entryDate?: string;
+  occurredTime?: string;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photos?: DiaryPhotoInput[];
 };

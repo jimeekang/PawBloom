@@ -172,6 +172,24 @@
 - [x] `npm run verify`를 실행한다.
 - [ ] `feat: bind reports draft to records` 커밋을 만든다.
 
+### Day 5A: Diary/Care record correction and Today dashboard
+
+**Files:**
+- Modify: `apps/mobile/src/presentation/liveUiState.ts`
+- Create: `apps/mobile/src/presentation/liveUiState.dashboard.test.ts`
+- Modify: `apps/mobile/src/presentation/screens/HomeScreen.tsx`
+- Create: `apps/mobile/src/presentation/screens/HomeDashboardPanel.tsx`
+- Modify: `apps/mobile/src/presentation/PawBloomShell.tsx`
+- Modify: `apps/mobile/src/i18n/translations.ts`
+
+- [x] Diary records can be opened from the list and edited.
+- [x] Diary records can be deleted with confirmation.
+- [x] Care medication records can be opened and edited.
+- [x] Care medication records can be deleted with confirmation.
+- [x] Today dashboard shows completion, attention signals, care summary, recent timeline, and quick actions.
+- [x] `npm --prefix apps/mobile run typecheck`를 실행한다.
+- [x] `npm run verify`를 실행한다.
+
 ### Day 6: Week 1 모바일 smoke test
 
 **Files:**

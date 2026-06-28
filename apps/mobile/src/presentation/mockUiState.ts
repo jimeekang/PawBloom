@@ -54,6 +54,7 @@ export function createMockDiaryEntry(petId: string, draft: DraftDiaryEntry): Dia
     entryDate: draft.entryDate ?? getLocalDateKey(),
     occurredAt: draft.occurredAt,
     summary: draft.summary || defaultSummary[draft.category],
+    memo: draft.summary.trim() || undefined,
     detail: draft.detail,
     conditionScore: draft.category === "condition" ? draft.conditionScore ?? 3 : undefined,
     photoCount: draft.photos?.length ?? 0,
