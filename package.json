@@ -4,6 +4,8 @@
   "private": true,
   "description": "Agent-first PawBloom mobile app repository.",
   "scripts": {
+    "start": "npm run codex:check",
+    "codex:run": "./script/build_and_run.sh",
     "mobile:start": "npm --prefix apps/mobile run start",
     "mobile:android": "npm --prefix apps/mobile run android",
     "mobile:ios": "npm --prefix apps/mobile run ios",
@@ -17,6 +19,7 @@
     "verify:secrets": "node scripts/verify-secrets.mjs",
     "verify:supabase": "node scripts/verify-supabase.mjs",
     "verify:offline": "node scripts/verify-offline-sync.mjs",
+    "codex:check": "node scripts/codex-environment-check.mjs",
     "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:offline"
   },
   "engines": {
