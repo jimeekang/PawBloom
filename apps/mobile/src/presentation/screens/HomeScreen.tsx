@@ -8,32 +8,32 @@ import { AppIcon } from "../../design-system/iconography";
 import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard } from "../../design-system/components";
 import { colors, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
-import { createDashboardSummary } from "../liveUiState";
+import { createDashboardSummary, getTodayChecklistOrder } from "../liveUiState";
 import type { ChecklistKey } from "../mockUiState";
-import { AttentionStrip, CareSummaryCard, QuickActionRow } from "./HomeDashboardPanel";
+import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
 
 const mochiHero = require("../../../assets/mochi-hero.png");
-
-const checklistOrder: ChecklistKey[] = ["food", "water", "walk", "stool", "medication", "night"];
 
 type Props = {
   pet: PetProfile;
   checklist: Record<ChecklistKey, boolean>;
   entries: DiaryEntry[];
   doses: DoseRecord[];
+  walkEnabled: boolean;
+  includeMedication?: boolean;
+  showMedicationSummary?: boolean;
   notice: string;
   onChecklistToggle: (key: ChecklistKey) => void;
-  onAddDiary: () => void;
-  onRecordMedication: () => void;
-  onViewReport: () => void;
+  onViewTimelineAll: () => void;
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, checklist, entries, doses, notice, onChecklistToggle, onAddDiary, onRecordMedication, onViewReport, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, checklist, entries, doses, walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const timeline = entries.slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
-  const dashboard = createDashboardSummary(checklist, entries, doses);
+  const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
+  const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder);
 
   return (
     <View>
@@ -41,26 +41,33 @@ export function HomeScreen({ pet, checklist, entries, doses, notice, onChecklist
         <View style={styles.heroOverlay}>
           <Text style={styles.heroName}>{pet.name}</Text>
           <Text style={styles.heroMeta}>{pet.breed} - {pet.ageLabel}</Text>
-          {pet.careMode ? (
-            <View style={styles.heroPill}>
-              <AppIcon name="diary" size={iconSize.sm} color={colors.orangeDeep} />
-              <Text style={styles.heroPillText}>{t("ko", "pet.diaryMode")}</Text>
-            </View>
-          ) : null}
-          <View style={styles.heroSummary}>
-            <Text style={styles.heroSummaryText}>{t("ko", "today.dashboardCompletion")} {dashboard.completedCount}/{dashboard.totalCount}</Text>
-            <Text style={styles.heroSummaryText}>{t("ko", "today.dashboardMedicationPending")} {dashboard.pendingMedicationCount}</Text>
-          </View>
         </View>
       </ImageBackground>
 
-      <View style={styles.noticeWrap}>
-        <NoticeBanner text={notice} />
+      <View style={styles.heroInfo}>
+        <View style={styles.heroSummary}>
+          <View style={styles.heroSummaryItem}>
+            <Text style={styles.heroSummaryLabel}>{t("ko", "today.dashboardCompletion")}</Text>
+            <Text style={styles.heroSummaryValue}>{dashboard.completedCount}/{dashboard.totalCount}</Text>
+          </View>
+          {showMedicationSummary ? <View style={styles.heroSummaryItem}>
+            <Text style={styles.heroSummaryLabel}>{t("ko", "today.dashboardMedicationPending")}</Text>
+            <Text style={styles.heroSummaryValue}>{dashboard.pendingMedicationCount}</Text>
+          </View> : null}
+        </View>
       </View>
+
+      {notice ? (
+        <View style={styles.noticeWrap}>
+          <NoticeBanner text={notice} />
+        </View>
+      ) : null}
 
       <AttentionStrip signals={dashboard.attentionSignals} />
 
-      <SectionHeader title={t("ko", "today.checklist.full")} action={t("ko", "today.seeAll")} />
+      <SectionHeader
+        title={t("ko", "today.checklist.full")}
+      />
       <View style={styles.checklist}>
         {checklistOrder.map((key) => {
           const item = categoryVisuals[key];
@@ -77,39 +84,40 @@ export function HomeScreen({ pet, checklist, entries, doses, notice, onChecklist
         })}
       </View>
 
-      <CareSummaryCard dashboard={dashboard} doses={doses} />
+      {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} /> : null}
 
-      <SurfaceCard>
-        <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} />
-        <View style={styles.timeline}>
-          {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", "today.noTimeline")}</Text> : null}
-          {timeline.map((entry) => {
-            const item = categoryVisuals[entry.category];
-            const row = (
-              <>
-                <View style={styles.timelineStem}>
-                  <View style={styles.timelineDot} />
+      <View style={styles.timelineCard}>
+        <SurfaceCard>
+          <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} onActionPress={onViewTimelineAll} />
+          <View style={styles.timeline}>
+            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", "today.noTimeline")}</Text> : null}
+            {timeline.map((entry) => {
+              const item = categoryVisuals[entry.category];
+              const row = (
+                <>
+                  <View style={styles.timelineStem}>
+                    <View style={styles.timelineDot} />
+                  </View>
+                  <Text style={styles.time}>{entry.occurredAt}</Text>
+                  <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
+                  <Text style={styles.timelineTitle}>{item.label}</Text>
+                  <Text style={styles.timelineValue} numberOfLines={1}>{entry.summary}</Text>
+                </>
+              );
+              return onTimelineEntryPress ? (
+                <Pressable key={entry.id} style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]} onPress={() => onTimelineEntryPress(entry)}>
+                  {row}
+                </Pressable>
+              ) : (
+                <View key={entry.id} style={styles.timelineRow}>
+                  {row}
                 </View>
-                <Text style={styles.time}>{entry.occurredAt}</Text>
-                <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
-                <Text style={styles.timelineTitle}>{item.label}</Text>
-                <Text style={styles.timelineValue} numberOfLines={1}>{entry.summary}</Text>
-              </>
-            );
-            return onTimelineEntryPress ? (
-              <Pressable key={entry.id} style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]} onPress={() => onTimelineEntryPress(entry)}>
-                {row}
-              </Pressable>
-            ) : (
-              <View key={entry.id} style={styles.timelineRow}>
-                {row}
-              </View>
-            );
-          })}
-        </View>
-      </SurfaceCard>
+              );
+            })}
+          </View>
+        </SurfaceCard>
+      </View>
 
-      <QuickActionRow onAddDiary={onAddDiary} onRecordMedication={onRecordMedication} onViewReport={onViewReport} />
     </View>
   );
 }
@@ -121,122 +129,33 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: colors.border,
   },
-  heroImage: {
-    borderRadius: radius.xl,
-  },
-  heroOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    padding: spacing.xxl,
-    backgroundColor: colors.heroScrim,
-  },
-  heroName: {
-    ...type.heroTitle,
-  },
-  heroMeta: {
-    ...type.sectionTitle,
-    color: colors.white,
-    marginTop: spacing.xs,
-  },
-  heroPill: {
-    alignSelf: "flex-start",
-    minHeight: 36,
-    borderRadius: radius.full,
-    backgroundColor: colors.surfacePeach,
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  heroPillText: {
-    ...type.caption,
-    color: colors.orangeDeep,
-    fontWeight: "600",
-  },
-  heroSummary: {
-    alignSelf: "flex-start",
-    borderRadius: radius.md,
-    backgroundColor: "rgba(255, 255, 255, 0.82)",
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.xxs,
-  },
-  heroSummaryText: {
-    ...type.caption,
-    color: colors.text,
-    fontWeight: "700",
-  },
-  noticeWrap: {
-    marginTop: spacing.md,
-  },
+  heroImage: { borderRadius: radius.xl },
+  heroOverlay: { flex: 1, justifyContent: "flex-end", padding: spacing.xxl, backgroundColor: colors.heroScrim },
+  heroName: { ...type.heroTitle },
+  heroMeta: { ...type.sectionTitle, color: colors.white, marginTop: spacing.xs },
+  heroInfo: { marginTop: spacing.md, gap: spacing.md },
+  heroSummary: { flexDirection: "row", gap: spacing.sm },
+  heroSummaryItem: { flex: 1, minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, justifyContent: "center" },
+  heroSummaryLabel: { ...type.caption },
+  heroSummaryValue: { ...type.sectionTitle, color: colors.text, fontWeight: "700", marginTop: spacing.xxs },
+  noticeWrap: { marginTop: spacing.md },
   checklist: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: spacing.lg,
     marginBottom: spacing.lg,
   },
-  checkItem: {
-    width: 56,
-    alignItems: "center",
-    position: "relative",
-  },
-  checkMark: {
-    position: "absolute",
-    top: 38,
-    right: 5,
-    width: 18,
-    height: 18,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkLabel: {
-    ...type.tiny,
-    color: colors.text,
-    textAlign: "center",
-    marginTop: spacing.xs,
-  },
-  timeline: {
-    gap: spacing.md,
-  },
-  timelineRow: {
-    minHeight: 28,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  timelineRowPressed: {
-    opacity: 0.72,
-  },
-  timelineStem: {
-    width: 8,
-    alignItems: "center",
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: radius.full,
-    backgroundColor: colors.salmon,
-  },
-  time: {
-    ...type.body,
-    width: 54,
-  },
-  timelineTitle: {
-    ...type.bodyStrong,
-    flex: 1,
-  },
-  timelineValue: {
-    ...type.caption,
-    maxWidth: 116,
-    textAlign: "right",
-  },
-  emptyTimeline: {
-    ...type.caption,
-    color: colors.textMuted,
-  },
+  checkItem: { width: 56, alignItems: "center", position: "relative" },
+  checkMark: { position: "absolute", top: 38, right: 5, width: 18, height: 18, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  checkLabel: { ...type.tiny, color: colors.text, textAlign: "center", marginTop: spacing.xs },
+  timelineCard: { marginTop: spacing.md },
+  timeline: { gap: spacing.md },
+  timelineRow: { minHeight: 28, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  timelineRowPressed: { opacity: 0.72 },
+  timelineStem: { width: 8, alignItems: "center" },
+  timelineDot: { width: 10, height: 10, borderRadius: radius.full, backgroundColor: colors.salmon },
+  time: { ...type.body, width: 54 },
+  timelineTitle: { ...type.bodyStrong, flex: 1 },
+  timelineValue: { ...type.caption, maxWidth: 116, textAlign: "right" },
+  emptyTimeline: { ...type.caption, color: colors.textMuted },
 });

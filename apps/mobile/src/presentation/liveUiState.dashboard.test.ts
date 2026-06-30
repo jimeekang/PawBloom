@@ -1,6 +1,6 @@
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../contexts/medication/domain/medication";
-import { createDashboardSummary } from "./liveUiState";
+import { createDashboardSummary, getTodayChecklistOrder } from "./liveUiState";
 import type { ChecklistKey } from "./mockUiState";
 
 const checklist: Record<ChecklistKey, boolean> = {
@@ -32,3 +32,20 @@ if (!summary.attentionSignals.some((signal) => signal.includes("컨디션"))) th
 if (!summary.attentionSignals.some((signal) => signal.includes("물"))) throw new Error("dashboard summary must flag missing water record");
 if (!summary.attentionSignals.some((signal) => signal.includes("투약"))) throw new Error("dashboard summary must flag partial or skipped medication");
 if (!summary.attentionSignals.some((signal) => signal.includes("배변"))) throw new Error("dashboard summary must flag stool diarrhea or blood concerns");
+
+const diaryOnlyKeys = getTodayChecklistOrder({ walkEnabled: false, includeMedication: false });
+if (diaryOnlyKeys.includes("walk")) throw new Error("today checklist must hide walk when the pet routine disables walks");
+if (diaryOnlyKeys.includes("medication")) throw new Error("today checklist must hide medication only when the caller explicitly suppresses it");
+if (!diaryOnlyKeys.includes("condition")) throw new Error("today checklist must keep condition in the normal diary flow");
+
+const careKeys = getTodayChecklistOrder({ walkEnabled: true, includeMedication: true });
+if (!careKeys.includes("walk")) throw new Error("today checklist must show walk when enabled");
+if (!careKeys.includes("medication")) throw new Error("today checklist must show medication when care records exist");
+
+const defaultKeys = getTodayChecklistOrder({ walkEnabled: true });
+if (!defaultKeys.includes("medication")) throw new Error("today checklist must show medication by default");
+
+const diarySummary = createDashboardSummary(checklist, entries, doses, diaryOnlyKeys);
+if (diarySummary.totalCount !== diaryOnlyKeys.length) throw new Error("dashboard summary must count only visible checklist items");
+if (diarySummary.pendingMedicationCount !== 0) throw new Error("dashboard summary must hide pending medication count when medication is not visible");
+if (diarySummary.attentionSignals.some((signal) => signal.includes("투약"))) throw new Error("dashboard summary must hide medication attention when medication is not visible");

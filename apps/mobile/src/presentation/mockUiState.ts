@@ -3,7 +3,7 @@ import type { DoseRecord, DoseStatus } from "../contexts/medication/domain/medic
 import type { PetProfile } from "../contexts/pet/domain/pet";
 import { sampleDoses, sampleEntries, samplePet } from "./sampleData";
 
-export type ChecklistKey = DiaryCategory | "medication" | "night";
+export type ChecklistKey = Exclude<DiaryCategory, "photo"> | "medication" | "night";
 export type ReportStage = "empty" | "draft" | "confirmed" | "shared";
 
 export type DraftDiaryEntry = {
@@ -75,6 +75,7 @@ const defaultSummary: Record<DiaryCategory, string> = {
   stool: "배변 기록",
   condition: "컨디션 확인",
   memo: "메모 추가",
+  photo: "사진 추가",
 };
 
 function getLocalDateKey(date = new Date()) {

@@ -2,7 +2,7 @@ import { buildRoutineDiaryDetail, createDefaultPetRoutine, getDiaryCategoriesFor
 
 const routine = createDefaultPetRoutine("pet-routine-species-test");
 
-if (getDiaryCategoriesForSpecies("dog").join(",") !== "food,water,walk,stool,condition,memo") {
+if (getDiaryCategoriesForSpecies("dog").join(",") !== "food,water,walk,stool,condition,memo,photo") {
   throw new Error("dog diary categories must include walk");
 }
 

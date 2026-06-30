@@ -5,6 +5,7 @@ import { PrimaryButton, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { TimePickerField } from "../ui/TimePickerField";
 
 export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: ActiveCareSetup; onSave: (input: CareSetupInput) => void; onUseSchedule: (schedule: CareMedicationSchedule) => void }) {
   const [conditionName, setConditionName] = useState(setup.conditionName ?? "");
@@ -66,7 +67,9 @@ export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: Active
         <TextInput style={styles.input} value={planTitle} onChangeText={updatePlanTitle} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
         <View style={styles.row}>
           <TextInput style={[styles.input, styles.flex]} value={medicationName} onChangeText={updateMedicationName} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-          <TextInput style={styles.timeInput} value={localTime} onChangeText={(value) => setLocalTime(value.slice(0, 5))} placeholder="08:00" placeholderTextColor={colors.textSoft} />
+          <View style={styles.timePicker}>
+            <TimePickerField value={localTime} onChange={setLocalTime} />
+          </View>
         </View>
         <TextInput style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -96,7 +99,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: spacing.sm },
   flex: { flex: 1 },
   input: { ...type.body, minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
-  timeInput: { ...type.body, width: 78, minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.sm },
+  timePicker: { width: 112 },
   errorText: { ...type.caption, color: colors.coral },
   scheduleRow: { minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
   scheduleTitle: { ...type.bodyStrong },

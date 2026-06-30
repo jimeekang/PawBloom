@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const trackedFiles = execFileSync("git", ["ls-files"], { encoding: "utf8" })
   .split("\n")
@@ -19,7 +19,7 @@ const allowedPlaceholderValues = new Set([
 ]);
 
 for (const file of trackedFiles) {
-  if (file.endsWith("package-lock.json")) {
+  if (!existsSync(file) || file.endsWith("package-lock.json")) {
     continue;
   }
 

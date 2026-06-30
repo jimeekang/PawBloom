@@ -6,7 +6,7 @@ import type { PetRoutine, PetRoutineInput } from "../domain/petRoutine";
 
 type RoutineRow = Database["public"]["Tables"]["pet_routines"]["Row"];
 type RoutineInsert = Database["public"]["Tables"]["pet_routines"]["Insert"];
-export type RoutineCategory = "food" | "water" | "walk" | "stool" | "condition" | "memo";
+export type RoutineCategory = "food" | "water" | "walk" | "stool" | "condition" | "memo" | "photo";
 type RoutineDiaryDetail =
   | { category: "food"; meals: PetRoutine["food"]["meals"]; appetite?: PetRoutine["food"]["appetite"] }
   | { category: "water"; amountMl?: string; intakeLevel?: PetRoutine["water"]["intakeLevel"] }
@@ -25,8 +25,8 @@ export function createDefaultPetRoutine(petId: string, species: Species = "dog")
 
 export function getDiaryCategoriesForSpecies(species: Species, walkEnabled = species === "dog"): RoutineCategory[] {
   return walkEnabled
-    ? ["food", "water", "walk", "stool", "condition", "memo"]
-    : ["food", "water", "stool", "condition", "memo"];
+    ? ["food", "water", "walk", "stool", "condition", "memo", "photo"]
+    : ["food", "water", "stool", "condition", "memo", "photo"];
 }
 
 export function buildRoutineDiaryDetail(category: RoutineCategory, routine: PetRoutine): RoutineDiaryDetail {

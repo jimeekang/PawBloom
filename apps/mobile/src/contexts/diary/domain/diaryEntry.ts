@@ -1,6 +1,6 @@
 import type { UUID } from "../../../shared-kernel/types";
 
-export type DiaryCategory = "food" | "water" | "walk" | "stool" | "condition" | "memo";
+export type DiaryCategory = "food" | "water" | "walk" | "stool" | "condition" | "memo" | "photo";
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
 export type AppetiteLevel = "good" | "normal" | "low" | "refused";
 export type RelativeLevel = "less" | "normal" | "more";

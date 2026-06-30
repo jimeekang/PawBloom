@@ -15,12 +15,13 @@
     "typecheck": "npm --prefix apps/mobile run typecheck",
     "verify:architecture": "node scripts/verify-architecture.mjs",
     "verify:i18n": "node scripts/verify-i18n.mjs",
+    "verify:presentation": "node scripts/verify-presentation-state.mjs",
     "verify:ai-safety": "node scripts/verify-ai-safety.mjs",
     "verify:secrets": "node scripts/verify-secrets.mjs",
     "verify:supabase": "node scripts/verify-supabase.mjs",
     "verify:offline": "node scripts/verify-offline-sync.mjs",
     "codex:check": "node scripts/codex-environment-check.mjs",
-    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:offline"
+    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:presentation && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:offline"
   },
   "engines": {
     "node": ">=22.0.0",

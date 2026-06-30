@@ -6,6 +6,7 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, Surface
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { TimePickerField } from "../ui/TimePickerField";
 import { createEmptyQuickMedicationState, createQuickMedicationEditState, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete } from "./careMedicationPanelState";
 
 export type QuickMedicationSaveHandler = (input: QuickMedicationDoseInput) => void | Promise<void>;
@@ -122,7 +123,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         <NoticeBanner text={notice} icon="medication" />
         <TextInput style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
         <TextInput style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-        {isEditing ? <TextInput style={styles.input} value={scheduledTime} onChangeText={(value) => setScheduledTime(value.slice(0, 5))} placeholder={t("ko", "care.quickDoseTimePlaceholder")} placeholderTextColor={colors.textSoft} /> : null}
+        {isEditing ? <TimePickerField value={scheduledTime} onChange={setScheduledTime} /> : null}
         <View style={styles.inputGrid}>
           <TextInput style={[styles.input, styles.inputHalf]} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
           <TextInput style={[styles.input, styles.inputHalf]} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />

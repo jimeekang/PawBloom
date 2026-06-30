@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { SurfaceCard } from "../../design-system/components";
-import { AppIcon, type AppIconName } from "../../design-system/iconography";
+import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import type { DashboardSummary } from "../liveUiState";
@@ -40,25 +40,6 @@ export function CareSummaryCard({ dashboard, doses }: Props) {
         <Text style={styles.careCount}>{completedDoses}/{doses.length}</Text>
       </View>
     </SurfaceCard>
-  );
-}
-
-export function QuickActionRow({ onAddDiary, onRecordMedication, onViewReport }: { onAddDiary: () => void; onRecordMedication: () => void; onViewReport: () => void }) {
-  return (
-    <View style={styles.quickActions}>
-      <QuickAction label={t("ko", "today.dashboardAddDiary")} icon="add" onPress={onAddDiary} />
-      <QuickAction label={t("ko", "today.dashboardRecordMedication")} icon="medication" onPress={onRecordMedication} />
-      <QuickAction label={t("ko", "today.dashboardViewReport")} icon="report" onPress={onViewReport} />
-    </View>
-  );
-}
-
-function QuickAction({ label, icon, onPress }: { label: string; icon: AppIconName; onPress: () => void }) {
-  return (
-    <Pressable style={styles.quickAction} onPress={onPress}>
-      <AppIcon name={icon} size={iconSize.sm} color={colors.orangeDeep} />
-      <Text style={styles.quickActionText} numberOfLines={2}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -112,28 +93,5 @@ const styles = StyleSheet.create({
   careCount: {
     ...type.sectionTitle,
     color: colors.orangeDeep,
-  },
-  quickActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  quickAction: {
-    flex: 1,
-    minHeight: 64,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  quickActionText: {
-    ...type.tiny,
-    color: colors.text,
-    textAlign: "center",
   },
 });

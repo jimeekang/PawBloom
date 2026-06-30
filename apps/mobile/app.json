@@ -31,7 +31,8 @@
         {
           "photosPermission": "PawBloom uses your selected photo as this pet's profile image."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

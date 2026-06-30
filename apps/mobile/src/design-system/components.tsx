@@ -7,11 +7,17 @@ export function SurfaceCard({ children, padded = true }: PropsWithChildren<{ pad
   return <View style={[styles.surface, padded && styles.padded]}>{children}</View>;
 }
 
-export function SectionHeader({ title, action }: { title: string; action?: string }) {
+export function SectionHeader({ title, action, onActionPress }: { title: string; action?: string; onActionPress?: () => void }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {action ? <Text style={styles.sectionAction}>{action}</Text> : null}
+      {action && onActionPress ? (
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={onActionPress}>
+          <Text style={styles.sectionAction}>{action}</Text>
+        </Pressable>
+      ) : action ? (
+        <Text style={styles.sectionAction}>{action}</Text>
+      ) : null}
     </View>
   );
 }

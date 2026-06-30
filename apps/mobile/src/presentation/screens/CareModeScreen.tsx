@@ -7,8 +7,6 @@ import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { SummaryCard } from "../ui/SummaryCard";
-import type { DraftDiaryEntry } from "../mockUiState";
-import { CareRecordPanel } from "./CareRecordPanel";
 import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
 import { CareSetupPanel } from "./CareSetupPanel";
 
@@ -21,7 +19,6 @@ export function CareModeScreen({
   onAddDose,
   onUpdateDose,
   onDeleteDose,
-  onSaveCareEntry,
   onGenerateReport,
   conditionScore,
   careSetup,
@@ -33,7 +30,6 @@ export function CareModeScreen({
   onAddDose: QuickMedicationSaveHandler;
   onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
   onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
-  onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
@@ -60,7 +56,6 @@ export function CareModeScreen({
           onAddDose={onAddDose}
           onUpdateDose={onUpdateDose}
           onDeleteDose={onDeleteDose}
-          onSaveCareEntry={onSaveCareEntry}
           onGenerateReport={onGenerateReport}
           conditionScore={conditionScore}
           careSetup={careSetup}
@@ -80,7 +75,6 @@ function CarePanel({
   onAddDose,
   onUpdateDose,
   onDeleteDose,
-  onSaveCareEntry,
   onGenerateReport,
   conditionScore,
   careSetup,
@@ -92,7 +86,6 @@ function CarePanel({
   onAddDose: QuickMedicationSaveHandler;
   onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
   onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
-  onSaveCareEntry: (entry: DraftDiaryEntry) => void;
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
@@ -131,7 +124,6 @@ function CarePanel({
         )}
       </SurfaceCard>
 
-      <CareRecordPanel onSave={onSaveCareEntry} />
       <SummaryCard />
       <PrimaryButton label={t("ko", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
     </>

@@ -773,6 +773,7 @@ export type Database = {
         | "stool"
         | "condition"
         | "memo"
+        | "photo"
       dose_status: "pending" | "completed" | "skipped" | "partial"
       pet_member_role: "owner" | "caregiver" | "pet_sitter"
       report_status: "draft" | "confirmed" | "shared"
@@ -911,6 +912,7 @@ export const Constants = {
         "stool",
         "condition",
         "memo",
+        "photo",
       ],
       dose_status: ["pending", "completed", "skipped", "partial"],
       pet_member_role: ["owner", "caregiver", "pet_sitter"],
