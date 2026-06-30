@@ -1,5 +1,5 @@
 import type { CareMedicationSchedule } from "../domain/carePlan";
-import { buildQuickDoseFromSchedule } from "./carePlanRecords";
+import { buildQuickDoseFromSchedule, mapCareSetupForTest, normalizeCareLocalTime } from "./carePlanRecords";
 
 const schedule: CareMedicationSchedule = {
   id: "schedule-1",
@@ -16,3 +16,70 @@ const status: "partial" = dose.status;
 
 void medicationName;
 void status;
+
+const condition = {
+  id: "condition-1",
+  pet_id: "pet-1",
+  name: "구토",
+  status: "active",
+  vet_instructions: null,
+  starts_on: "2026-06-30",
+  ends_on: null,
+  created_by: "user-1",
+  created_at: "2026-06-30T00:00:00.000Z",
+  updated_at: "2026-06-30T00:00:00.000Z",
+};
+
+const plan = {
+  id: "plan-1",
+  pet_id: "pet-1",
+  condition_id: "condition-1",
+  title: "위장 케어",
+  instructions: "식후 관찰",
+  starts_on: "2026-06-30",
+  ends_on: null,
+  created_by: "user-1",
+  created_at: "2026-06-30T00:00:00.000Z",
+  updated_at: "2026-06-30T00:00:00.000Z",
+};
+
+const medication = {
+  id: "medication-1",
+  pet_id: "pet-1",
+  condition_id: "condition-1",
+  name: "Cerenia",
+  dosage_label: "16mg 1정",
+  vet_instructions: null,
+  created_by: "user-1",
+  created_at: "2026-06-30T00:00:00.000Z",
+  updated_at: "2026-06-30T00:00:00.000Z",
+};
+
+const medicationSchedule = {
+  id: "schedule-1",
+  pet_id: "pet-1",
+  medication_id: "medication-1",
+  local_time: "08:00:00",
+  starts_on: "2026-06-30",
+  ends_on: null,
+  created_by: "user-1",
+  created_at: "2026-06-30T00:00:00.000Z",
+};
+
+const setup = mapCareSetupForTest([condition], [plan], [medication], [medicationSchedule]);
+
+if (setup.condition?.name !== "구토") throw new Error("care setup must expose active condition name");
+if (setup.condition?.status !== "active") throw new Error("care setup must expose active condition status");
+if (setup.plan?.title !== "위장 케어") throw new Error("care setup must expose active plan title");
+if (setup.schedules[0]?.medicationName !== "Cerenia") throw new Error("care setup schedules must include medication name");
+if (setup.schedules[0]?.localTime !== "08:00:00") throw new Error("care setup schedules must keep local medication time");
+
+const olderPlan = { ...plan, id: "plan-old", condition_id: "condition-old", title: "이전 케어" };
+const matchedSetup = mapCareSetupForTest([condition], [olderPlan, plan], [medication], [medicationSchedule]);
+if (matchedSetup.plan?.title !== "위장 케어") throw new Error("care setup must prefer the plan linked to the active condition");
+
+if (normalizeCareLocalTime("8:5") !== "08:05:00") throw new Error("care local time must normalize one-digit hour and minute");
+if (normalizeCareLocalTime("") !== "08:00:00") throw new Error("empty care local time must fall back to 08:00:00");
+if (normalizeCareLocalTime("ab:cd") !== "08:00:00") throw new Error("invalid care local time must fall back to 08:00:00");
+if (normalizeCareLocalTime("24:00") !== "08:00:00") throw new Error("out-of-range care local time must fall back to 08:00:00");
+if (normalizeCareLocalTime("9") !== "09:00:00") throw new Error("hour-only care local time must use zero minutes");

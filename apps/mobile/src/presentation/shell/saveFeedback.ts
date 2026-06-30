@@ -1,5 +1,5 @@
-import type { TranslationKey } from "../../i18n/translations";
 import type { AppIconName } from "../../design-system/iconography";
+import type { TranslationKey } from "../../i18n/translations";
 
 export type SaveFeedbackKind = "diary" | "careRecord" | "medication" | "medicationStatus" | "routine" | "careSetup" | "petProfile" | "checklist";
 export type SaveFeedbackTone = "success" | "settings";

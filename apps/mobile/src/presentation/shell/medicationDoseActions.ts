@@ -1,10 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
-import { Alert } from "react-native";
 import { shouldCountDoseAsMedicationRecorded, type UpdateMedicationDoseInput } from "../../contexts/medication/application/medicationDoseRecords";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { t } from "../../i18n/translations";
 import { updateLocalDoseRecord } from "../localMedicationState";
 import type { ChecklistKey } from "../mockUiState";
+import { confirmDestructiveAction } from "./confirmAction";
 import type { SaveFeedbackKind } from "./saveFeedback";
 
 type ChecklistState = Record<ChecklistKey, boolean>;
@@ -58,44 +58,29 @@ export function confirmAndDeleteMedicationDose({
   dose: DoseRecord;
   deleteMedicationDose: DeleteMedicationDoseMutation;
 }) {
-  return new Promise<boolean>((resolve) =>
-    Alert.alert(
-      t("ko", "care.quickDoseDeleteTitle"),
-      t("ko", "care.quickDoseDeleteCopy"),
-      [
-        { text: t("ko", "care.quickDoseDeleteCancel"), style: "cancel", onPress: () => resolve(false) },
-        {
-          text: t("ko", "care.quickDoseDeleteConfirm"),
-          style: "destructive",
-          onPress: async () => {
-            if (args.databaseMode) {
-              try {
-                await deleteMedicationDose.mutateAsync(dose.id);
-                args.setNotice(t("ko", "today.medicationDeletedRemote"));
-                args.showSaveFeedback("medication");
-                resolve(true);
-              } catch (error) {
-                args.setNotice(error instanceof Error ? error.message : t("ko", "care.quickDoseDeleteFailed"));
-                resolve(false);
-              }
-              return;
-            }
+  return confirmDestructiveAction({ title: t("ko", "care.quickDoseDeleteTitle"), message: t("ko", "care.quickDoseDeleteCopy"), cancelText: t("ko", "care.quickDoseDeleteCancel"), confirmText: t("ko", "care.quickDoseDeleteConfirm") }, async () => {
+    if (args.databaseMode) {
+      try {
+        await deleteMedicationDose.mutateAsync(dose.id);
+        args.setNotice(t("ko", "today.medicationDeletedRemote"));
+        args.showSaveFeedback("medication");
+        return true;
+      } catch (error) {
+        args.setNotice(error instanceof Error ? error.message : t("ko", "care.quickDoseDeleteFailed"));
+        return false;
+      }
+    }
 
-            let nextDoses: DoseRecord[] = [];
-            args.setDoses((current) => {
-              nextDoses = current.filter((item) => item.id !== dose.id);
-              return nextDoses;
-            });
-            args.setLocalChecklist((current) => ({ ...current, medication: hasRecordedMedication(nextDoses, args.activePetId) }));
-            args.setNotice(t("ko", "today.medicationDeleted"));
-            args.showSaveFeedback("medication");
-            resolve(true);
-          },
-        },
-      ],
-      { cancelable: true, onDismiss: () => resolve(false) },
-    ),
-  );
+    let nextDoses: DoseRecord[] = [];
+    args.setDoses((current) => {
+      nextDoses = current.filter((item) => item.id !== dose.id);
+      return nextDoses;
+    });
+    args.setLocalChecklist((current) => ({ ...current, medication: hasRecordedMedication(nextDoses, args.activePetId) }));
+    args.setNotice(t("ko", "today.medicationDeleted"));
+    args.showSaveFeedback("medication");
+    return true;
+  });
 }
 
 function hasRecordedMedication(doses: DoseRecord[], activePetId: string) {

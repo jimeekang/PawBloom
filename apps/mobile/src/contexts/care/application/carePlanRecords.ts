@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
-import type { ActiveCareSetup, CareDoseStatus, CareMedicationSchedule, CareSetupInput } from "../domain/carePlan";
+import type { ActiveCareSetup, CareConditionStatus, CareDoseStatus, CareMedicationSchedule, CareSetupInput } from "../domain/carePlan";
 
 type ConditionRow = Database["public"]["Tables"]["conditions"]["Row"];
 type CarePlanRow = Database["public"]["Tables"]["care_plans"]["Row"];
@@ -45,7 +45,7 @@ export function useCreateCareSetup(petId: string | null, userId: string | null) 
       if (input.medicationName.trim()) {
         const { data: medication, error } = await supabase.from("medications").insert({ pet_id: petId, created_by: userId, condition_id: condition?.id ?? null, name: input.medicationName.trim(), dosage_label: input.dosageLabel.trim() || "용량 확인 필요" }).select().single();
         if (error) throw new Error(error.message);
-        const { error: scheduleError } = await supabase.from("medication_schedules").insert({ pet_id: petId, created_by: userId, medication_id: medication.id, local_time: normalizeLocalTime(input.localTime) });
+        const { error: scheduleError } = await supabase.from("medication_schedules").insert({ pet_id: petId, created_by: userId, medication_id: medication.id, local_time: normalizeCareLocalTime(input.localTime) });
         if (scheduleError) throw new Error(scheduleError.message);
       }
       return true;
@@ -63,13 +63,21 @@ async function insertCondition(petId: string, userId: string, name: string) {
   return data;
 }
 
+export function mapCareSetupForTest(conditions: ConditionRow[], plans: CarePlanRow[], medications: MedicationRow[], schedules: ScheduleRow[]): ActiveCareSetup {
+  return mapCareSetup(conditions, plans, medications, schedules);
+}
+
 function mapCareSetup(conditions: ConditionRow[], plans: CarePlanRow[], medications: MedicationRow[], schedules: ScheduleRow[]): ActiveCareSetup {
   const conditionById = new Map(conditions.map((condition) => [condition.id, condition]));
   const medicationById = new Map(medications.map((medication) => [medication.id, medication]));
+  const condition = conditions[0];
+  const plan = plans.find((item) => item.condition_id === condition?.id) ?? plans[0];
   return {
-    conditionName: conditions[0]?.name,
-    planTitle: plans[0]?.title,
-    instructions: plans[0]?.instructions ?? undefined,
+    condition: condition ? { id: condition.id, name: condition.name, status: normalizeCareConditionStatus(condition.status), startsOn: condition.starts_on } : undefined,
+    plan: plan ? { id: plan.id, title: plan.title, instructions: plan.instructions ?? undefined, startsOn: plan.starts_on } : undefined,
+    conditionName: condition?.name,
+    planTitle: plan?.title,
+    instructions: plan?.instructions ?? undefined,
     schedules: schedules.flatMap((schedule) => {
       const medication = medicationById.get(schedule.medication_id);
       if (!medication) return [];
@@ -82,7 +90,16 @@ function emptyCareSetup(): ActiveCareSetup {
   return { schedules: [] };
 }
 
-function normalizeLocalTime(value: string) {
-  const [hour = "08", minute = "00"] = value.split(":");
-  return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:00`;
+function normalizeCareConditionStatus(value: string): CareConditionStatus {
+  if (value === "resolved" || value === "archived") return value;
+  return "active";
+}
+
+export function normalizeCareLocalTime(value: string) {
+  const [rawHour, rawMinute] = value.split(":");
+  if (!rawHour?.trim()) return "08:00:00";
+  const hour = Number(rawHour?.trim());
+  const minute = Number(rawMinute?.trim() || "0");
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return "08:00:00";
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
 }

@@ -2,6 +2,22 @@ import type { UUID } from "../../../shared-kernel/types";
 
 export type CareDoseStatus = "pending" | "completed" | "skipped" | "partial";
 
+export type CareConditionStatus = "active" | "resolved" | "archived";
+
+export type ActiveCareCondition = {
+  id: UUID;
+  name: string;
+  status: CareConditionStatus;
+  startsOn?: string;
+};
+
+export type ActiveCarePlanSummary = {
+  id: UUID;
+  title: string;
+  instructions?: string;
+  startsOn?: string;
+};
+
 export type CareMedicationSchedule = {
   id: UUID;
   medicationId: UUID;
@@ -12,6 +28,8 @@ export type CareMedicationSchedule = {
 };
 
 export type ActiveCareSetup = {
+  condition?: ActiveCareCondition;
+  plan?: ActiveCarePlanSummary;
   conditionName?: string;
   planTitle?: string;
   instructions?: string;

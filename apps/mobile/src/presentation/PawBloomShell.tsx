@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, SafeAreaView, ScrollView, View } from "react-native";
+import { SafeAreaView, ScrollView, View } from "react-native";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../contexts/medication/domain/medication";
 import { useAuth } from "../contexts/identity/application/authContext";
@@ -24,6 +24,7 @@ import type { DiaryFilter } from "./screens/DiaryCalendar";
 import { styles } from "./PawBloomShell.styles";
 import { createLocalDoseRecord, shouldMarkMedicationChecklist } from "./localMedicationState";
 import { getTodayEntriesForPet, updateLocalDiaryEntry } from "./localDiaryState";
+import { confirmDestructiveAction } from "./shell/confirmAction";
 import { confirmAndDeleteMedicationDose, saveMedicationDoseEdit } from "./shell/medicationDoseActions";
 
 type PawBloomShellProps = { activePet?: PetProfile | null; pets?: PetProfile[]; onPetNext?: () => void };
@@ -133,28 +134,21 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   }
 
   function deleteDiaryRecord(entry: DiaryEntry) {
-    return new Promise<boolean>((resolve) => Alert.alert(t("ko", "diary.deleteTitle"), t("ko", "diary.deleteCopy"), [
-      { text: t("ko", "diary.deleteCancel"), style: "cancel", onPress: () => resolve(false) },
-      {
-        text: t("ko", "diary.deleteConfirm"), style: "destructive",
-        onPress: async () => {
-          if (databaseMode) {
-            try {
-              await deleteDiaryEntry.mutateAsync(entry.id);
-              setNotice(t("ko", "today.diaryDeletedRemote")); showSaveFeedback("diary"); resolve(true);
-            } catch (error) {
-              setNotice(error instanceof Error ? error.message : t("ko", "diary.deleteFailed")); resolve(false);
-            }
-            return;
-          }
+    return confirmDestructiveAction({ title: t("ko", "diary.deleteTitle"), message: t("ko", "diary.deleteCopy"), cancelText: t("ko", "diary.deleteCancel"), confirmText: t("ko", "diary.deleteConfirm") }, async () => {
+      if (databaseMode) {
+        try {
+          await deleteDiaryEntry.mutateAsync(entry.id);
+          setNotice(t("ko", "today.diaryDeletedRemote")); showSaveFeedback("diary"); return true;
+        } catch (error) {
+          setNotice(error instanceof Error ? error.message : t("ko", "diary.deleteFailed")); return false;
+        }
+      }
 
-          const nextEntries = entries.filter((item) => item.id !== entry.id);
-          setEntries(nextEntries);
-          setLocalChecklist(createChecklistFromRecords(getTodayEntriesForPet(nextEntries, activePet.id), activeDoses));
-          setNotice(t("ko", "today.diaryDeleted")); showSaveFeedback("diary"); resolve(true);
-        },
-      },
-    ], { cancelable: true, onDismiss: () => resolve(false) }));
+      const nextEntries = entries.filter((item) => item.id !== entry.id);
+      setEntries(nextEntries);
+      setLocalChecklist(createChecklistFromRecords(getTodayEntriesForPet(nextEntries, activePet.id), activeDoses));
+      setNotice(t("ko", "today.diaryDeleted")); showSaveFeedback("diary"); return true;
+    });
   }
 
   function cycleDoseStatus(id: string) {

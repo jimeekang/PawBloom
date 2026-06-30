@@ -17,15 +17,17 @@
 - [ ] Mobile secret에는 publishable key만 사용한다. service role, OpenAI key, Supabase access token은 앱 코드와 git에 넣지 않는다.
 - [ ] 사용자 문구는 `apps/mobile/src/i18n/translations.ts`에 둔다.
 - [ ] 작업 단위마다 작은 검증을 먼저 실행하고, handoff 전에는 반드시 `npm run verify`를 실행한다.
-- [ ] 기능 단위가 끝나면 커밋하고 원격 브랜치 `data-migratin-login`에 push한다.
+- [ ] 기능 단위가 끝나면 커밋하고 원격 브랜치 `codex/routine-diary-care-defaults`에 push한다.
 
 ## 현재 기준 상태
 
-- Branch: `data-migratin-login`
-- Remote branch: `origin/data-migratin-login`
-- Latest completed commit: `f7b43da Bind today diary and care screens to Supabase`
+- Branch: `codex/routine-diary-care-defaults`
+- Remote branch: `origin/codex/routine-diary-care-defaults`
+- Latest completed commits:
+  - `4d1ce4a feat: edit diary care records and dashboard`
+  - `9edcf3d chore: add codex run environment checks`
 - Required verification: `npm run verify`
-- Expo dev URL: `http://localhost:8081/`
+- Expo dev URL: `http://localhost:8081/` or `http://localhost:3200/` depending on the active run command.
 
 ## Week 1: Auth, Pet, Today Data Binding 안정화
 
@@ -195,13 +197,13 @@
 **Files:**
 - Modify only if needed: `apps/mobile/src/**`
 
-- [ ] Expo dev 화면에서 로그인 상태를 확인한다.
-- [ ] 반려동물 생성, 선택, 수정이 정상 동작하는지 확인한다.
-- [ ] Today checklist 기록이 DB에 저장되고 reload 후 유지되는지 확인한다.
-- [ ] Diary 저장 후 Today timeline과 Diary 목록에 반영되는지 확인한다.
-- [ ] Care quick dose 추가와 상태 변경이 DB에 저장되는지 확인한다.
+- [x] Expo dev 화면에서 로그인 상태를 확인한다.
+- [x] 반려동물 생성, 선택, 수정이 정상 동작하는지 확인한다.
+- [x] Today checklist 기록이 DB에 저장되고 reload 후 유지되는지 확인한다.
+- [x] Diary 저장 후 Today timeline과 Diary 목록에 반영되는지 확인한다.
+- [x] Care quick dose 추가와 상태 변경이 DB에 저장되는지 확인한다.
 - [x] Reports draft가 실제 기록 기반으로 표시되는지 확인한다.
-- [ ] 발견한 오류를 먼저 수정한다.
+- [x] 발견한 오류를 먼저 수정한다.
 - [x] `npm run verify`를 실행한다.
 - [ ] `test: complete week 1 smoke fixes` 커밋을 만든다.
 
@@ -212,11 +214,11 @@
 - Modify if needed: `scripts/verify-supabase.mjs`
 - Modify if needed: `scripts/verify-secrets.mjs`
 
-- [ ] public table 전체에 RLS와 explicit GRANT가 유지되는지 확인한다.
-- [ ] pet membership 기준 조회/insert/update 권한이 의도대로 동작하는지 확인한다.
-- [ ] 앱 bundle에 service role, OpenAI key, Supabase access token이 들어가지 않는지 확인한다.
-- [ ] Supabase smoke test를 publishable key 기준으로 다시 실행한다.
-- [ ] `npm run verify`를 실행한다.
+- [x] public table 전체에 RLS와 explicit GRANT가 유지되는지 확인한다.
+- [x] pet membership 기준 조회/insert/update 권한이 의도대로 동작하는지 확인한다.
+- [x] 앱 bundle에 service role, OpenAI key, Supabase access token이 들어가지 않는지 확인한다.
+- [x] Supabase smoke test를 publishable key 기준으로 다시 실행한다.
+- [x] `npm run verify`를 실행한다.
 - [ ] 필요한 수정이 있으면 `chore: harden week 1 auth data checks` 커밋을 만든다.
 
 ## Week 2: Care Plan, Medication Schedule, Walk, Offline
