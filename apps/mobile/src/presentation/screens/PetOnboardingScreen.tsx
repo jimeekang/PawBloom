@@ -13,6 +13,7 @@ import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain
 import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
 import { RoutineSettingsPanel } from "./RoutineSettingsPanel";
 import { ProfileCareDefaultsPanel } from "./ProfileCareDefaultsPanel";
+import { DatePickerField } from "../ui/DatePickerField";
 import { styles } from "./PetOnboardingScreen.styles";
 
 const speciesOptions = ["dog", "cat", "other"] as const;
@@ -183,14 +184,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
 
           <TextInput style={styles.input} value={editName} onChangeText={setEditName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
           <TextInput style={styles.input} value={editBreed} onChangeText={setEditBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-          <TextInput
-            style={styles.input}
-            value={editBirthdate}
-            onChangeText={setEditBirthdate}
-            placeholder={t("ko", "pet.birthdatePlaceholder")}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numbers-and-punctuation"
-          />
+          <DatePickerField value={editBirthdate} onChange={setEditBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
           <TextInput
             style={styles.input}
             value={editWeightKg}
@@ -224,14 +218,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
 
           <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
           <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-          <TextInput
-            style={styles.input}
-            value={birthdate}
-            onChangeText={setBirthdate}
-            placeholder={t("ko", "pet.birthdatePlaceholder")}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numbers-and-punctuation"
-          />
+          <DatePickerField value={birthdate} onChange={setBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
           <TextInput
             style={styles.input}
             value={weightKg}

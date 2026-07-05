@@ -46,7 +46,8 @@ export type CareSetupInput = {
   planTitle: string;
   medicationName: string;
   dosageLabel: string;
-  localTime: string;
+  localTime?: string;
+  localTimes?: string[];
   startsOn?: string;
   endsOn?: string;
   recurrenceIntervalDays?: number;

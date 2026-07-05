@@ -34,9 +34,6 @@ export function HomeHeader({ petName, onPetPress, onManagePets, canSwitchPet }: 
           <AppIcon name="bell" size={iconSize.lg} color={colors.text} />
           <View style={styles.notificationDot} />
         </View>
-        <Pressable onPress={onManagePets} style={styles.headerIconTouch}>
-          <AppIcon name="menu" size={iconSize.lg} color={colors.text} />
-        </Pressable>
       </View>
     </View>
   );
@@ -57,7 +54,7 @@ export function PetSettingsHeader({ onBack }: DiaryHeaderProps) {
     <View style={styles.header}>
       <AppIconButton iconName="back" onPress={onBack} />
       <Text style={styles.screenTitle}>{t("ko", "pet.manageTitle")}</Text>
-      <AppIcon name="settings" size={iconSize.lg} color={colors.text} />
+      <AppIcon name="pet" size={iconSize.lg} color={colors.text} />
     </View>
   );
 }
@@ -71,21 +68,31 @@ export function CareHeader() {
         </View>
         <Text style={styles.screenTitle}>{t("ko", "care.eyebrow")}</Text>
       </View>
-      <AppIcon name="settings" size={iconSize.lg} color={colors.text} />
+      <View style={styles.headerSpacer} />
     </View>
   );
 }
 
-export function ReportsHeader({ onSignOut }: ReportsHeaderProps) {
+export function ReportsHeader() {
   return (
     <View style={styles.header}>
       <View style={styles.careTitleRow}>
         <AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} />
         <Text style={styles.screenTitle}>{t("ko", "tabs.reports")}</Text>
       </View>
-      <Pressable onPress={onSignOut}>
-        <Text style={styles.signOutText}>{t("ko", "auth.signOut")}</Text>
-      </Pressable>
+      <View style={styles.headerSpacer} />
+    </View>
+  );
+}
+
+export function SettingsHeader() {
+  return (
+    <View style={styles.header}>
+      <View style={styles.careTitleRow}>
+        <AppIcon name="settings" size={iconSize.lg} color={colors.orangeDeep} />
+        <Text style={styles.screenTitle}>{t("ko", "tabs.settings")}</Text>
+      </View>
+      <View style={styles.headerSpacer} />
     </View>
   );
 }
@@ -179,5 +186,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     justifyContent: "center",
+  },
+  headerSpacer: {
+    width: 44,
+    height: 44,
   },
 });

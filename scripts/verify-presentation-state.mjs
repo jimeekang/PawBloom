@@ -75,6 +75,25 @@ if (/\n\s*row:\s*{\s*flexDirection:\s*"row"/s.test(careSetupPanel) || /\n\s*time
   throw new Error("care setup medication and time fields must remain stacked to avoid narrow mobile clipping");
 }
 
+const profileCareDefaultsPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/ProfileCareDefaultsPanel.tsx"), "utf8");
+if (!profileCareDefaultsPanel.includes("DatePickerField")) {
+  throw new Error("profile care treatment period must use native date picker controls");
+}
+
+if (profileCareDefaultsPanel.includes('placeholder="YYYY-MM-DD"') || profileCareDefaultsPanel.includes("pet.careDefaultsEveryTwoDays")) {
+  throw new Error("profile care period and recurrence must not use manual date text fields or fixed 2-day recurrence");
+}
+
+const bottomNav = readFileSync(join(root, "apps/mobile/src/presentation/ui/BottomNav.tsx"), "utf8");
+if (!bottomNav.includes('"settings"') || !bottomNav.includes('"tabs.settings"')) {
+  throw new Error("settings must be a bottom navigation tab beside reports");
+}
+
+const shellHeaders = readFileSync(join(root, "apps/mobile/src/presentation/shell/ShellHeaders.tsx"), "utf8");
+if (shellHeaders.includes('name="menu"') || shellHeaders.includes('name="settings" size={iconSize.lg} color={colors.text}')) {
+  throw new Error("settings entry must not remain as a right-side header icon");
+}
+
 const { t } = require(join(root, "apps/mobile/src/i18n/translations.ts"));
 const careEyebrowKo = t("ko", "care.eyebrow");
 const careEyebrowEn = t("en", "care.eyebrow");

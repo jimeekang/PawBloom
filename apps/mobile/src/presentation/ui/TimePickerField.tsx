@@ -1,4 +1,4 @@
-import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import DateTimePicker, { type DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "../../design-system/iconography";
@@ -14,9 +14,8 @@ export function TimePickerField({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const selectedDate = parseTimeValue(value);
 
-  function handleChange(event: DateTimePickerEvent, date?: Date) {
+  function handleValueChange(_event: DateTimePickerChangeEvent, date: Date) {
     if (Platform.OS !== "ios") setOpen(false);
-    if (event.type === "dismissed" || !date) return;
     onChange(formatTimeValue(date));
   }
 
@@ -24,7 +23,7 @@ export function TimePickerField({ value, onChange }: Props) {
     return (
       <View style={styles.iosWrap}>
         <AppIcon name="time" size={iconSize.md} color={colors.orangeDeep} />
-        <DateTimePicker value={selectedDate} mode="time" display="compact" onChange={handleChange} />
+        <DateTimePicker value={selectedDate} mode="time" display="compact" onValueChange={handleValueChange} />
       </View>
     );
   }
@@ -35,7 +34,7 @@ export function TimePickerField({ value, onChange }: Props) {
         <AppIcon name="time" size={iconSize.md} color={colors.orangeDeep} />
         <Text style={styles.value}>{value}</Text>
       </Pressable>
-      {open ? <DateTimePicker value={selectedDate} mode="time" display="default" onChange={handleChange} /> : null}
+      {open ? <DateTimePicker value={selectedDate} mode="time" display="default" onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
     </View>
   );
 }

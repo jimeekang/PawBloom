@@ -45,7 +45,8 @@ export function useCreateCareSetup(petId: string | null, userId: string | null) 
       if (input.medicationName.trim()) {
         const { data: medication, error } = await supabase.from("medications").insert({ pet_id: petId, created_by: userId, condition_id: condition?.id ?? null, name: input.medicationName.trim(), dosage_label: input.dosageLabel.trim() || "용량 확인 필요" }).select().single();
         if (error) throw new Error(error.message);
-        const { error: scheduleError } = await supabase.from("medication_schedules").insert({ pet_id: petId, created_by: userId, medication_id: medication.id, local_time: normalizeCareLocalTime(input.localTime), starts_on: input.startsOn || currentDateKey(), ends_on: input.endsOn?.trim() || null, recurrence_interval_days: normalizeRecurrenceInterval(input.recurrenceIntervalDays) });
+        const localTimes = input.localTimes?.length ? input.localTimes : [input.localTime || "08:00"];
+        const { error: scheduleError } = await supabase.from("medication_schedules").insert(localTimes.map((localTime) => ({ pet_id: petId, created_by: userId, medication_id: medication.id, local_time: normalizeCareLocalTime(localTime), starts_on: input.startsOn || currentDateKey(), ends_on: input.endsOn?.trim() || null, recurrence_interval_days: normalizeRecurrenceInterval(input.recurrenceIntervalDays) })));
         if (scheduleError) throw new Error(scheduleError.message);
       }
       return true;
