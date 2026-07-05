@@ -32,6 +32,8 @@ const tests = [
   "apps/mobile/src/contexts/medication/application/medicationScheduleRecords.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationDoseRecords.scheduleGuard.test.ts",
   "apps/mobile/src/contexts/sync/application/offlineMutationPayload.test.ts",
+  "apps/mobile/src/contexts/sync/application/offlineReplayPolicy.test.ts",
+  "apps/mobile/src/contexts/sync/application/offlineReplayQueue.test.ts",
   "apps/mobile/src/presentation/liveUiState.dashboard.test.ts",
   "apps/mobile/src/presentation/screens/HomeDashboardPanel.logic.test.ts",
   "apps/mobile/src/presentation/screens/todayMedicationAgenda.test.ts",
@@ -46,7 +48,8 @@ const tests = [
 ];
 
 for (const test of tests) {
-  require(join(root, test));
+  const loaded = require(join(root, test));
+  if (loaded.default && typeof loaded.default.then === "function") await loaded.default;
 }
 
 const homeScreen = readFileSync(join(root, "apps/mobile/src/presentation/screens/HomeScreen.tsx"), "utf8");
