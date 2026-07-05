@@ -1,4 +1,15 @@
-import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
+import type { DiaryCategory, DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
+
+const structuredDailyCategories = new Set<DiaryCategory>(["food", "water", "walk", "stool", "condition"]);
+
+export function isStructuredDailyDiaryCategory(category: DiaryCategory) {
+  return structuredDailyCategories.has(category);
+}
+
+export function findEditableDailyStructuredEntry(entries: DiaryEntry[], category: DiaryCategory, dateKey: string) {
+  if (!isStructuredDailyDiaryCategory(category)) return undefined;
+  return entries.find((entry) => entry.category === category && entry.entryDate === dateKey);
+}
 
 export function isDiaryDetailPanelOpenAfterSave(_wasOpen: boolean) {
   return false;

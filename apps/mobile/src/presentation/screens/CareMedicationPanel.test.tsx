@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { updateLocalDoseRecord } from "../localMedicationState";
 import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
-import { createEmptyQuickMedicationState, createQuickMedicationEditState, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete } from "./careMedicationPanelState";
+import { careStatusActionLabel, createEmptyQuickMedicationState, createQuickMedicationEditState, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete, shouldShowTemporaryMedicationForm } from "./careMedicationPanelState";
 
 const asyncSave: QuickMedicationSaveHandler = async (input) => {
   const medicationName: string = input.medicationName;
@@ -62,6 +62,11 @@ if (shouldCloseMedicationEditAfterDelete(false)) throw new Error("failed or canc
 if (!shouldCloseMedicationEditAfterDelete(true) || !shouldCloseMedicationEditAfterDelete(undefined)) throw new Error("successful medication delete must exit edit mode");
 if (quickDoseSavedNoticeKey("skipped") !== "care.quickDoseSaved.skipped") throw new Error("dose status notice must preserve skipped copy");
 if (createEmptyQuickMedicationState().status !== "completed") throw new Error("quick add form must keep completed as the default status");
+if (careStatusActionLabel("completed") !== "먹였어요") throw new Error("completed action must use caregiver wording");
+if (careStatusActionLabel("skipped") !== "못 먹였어요") throw new Error("skipped action must use caregiver wording");
+if (shouldShowTemporaryMedicationForm(false) !== false || shouldShowTemporaryMedicationForm(true) !== true) {
+  throw new Error("temporary medication form visibility must be explicit");
+}
 
 const rowProps: ComponentProps<typeof MedicationRow> = {
   dose: editingDose,

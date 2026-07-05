@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          dose_date: string
           id: string
           payload: Json
           pet_id: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          dose_date?: string
           id?: string
           payload: Json
           pet_id: string
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          dose_date?: string
           id?: string
           payload?: Json
           pet_id?: string
@@ -196,6 +199,7 @@ export type Database = {
           id: string
           occurred_at: string
           pet_id: string
+          record_origin: "diary" | "checklist"
           summary: string
           updated_at: string
         }
@@ -209,6 +213,7 @@ export type Database = {
           id?: string
           occurred_at?: string
           pet_id: string
+          record_origin?: "diary" | "checklist"
           summary: string
           updated_at?: string
         }
@@ -222,6 +227,7 @@ export type Database = {
           id?: string
           occurred_at?: string
           pet_id?: string
+          record_origin?: "diary" | "checklist"
           summary?: string
           updated_at?: string
         }
@@ -323,6 +329,7 @@ export type Database = {
           client_mutation_id: string | null
           created_at: string
           created_by: string
+          dose_date: string
           id: string
           medication_name: string
           pet_id: string
@@ -337,6 +344,7 @@ export type Database = {
           client_mutation_id?: string | null
           created_at?: string
           created_by: string
+          dose_date?: string
           id?: string
           medication_name: string
           pet_id: string
@@ -351,6 +359,7 @@ export type Database = {
           client_mutation_id?: string | null
           created_at?: string
           created_by?: string
+          dose_date?: string
           id?: string
           medication_name?: string
           pet_id?: string
@@ -387,6 +396,7 @@ export type Database = {
           local_time: string
           medication_id: string
           pet_id: string
+          recurrence_interval_days: number
           starts_on: string
         }
         Insert: {
@@ -397,6 +407,7 @@ export type Database = {
           local_time: string
           medication_id: string
           pet_id: string
+          recurrence_interval_days?: number
           starts_on?: string
         }
         Update: {
@@ -407,6 +418,7 @@ export type Database = {
           local_time?: string
           medication_id?: string
           pet_id?: string
+          recurrence_interval_days?: number
           starts_on?: string
         }
         Relationships: [

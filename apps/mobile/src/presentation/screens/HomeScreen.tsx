@@ -1,6 +1,7 @@
 import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
+import type { TodayMedicationAgendaRow } from "./todayMedicationAgenda";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
@@ -19,6 +20,7 @@ type Props = {
   checklist: Record<ChecklistKey, boolean>;
   entries: DiaryEntry[];
   doses: DoseRecord[];
+  medicationAgenda?: TodayMedicationAgendaRow[];
   walkEnabled: boolean;
   includeMedication?: boolean;
   showMedicationSummary?: boolean;
@@ -28,12 +30,12 @@ type Props = {
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, checklist, entries, doses, walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const timeline = entries.slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
   const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
-  const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder);
+  const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder, medicationAgenda);
 
   return (
     <View>
@@ -131,8 +133,8 @@ const styles = StyleSheet.create({
   },
   heroImage: { borderRadius: radius.xl },
   heroOverlay: { flex: 1, justifyContent: "flex-end", padding: spacing.xxl, backgroundColor: colors.heroScrim },
-  heroName: { ...type.heroTitle },
-  heroMeta: { ...type.sectionTitle, color: colors.white, marginTop: spacing.xs },
+  heroName: { ...type.heroTitle, textShadowColor: "rgba(0, 0, 0, 0.32)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+  heroMeta: { ...type.sectionTitle, color: colors.white, marginTop: spacing.xs, textShadowColor: "rgba(0, 0, 0, 0.28)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },
   heroInfo: { marginTop: spacing.md, gap: spacing.md },
   heroSummary: { flexDirection: "row", gap: spacing.sm },
   heroSummaryItem: { flex: 1, minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, justifyContent: "center" },

@@ -13,7 +13,7 @@ import type { DraftDiaryEntry } from "../mockUiState";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
 import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
 import { DiaryEntryList } from "./DiaryEntryList";
-import { formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 import { styles } from "./DiaryEntryScreen.styles";
 import { DiaryPhotoPicker } from "./DiaryPhotoPicker";
@@ -90,6 +90,7 @@ export function DiaryEntryScreen({
       detail: getDiaryDetailForSave(selected, activeDetail),
       entryDate: getDiaryEntryDateForSave(selectedDateKey, editingEntry),
       occurredAt: saveTime,
+      origin: "diary" as const,
       conditionScore: selected === "condition" ? conditionScore : undefined,
       photos: getDiaryPhotosForSave(selected, photos, Boolean(editingEntry)),
     };
@@ -100,8 +101,14 @@ export function DiaryEntryScreen({
         setEditingEntry(null);
         setNotice(t("ko", "diary.updatedForDate"));
       } else {
-        await onSave(draft);
-        setNotice(t("ko", "diary.savedForDate"));
+        const existingDailyEntry = findEditableDailyStructuredEntry(entries, selected, draft.entryDate ?? selectedDateKey);
+        if (existingDailyEntry) {
+          await onUpdate({ id: existingDailyEntry.id, ...draft, occurredTime: saveTime });
+          setNotice(t("ko", "diary.updatedForDate"));
+        } else {
+          await onSave(draft);
+          setNotice(t("ko", "diary.savedForDate"));
+        }
       }
     } catch { setNotice(t("ko", editingEntry ? "diary.updateFailed" : "diary.saveFailed")); return; }
 

@@ -9,8 +9,10 @@ import { useAuth } from "../../contexts/identity/application/authContext";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
 import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
+import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain/carePlan";
 import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
 import { RoutineSettingsPanel } from "./RoutineSettingsPanel";
+import { ProfileCareDefaultsPanel } from "./ProfileCareDefaultsPanel";
 import { styles } from "./PetOnboardingScreen.styles";
 
 const speciesOptions = ["dog", "cat", "other"] as const;
@@ -20,7 +22,7 @@ const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
   other: "기타",
 };
 
-export function PetOnboardingScreen({ routine, onSaveRoutine, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void; onProfileSaved?: () => void } = {}) {
+export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => void; onProfileSaved?: () => void } = {}) {
   const { pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
 
   const [name, setName] = useState("");
@@ -207,6 +209,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, onProfileSaved }: 
       ) : null}
 
       {activePet && !showCreateForm && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
+      {activePet && !showCreateForm && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel setup={careSetup} onSave={onSaveCareSetup} /> : null}
 
       {showCreateForm ? (
         <View style={styles.card}>

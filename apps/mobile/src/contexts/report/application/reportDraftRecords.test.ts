@@ -7,6 +7,7 @@ const entries: DiaryEntry[] = [
     id: "entry-old-condition",
     petId: "pet-1",
     category: "condition",
+    origin: "diary",
     entryDate: "2026-06-22",
     occurredAt: "09:00",
     summary: "Low energy",
@@ -16,6 +17,7 @@ const entries: DiaryEntry[] = [
     id: "entry-latest-condition",
     petId: "pet-1",
     category: "condition",
+    origin: "diary",
     entryDate: "2026-06-28",
     occurredAt: "09:00",
     summary: "More alert",
@@ -63,6 +65,8 @@ const range = getLast7DayReportRange(new Date(2026, 5, 28));
 const hasRecords: boolean = summary.hasRecords;
 const diaryCount: number = summary.diaryCount;
 const attentionCount: number = summary.medicationAttentionCount;
+const completedCount: number = summary.medicationCompletedCount;
+const pendingCount: number = summary.medicationPendingCount;
 const trend: ReportDraftSummary["conditionTrend"]["direction"] = summary.conditionTrend.direction;
 const fromDateKey: string = range.fromDateKey;
 const toDateKey: string = range.toDateKey;
@@ -71,9 +75,44 @@ if (summary.medicationAttentionCount !== 2) {
   throw new Error("Medication attention count should include only partial and skipped doses.");
 }
 
+if (summary.medicationCompletedCount !== 1 || summary.medicationPendingCount !== 1) {
+  throw new Error("Medication adherence counts should separate completed and pending records.");
+}
+
+if (!summary.timelineHighlights.some((highlight) => highlight.includes("Condition: More alert"))) {
+  throw new Error("Timeline highlights should include recent diary records.");
+}
+
+if (!summary.timelineHighlights.some((highlight) => highlight.includes("partial dose recorded"))) {
+  throw new Error("Timeline highlights should include medication status records.");
+}
+
+if (!summary.missingRecords.includes("No food or appetite diary record was logged.")) {
+  throw new Error("Missing record prompts should call out absent report inputs.");
+}
+
+if (!summary.vetQuestions.some((question) => question.includes("partial or skipped medication records"))) {
+  throw new Error("Vet questions should include medication attention prompts.");
+}
+
+if (!summary.englishPreview.includes("not a diagnosis")) {
+  throw new Error("English preview must keep the non-diagnosis safety wording.");
+}
+
+if (!summary.englishPreview.includes("score increased from 2 to 4")) {
+  throw new Error("English preview should describe condition score movement, not medical improvement.");
+}
+
+const emptySummary = createReportDraftSummary([], []);
+if (!emptySummary.missingRecords.includes("No diary records were logged in this range.")) {
+  throw new Error("Empty reports should explain missing diary records.");
+}
+
 void hasRecords;
 void diaryCount;
 void attentionCount;
+void completedCount;
+void pendingCount;
 void trend;
 void fromDateKey;
 void toDateKey;

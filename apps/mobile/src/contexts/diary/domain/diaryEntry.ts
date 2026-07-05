@@ -1,6 +1,7 @@
 import type { UUID } from "../../../shared-kernel/types";
 
 export type DiaryCategory = "food" | "water" | "walk" | "stool" | "condition" | "memo" | "photo";
+export type DiaryRecordOrigin = "diary" | "checklist";
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
 export type AppetiteLevel = "good" | "normal" | "low" | "refused";
 export type RelativeLevel = "less" | "normal" | "more";
@@ -19,6 +20,7 @@ export type DiaryEntry = {
   id: UUID;
   petId: UUID;
   category: DiaryCategory;
+  origin: DiaryRecordOrigin;
   entryDate: string;
   occurredAt: string;
   summary: string;
@@ -34,6 +36,7 @@ export type CreateDiaryEntryInput = {
   detail?: DiaryDetailInput;
   entryDate?: string;
   occurredTime?: string;
+  origin?: DiaryRecordOrigin;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photos?: DiaryPhotoInput[];
 };

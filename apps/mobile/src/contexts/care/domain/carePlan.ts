@@ -23,11 +23,16 @@ export type CareMedicationSchedule = {
   medicationId: UUID;
   medicationName: string;
   dosageLabel: string;
+  conditionId?: UUID;
   conditionName?: string;
   localTime: string;
+  startsOn: string;
+  endsOn?: string;
+  recurrenceIntervalDays: number;
 };
 
 export type ActiveCareSetup = {
+  conditions: ActiveCareCondition[];
   condition?: ActiveCareCondition;
   plan?: ActiveCarePlanSummary;
   conditionName?: string;
@@ -42,5 +47,8 @@ export type CareSetupInput = {
   medicationName: string;
   dosageLabel: string;
   localTime: string;
+  startsOn?: string;
+  endsOn?: string;
+  recurrenceIntervalDays?: number;
   instructions?: string;
 };

@@ -40,10 +40,22 @@ if (!safetyText.includes("record-based summary") || !safetyText.includes("진단
   failures.push("AI safety doc must contain English and Korean required disclaimer copy.");
 }
 
+const requiredEnglishDisclaimer = "This is a record-based summary, not a diagnosis. Contact a veterinarian for medical decisions.";
+const requiredKoreanDisclaimer = "이 내용은 진단이 아니라 기록 기반 요약입니다. 의학적 판단은 수의사에게 문의하세요.";
+const translationsText = readFileSync(join(root, "apps/mobile/src/i18n/translations.ts"), "utf8");
+const sampleDataText = readFileSync(join(root, "apps/mobile/src/presentation/sampleData.ts"), "utf8");
+
+if (!translationsText.includes(requiredEnglishDisclaimer) || !translationsText.includes(requiredKoreanDisclaimer)) {
+  failures.push("App translations must keep the exact English and Korean report disclaimer copy.");
+}
+
+if (!sampleDataText.includes(requiredKoreanDisclaimer)) {
+  failures.push("Sample report data must use the exact Korean report disclaimer copy.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
 
 console.log("AI safety verification passed.");
-

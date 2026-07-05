@@ -5,6 +5,8 @@ export type DoseStatus = "pending" | "completed" | "skipped" | "partial";
 export type DoseRecord = {
   id: UUID;
   petId: UUID;
+  scheduleId?: UUID;
+  doseDate?: string;
   medicationName: string;
   conditionName?: string;
   dosageLabel?: string;

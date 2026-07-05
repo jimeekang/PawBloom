@@ -13,7 +13,7 @@ export const carePlanKeys = {
 };
 
 export function buildQuickDoseFromSchedule<TStatus extends CareDoseStatus = "pending">(schedule: CareMedicationSchedule, status: TStatus = "pending" as TStatus) {
-  return { conditionName: schedule.conditionName, medicationName: schedule.medicationName, dosageLabel: schedule.dosageLabel, administeredAmount: "", reactionNote: "", status };
+  return { scheduleId: schedule.id, conditionName: schedule.conditionName, medicationName: schedule.medicationName, dosageLabel: schedule.dosageLabel, administeredAmount: "", reactionNote: "", status };
 }
 
 export function useActiveCareSetup(petId: string | null) {
@@ -26,7 +26,7 @@ export function useActiveCareSetup(petId: string | null) {
         supabase.from("conditions").select("id,pet_id,name,status,vet_instructions,starts_on,ends_on,created_by,created_at,updated_at").eq("pet_id", petId).eq("status", "active").order("created_at", { ascending: false }),
         supabase.from("care_plans").select("id,pet_id,condition_id,title,instructions,starts_on,ends_on,created_by,created_at,updated_at").eq("pet_id", petId).order("created_at", { ascending: false }),
         supabase.from("medications").select("id,pet_id,condition_id,name,dosage_label,vet_instructions,created_by,created_at,updated_at").eq("pet_id", petId).order("created_at", { ascending: false }),
-        supabase.from("medication_schedules").select("id,pet_id,medication_id,local_time,starts_on,ends_on,created_by,created_at").eq("pet_id", petId).order("local_time", { ascending: true }),
+        supabase.from("medication_schedules").select("id,pet_id,medication_id,local_time,starts_on,ends_on,recurrence_interval_days,created_by,created_at").eq("pet_id", petId).order("local_time", { ascending: true }),
       ]);
       const error = conditions.error ?? plans.error ?? medications.error ?? schedules.error;
       if (error) throw new Error(error.message);
@@ -45,7 +45,7 @@ export function useCreateCareSetup(petId: string | null, userId: string | null) 
       if (input.medicationName.trim()) {
         const { data: medication, error } = await supabase.from("medications").insert({ pet_id: petId, created_by: userId, condition_id: condition?.id ?? null, name: input.medicationName.trim(), dosage_label: input.dosageLabel.trim() || "용량 확인 필요" }).select().single();
         if (error) throw new Error(error.message);
-        const { error: scheduleError } = await supabase.from("medication_schedules").insert({ pet_id: petId, created_by: userId, medication_id: medication.id, local_time: normalizeCareLocalTime(input.localTime) });
+        const { error: scheduleError } = await supabase.from("medication_schedules").insert({ pet_id: petId, created_by: userId, medication_id: medication.id, local_time: normalizeCareLocalTime(input.localTime), starts_on: input.startsOn || currentDateKey(), ends_on: input.endsOn?.trim() || null, recurrence_interval_days: normalizeRecurrenceInterval(input.recurrenceIntervalDays) });
         if (scheduleError) throw new Error(scheduleError.message);
       }
       return true;
@@ -70,24 +70,27 @@ export function mapCareSetupForTest(conditions: ConditionRow[], plans: CarePlanR
 function mapCareSetup(conditions: ConditionRow[], plans: CarePlanRow[], medications: MedicationRow[], schedules: ScheduleRow[]): ActiveCareSetup {
   const conditionById = new Map(conditions.map((condition) => [condition.id, condition]));
   const medicationById = new Map(medications.map((medication) => [medication.id, medication]));
+  const activeConditions = conditions.map((item) => ({ id: item.id, name: item.name, status: normalizeCareConditionStatus(item.status), startsOn: item.starts_on }));
   const condition = conditions[0];
   const plan = plans.find((item) => item.condition_id === condition?.id) ?? plans[0];
   return {
-    condition: condition ? { id: condition.id, name: condition.name, status: normalizeCareConditionStatus(condition.status), startsOn: condition.starts_on } : undefined,
+    conditions: activeConditions,
+    condition: activeConditions[0],
     plan: plan ? { id: plan.id, title: plan.title, instructions: plan.instructions ?? undefined, startsOn: plan.starts_on } : undefined,
-    conditionName: condition?.name,
+    conditionName: activeConditions[0]?.name,
     planTitle: plan?.title,
     instructions: plan?.instructions ?? undefined,
     schedules: schedules.flatMap((schedule) => {
       const medication = medicationById.get(schedule.medication_id);
       if (!medication) return [];
-      return [{ id: schedule.id, medicationId: medication.id, medicationName: medication.name, dosageLabel: medication.dosage_label, conditionName: medication.condition_id ? conditionById.get(medication.condition_id)?.name : undefined, localTime: schedule.local_time }];
+      const linkedCondition = medication.condition_id ? conditionById.get(medication.condition_id) : undefined;
+      return [{ id: schedule.id, medicationId: medication.id, medicationName: medication.name, dosageLabel: medication.dosage_label, conditionId: medication.condition_id ?? undefined, conditionName: linkedCondition?.name, localTime: schedule.local_time, startsOn: schedule.starts_on, endsOn: schedule.ends_on ?? undefined, recurrenceIntervalDays: schedule.recurrence_interval_days ?? 1 }];
     }),
   };
 }
 
 function emptyCareSetup(): ActiveCareSetup {
-  return { schedules: [] };
+  return { conditions: [], schedules: [] };
 }
 
 function normalizeCareConditionStatus(value: string): CareConditionStatus {
@@ -102,4 +105,14 @@ export function normalizeCareLocalTime(value: string) {
   const minute = Number(rawMinute?.trim() || "0");
   if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return "08:00:00";
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+}
+
+function normalizeRecurrenceInterval(value: number | undefined) {
+  if (!Number.isFinite(value) || !value) return 1;
+  return Math.max(1, Math.floor(value));
+}
+
+function currentDateKey() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

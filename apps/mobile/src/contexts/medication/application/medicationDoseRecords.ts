@@ -2,10 +2,12 @@ import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient 
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
+import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
+export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote } from "./medicationDosePayload";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
 type DoseInsert = Database["public"]["Tables"]["medication_doses"]["Insert"];
 type DoseUpdate = Database["public"]["Tables"]["medication_doses"]["Update"];
-export type QuickMedicationDoseInput = { conditionName?: string; medicationName: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string; status?: DoseStatus };
+export type QuickMedicationDoseInput = { scheduleId?: string; doseDate?: string; scheduledTime?: string; conditionName?: string; medicationName: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string; status?: DoseStatus };
 export type UpdateMedicationDoseInput = QuickMedicationDoseInput & { id: string; scheduledTime?: string };
 type MedicationDoseCareNote = { version: 1; conditionName?: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string };
 export const medicationDoseKeys = {
@@ -14,7 +16,7 @@ export const medicationDoseKeys = {
 };
 export function mapDoseRow(row: DoseRow): DoseRecord {
   const careNote = decodeMedicationDoseCareNote(row.reaction_note);
-  return { id: row.id, petId: row.pet_id, medicationName: row.medication_name, conditionName: careNote.conditionName, dosageLabel: careNote.dosageLabel, administeredAmount: careNote.administeredAmount, scheduledAt: formatTime(row.scheduled_at), status: row.status, recordedAt: row.recorded_at ?? undefined, reactionNote: careNote.reactionNote };
+  return { id: row.id, petId: row.pet_id, scheduleId: row.schedule_id ?? undefined, doseDate: row.dose_date ?? undefined, medicationName: row.medication_name, conditionName: careNote.conditionName, dosageLabel: careNote.dosageLabel, administeredAmount: careNote.administeredAmount, scheduledAt: formatTime(row.scheduled_at), status: row.status, recordedAt: row.recorded_at ?? undefined, reactionNote: careNote.reactionNote };
 }
 export function nextDoseStatus(status: DoseStatus): DoseStatus {
   if (status === "pending") return "completed";
@@ -24,9 +26,6 @@ export function nextDoseStatus(status: DoseStatus): DoseStatus {
 }
 export function shouldCountDoseAsMedicationRecorded(status: DoseStatus) {
   return status !== "pending";
-}
-export function buildDoseRecordedAt(status: DoseStatus, recordedAt = new Date()) {
-  return status === "pending" ? null : recordedAt.toISOString();
 }
 export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInput): DoseUpdate {
   const scheduledAt = buildScheduledAtForTime(input.scheduledTime);
@@ -42,11 +41,6 @@ export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInpu
 }
 export function removeMedicationDoseFromList<T extends { id: string }>(doses: T[] | undefined, id: string) {
   return (doses ?? []).filter((dose) => dose.id !== id);
-}
-export function encodeMedicationDoseCareNote(input: QuickMedicationDoseInput): string | null {
-  const careNote: MedicationDoseCareNote = { version: 1, conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), reactionNote: cleanOptional(input.reactionNote) };
-  if (!careNote.conditionName && !careNote.dosageLabel && !careNote.administeredAmount && !careNote.reactionNote) return null;
-  return JSON.stringify(careNote);
 }
 export function decodeMedicationDoseCareNote(value: string | null | undefined): Omit<MedicationDoseCareNote, "version"> {
   if (!value) return {};
@@ -87,7 +81,7 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
       const status = input.status ?? "pending";
       const now = new Date();
-      const payload: DoseInsert = { pet_id: petId, created_by: userId, medication_name: input.medicationName.trim() || "투약", scheduled_at: now.toISOString(), status, recorded_at: buildDoseRecordedAt(status, now), reaction_note: encodeMedicationDoseCareNote(input) };
+      const payload = buildMedicationDoseInsertPayload({ ...input, petId, userId, now });
       const { data, error } = await supabase.from("medication_doses").insert(payload).select().single();
       if (error) throw new Error(error.message);
       return mapDoseRow(data);
@@ -98,8 +92,9 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       const previousToday = queryClient.getQueryData<DoseRecord[]>(todayKey);
       const status = input.status ?? "pending";
       const optimisticId = `dose-optimistic-${Date.now()}`;
-      const dose: DoseRecord = { id: optimisticId, petId: petId ?? "pending-pet", medicationName: input.medicationName.trim() || "투약", conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), scheduledAt: formatTime(new Date().toISOString()), status, recordedAt: buildDoseRecordedAt(status) ?? undefined, reactionNote: cleanOptional(input.reactionNote) };
-      queryClient.setQueryData<DoseRecord[]>(todayKey, (current) => [dose, ...(current ?? [])]);
+      const scheduledAt = buildScheduledAtForDateTime(input.doseDate, input.scheduledTime, new Date());
+      const dose: DoseRecord = { id: optimisticId, petId: petId ?? "pending-pet", scheduleId: input.scheduleId, doseDate: input.doseDate ?? localDateKey(scheduledAt), medicationName: input.medicationName.trim() || "투약", conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), scheduledAt: formatTime(scheduledAt.toISOString()), status, recordedAt: buildDoseRecordedAt(status) ?? undefined, reactionNote: cleanOptional(input.reactionNote) };
+      queryClient.setQueryData<DoseRecord[]>(todayKey, (current) => mergeSavedDoseIntoList(current ?? [], dose));
       return { previousToday, optimisticId };
     },
     onError: (_error, _variables, context) => {
@@ -111,7 +106,7 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       else queryClient.removeQueries({ queryKey: todayKey, exact: true });
     },
     onSuccess: (dose, _input, context) => {
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId), (current) => [dose, ...(current ?? []).filter((item) => item.id !== dose.id && item.id !== context?.optimisticId)]);
+      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), dose));
       void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
@@ -187,7 +182,7 @@ function cleanOptional(value: unknown) {
 async function fetchMedicationDoses(petId: string, start: string, end: string, ascending: boolean) {
   const { data, error } = await supabase!
     .from("medication_doses")
-    .select("id,pet_id,schedule_id,medication_name,scheduled_at,status,recorded_at,reaction_note,created_by,client_mutation_id,created_at,updated_at")
+    .select("id,pet_id,schedule_id,dose_date,medication_name,scheduled_at,status,recorded_at,reaction_note,created_by,client_mutation_id,created_at,updated_at")
     .eq("pet_id", petId)
     .gte("scheduled_at", start)
     .lt("scheduled_at", end)
@@ -224,6 +219,21 @@ function buildScheduledAtForTime(scheduledTime?: string) {
     }
   }
   return undefined;
+}
+function buildScheduledAtForDateTime(doseDate?: string, scheduledTime?: string, fallback = new Date()) {
+  const scheduledAt = new Date(fallback);
+  if (doseDate) {
+    const [year, month, day] = doseDate.split("-").map(Number);
+    scheduledAt.setFullYear(year ?? scheduledAt.getFullYear(), (month ?? scheduledAt.getMonth() + 1) - 1, day ?? scheduledAt.getDate());
+  }
+  const timeMatch = scheduledTime?.match(/^(\d{1,2}):(\d{2})/);
+  if (timeMatch) {
+    scheduledAt.setHours(Number(timeMatch[1]), Number(timeMatch[2]), 0, 0);
+  }
+  return scheduledAt;
+}
+function localDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 function buildDoseStatusUpdate(status: DoseStatus) {
   const now = new Date();

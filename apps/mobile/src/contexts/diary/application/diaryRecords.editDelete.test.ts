@@ -12,6 +12,7 @@ const payload = buildDiaryUpdatePayload({
 if (payload.entry_date !== "2026-06-28") throw new Error("update payload must keep selected date");
 if (payload.occurred_at !== new Date(2026, 5, 28, 8, 15, 0, 0).toISOString()) throw new Error("update payload must store edited time on the local selected date");
 if (!String(payload.summary).includes("\"version\":1")) throw new Error("update payload must encode structured detail");
+if ("record_origin" in payload) throw new Error("diary update payload must not require record_origin until the live database has the migration");
 
 const payloadWithoutTime = buildDiaryUpdatePayload({ category: "memo", summary: "same time", entryDate: "2026-06-28", id: "entry-2" });
 if ("occurred_at" in payloadWithoutTime) throw new Error("update payload must not change occurred_at when edited time is omitted");

@@ -15,8 +15,8 @@ const checklist: Record<ChecklistKey, boolean> = {
 };
 
 const entries: DiaryEntry[] = [
-  { id: "condition-1", petId: "pet-1", category: "condition", entryDate: "2026-06-28", occurredAt: "08:00", summary: "low", conditionScore: 2 },
-  { id: "stool-1", petId: "pet-1", category: "stool", entryDate: "2026-06-28", occurredAt: "09:00", summary: "stool", detail: { category: "stool", consistency: "diarrhea", hasBloodOrMucus: true } },
+  { id: "condition-1", petId: "pet-1", category: "condition", origin: "diary", entryDate: "2026-06-28", occurredAt: "08:00", summary: "low", conditionScore: 2 },
+  { id: "stool-1", petId: "pet-1", category: "stool", origin: "diary", entryDate: "2026-06-28", occurredAt: "09:00", summary: "stool", detail: { category: "stool", consistency: "diarrhea", hasBloodOrMucus: true } },
 ];
 
 const doses: DoseRecord[] = [
@@ -49,3 +49,8 @@ const diarySummary = createDashboardSummary(checklist, entries, doses, diaryOnly
 if (diarySummary.totalCount !== diaryOnlyKeys.length) throw new Error("dashboard summary must count only visible checklist items");
 if (diarySummary.pendingMedicationCount !== 0) throw new Error("dashboard summary must hide pending medication count when medication is not visible");
 if (diarySummary.attentionSignals.some((signal) => signal.includes("투약"))) throw new Error("dashboard summary must hide medication attention when medication is not visible");
+
+const scheduledSummary = createDashboardSummary(checklist, entries, [], undefined, [{ status: "pending" }]);
+if (scheduledSummary.pendingMedicationCount !== 1) {
+  throw new Error("dashboard must count pending scheduled medication before a dose row is saved");
+}

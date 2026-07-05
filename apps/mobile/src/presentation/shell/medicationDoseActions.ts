@@ -1,15 +1,18 @@
 import type { Dispatch, SetStateAction } from "react";
-import { shouldCountDoseAsMedicationRecorded, type UpdateMedicationDoseInput } from "../../contexts/medication/application/medicationDoseRecords";
-import type { DoseRecord } from "../../contexts/medication/domain/medication";
+import { buildDoseRecordedAt, shouldCountDoseAsMedicationRecorded, type QuickMedicationDoseInput, type UpdateMedicationDoseInput } from "../../contexts/medication/application/medicationDoseRecords";
+import type { DoseRecord, DoseStatus } from "../../contexts/medication/domain/medication";
 import { t } from "../../i18n/translations";
 import { updateLocalDoseRecord } from "../localMedicationState";
 import type { ChecklistKey } from "../mockUiState";
+import type { TodayMedicationAgendaRow } from "../screens/todayMedicationAgenda";
 import { confirmDestructiveAction } from "./confirmAction";
 import type { SaveFeedbackKind } from "./saveFeedback";
 
 type ChecklistState = Record<ChecklistKey, boolean>;
 type UpdateMedicationDoseMutation = { mutateAsync: (input: UpdateMedicationDoseInput) => Promise<unknown> };
+type UpdateMedicationDoseStatusMutation = { mutateAsync: (input: { id: string; status: DoseStatus }) => Promise<unknown> };
 type DeleteMedicationDoseMutation = { mutateAsync: (id: string) => Promise<unknown> };
+type AddMedicationDoseAction = (input: QuickMedicationDoseInput) => Promise<void>;
 
 type MedicationDoseActionArgs = {
   activePetId: string;
@@ -81,6 +84,39 @@ export function confirmAndDeleteMedicationDose({
     args.showSaveFeedback("medication");
     return true;
   });
+}
+
+export function saveMedicationAgendaStatus({
+  row,
+  status,
+  activePetId,
+  databaseMode,
+  doses,
+  updateMedicationDoseStatus,
+  addMedicationDose,
+  setDoses,
+  setLocalChecklist,
+  setNotice,
+  showSaveFeedback,
+}: MedicationDoseActionArgs & {
+  row: TodayMedicationAgendaRow;
+  status: Extract<DoseStatus, "completed" | "skipped" | "partial">;
+  doses: DoseRecord[];
+  updateMedicationDoseStatus: UpdateMedicationDoseStatusMutation;
+  addMedicationDose: AddMedicationDoseAction;
+}): Promise<void> | void {
+  if (row.doseId) {
+    if (databaseMode) {
+      return updateMedicationDoseStatus.mutateAsync({ id: row.doseId, status }).then(() => { setNotice(t("ko", "today.medicationUpdatedRemote")); showSaveFeedback("medicationStatus"); }).catch((error: Error) => setNotice(error.message));
+    }
+    const nextDoses = doses.map((dose) => (dose.id === row.doseId ? { ...dose, status, recordedAt: buildDoseRecordedAt(status) ?? undefined } : dose));
+    setDoses(nextDoses);
+    setLocalChecklist((current) => ({ ...current, medication: nextDoses.some((dose) => dose.petId === activePetId && shouldCountDoseAsMedicationRecorded(dose.status)) }));
+    setNotice(t("ko", "today.medicationUpdated"));
+    showSaveFeedback("medicationStatus");
+    return;
+  }
+  return addMedicationDose({ scheduleId: row.scheduleId, doseDate: row.doseDate, scheduledTime: row.scheduledTime, medicationName: row.medicationName, conditionName: row.conditionName, dosageLabel: row.dosageLabel, status }).catch(() => undefined);
 }
 
 function hasRecordedMedication(doses: DoseRecord[], activePetId: string) {

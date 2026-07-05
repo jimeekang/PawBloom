@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SegmentedControl } from "../../design-system/components";
-import { colors, layout, radius, spacing, type } from "../../design-system/tokens";
+import { AppIcon, type AppIconName } from "../../design-system/iconography";
+import { colors, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { useAuth } from "../../contexts/identity/application/authContext";
 
@@ -42,6 +43,17 @@ export function AuthScreen() {
     <View style={styles.wrap}>
       <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
       <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
+      <View style={styles.valuePanel}>
+        {authValueItems.map((item) => (
+          <View key={item.key} style={styles.valueRow}>
+            <View style={styles.valueIcon}>
+              <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
+            </View>
+            <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
 
       <SegmentedControl
         items={[
@@ -85,8 +97,8 @@ export function AuthScreen() {
 
         <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} />
 
-      {error || localError ? <NoticeBanner text={error ?? localError ?? ""} icon="close" /> : null}
-      {authMessage ? <NoticeBanner text={authMessage} icon="check" /> : null}
+        {error || localError ? <NoticeBanner text={error ?? localError ?? ""} icon="close" /> : null}
+        {authMessage ? <NoticeBanner text={authMessage} icon="check" /> : null}
 
         {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
         {isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
@@ -95,6 +107,12 @@ export function AuthScreen() {
     </View>
   );
 }
+
+const authValueItems: { key: "auth.valueReport" | "auth.valueFamily" | "auth.valueSafeSummary"; icon: AppIconName }[] = [
+  { key: "auth.valueReport", icon: "reports" },
+  { key: "auth.valueFamily", icon: "care" },
+  { key: "auth.valueSafeSummary", icon: "shield" },
+];
 
 const styles = StyleSheet.create({
   wrap: {
@@ -111,6 +129,36 @@ const styles = StyleSheet.create({
   copy: {
     ...type.body,
     color: colors.text,
+  },
+  valuePanel: {
+    gap: spacing.sm,
+  },
+  valueRow: {
+    minHeight: 46,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+  },
+  valueIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfacePeach,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  valueText: {
+    ...type.bodyStrong,
+    flex: 1,
+  },
+  trustCopy: {
+    ...type.caption,
+    color: colors.textMuted,
   },
   form: {
     gap: spacing.md,

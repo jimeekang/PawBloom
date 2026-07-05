@@ -14,7 +14,7 @@ export function SummaryCard() {
       <Text style={styles.summaryCopy}>{t("ko", "briefing.summaryCopy")}</Text>
       <View style={styles.diagnosisRow}>
         <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
-        <Text style={styles.diagnosisText}>{t("ko", "briefing.notDiagnosis")}</Text>
+        <Text style={styles.diagnosisText}>{t("ko", "briefing.disclaimer")}</Text>
       </View>
       <View style={styles.cloudBadge}>
         <IconBubble name="walk" color={colors.summaryPaw} background={colors.summaryBg} size={62} />
@@ -45,19 +45,20 @@ const styles = StyleSheet.create({
   summaryCopy: {
     ...type.body,
     color: colors.text,
-    maxWidth: "78%",
     marginTop: spacing.md,
   },
   diagnosisRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: spacing.xs,
     marginTop: spacing.md,
+    paddingRight: 72,
   },
   diagnosisText: {
     ...type.caption,
     color: colors.diagnosis,
     fontWeight: "600",
+    flex: 1,
   },
   cloudBadge: {
     position: "absolute",

@@ -22,6 +22,7 @@ export const sampleEntries: DiaryEntry[] = [
     id: "entry-food",
     petId: samplePet.id,
     category: "food",
+    origin: "diary",
     entryDate: todayKey,
     occurredAt: "08:15",
     summary: "아침식사 반만 먹음",
@@ -30,6 +31,7 @@ export const sampleEntries: DiaryEntry[] = [
     id: "entry-water",
     petId: samplePet.id,
     category: "water",
+    origin: "diary",
     entryDate: todayKey,
     occurredAt: "10:40",
     summary: "평소보다 물 섭취량이 적음",
@@ -38,6 +40,7 @@ export const sampleEntries: DiaryEntry[] = [
     id: "entry-stool",
     petId: samplePet.id,
     category: "stool",
+    origin: "diary",
     entryDate: todayKey,
     occurredAt: "18:20",
     summary: "대변 한 번 묽음",
@@ -76,7 +79,7 @@ export const sampleBrief: AiBrief = {
     "식욕 저하는 언제 시작되었나요?",
     "현재 투약 스케줄을 그대로 유지해도 될까요?",
   ],
-  disclaimer: "이 내용은 진단이 아니라 기록 기반 요약입니다. 의료 판단은 수의사와 상의하세요.",
+  disclaimer: "이 내용은 진단이 아니라 기록 기반 요약입니다. 의학적 판단은 수의사에게 문의하세요.",
 };
 
 export const sampleReport: VetReport = {

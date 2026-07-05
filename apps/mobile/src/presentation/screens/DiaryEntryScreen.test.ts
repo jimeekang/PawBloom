@@ -1,5 +1,5 @@
 import type { CreateDiaryEntryInput } from "../../contexts/diary/domain/diaryEntry";
-import { formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 
 if (isDiaryDetailPanelOpenAfterSave(true) !== false) {
@@ -29,6 +29,34 @@ if (resolveDiarySaveTime("24:00", false, new Date(2026, 0, 1, 9, 7)) !== "09:07"
 const createInputWithTime: CreateDiaryEntryInput = { category: "memo", summary: "late note", occurredTime: "21:35" };
 if (createInputWithTime.occurredTime !== "21:35") throw new Error("remote diary create input must accept edited record time");
 
+const existingFood = {
+  id: "entry-food",
+  petId: "pet-1",
+  category: "food" as const,
+  origin: "diary" as const,
+  entryDate: "2026-07-01",
+  occurredAt: "08:00",
+  summary: "아침 80g/100g",
+};
+
+const existingChecklistFood = { ...existingFood, id: "entry-food-checklist", origin: "checklist" as const };
+
+if (!isStructuredDailyDiaryCategory("food")) {
+  throw new Error("food must be treated as one detailed daily diary category");
+}
+
+if (isStructuredDailyDiaryCategory("memo")) {
+  throw new Error("memo must remain appendable");
+}
+
+if (findEditableDailyStructuredEntry([existingFood], "food", "2026-07-01")?.id !== "entry-food") {
+  throw new Error("saving the same structured diary category should find the existing daily record");
+}
+
+if (findEditableDailyStructuredEntry([existingChecklistFood], "food", "2026-07-01")?.id !== "entry-food-checklist") {
+  throw new Error("saving a detailed diary record after a checklist completion must update the existing daily category record");
+}
+
 if (getDiaryEntryDateForSave("2026-06-28", { entryDate: "2026-06-24" }) !== "2026-06-24") {
   throw new Error("diary edit mode must preserve the edited entry date");
 }
@@ -45,6 +73,7 @@ const editableMemo = getEditableDiaryMemo({
   id: "entry-test",
   petId: "pet-test",
   category: "memo",
+  origin: "diary",
   entryDate: "2026-06-28",
   occurredAt: "08:15",
   summary: "Ate breakfast well",
@@ -58,6 +87,7 @@ const legacyPlainMemo = getEditableDiaryMemo({
   id: "entry-legacy",
   petId: "pet-test",
   category: "water",
+  origin: "diary",
   entryDate: "2026-06-28",
   occurredAt: "10:15",
   summary: "Drank more water than usual",
@@ -71,6 +101,7 @@ const structuredMemo = getEditableDiaryMemo({
   id: "entry-structured",
   petId: "pet-test",
   category: "water",
+  origin: "diary",
   entryDate: "2026-06-28",
   occurredAt: "10:15",
   summary: "Water 250ml · Normal",
@@ -85,6 +116,7 @@ const structuredRawMemo = getEditableDiaryMemo({
   id: "entry-structured-memo",
   petId: "pet-test",
   category: "water",
+  origin: "diary",
   entryDate: "2026-06-28",
   occurredAt: "10:15",
   summary: "Water 250ml · drank after walk",

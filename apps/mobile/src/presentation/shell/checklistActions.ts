@@ -59,7 +59,7 @@ export function createLocalChecklistRecord({
 
   const category = checklistKeyToDiaryCategory(key);
   if (!category) return null;
-  const nextEntry = createMockDiaryEntry(activePetId, { category, summary: checklistSummary(key), entryDate, occurredAt: formatChecklistTime(), conditionScore: category === "condition" ? 3 : undefined });
+  const nextEntry = createMockDiaryEntry(activePetId, { category, summary: checklistSummary(key), entryDate, occurredAt: formatChecklistTime(), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
   const nextEntries = [nextEntry, ...entries];
   return { nextEntries, nextChecklist: createChecklistFromRecords(nextEntries.filter((entry) => entry.petId === activePetId && entry.entryDate === entryDate), activeDoses), noticeKey: "today.diarySaved" as const, feedbackKind: "checklist" as const };
 }
@@ -75,7 +75,7 @@ export async function recordRemoteChecklistItem({
   key: ChecklistKey;
   activeDoses: DoseRecord[];
   quickMedicationName: string;
-  createDiaryEntry: (input: { category: DiaryCategory; summary: string; conditionScore?: 1 | 2 | 3 | 4 | 5 }) => Promise<unknown>;
+  createDiaryEntry: (input: { category: DiaryCategory; summary: string; origin?: "diary" | "checklist"; conditionScore?: 1 | 2 | 3 | 4 | 5 }) => Promise<unknown>;
   createMedicationDose: (input: { medicationName: string; status: "completed" }) => Promise<unknown>;
   updateMedicationDoseStatus: (input: { id: string; status: "completed" }) => Promise<unknown>;
 }) {
@@ -88,7 +88,7 @@ export async function recordRemoteChecklistItem({
 
   const category = checklistKeyToDiaryCategory(key);
   if (!category) return "checklist" as const;
-  await createDiaryEntry({ category, summary: checklistSummary(key), conditionScore: category === "condition" ? 3 : undefined });
+  await createDiaryEntry({ category, summary: checklistSummary(key), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
   return "checklist" as const;
 }
 

@@ -25,13 +25,13 @@ export function useShellCareDefaults({ activePet, databaseMode, livePetId, userI
   const careSetupQuery = useActiveCareSetup(livePetId);
   const createCareSetup = useCreateCareSetup(livePetId, userId);
   const [localRoutine, setLocalRoutine] = useState(() => createDefaultPetRoutine(mockPets[0].id, mockPets[0].species));
-  const [localCareSetup, setLocalCareSetup] = useState<ActiveCareSetup>({ schedules: [] });
+  const [localCareSetup, setLocalCareSetup] = useState<ActiveCareSetup>(() => emptyActiveCareSetup());
   const activeRoutine = useMemo(() => {
     if (databaseMode) return routineQuery.data ?? createDefaultPetRoutine(activePet.id, activePet.species);
     if (localRoutine.petId === activePet.id) return localRoutine;
     return createDefaultPetRoutine(activePet.id, activePet.species);
   }, [activePet.id, activePet.species, databaseMode, localRoutine, routineQuery.data]);
-  const activeCareSetup = databaseMode ? careSetupQuery.data ?? { schedules: [] } : localCareSetup;
+  const activeCareSetup = databaseMode ? careSetupQuery.data ?? emptyActiveCareSetup() : localCareSetup;
 
   function saveRoutine(input: PetRoutineInput) {
     if (!databaseMode) {
@@ -48,8 +48,9 @@ export function useShellCareDefaults({ activePet, databaseMode, livePetId, userI
 
   function saveCareSetup(input: CareSetupInput) {
     if (!databaseMode) {
-      const schedule: CareMedicationSchedule = { id: `local-schedule-${Date.now()}`, medicationId: `local-medication-${Date.now()}`, medicationName: input.medicationName || t("ko", "care.quickMedicationName"), dosageLabel: input.dosageLabel || "-", conditionName: input.conditionName, localTime: `${input.localTime || "08:00"}:00` };
-      setLocalCareSetup({ conditionName: input.conditionName, planTitle: input.planTitle, schedules: [schedule, ...localCareSetup.schedules] });
+      const condition = input.conditionName ? { id: `local-condition-${Date.now()}`, name: input.conditionName, status: "active" as const } : undefined;
+      const schedule: CareMedicationSchedule = { id: `local-schedule-${Date.now()}`, medicationId: `local-medication-${Date.now()}`, medicationName: input.medicationName || t("ko", "care.quickMedicationName"), dosageLabel: input.dosageLabel || "-", conditionId: condition?.id, conditionName: input.conditionName, localTime: `${input.localTime || "08:00"}:00`, startsOn: input.startsOn || getLocalDateKey(), endsOn: input.endsOn || undefined, recurrenceIntervalDays: input.recurrenceIntervalDays ?? 1 };
+      setLocalCareSetup({ conditions: condition ? [condition, ...localCareSetup.conditions] : localCareSetup.conditions, conditionName: input.conditionName, planTitle: input.planTitle, schedules: [schedule, ...localCareSetup.schedules] });
       setNotice(t("ko", "care.setupSaved"));
       showSaveFeedback("careSetup");
       return;
@@ -65,4 +66,13 @@ export function useShellCareDefaults({ activePet, databaseMode, livePetId, userI
   }
 
   return { activeRoutine, activeCareSetup, saveRoutine, saveCareSetup, useCareSchedule };
+}
+
+function emptyActiveCareSetup(): ActiveCareSetup {
+  return { conditions: [], schedules: [] };
+}
+
+function getLocalDateKey() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }

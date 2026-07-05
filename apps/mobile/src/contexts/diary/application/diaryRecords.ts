@@ -2,16 +2,21 @@ import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient 
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { uploadDiaryPhoto } from "../../media/application/mediaUpload";
-import type { CreateDiaryEntryInput, DiaryCategory, DiaryDetailInput, DiaryEntry } from "../domain/diaryEntry";
+import type { CreateDiaryEntryInput, DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
+import { inferDiaryRecordOrigin } from "./diaryRecordOrigin";
+import { buildDiaryUpdatePayload, buildOccurredAt, buildOccurredAtForTime, isStructuredDailyCategory, type DiaryUpdateInput } from "./diaryRecordPayload";
+import { decodeDiarySummary, defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
+
+export { buildDiaryUpdatePayload } from "./diaryRecordPayload";
+export { decodeDiarySummary, encodeDiarySummary } from "./diarySummary";
 
 type DiaryRow = Database["public"]["Tables"]["diary_entries"]["Row"];
 type DiaryInsert = Database["public"]["Tables"]["diary_entries"]["Insert"];
 type DiaryRowWithMedia = DiaryRow & { media_assets?: { id: string }[] | null };
-type DiaryUpdatePayload = { category: DiaryCategory; summary: string; condition_score: number | null; entry_date: string; updated_at: string; occurred_at?: string };
 
 const diaryEntrySelect = "id,pet_id,category,occurred_at,summary,condition_score,entry_date,created_by,client_mutation_id,created_at,updated_at,media_assets(id)";
 
-export type UpdateDiaryEntryInput = CreateDiaryEntryInput & { id: string; occurredTime?: string };
+export type UpdateDiaryEntryInput = DiaryUpdateInput;
 
 export const diaryKeys = {
   date: (petId: string | null, dateKey: string) => ["diary", "date", petId, dateKey] as const,
@@ -36,6 +41,7 @@ export function mapDiaryRow(row: DiaryRowWithMedia): DiaryEntry {
     id: row.id,
     petId: row.pet_id,
     category: row.category,
+    origin: inferDiaryRecordOrigin({ storedOrigin: row.record_origin, summary: decoded.summary }),
     entryDate: row.entry_date,
     occurredAt: formatTime(row.occurred_at),
     summary: decoded.summary,
@@ -44,27 +50,6 @@ export function mapDiaryRow(row: DiaryRowWithMedia): DiaryEntry {
     conditionScore: normalizeScore(row.condition_score),
     photoCount: row.media_assets?.length ?? 0,
   };
-}
-
-export function encodeDiarySummary(input: { category: DiaryCategory; memo?: string; detail?: DiaryDetailInput }) {
-  const memo = input.memo?.trim() ?? "";
-  return input.detail ? JSON.stringify({ version: 1, category: input.category, memo, detail: input.detail }) : memo;
-}
-
-export function decodeDiarySummary(value: string, fallbackCategory: DiaryCategory): { summary: string; memo?: string; detail?: DiaryDetailInput } {
-  try {
-    const parsed = JSON.parse(value) as { version?: number; memo?: string; detail?: DiaryDetailInput };
-    return parsed.version === 1 && parsed.detail ? { summary: buildDetailSummary(parsed.detail, parsed.memo), memo: parsed.memo?.trim() || undefined, detail: parsed.detail } : { summary: value };
-  } catch {
-    return { summary: value || defaultSummary(fallbackCategory) };
-  }
-}
-
-export function buildDiaryUpdatePayload(input: UpdateDiaryEntryInput): DiaryUpdatePayload {
-  const entryDate = input.entryDate ?? getLocalDateKey();
-  const payload = { category: input.category, summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultSummary(input.category), condition_score: input.category === "condition" ? input.conditionScore ?? 3 : null, entry_date: entryDate, updated_at: new Date().toISOString() };
-  const occurredAt = buildOccurredAtForTime(entryDate, input.occurredTime);
-  return occurredAt ? { ...payload, occurred_at: occurredAt } : payload;
 }
 
 export function removeDiaryEntryFromList<T extends { id: string }>(entries: T[] | undefined, id: string) {
@@ -129,11 +114,18 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
       if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
       if ((input.photos?.length ?? 0) > 5) throw new Error("하루 사진은 최대 5장까지 저장할 수 있습니다.");
       const entryDate = input.entryDate ?? getLocalDateKey();
+      const existingEntry = isStructuredDailyCategory(input.category) ? await fetchExistingDailyStructuredEntry(petId, input.category, entryDate) : null;
+      if (existingEntry) {
+        if (input.origin === "checklist") return mapDiaryRow(existingEntry);
+        const { data, error } = await supabase.from("diary_entries").update(buildDiaryUpdatePayload({ ...input, id: existingEntry.id, entryDate, origin: "diary" })).eq("id", existingEntry.id).eq("pet_id", petId).select(diaryEntrySelect).single();
+        if (error) throw new Error(error.message);
+        return mapDiaryRow(data as DiaryRowWithMedia);
+      }
       const payload: DiaryInsert = {
         pet_id: petId,
         created_by: userId,
         category: input.category,
-        summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultSummary(input.category),
+        summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultDiarySummary(input.category),
         condition_score: input.category === "condition" ? input.conditionScore ?? 3 : null,
         entry_date: entryDate,
         occurred_at: buildOccurredAtForTime(entryDate, input.occurredTime) ?? buildOccurredAt(entryDate),
@@ -149,10 +141,25 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
       return mapDiaryRow({ ...data, media_assets: input.photos?.map((_, index) => ({ id: `${data.id}-${index}` })) ?? [] });
     },
     onSuccess: (entry) => {
-      queryClient.setQueryData<DiaryEntry[]>(diaryKeys.date(petId, entry.entryDate), (current) => [entry, ...(current ?? [])]);
+      upsertDiaryEntryInCachedLists(queryClient, petId, entry);
       void queryClient.invalidateQueries({ queryKey: ["diary"] });
     },
   });
+}
+
+async function fetchExistingDailyStructuredEntry(petId: string, category: DiaryCategory, entryDate: string) {
+  const { data, error } = await supabase!
+    .from("diary_entries")
+    .select(diaryEntrySelect)
+    .eq("pet_id", petId)
+    .eq("category", category)
+    .eq("entry_date", entryDate)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data as DiaryRowWithMedia | null;
 }
 
 async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: string) {
@@ -171,55 +178,8 @@ async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: 
   return ((data ?? []) as DiaryRowWithMedia[]).map(mapDiaryRow);
 }
 
-function defaultSummary(category: CreateDiaryEntryInput["category"]) {
-  const labels: Record<CreateDiaryEntryInput["category"], string> = { food: "식사가 기록되었습니다.", water: "물 섭취가 기록되었습니다.", walk: "산책이 기록되었습니다.", stool: "배변이 기록되었습니다.", condition: "컨디션 체크가 기록되었습니다.", memo: "메모가 기록되었습니다.", photo: "사진이 기록되었습니다." };
-  return labels[category];
-}
-
-function buildDetailSummary(detail: DiaryDetailInput, memo?: string) {
-  return [detailSummary(detail), memo?.trim()].filter(Boolean).join(" · ");
-}
-
-function detailSummary(detail: DiaryDetailInput) {
-  if (detail.category === "food") {
-    const mealParts = (Object.entries(detail.meals) as [string, { offeredGrams?: string; eatenGrams?: string }][])
-      .filter(([, meal]) => meal.offeredGrams || meal.eatenGrams)
-      .map(([slot, meal]) => `${mealLabel(slot)} ${meal.eatenGrams || "-"}g/${meal.offeredGrams || "-"}g`);
-    return [...mealParts, detail.appetite ? `식욕 ${appetiteLabel(detail.appetite)}` : ""].filter(Boolean).join(", ");
-  }
-  if (detail.category === "water") return [`물 ${detail.amountMl || "-"}ml`, detail.intakeLevel ? levelLabel(detail.intakeLevel) : ""].filter(Boolean).join(", ");
-  if (detail.category === "walk") return [`산책 ${detail.durationMinutes || "-"}분`, detail.intensity ? intensityLabel(detail.intensity) : "", detail.observation].filter(Boolean).join(", ");
-  if (detail.category === "stool") return [`배변 ${detail.count || "-"}회`, detail.consistency ? stoolLabel(detail.consistency) : "", detail.hasBloodOrMucus ? "혈변/점액 관찰" : ""].filter(Boolean).join(", ");
-  if (detail.category === "condition") return [`에너지 ${detail.energyLevel ? levelLabel(detail.energyLevel) : "-"}`, detail.discomfortNote].filter(Boolean).join(", ");
-  return "";
-}
-
-function mealLabel(slot: string) { return ({ breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" } as Record<string, string>)[slot] ?? slot; }
-function appetiteLabel(value: string) { return ({ good: "좋음", normal: "보통", low: "적음", refused: "거부" } as Record<string, string>)[value] ?? value; }
-function levelLabel(value: string) { return ({ less: "적음", normal: "정상", more: "많음" } as Record<string, string>)[value] ?? value; }
-function intensityLabel(value: string) { return ({ low: "낮음", normal: "보통", high: "높음" } as Record<string, string>)[value] ?? value; }
-function stoolLabel(value: string) { return ({ normal: "정상변", soft: "무른변", diarrhea: "설사", hard: "딱딱함" } as Record<string, string>)[value] ?? value; }
-
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
-}
-
-function buildOccurredAt(dateKey: string) {
-  const now = new Date();
-  const occurredAt = parseDateKey(dateKey);
-  occurredAt.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-  return occurredAt.toISOString();
-}
-
-function buildOccurredAtForTime(dateKey: string, occurredTime?: string) {
-  const timeMatch = occurredTime?.match(/^(\d{1,2}):(\d{2})$/);
-  if (!timeMatch) return undefined;
-  const hours = Number(timeMatch[1]);
-  const minutes = Number(timeMatch[2]);
-  if (hours > 23 || minutes > 59) return undefined;
-  const occurredAt = parseDateKey(dateKey);
-  occurredAt.setHours(hours, minutes, 0, 0);
-  return occurredAt.toISOString();
 }
 
 function parseDateKey(dateKey: string) {

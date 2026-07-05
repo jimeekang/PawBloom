@@ -1,4 +1,4 @@
-import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput } from "../contexts/diary/domain/diaryEntry";
+import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput, DiaryRecordOrigin } from "../contexts/diary/domain/diaryEntry";
 import type { DoseRecord, DoseStatus } from "../contexts/medication/domain/medication";
 import type { PetProfile } from "../contexts/pet/domain/pet";
 import { sampleDoses, sampleEntries, samplePet } from "./sampleData";
@@ -11,6 +11,7 @@ export type DraftDiaryEntry = {
   summary: string;
   entryDate?: string;
   occurredAt: string;
+  origin?: DiaryRecordOrigin;
   detail?: DiaryDetailInput;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photos?: DiaryPhotoInput[];
@@ -36,6 +37,7 @@ export const initialDiaryEntries: DiaryEntry[] = sampleEntries.map((entry, index
   ...entry,
   id: `entry-ui-${index + 1}`,
   petId: mockPets[0].id,
+  origin: entry.origin ?? "diary",
 }));
 
 export const initialDoses: DoseRecord[] = sampleDoses.map((dose, index) => ({
@@ -51,6 +53,7 @@ export function createMockDiaryEntry(petId: string, draft: DraftDiaryEntry): Dia
     id: `entry-local-${Date.now()}`,
     petId,
     category: draft.category,
+    origin: draft.origin ?? "diary",
     entryDate: draft.entryDate ?? getLocalDateKey(),
     occurredAt: draft.occurredAt,
     summary: draft.summary || defaultSummary[draft.category],

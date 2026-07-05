@@ -8,6 +8,8 @@ export type QuickMedicationFormState = Required<QuickMedicationDoseInput> & {
 
 export function createEmptyQuickMedicationState(): QuickMedicationFormState {
   return {
+    scheduleId: "",
+    doseDate: "",
     conditionName: "",
     medicationName: "",
     dosageLabel: "",
@@ -20,6 +22,8 @@ export function createEmptyQuickMedicationState(): QuickMedicationFormState {
 
 export function createQuickMedicationEditState(dose: DoseRecord): QuickMedicationFormState {
   return {
+    scheduleId: dose.scheduleId ?? "",
+    doseDate: dose.doseDate ?? "",
     conditionName: dose.conditionName ?? "",
     medicationName: dose.medicationName,
     dosageLabel: dose.dosageLabel ?? "",
@@ -41,6 +45,14 @@ export function isValidDoseTime(value: string) {
 
 export function shouldCloseMedicationEditAfterDelete(deleted: boolean | void) {
   return deleted !== false;
+}
+
+export function careStatusActionLabel(status: "completed" | "skipped") {
+  return status === "completed" ? "먹였어요" : "못 먹였어요";
+}
+
+export function shouldShowTemporaryMedicationForm(expanded: boolean) {
+  return expanded;
 }
 
 export function quickDoseSavedNoticeKey(status: DoseStatus): TranslationKey {

@@ -31,7 +31,7 @@ export const colors = {
   diagnosis: "#0E3E69",
   inactive: "#D4D0CB",
   shadow: "#211B16",
-  heroScrim: "rgba(0, 0, 0, 0.08)",
+  heroScrim: "rgba(0, 0, 0, 0.32)",
 } as const;
 
 export const spacing = {

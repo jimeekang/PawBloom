@@ -46,8 +46,10 @@ function FoodDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { 
       {mealSlots.map((slot) => (
         <View key={slot} style={styles.mealRow}>
           <Text style={styles.mealLabel}>{t("ko", mealLabelKeys[slot])}</Text>
-          <TextInput style={styles.compactInput} keyboardType="numeric" value={detail.meals[slot]?.offeredGrams ?? ""} onChangeText={(value) => updateMeal(slot, "offeredGrams", value)} placeholder={t("ko", "diary.offeredGrams")} placeholderTextColor={colors.textSoft} />
-          <TextInput style={styles.compactInput} keyboardType="numeric" value={detail.meals[slot]?.eatenGrams ?? ""} onChangeText={(value) => updateMeal(slot, "eatenGrams", value)} placeholder={t("ko", "diary.eatenGrams")} placeholderTextColor={colors.textSoft} />
+          <View style={styles.mealInputStack}>
+            <TextInput style={styles.compactInput} keyboardType="numeric" value={detail.meals[slot]?.offeredGrams ?? ""} onChangeText={(value) => updateMeal(slot, "offeredGrams", value)} placeholder={t("ko", "diary.offeredGrams")} placeholderTextColor={colors.textSoft} />
+            <TextInput style={styles.compactInput} keyboardType="numeric" value={detail.meals[slot]?.eatenGrams ?? ""} onChangeText={(value) => updateMeal(slot, "eatenGrams", value)} placeholder={t("ko", "diary.eatenGrams")} placeholderTextColor={colors.textSoft} />
+          </View>
         </View>
       ))}
       <SegmentedControl
@@ -133,13 +135,13 @@ const styles = StyleSheet.create({
     ...type.sectionTitle,
   },
   mealRow: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: spacing.sm,
   },
   mealLabel: {
     ...type.bodyStrong,
-    width: 42,
+  },
+  mealInputStack: {
+    gap: spacing.sm,
   },
   input: {
     ...type.body,
@@ -152,7 +154,6 @@ const styles = StyleSheet.create({
   },
   compactInput: {
     ...type.body,
-    flex: 1,
     minHeight: 42,
     borderRadius: radius.md,
     borderWidth: 1,

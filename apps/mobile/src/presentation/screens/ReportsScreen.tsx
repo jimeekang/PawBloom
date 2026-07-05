@@ -5,6 +5,7 @@ import { AppIcon, type AppIconName } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t, type TranslationKey } from "../../i18n/translations";
 import type { ReportStage } from "../mockUiState";
+import { MockShareCard, ReportListSection, ReportMetricsCard } from "./ReportArtifactSections";
 
 export function ReportsScreen({
   reportStage,
@@ -41,15 +42,25 @@ export function ReportsScreen({
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
           <Text style={styles.noticeText}>{t("ko", "briefing.disclaimer")}</Text>
         </View>
+        {reportSummary.hasRecords ? (
+          <View style={styles.previewBlock}>
+            <Text style={styles.blockLabel}>{t("ko", "reports.englishPreview")}</Text>
+            <Text style={styles.previewText}>{reportSummary.englishPreview}</Text>
+          </View>
+        ) : null}
       </SurfaceCard>
 
       {reportSummary.hasRecords ? (
         <>
-          <View style={styles.metricsGrid}>
-            <MetricCard icon="diary" label={t("ko", "reports.diaryCount")} value={`${reportSummary.diaryCount}`} />
-            <MetricCard icon="condition" label={t("ko", "reports.conditionTrend")} value={conditionTrend} />
-            <MetricCard icon="medication" label={t("ko", "reports.medicationAttention")} value={`${reportSummary.medicationAttentionCount}`} />
-          </View>
+          <ReportListSection icon="time" title={t("ko", "reports.timelineHighlights")} items={reportSummary.timelineHighlights} />
+          <ReportListSection
+            icon="shield"
+            title={t("ko", "reports.missingRecords")}
+            items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords : [t("ko", "reports.noMissingRecords")]}
+          />
+          <ReportListSection icon="condition" title={t("ko", "reports.vetQuestions")} items={reportSummary.vetQuestions} />
+
+          <ReportMetricsCard summary={reportSummary} conditionTrend={conditionTrend} />
 
           <SurfaceCard>
             <Text style={styles.title}>{t("ko", "reports.beforeSharing")}</Text>
@@ -62,6 +73,8 @@ export function ReportsScreen({
               <Text style={styles.body}>{t("ko", "reports.reviewNotes")}</Text>
             </View>
           </SurfaceCard>
+
+          {reportStage === "shared" ? <MockShareCard /> : null}
         </>
       ) : (
         <SurfaceCard>
@@ -75,18 +88,6 @@ export function ReportsScreen({
         <SecondaryButton label={t("ko", "reports.addMoreRecords")} icon="diary" onPress={onNewDiary} />
       </View>
     </View>
-  );
-}
-
-function MetricCard({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
-  return (
-    <SurfaceCard>
-      <View style={styles.metricHeader}>
-        <AppIcon name={icon} size={iconSize.sm} color={colors.orangeDeep} />
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
-      <Text style={styles.metricValue}>{value}</Text>
-    </SurfaceCard>
   );
 }
 
@@ -192,6 +193,19 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.diagnosis,
   },
+  previewBlock: {
+    marginTop: spacing.lg,
+    gap: spacing.xs,
+  },
+  blockLabel: {
+    ...type.caption,
+    color: colors.orangeDeep,
+    fontWeight: "700",
+  },
+  previewText: {
+    ...type.body,
+    color: colors.text,
+  },
   checkRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -204,22 +218,6 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.md,
-  },
-  metricsGrid: {
-    gap: spacing.md,
-  },
-  metricHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  metricLabel: {
-    ...type.caption,
-    flex: 1,
-  },
-  metricValue: {
-    ...type.sectionTitle,
-    marginTop: spacing.sm,
   },
   emptyText: {
     ...type.body,
