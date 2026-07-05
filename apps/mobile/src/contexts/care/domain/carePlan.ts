@@ -1,15 +1,54 @@
 import type { UUID } from "../../../shared-kernel/types";
 
-export type CarePlan = {
+export type CareDoseStatus = "pending" | "completed" | "skipped" | "partial";
+
+export type CareConditionStatus = "active" | "resolved" | "archived";
+
+export type ActiveCareCondition = {
   id: UUID;
-  petId: UUID;
-  conditionName: string;
-  instructions: string;
-  startsOn: string;
-  endsOn?: string;
+  name: string;
+  status: CareConditionStatus;
+  startsOn?: string;
 };
 
-export function isActiveCarePlan(plan: CarePlan, today: string) {
-  return plan.startsOn <= today && (!plan.endsOn || plan.endsOn >= today);
-}
+export type ActiveCarePlanSummary = {
+  id: UUID;
+  title: string;
+  instructions?: string;
+  startsOn?: string;
+};
 
+export type CareMedicationSchedule = {
+  id: UUID;
+  medicationId: UUID;
+  medicationName: string;
+  dosageLabel: string;
+  conditionId?: UUID;
+  conditionName?: string;
+  localTime: string;
+  startsOn: string;
+  endsOn?: string;
+  recurrenceIntervalDays: number;
+};
+
+export type ActiveCareSetup = {
+  conditions: ActiveCareCondition[];
+  condition?: ActiveCareCondition;
+  plan?: ActiveCarePlanSummary;
+  conditionName?: string;
+  planTitle?: string;
+  instructions?: string;
+  schedules: CareMedicationSchedule[];
+};
+
+export type CareSetupInput = {
+  conditionName: string;
+  planTitle: string;
+  medicationName: string;
+  dosageLabel: string;
+  localTime: string;
+  startsOn?: string;
+  endsOn?: string;
+  recurrenceIntervalDays?: number;
+  instructions?: string;
+};

@@ -15,14 +15,17 @@ PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도
 
 - `identity`: Auth profile, 언어, 계정 설정
 - `pet`: 반려동물 프로필, 종, 품종, 나이, 체중
-- `diary`: 식사, 물, 산책, 배변, 컨디션, 메모
-- `care`: 질병/상태, Care Mode, care plan
-- `medication`: 약 일정, 복용량, 누락, 부분 투약, 완료
+- `routine`: 반려동물별 기본 식사량, 물, 산책, 배변, 컨디션 기준값
+- `diary`: 식사, 물, 산책, 배변, 컨디션, 메모, 사진. 컨디션 점수의 원천
+- `care`: 질병/상태, care plan, 프로필 기반 케어 기본값
+- `medication`: 약 일정, 투약 기간, 반복 간격, 로컬 알림, 오늘 투약 체크, 임시 투약, 누락, 부분 투약, 완료
 - `briefing`: AI 요약, 누락 기록, 변화 패턴
 - `report`: 병원 리포트, 공유 token, 사용자 확인
 - `media`: 사진/영상과 Supabase Storage metadata
 - `subscription`: Free, Plus, Family entitlement gate
 - `sync`: 오프라인 outbox와 idempotent replay
+
+프로필 화면은 `pet`, `routine`, `care`, `medication` use case를 조합할 수 있지만, 병명/상태와 약 일정의 데이터 소유권은 `care`와 `medication` context에 둔다.
 
 ## Context 구조
 
