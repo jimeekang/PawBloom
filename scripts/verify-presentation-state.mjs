@@ -56,8 +56,8 @@ if (careModeScreen.includes("CareRecordPanel")) {
   throw new Error("care screen must not include the duplicate care record input panel");
 }
 
-if (careModeScreen.includes("CareSetupPanel")) {
-  throw new Error("care screen must keep profile care defaults out of the primary care flow");
+if (!careModeScreen.includes("CareSetupPanel")) {
+  throw new Error("care screen must include care plan creation UI in the primary care flow");
 }
 
 const diaryDetailPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/DiaryDetailPanel.tsx"), "utf8");
@@ -73,6 +73,10 @@ if (/\n\s*inputGrid:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
 const careSetupPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/CareSetupPanel.tsx"), "utf8");
 if (/\n\s*row:\s*{\s*flexDirection:\s*"row"/s.test(careSetupPanel) || /\n\s*timePicker:\s*{\s*width:\s*112/s.test(careSetupPanel)) {
   throw new Error("care setup medication and time fields must remain stacked to avoid narrow mobile clipping");
+}
+
+if (!careSetupPanel.includes("DatePickerField")) {
+  throw new Error("care setup treatment period must use native date picker controls");
 }
 
 const profileCareDefaultsPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/ProfileCareDefaultsPanel.tsx"), "utf8");

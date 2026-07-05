@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../../contexts/care/domain/carePlan";
-import { PrimaryButton, SurfaceCard } from "../../design-system/components";
+import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { DatePickerField } from "../ui/DatePickerField";
 import { TimePickerField } from "../ui/TimePickerField";
+
+type RepeatOption = "daily" | "custom";
 
 export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: ActiveCareSetup; onSave: (input: CareSetupInput) => void; onUseSchedule: (schedule: CareMedicationSchedule) => void }) {
   const [conditionName, setConditionName] = useState(setup.conditionName ?? "");
@@ -13,13 +16,21 @@ export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: Active
   const [medicationName, setMedicationName] = useState("");
   const [dosageLabel, setDosageLabel] = useState("");
   const [localTime, setLocalTime] = useState("08:00");
+  const [startsOn, setStartsOn] = useState(setup.schedules[0]?.startsOn ?? getLocalDateKey());
+  const [endsOn, setEndsOn] = useState(setup.schedules[0]?.endsOn ?? "");
+  const [repeat, setRepeat] = useState<RepeatOption>(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? "custom" : "daily");
+  const [repeatInterval, setRepeatInterval] = useState(String(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? setup.schedules[0].recurrenceIntervalDays : 2));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setConditionName(setup.conditionName ?? "");
     setPlanTitle(setup.planTitle ?? "");
+    setStartsOn(setup.schedules[0]?.startsOn ?? getLocalDateKey());
+    setEndsOn(setup.schedules[0]?.endsOn ?? "");
+    setRepeat(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? "custom" : "daily");
+    setRepeatInterval(String(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? setup.schedules[0].recurrenceIntervalDays : 2));
     setError(null);
-  }, [setup.conditionName, setup.planTitle]);
+  }, [setup.conditionName, setup.planTitle, setup.schedules]);
 
   const save = () => {
     const nextConditionName = conditionName.trim();
@@ -31,7 +42,16 @@ export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: Active
       return;
     }
 
-    onSave({ conditionName: nextConditionName, planTitle: nextPlanTitle, medicationName: nextMedicationName, dosageLabel: dosageLabel.trim(), localTime: localTime.trim() });
+    onSave({
+      conditionName: nextConditionName,
+      planTitle: nextPlanTitle,
+      medicationName: nextMedicationName,
+      dosageLabel: dosageLabel.trim(),
+      localTime: localTime.trim(),
+      startsOn,
+      endsOn,
+      recurrenceIntervalDays: repeat === "daily" ? 1 : Number(repeatInterval) || 1,
+    });
     setError(null);
     setMedicationName("");
     setDosageLabel("");
@@ -72,6 +92,17 @@ export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: Active
           </View>
         </View>
         <TextInput style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <Text style={styles.label}>{t("ko", "care.setupPeriod")}</Text>
+        <DatePickerField value={startsOn} onChange={setStartsOn} placeholder={t("ko", "care.setupStartDate")} />
+        <DatePickerField value={endsOn} onChange={setEndsOn} placeholder={t("ko", "care.setupEndDate")} allowClear clearLabel={t("ko", "care.setupClearDate")} />
+        <Text style={styles.label}>{t("ko", "care.setupRepeat")}</Text>
+        <SegmentedControl value={repeat} onChange={setRepeat} items={[{ label: t("ko", "care.setupEveryDay"), value: "daily" }, { label: t("ko", "care.setupCustomRepeat"), value: "custom" }]} />
+        {repeat === "custom" ? (
+          <View style={styles.repeatRow}>
+            <TextInput style={[styles.input, styles.repeatInput]} value={repeatInterval} onChangeText={(value) => setRepeatInterval(value.replace(/[^0-9]/g, "").slice(0, 2))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
+            <Text style={styles.repeatSuffix}>{t("ko", "care.setupCustomRepeatSuffix")}</Text>
+          </View>
+        ) : null}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={save} />
         {setup.schedules.map((schedule) => (
@@ -93,6 +124,7 @@ const styles = StyleSheet.create({
   panel: { gap: spacing.md },
   title: { ...type.sectionTitle },
   copy: { ...type.caption, color: colors.textMuted },
+  label: { ...type.caption, color: colors.textMuted },
   activeBox: { gap: spacing.xxs, borderRadius: radius.md, borderWidth: 1, borderColor: colors.summaryBorder, backgroundColor: colors.summaryBg, padding: spacing.md },
   activeTitle: { ...type.bodyStrong },
   activeMeta: { ...type.caption, color: colors.summaryAccent },
@@ -100,9 +132,17 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   input: { ...type.body, minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
   timePicker: {},
+  repeatRow: { gap: spacing.sm },
+  repeatInput: { maxWidth: 96 },
+  repeatSuffix: { ...type.caption, color: colors.textMuted },
   errorText: { ...type.caption, color: colors.coral },
   scheduleRow: { minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
   scheduleTitle: { ...type.bodyStrong },
   scheduleMeta: { ...type.caption, color: colors.textMuted },
   useText: { ...type.caption, color: colors.orangeDeep, fontWeight: "700" },
 });
+
+function getLocalDateKey() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}

@@ -8,6 +8,7 @@ import { colors, iconSize, radius, spacing, type } from "../../design-system/tok
 import { t } from "../../i18n/translations";
 import { SummaryCard } from "../ui/SummaryCard";
 import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
+import { CareSetupPanel } from "./CareSetupPanel";
 import type { TodayMedicationAgendaRow } from "./todayMedicationAgenda";
 
 type Segment = "care" | "reports";
@@ -20,6 +21,8 @@ export function CareModeScreen({
   onAddDose,
   onUpdateDose,
   onDeleteDose,
+  onSaveCareSetup,
+  onUseSchedule,
   onGenerateReport,
   conditionScore,
   careSetup,
@@ -30,6 +33,8 @@ export function CareModeScreen({
   onAddDose: QuickMedicationSaveHandler;
   onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
   onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
+  onSaveCareSetup: ComponentProps<typeof CareSetupPanel>["onSave"];
+  onUseSchedule: ComponentProps<typeof CareSetupPanel>["onUseSchedule"];
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
@@ -55,6 +60,8 @@ export function CareModeScreen({
           onAddDose={onAddDose}
           onUpdateDose={onUpdateDose}
           onDeleteDose={onDeleteDose}
+          onSaveCareSetup={onSaveCareSetup}
+          onUseSchedule={onUseSchedule}
           onGenerateReport={onGenerateReport}
           conditionScore={conditionScore}
           careSetup={careSetup}
@@ -73,6 +80,8 @@ function CarePanel({
   onAddDose,
   onUpdateDose,
   onDeleteDose,
+  onSaveCareSetup,
+  onUseSchedule,
   onGenerateReport,
   conditionScore,
   careSetup,
@@ -83,6 +92,8 @@ function CarePanel({
   onAddDose: QuickMedicationSaveHandler;
   onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
   onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
+  onSaveCareSetup: ComponentProps<typeof CareSetupPanel>["onSave"];
+  onUseSchedule: ComponentProps<typeof CareSetupPanel>["onUseSchedule"];
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
@@ -95,6 +106,8 @@ function CarePanel({
 
   return (
     <>
+      <CareSetupPanel setup={careSetup} onSave={onSaveCareSetup} onUseSchedule={onUseSchedule} />
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.todayMedicationTitle")}</Text>
         <Text style={styles.linkText}>{t("ko", "care.todayMedicationProgress")} {pendingCount}</Text>
@@ -169,20 +182,6 @@ function ReportPanel({ onShare }: { onShare: () => void }) {
   );
 }
 
-function ScoreRow({ label, color, value }: { label: string; color: string; value: number }) {
-  return (
-    <View style={styles.scoreRow}>
-      <Text style={styles.scoreLabel}>{label}</Text>
-      <View style={styles.paws}>
-        {[1, 2, 3, 4, 5].map((score) => (
-          <AppIcon key={score} name="walk" size={iconSize.md} color={score <= value ? color : colors.inactive} />
-        ))}
-      </View>
-      <Text style={styles.scoreValue}>{value}/5</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     gap: spacing.lg,
@@ -228,24 +227,6 @@ const styles = StyleSheet.create({
   emptyText: {
     ...type.body,
     color: colors.textMuted,
-  },
-  scoreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 34,
-  },
-  scoreLabel: {
-    ...type.body,
-    flex: 1,
-  },
-  paws: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
-  scoreValue: {
-    ...type.body,
-    width: 40,
-    textAlign: "right",
   },
   reportCopy: {
     ...type.body,
