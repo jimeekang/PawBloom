@@ -28,6 +28,7 @@ const tests = [
   "apps/mobile/src/contexts/diary/application/diaryRecordOrigin.test.ts",
   "apps/mobile/src/contexts/diary/application/diaryRecordPayload.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationScheduleRules.test.ts",
+  "apps/mobile/src/contexts/medication/application/medicationScheduleRecords.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationDoseRecords.scheduleGuard.test.ts",
   "apps/mobile/src/presentation/liveUiState.dashboard.test.ts",
   "apps/mobile/src/presentation/screens/HomeDashboardPanel.logic.test.ts",

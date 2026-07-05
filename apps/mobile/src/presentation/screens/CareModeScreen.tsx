@@ -9,7 +9,7 @@ import { t } from "../../i18n/translations";
 import { SummaryCard } from "../ui/SummaryCard";
 import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
 import { CareSetupPanel } from "./CareSetupPanel";
-import type { TodayMedicationAgendaRow } from "./todayMedicationAgenda";
+import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "./todayMedicationAgenda";
 
 type Segment = "care" | "reports";
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
@@ -148,6 +148,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
       <AppIcon name="medication" size={iconSize.lg} color={visual.icon} />
       <View style={styles.agendaBody}>
         <Text style={styles.medTitle}>{row.medicationName}</Text>
+        <Text style={styles.sourceLabel}>{t("ko", medicationAgendaSourceLabelKey(row))}</Text>
         <Text style={styles.medDetail}>{row.scheduledTime} · {visual.label}</Text>
         {row.conditionName ? <Text style={styles.medMeta}>{t("ko", "care.conditionLabel")}: {row.conditionName}</Text> : null}
         {row.dosageLabel ? <Text style={styles.medMeta}>{t("ko", "care.dosageLabel")}: {row.dosageLabel}</Text> : null}
@@ -216,6 +217,7 @@ const styles = StyleSheet.create({
   medAccent: { width: 8, height: "100%" },
   agendaBody: { flex: 1, gap: spacing.xs, paddingVertical: spacing.md },
   medTitle: { ...type.bodyStrong },
+  sourceLabel: { ...type.tiny, color: colors.orangeDeep },
   medDetail: { ...type.caption },
   medMeta: { ...type.tiny, color: colors.textMuted },
   actionButtons: { gap: spacing.sm, marginTop: spacing.sm },

@@ -1,6 +1,6 @@
 import type { CareMedicationSchedule } from "../../contexts/care/domain/carePlan";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { createTodayMedicationAgendaRows, findPendingMedicationAgendaRow } from "./todayMedicationAgenda";
+import { createTodayMedicationAgendaRows, findPendingMedicationAgendaRow, medicationAgendaSourceLabelKey } from "./todayMedicationAgenda";
 
 const schedule: CareMedicationSchedule = {
   id: "schedule-1",
@@ -47,4 +47,12 @@ const firstPendingRow = findPendingMedicationAgendaRow([
 ]);
 if (firstPendingRow?.scheduleId !== "schedule-2") {
   throw new Error("today checklist must target the first pending scheduled medication instead of creating a duplicate dose");
+}
+
+if (medicationAgendaSourceLabelKey(rows[0]!) !== "care.scheduledMedicationLabel") {
+  throw new Error("virtual schedule agenda rows must be labeled as scheduled medication");
+}
+
+if (medicationAgendaSourceLabelKey({ ...rows[0]!, source: "dose", scheduleId: undefined, doseId: "quick-dose-1" }) !== "care.temporaryMedicationLabel") {
+  throw new Error("quick medication rows must be labeled separately from scheduled medication");
 }

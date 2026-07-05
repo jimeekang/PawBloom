@@ -51,3 +51,7 @@ export function createTodayMedicationAgendaRows({ schedules, doses, doseDate }: 
 export function findPendingMedicationAgendaRow(rows: TodayMedicationAgendaRow[]) {
   return rows.find((row) => row.status === "pending");
 }
+
+export function medicationAgendaSourceLabelKey(row: TodayMedicationAgendaRow) {
+  return row.scheduleId ? "care.scheduledMedicationLabel" : "care.temporaryMedicationLabel";
+}
