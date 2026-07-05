@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: analysis
+edit_policy: exclusive
+---
+
 # PawBloom 전면 분석 — 종합 요약
 
 - 작성일: 2026-07-05

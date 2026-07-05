@@ -1,3 +1,9 @@
+---
+owner_model: codex-high
+domain: database
+edit_policy: exclusive
+---
+
 # 데이터베이스 엔지니어링
 
 Supabase는 Australia-first 출시를 위해 `ap-southeast-2` Sydney region에 둔다.

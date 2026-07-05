@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: planning
+edit_policy: exclusive
+---
+
 # AI 안전 정책
 
 PawBloom AI는 수의사가 아니라 기록 요약 도구다.

@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: planning
+edit_policy: exclusive
+---
+
 # PawBloom 제품 명세
 
 PawBloom는 이중 언어 반려동물 다이어리와 케어 기록 앱이다. 평소에는 보호자가 일상 기록을 빠르게 남기도록 돕고, 반려동물이 아플 때는 프로필에 병명과 투약 기본값을 저장해 케어 섹션에서 오늘 투약 여부를 빠르게 체크하고 다이어리 기록과 함께 병원용 briefing을 만든다.

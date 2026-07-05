@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: analysis
+edit_policy: exclusive
+---
+
 # PawBloom 엔지니어링 · 출시 준비도 (CTO 관점)
 
 - 작성일: 2026-07-05

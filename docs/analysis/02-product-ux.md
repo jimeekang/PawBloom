@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: product-design
+edit_policy: exclusive
+---
+
 # PawBloom 제품 · UI/UX 분석
 
 - 작성일: 2026-07-05
@@ -72,7 +78,7 @@
 
 - preview 모드 초기 상태는 `mockUiState.ts`(모찌/루나 2마리)와 `sampleData.ts`(밀로, 식사/물/배변, 투약 2건)로 시드.
 - 네비게이션은 스택이 아니라 `PawBloomShell`의 `activeTab` state로 4개 탭(today/diary/care/reports)을 조건부 렌더.
-- `design-qa.md`는 브라우저 URL 정책으로 실제 스크린샷 캡처가 차단돼 mockup 대비 비교가 'blocked' 상태로 남아있음을 기록.
+- [design QA 문서](../design/DESIGN_QA.md)는 브라우저 URL 정책으로 실제 스크린샷 캡처가 차단돼 mockup 대비 비교가 'blocked' 상태로 남아있음을 기록.
 
 ## 권장 조치 요약
 

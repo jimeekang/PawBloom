@@ -1,46 +1,66 @@
+---
+owner_model: codex-high
+domain: implementation
+edit_policy: exclusive
+---
+
 # 프론트엔드 엔지니어링
 
-모바일 앱은 `apps/mobile` 아래에 둔다.
+모바일 앱 구현 계약(implementation contract)만 다룬다. 화면 동작·MVP 화면 구성 등 제품 성격의 결정은 [../product/PRODUCT_SPEC.md](../product/PRODUCT_SPEC.md)에 있다. 앱 코드는 `apps/mobile` 아래에 둔다.
 
-## 규칙
+## 스택
 
-- Expo SDK 56 API와 versioned Expo documentation을 사용한다.
-- TypeScript strict mode를 유지한다.
-- Supabase read/mutation에는 TanStack Query를 사용한다.
-- Supabase Auth session 저장에는 Expo SecureStore를 사용한다.
-- Offline outbox에는 Expo SQLite를 사용한다.
-- 사용자에게 보이는 모든 문구는 `src/i18n/translations.ts`에 둔다.
-- Supabase secret은 앱에 hard-code하지 않는다.
-- Edge Function은 typed request/response wrapper 없이 호출하지 않는다.
+- **Expo**: SDK 56 API와 versioned Expo documentation을 사용한다.
+- **TypeScript**: strict mode를 유지한다.
+- **TanStack Query**: Supabase read/mutation에 사용한다.
+- **Expo SecureStore**: Supabase Auth session 저장에 사용한다.
+- **Expo SQLite**: offline outbox에 사용한다.
 
-## UI 원칙
+## 필수 구현 규칙
 
-- 첫 화면은 landing page가 아니라 바로 사용할 수 있는 Today workflow다.
-- Care 화면은 차분하고 직접적으로 만든다.
-- AI가 의료 판단자인 것처럼 보이는 표현을 피한다.
-- 모바일 interaction은 엄지손가락으로 누르기 쉬워야 한다.
-- 반복 기록은 기본 루틴 또는 care plan에서 불러오고, 입력 화면에서는 오늘 값만 빠르게 수정하게 한다.
-- 시간 선택은 사용자가 직접 숫자를 입력하지 않게 하고, 휴대폰 기본 시간 선택 UI를 사용한다.
-- 기본 루틴은 반려동물 프로필 관리 화면에서 설정한다. Diary 화면은 기본값을 읽기만 하고 루틴 설정 UI를 직접 보여주지 않는다.
-- 장기 케어 기본값은 반려동물 프로필 관리 화면에서 설정한다. Care 화면은 프로필에 저장된 병명/상태, 약, 용량, 투약 기간, 반복 간격, 복용 시간을 읽어 오늘 해당되는 체크리스트로 보여준다.
-- 기본값을 불러온 경우에도 사용자가 오늘만 수정할지, 기본 설정을 다시 저장할지 명확하게 구분한다.
-- Diary는 일상 기록에 집중한다. 식사, 물, 산책, 배변, 컨디션은 각 카테고리 전용 입력만 보여준다. 사진과 메모는 별도 다이어리 카테고리로 제공하며 모든 카테고리에 공통으로 붙이지 않는다.
-- Today checklist는 빠른 완료 확인 UI다. 체크리스트가 만든 기록은 Diary 상세 수정 화면으로 보내지 않고, 직접 작성한 Diary 기록만 카테고리별 수정 화면으로 보낸다.
-- 구조화된 Diary 카테고리(식사, 물, 산책, 배변, 컨디션)는 같은 반려동물/날짜/카테고리에서 하나의 상세 기록을 수정하는 흐름을 기본으로 한다. 메모와 사진은 여러 이벤트성 기록을 허용할 수 있다.
-- Care 화면은 오늘 예정된 투약을 투약함/건너뜀으로 체크하는 실행 화면이다. 병명/상태, 약 종류, 용량, 기간, 하루 횟수, 시간, 2일에 한 번 같은 반복 기본값 설정은 프로필에서 관리한다.
-- 투약 알림은 프로필의 약 일정에서 계산한 오늘 이후의 실제 투약 시간에 맞춰 기기 로컬 알림으로 예약한다. 사용자가 일정, 기간, 반복 간격, 시간을 바꾸면 기존 알림을 취소하고 다시 예약한다.
-- Care 화면의 일시적 투약 입력은 사용자가 명시적으로 추가 버튼을 눌렀을 때만 펼친다. 이 입력은 오늘만 남기는 기록이며 프로필 기본값을 바꾸지 않는다.
-- Care 화면은 컨디션 점수를 입력하지 않는다. 최신 컨디션 점수는 Diary 기록에서 읽어 리포트 준비 상태에만 보여준다.
-- 프로필 케어 기본값은 여러 병명/상태와 여러 약을 추가할 수 있어야 하며, 약은 특정 병명/상태에 연결하거나 미연결 약으로 저장할 수 있다. 하루 여러 번 복용하는 약은 같은 약 아래 여러 복용 시간으로 보여주되, 저장은 시간별 일정으로 분리한다.
-- 전역 디자인 token, icon, spacing, typography, layout rule을 우선 사용한다.
-- 화면별 임의 스타일 추가는 피하고, 필요한 스타일은 design system에 먼저 반영한다.
+- **디자인 token 우선**: 전역 디자인 token, icon, spacing, typography, layout rule을 우선 사용한다. 화면별 임의 스타일 추가는 금지한다. 새 스타일이 필요하면 design system(`src/design-system`)에 먼저 반영한 뒤 사용한다.
+- **i18n**: 사용자에게 보이는 모든 문구는 `src/i18n/translations.ts`에 둔다. 화면에 리터럴 문자열을 하드코딩하지 않는다.
+- **Edge Function 호출**: typed request/response wrapper 없이 직접 호출하지 않는다. 모든 Edge Function 호출은 typed wrapper를 통한다.
+- **Supabase secret**: 앱 코드에 hard-code하지 않는다.
 
-## MVP 화면 방향
+## 투약 알림 로컬 예약
 
-- Today: 오늘의 기록, 투약, 산책, 컨디션 check list
-- Diary: 식사, 물, 선택형 산책, 배변, 컨디션, 사진, 메모 입력
-- Care: 프로필에서 불러온 오늘 투약 체크, 일시적 투약 추가, 리포트 이동
-- Reports: 3일/7일 요약, 누락 기록, 수의사 질문, 공유 link
-- Pet selector: 여러 반려동물 중 활성 pet 선택
-- Routine setup: 반려동물 프로필 안에서 기본 식사량, 물, 선택형 산책, 배변, 컨디션 기준값 설정
-- Care setup: 반려동물 프로필 안에서 여러 상태/진단명, 약 이름, 용량, 투약 기간, 반복 간격, 하루 횟수와 복용 시간 설정
+투약 알림은 기기 로컬 알림(expo-notifications)으로만 예약한다. 서버 push에 의존하지 않는다.
+
+- **구현 위치**: `apps/mobile/src/presentation/notifications/medicationReminderNotifications.ts`.
+- **알림 identifier 규약**: `medication:${scheduleId}:${dateKey}` 형식. 이 접두사(`medication:`)로 기존 예약을 식별·취소한다.
+- **예약 범위**: 오늘(`fromDate`) 기준 앞으로 **30일** 치를 예약한다(`buildMedicationReminderRequests`의 `daysAhead: 30`). 각 날짜마다 `scheduleAppliesOnDate`로 해당 일정이 그 날에 적용되는지 확인한 뒤에만 요청을 만든다.
+- **재예약(reschedule)**: 사용자가 일정, 기간, 반복 간격, 시간을 바꾸면 `rescheduleMedicationReminders`가 `medication:` 접두사를 가진 기존 로컬 알림을 모두 취소하고 다시 예약한다. 권한이 없으면(`requestPermissionsAsync` 미허용) `false`를 반환하고 예약하지 않는다.
+- **trigger 계산**: `triggerDate`는 `dateKey`와 스케줄의 `localTime`(`HH:mm`)으로 기기 로컬 시각을 만든다. `SchedulableTriggerInputTypes.DATE`를 사용한다.
+- **content**: title은 `${petName} 약 먹일 시간이에요`, body는 `schedule.medicationName`.
+
+### 스케줄 시간별 분리 저장
+
+하루 여러 번 복용하는 약은 UI에서는 같은 약 아래 여러 복용 시간으로 보여주되, 저장은 **시간별 개별 일정**(`CareMedicationSchedule`, 각각 고유 `id`/`localTime`)으로 분리한다. 알림 예약도 이 분리된 시간별 일정 단위로 이뤄진다.
+
+## 타임라인 탭 라우팅 UI 계약
+
+Home 타임라인 항목 탭 동작은 Diary record origin으로 분기한다.
+
+- **구현 위치**: `apps/mobile/src/presentation/shell/timelineRouting.ts`.
+- **계약**: `getTimelineEntryRoute(entry): "diaryEdit" | "checklistNotice"`.
+  - `entry.origin === "checklist"` → `"checklistNotice"` (Today에 머물고 Diary edit를 열지 않음. `PawBloomShell.tsx`에서 `today.checklistTimelineReadOnly` notice 표시).
+  - 그 외(`origin: "diary"`) → `"diaryEdit"` (해당 카테고리 Diary edit 폼을 연다).
+- **근거**: Today checklist가 만든 기록(`origin: "checklist"`)은 상세 수정 대상이 아니고, 직접 작성한 Diary 기록(`origin: "diary"`)만 카테고리별 수정 화면으로 보낸다. 구조화 카테고리를 그 날짜에 직접 저장하면 같은 날 기존 record(checklist-origin 포함)를 갱신하고 `origin: "diary"`로 승격한다.
+- 관련 계획: [../exec-plans/archive/care-report-2026-07-completion-log.md](../exec-plans/archive/care-report-2026-07-completion-log.md) (2026-07-04 구현 완료, 완료 기록으로 통합).
+
+## 카테고리별 Diary 폼 헬퍼
+
+Diary 입력 화면은 선택한 카테고리에 따라 노출 필드를 헬퍼로 결정한다. `DiaryEntryScreen.tsx`는 이 헬퍼 결과만 신뢰하고 화면에서 조건 분기를 중복 작성하지 않는다.
+
+- **구현 위치**: `apps/mobile/src/presentation/screens/DiaryEntryScreen.formRules.ts`.
+- **구조화 카테고리 집합**: `food`, `water`, `walk`, `stool`, `condition`.
+- **`getDiaryCategoryFormState(category)`** → `{ showsDetail, showsMemo, showsPhotos }`:
+  - `showsDetail`: 구조화 카테고리일 때만 true (전용 상세 입력 노출).
+  - `showsMemo`: `category === "memo"`일 때만 true.
+  - `showsPhotos`: `category === "photo"`일 때만 true.
+- **저장 헬퍼(같은 파일)**:
+  - `getDiaryDetailForSave(category, detail)`: 구조화 카테고리이고 `detail.category`가 일치할 때만 detail 저장, 아니면 `undefined`.
+  - `getDiarySummaryForSave(category, memo)`: `memo`/`photo`일 때만 `memo.trim()`, 아니면 빈 문자열.
+  - `getDiaryPhotosForSave(category, photos, isEditing)`: `photo`이고 신규 작성(`!isEditing`)일 때만 photos, 아니면 `undefined`.
+- 관련 계획: [../exec-plans/archive/week1-completion-log.md](../exec-plans/archive/week1-completion-log.md) (완료 기록으로 통합).

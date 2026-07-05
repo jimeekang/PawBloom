@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: analysis
+edit_policy: exclusive
+---
+
 # PawBloom 시장 조사 — 호주(1차) · 한국(2차)
 
 - 작성일: 2026-07-05

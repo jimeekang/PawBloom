@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: planning
+edit_policy: exclusive
+---
+
 # Checklist and Diary Record Boundary Design
 
 ## Summary

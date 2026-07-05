@@ -1,85 +1,75 @@
-# Care Profile Defaults Simplification Design
+---
+owner_model: claude-opus-4.8-extra
+domain: planning
+edit_policy: exclusive
+status: completed
+---
 
-Date: 2026-07-04
-Status: planning draft from user request
-Scope: mobile care UX, profile care defaults, medication schedule/dose flow, product/engineering documentation
+# Care Profile 기본값 단순화 설계
 
-## Goal
+- 완료일: 2026-07-04
+- Scope: 모바일 Care UX, 프로필 care 기본값, medication 일정/dose 흐름, 제품/엔지니어링 문서 정합
+- 상태: completed (구현 반영 완료)
 
-Make Care simple enough for a non-technical caregiver to answer one daily question: "Did I give the scheduled medicine today?"
+## 목표
 
-The profile becomes the place to save long-running care defaults: illness or condition names, medication names, prescribed amount labels, treatment period, repeat interval, and scheduled times. The Care tab becomes the daily execution surface: scheduled medication check, temporary medication add, reminders, and report navigation.
+비전문 보호자가 매일 하나의 질문에만 답하면 되도록 Care를 단순화한다: "오늘 예정된 약을 먹였나?"
 
-## Problem
+프로필은 장기 실행되는 care 기본값을 저장하는 곳이 된다 — 병명/상태, 약 이름, 처방 용량 라벨, 투약 기간, 반복 간격, 복용 시간. Care 탭은 오늘의 실행 표면이 된다 — 예정 약 확인, 임시 약 추가, 리마인더, 리포트 이동.
 
-The current Care page exposes too many jobs at the same level:
+## 문제
 
-- report readiness
-- today's medication list
-- quick medication form
-- care plan default setup
-- condition score
-- AI/report summary
-- report button
+기존 Care 페이지는 서로 다른 성격의 작업(리포트 준비 상태, 오늘 약 목록, 빠른 약 입력, care plan 설정, 컨디션 점수, AI/리포트 요약, 리포트 버튼)을 같은 레벨에 노출해 설정 폼처럼 느껴졌다. 또한 세 가지 다른 데이터 의미를 섞었다: 날짜와 무관하게 지속되는 프로필 기본값, 오늘의 실제 투약 결과, Diary 기반 컨디션 정보.
 
-This makes the page feel like a configuration form instead of a daily care tool. It also blends three different data meanings:
+기대되는 단순한 흐름:
 
-- profile-level defaults that should persist across days
-- today's actual medication outcome
-- diary-based condition information
+1. 병명/약 기본값을 프로필에서 설정한다.
+2. Care가 오늘 예정 약을 자동으로 보여준다.
+3. Care에서는 각 예정 약을 먹였는지만 확인한다.
+4. 일회성 약이 필요하면 오늘만 수동으로 추가한다.
+5. 컨디션 점수는 Care에서 다시 묻지 않고 Diary에서 읽는다.
 
-The user expectation is simpler:
+## 제품 철학 (Care 단순화)
 
-1. Set up illness and medication defaults from the pet profile.
-2. Let Care automatically show scheduled medicines for today.
-3. In Care, check only whether each scheduled medicine was given.
-4. If a one-time medicine is needed, manually add it for today only.
-5. Read condition score from Diary rather than asking again in Care.
+PawBloom의 유료 가치는 복잡한 데이터 입력이 아니라 신뢰할 수 있는 care 이력과 병원용 리포트에 있다. 각 표면의 역할을 분리한다:
 
-## Product Direction
+- Profile: 선택된 반려동물의 장기 setup(기본값 저장소).
+- Diary: 일상과 컨디션의 상태 진실원(source of truth).
+- Care: 오늘 투약 실행 표면.
+- Reports: 병원용 요약과 공유.
 
-PawBloom should keep its monetizable value around reliable care history and vet-ready reporting, not around complex data entry.
+유료 가치 경로:
 
-The product roles are:
+- Free/core: 오늘 체크리스트와 간단한 투약 확인.
+- Plus/Family 방향: 긴 투약 이력, 다중 병명/약, 가족 책임 공유, 병원 리포트 공유·보관, 보호자 협업.
 
-- Profile: long-running setup for the selected pet.
-- Diary: daily life and condition source of truth.
-- Care: today medication execution.
-- Reports: clinic-ready summary and sharing.
+실제 구독/paywall 구현은 이 slice 범위 밖이다.
 
-This creates a clearer paid-value path:
+## UX 설계
 
-- Free/core: today checklist and simple medication check.
-- Plus/Family direction: longer medication history, multiple conditions/medications, family accountability, vet report sharing, report retention, and caregiver coordination.
+### 반려동물 프로필
 
-Actual subscription implementation remains outside this slice.
+프로필은 기본 정보와 기본 루틴 아래에 care 기본값을 보여준다.
 
-## UX Design
+권장 순서:
 
-### Pet Profile
+1. 반려동물 기본 정보
+2. 기본 루틴
+3. Care 기본값
 
-Profile should show care defaults below the basic pet profile and routine defaults.
+Care 기본값이 지원하는 것:
 
-Recommended order:
+- 다중 병명/상태
+- 다중 약
+- 약을 상태에 연결(선택) 또는 상태 없이 등록
+- 용량은 텍스트 라벨(의학적 조언 아님)
+- 투약 시작일과 선택적 종료일
+- 반복 간격(매일, 2일에 한 번 등)
+- 약마다 하나 이상의 로컬 복용 시간
 
-1. Pet basic information.
-2. Basic routine.
-3. Care defaults.
+하루 여러 번 먹는 약은 UI에서 한 약 아래에 시간들을 묶어 보여주되, 저장은 시간별로 schedule 행을 하나씩 둔다. 예: 08:00과 20:00 약은 같은 medication에 연결된 두 개의 schedule 행이 된다. (저장 모델은 [DATABASE.md](../../engineering/DATABASE.md) 참조.)
 
-Care defaults should support:
-
-- multiple illness or condition names
-- multiple medicines
-- medicine linked to a condition when relevant
-- medicine without a condition when the user does not want to categorize it
-- dosage label as text, not medical advice
-- treatment start date and optional end date
-- repeat interval such as every day or every 2 days
-- one or more daily local times per medicine
-
-For a medicine taken several times per day, the UI should group the times under one medicine, but storage should keep one schedule row per time. For example, one medicine at 08:00 and 20:00 becomes two schedule rows linked to the same medication.
-
-The profile copy should make the data meaning clear:
+프로필 카피(데이터 의미를 명확히):
 
 - "매일 보여줄 약 일정"
 - "병명/상태 추가"
@@ -89,204 +79,133 @@ The profile copy should make the data meaning clear:
 - "복용 시간 추가"
 - "이 내용은 기본 일정입니다. 오늘 실제 투약 여부는 Care에서 체크해요."
 
-### Care Tab
+### Care 탭 (화면 상단 순서 — 단일 기준)
 
-Care should start with today's medication check, not setup.
+Care는 setup이 아니라 오늘의 약 확인으로 시작한다. **이 순서가 Care 화면 상단 순서의 단일 기준이다.** 같은 날짜의 [clinic-report value-proof 설계](./2026-07-04-clinic-report-value-proof-design.md)의 Care 순서와 상충하므로, clinic-report spec은 이 문서를 참조하고 이 순서를 따른다.
 
-Recommended order:
+권장 순서:
 
-1. Summary line: "오늘 예정된 약 2개 중 1개 확인"
-2. Scheduled medication list.
-3. Temporary medication add button.
-4. Compact schedule summary with a link back to profile settings.
-5. Small Diary condition reference.
-6. Report CTA.
+1. 요약 라인: "오늘 예정된 약 2개 중 1개 확인"
+2. 예정 약 목록
+3. 임시 투약 추가 버튼
+4. 컴팩트 일정 요약 + 프로필 설정으로 돌아가는 링크
+5. Diary 컨디션 참조(소형)
+6. Report CTA
 
-Each scheduled medication row should show:
+각 예정 약 행이 보여주는 것: 시간, 약 이름, 용량 라벨(있을 때), 연결된 상태(있을 때), 유용하면 반복 패턴("2일에 한 번"), 현재 상태 텍스트, 직접 액션 버튼.
 
-- time
-- medication name
-- dosage label when present
-- linked condition when present
-- schedule pattern when useful, such as "2일에 한 번"
-- current status text
-- direct action buttons
+Primary 액션: "먹였어요" / "못 먹였어요".
 
-Primary actions:
+Secondary/편집 액션: "수정", 그리고 "일부만 먹였어요"는 상단 기본 액션이 아니라 편집/추가 상세 안에 둔다.
 
-- "먹였어요"
-- "못 먹였어요"
+기존의 상태 순환(circle 반복 탭) 동작은 지나치게 암묵적이었다. 사용자가 원 하나를 반복 탭해 상태가 맞기를 기대하는 대신 상태를 직접 설정하게 한다.
 
-Secondary/edit actions:
+### 임시 투약
 
-- "수정"
-- "일부만 먹였어요" inside edit/add details, not as a top-level default action
+임시 투약은 기본 접힘. 버튼: "임시 투약 추가".
 
-The current status cycle behavior is too implicit. Users should set a status directly instead of tapping one circle repeatedly and hoping it lands on the right state.
+Helper 카피: "오늘만 먹인 약이 있을 때만 추가하세요. 매일 먹는 약은 프로필의 약 일정에서 관리해요."
 
-### Temporary Medication
+필수: 약 이름, 시간, 상태. 선택: 병명/상태, 용량 라벨, 오늘 준 양, 반응/메모.
 
-Temporary medication should be collapsed by default.
+임시 투약 기록은 프로필 기본값을 생성/수정하지 않는다. 별도의 "일정에 추가" 흐름(후속 기능)에서 사용자가 명시적으로 선택할 때만 기본값에 반영한다.
 
-Button:
+### 컨디션 점수 (Diary 소유, Care는 참조)
 
-- "임시 투약 추가"
-
-Helper copy:
-
-- "오늘만 먹인 약이 있을 때만 추가하세요. 매일 먹는 약은 프로필의 약 일정에서 관리해요."
-
-Required fields:
-
-- medicine name
-- time
-- status
-
-Optional fields:
-
-- illness/condition
-- dosage label
-- amount given today
-- reaction/note
-
-Temporary medication records must not create or edit profile defaults unless the user explicitly chooses a separate "일정에 추가" flow in a later feature.
-
-### Condition Score
-
-Care should not ask for condition score input.
-
-Condition score belongs to Diary's condition category. Care may show a small reference such as:
+Care는 컨디션 점수를 입력받지 않는다. 컨디션 점수는 Diary의 컨디션 카테고리 소유다. Care는 소형 참조만 노출한다:
 
 - "오늘 컨디션은 Diary에서 기록해요."
 - "최근 컨디션: 3/5"
 
-The report readiness calculation may read the latest Diary condition score, but Care should not become a duplicate condition entry screen.
+리포트 준비 계산은 최신 Diary 컨디션 점수를 읽을 수 있으나, Care가 중복 컨디션 입력 화면이 되어서는 안 된다.
 
-## Schedule And Reminder Rules
+## 스케줄 노출·리마인더 규칙
 
-PawBloom should support practical caregiver schedules without implementing complex prescriptions.
+복잡한 처방을 구현하지 않고 실용적 보호자 일정을 지원한다.
 
-Supported schedule fields:
+스케줄 필드:
 
-- `startsOn`: the first local date the medicine may appear
-- `endsOn`: optional last local date
-- `recurrenceIntervalDays`: positive integer; `1` means every day, `2` means every other day
-- `localTime`: one local time per schedule row
+- `startsOn`: 약이 나타날 수 있는 첫 로컬 날짜
+- `endsOn`: 선택적 마지막 로컬 날짜
+- `recurrenceIntervalDays`: 양의 정수. `1`=매일, `2`=이틀에 한 번
+- `localTime`: schedule 행당 로컬 시간 하나
 
-The rule for whether a schedule appears on a local date:
+특정 로컬 날짜에 스케줄이 나타나는 규칙(세 조건 모두 충족):
 
-1. The date is on or after `startsOn`.
-2. The date is on or before `endsOn` when `endsOn` exists.
-3. The number of days from `startsOn` to the date is divisible by `recurrenceIntervalDays`.
+1. 날짜가 `startsOn` 이후(같은 날 포함)
+2. `endsOn`이 있으면 날짜가 `endsOn` 이내(같은 날 포함)
+3. `startsOn`부터 그 날짜까지의 일수가 `recurrenceIntervalDays`로 나누어떨어짐
 
-Example:
+예시 (every-2-days):
 
-- Start date: 2026-07-04
-- Repeat: every 2 days
-- Time: 08:00
-- Care shows the medicine on 2026-07-04, 2026-07-06, 2026-07-08, and so on.
+- 시작일 2026-07-04, 반복 2일, 시간 08:00
+- Care는 2026-07-04, 2026-07-06, 2026-07-08, … 에만 약을 표시한다.
 
-Medication reminders should use local device notifications through Expo Notifications. They are local reminders, not server push notifications. When the user creates, edits, or deletes a care default, the app should cancel the old reminders for that pet's medication schedules and schedule the next applicable reminders from the active schedule rules.
+리마인더는 Expo Notifications를 통한 로컬 디바이스 알림이다(서버 push 아님). 사용자가 care 기본값을 생성/수정/삭제하면, 해당 반려동물 medication 일정의 기존 리마인더를 취소하고 활성 규칙에서 다음 적용 리마인더를 다시 예약한다.
 
-Reminder copy must be neutral:
+리마인더 카피는 중립적이어야 한다:
 
-- allowed: "잉꼬 약 먹일 시간이에요: 항생제"
-- disallowed: diagnosis, dose adjustment advice, emergency certainty
+- 허용: "잉꼬 약 먹일 시간이에요: 항생제"
+- 금지: 진단, 용량 조절 조언, 응급 단정
 
-## Data And Architecture
+## 데이터·아키텍처 (DB 상세는 DATABASE.md)
 
-The UI location moves, but domain ownership does not:
+UI 위치는 이동하지만 도메인 소유권은 그대로다:
 
-- `care` owns illness/condition and care plan concepts.
-- `medication` owns medication schedule and daily dose concepts.
-- `pet` owns pet profile details.
-- `diary` owns condition score and daily condition detail.
+- `care`: 병명/상태와 care plan 개념 소유
+- `medication`: medication schedule과 일별 dose 소유
+- `pet`: 반려동물 프로필 상세 소유
+- `diary`: 컨디션 점수와 일별 컨디션 상세 소유
 
-The profile screen may compose `pet`, `routine`, `care`, and `medication` use cases. It should not move care fields into the `pet` table.
+프로필 화면은 `pet`/`routine`/`care`/`medication` use case를 조합만 하며, care 필드를 `pet` 테이블로 이동하지 않는다.
 
-Existing tables already support the desired model:
+기존 테이블(`conditions`, `care_plans`, `medications`, `medication_schedules`, `medication_doses`)이 이미 이 모델을 지원한다. 앱 모델을 확장해 `ActiveCareSetup`이 다중 condition·다중 schedule을 렌더링하게 한다. 기존 단일 `conditionName`/`planTitle`는 호환 요약으로 남길 수 있으나, 새 care 기본값 UI는 배열을 사용한다.
 
-- `conditions`
-- `care_plans`
-- `medications`
-- `medication_schedules`
-- `medication_doses`
+DB 컬럼(`recurrence_interval_days`, `dose_date`), unique index `(pet_id, schedule_id, dose_date)`, 시간별 schedule 행 규칙, 스케줄↔dose 병합 규칙은 [DATABASE.md](../../engineering/DATABASE.md)에 정본으로 기록한다.
 
-The implementation should extend the app model so `ActiveCareSetup` can render multiple conditions and multiple schedules. The current single `conditionName` and `planTitle` fields may remain as compatibility summaries, but the UI should use arrays for new care defaults.
+## Dose 생성 정책 (탭 시에만 생성/갱신)
 
-`medication_schedules` already has `starts_on`, `ends_on`, and `local_time`. Add `recurrence_interval_days integer not null default 1` with a positive-value check. Use multiple rows for multiple daily times rather than storing an array of times in one row.
+예정 약은 `medication_doses` 행을 즉시 만들지 않고 Care에 나타난다. 화면은 "오늘 투약 agenda"를 두 소스의 병합으로 구성한다: (1) 선택 날짜에 적용되는 활성 medication schedule, (2) 선택 날짜의 기존 dose.
 
-## Dose Creation Policy
+규칙:
 
-Scheduled medicines should appear in Care without immediately creating `medication_doses` rows.
+- 오늘 dose가 없는 schedule → schedule 데이터로 "아직 확인 전" 표시
+- 오늘 dose가 있으면 → 저장된 dose 상태 표시
+- 사용자가 "먹였어요"/"못 먹였어요" 탭 시 → 해당 schedule·날짜에 dose 1개 생성 또는 갱신
+- 상태를 다시 바꾸면 → 기존 dose 갱신
+- 임시 약은 schedule 없이 일회성 dose로 저장
+- 선택 날짜에 적용되지 않는 schedule → Care에 안 보이고 그 날짜 리마인더도 없음
 
-The screen should build a "today medication agenda" by merging:
+중복 저장 방지는 앱 레벨 병합과 DB unique guard를 함께 쓴다. DB guard(컬럼·unique index)의 정본 정의는 [DATABASE.md](../../engineering/DATABASE.md) 참조.
 
-1. active medication schedules for the selected pet that apply to the selected local date
-2. existing medication doses for the selected date
+## 안전 요구사항
 
-Rules:
+앱은 의학적 판단을 암시하지 않는다.
 
-- If a schedule has no dose today, show it as "아직 확인 전" from the schedule data.
-- If a schedule already has a dose today, show the saved dose status.
-- When the user taps "먹였어요" or "못 먹였어요", create or update one dose for that schedule and date.
-- If the user changes the status again, update the existing dose.
-- A temporary medication has no schedule and is saved as a one-time dose.
-- Schedules that do not apply to the selected date should not appear in Care and should not produce reminders for that date.
-
-To prevent duplicate saves, schedule-based daily doses need both app-level merge logic and a database guard. The recommended database guard is a `dose_date date` column plus a unique index on `(pet_id, schedule_id, dose_date)` where `schedule_id is not null`.
-
-## Safety Requirements
-
-The app must not imply medical judgment.
-
-Allowed:
-
-- record that a medicine was given
-- record that a medicine was not given
-- record user-entered dosage labels
-- show a vet report based on records
-
-Disallowed:
-
-- dose recommendation
-- diagnosis
-- emergency certainty
-- statements that a vet is unnecessary
-- automatic advice to change medication
+- 허용: 약을 먹였다/못 먹였다 기록, 사용자 입력 용량 라벨 기록, 기록 기반 병원 리포트 표시
+- 금지: 용량 권고, 진단, 응급 단정, 수의사 불필요 진술, 자동 약 변경 조언
 
 ## Non-Goals
 
-This slice does not implement:
+이 slice가 구현하지 않는 것: 약 재고/리필, 처방전 이미지 파싱, AI 진단/용량 조언, 원격/서버 push, 복잡한 tapering 일정, 실제 구독/paywall 변경, 병원 예약 예약.
 
-- medication inventory or refills
-- prescription image parsing
-- AI diagnosis or dose advice
-- remote/server push notifications
-- complex tapering medication schedules
-- real subscription/paywall changes
-- vet appointment booking
+## Acceptance Criteria (완료 확인 기준)
 
-## Acceptance Criteria
+- 프로필에 다중 병명·약을 위한 care 기본값 섹션이 있다.
+- Care 기본값에 투약 기간, 반복 간격, 하나 이상의 일별 시간이 포함된다.
+- Care가 긴 setup 폼을 주 흐름의 일부로 더는 보여주지 않는다.
+- Care 첫 화면이 오늘 예정 약 확인에 집중된다.
+- 2일에 한 번 약은 시작일 기준으로 계산된 날짜에만 나타난다.
+- 로컬 리마인더는 규칙에 맞는 날짜·시간에만 예약된다.
+- 예정 약이 저장된 프로필 기본값에서 나타나되 중복 일별 기록을 만들지 않는다.
+- 예정 약 액션 탭 시 해당 schedule·날짜에 정확히 dose 1개를 생성/갱신한다.
+- 임시 약을 오늘만 추가할 수 있다.
+- 컨디션 점수는 Diary 입력으로 남고 Care에서는 참조만 한다.
+- 리포트 생성은 여전히 diary entry와 medication dose 기록을 사용한다.
+- 사용자 카피가 진단·처방 조언·응급 단정을 피한다.
+- `npm run verify` 통과.
 
-- Profile has a care defaults section for multiple conditions and medicines.
-- Profile care defaults include treatment period, repeat interval, and one or more daily times.
-- Care no longer shows the long care setup form as part of the primary daily flow.
-- Care's first viewport is focused on today's scheduled medication check.
-- A medicine set to every 2 days appears only on dates calculated from its start date.
-- Local medication reminders are scheduled only for dates and times that match the schedule rules.
-- Scheduled medicines appear from saved profile defaults without creating duplicate daily records.
-- Tapping a scheduled medication action creates or updates exactly one dose for that schedule and date.
-- Temporary medication can be added for today only.
-- Condition score remains a Diary input and is only referenced in Care.
-- Report generation still uses diary entries and medication dose records.
-- User-facing copy avoids diagnosis, prescription advice, and emergency certainty.
-- `npm run verify` passes after implementation.
+## 후속 항목
 
-## Self-Review
-
-- No unspecified requirements remain.
-- Scope is one coherent mobile care simplification slice.
-- Data ownership stays in care/medication rather than moving clinical data into the pet profile table.
-- Duplicate prevention is explicit at app and database levels.
-- UX wording is caregiver-facing and avoids medical advice.
+- "일정에 추가" 흐름: 임시 투약을 명시적으로 프로필 기본값으로 승격(별도 기능).
+- 구독/paywall 및 Plus/Family 가치(긴 이력, 다중 조건, 가족 협업)의 실제 구현.

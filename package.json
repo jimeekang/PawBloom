@@ -20,8 +20,9 @@
     "verify:secrets": "node scripts/verify-secrets.mjs",
     "verify:supabase": "node scripts/verify-supabase.mjs",
     "verify:offline": "node scripts/verify-offline-sync.mjs",
+    "verify:docs": "node scripts/verify-docs.mjs",
     "codex:check": "node scripts/codex-environment-check.mjs",
-    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:presentation && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:offline"
+    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:presentation && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:offline && npm run verify:docs"
   },
   "engines": {
     "node": ">=22.0.0",

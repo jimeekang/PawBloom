@@ -1,3 +1,9 @@
+---
+owner_model: codex-high
+domain: release
+edit_policy: exclusive
+---
+
 # 릴리스 엔지니어링
 
 ## EAS Profile

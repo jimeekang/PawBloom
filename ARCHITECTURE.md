@@ -1,3 +1,9 @@
+---
+owner_model: codex-high
+domain: implementation
+edit_policy: exclusive
+---
+
 # PawBloom 아키텍처
 
 PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도메인은 자기 규칙을 소유하고, 외부에는 use case를 통해 기능을 제공한다. 다른 도메인과 협력해야 할 때는 application use case나 명시적인 domain event를 사용한다.
@@ -53,6 +59,9 @@ apps/mobile/src/contexts/<context>/
 
 - `scripts/verify-architecture.mjs`: context 경계와 파일 크기 점검
 - `scripts/verify-i18n.mjs`: 영어/한국어 번역 key 일치 점검
+- `scripts/verify-presentation-state.mjs`: presentation 로직 테스트 실행
 - `scripts/verify-ai-safety.mjs`: 앱과 Edge Function 출력에서 위험한 의료 문구 차단
+- `scripts/verify-secrets.mjs`: secret hard-code 차단
 - `scripts/verify-supabase.mjs`: migration의 GRANT와 RLS 적용 범위 점검
 - `scripts/verify-offline-sync.mjs`: outbox contract 검증
+- `scripts/verify-docs.mjs`: 문서 300줄 제한과 모델 배타 소유 frontmatter 강제 (AGENTS.md 라우팅 계약)

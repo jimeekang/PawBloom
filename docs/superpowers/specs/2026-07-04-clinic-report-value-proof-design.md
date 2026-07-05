@@ -1,217 +1,150 @@
-# Clinic Report Value Proof Design
+---
+owner_model: claude-opus-4.8-extra
+domain: planning
+edit_policy: exclusive
+---
 
-Date: 2026-07-04
-Status: approved for implementation by user request
-Scope: mobile UI, deterministic report draft, safety copy, presentation verification
+# Clinic Report Value Proof — 통합 완료 설계
 
-## Goal
+status: completed
 
-Strengthen PawBloom's first monetizable product moment: a caregiver records daily/care details and sees a clinic-ready, safe, record-based vet report preview.
+두 개의 완료 설계를 하나로 통합한다. 기준(base)은 clinic-report value-proof(2026-07-04)이며, 06-28 diary/care edit-delete & dashboard 설계의 살아있는 제품 결정을 흡수한다. 대시보드 빠른동작/모드버튼과 Care status cycle 관련 결정은 후속 설계(home-today-simplification, 07-04 defaults)가 대체했다.
 
-This slice does not implement real payments, PDF export, family invite delivery, offline replay, or a new AI prompt. It proves that the existing app experience can communicate why a user would pay before those heavier systems are added.
+AI 안전 disclaimer 전문은 [AI_SAFETY.md](../../AI_SAFETY.md) 참조. 상세 파일 경로/npm 명령/테스트 항목은 아카이브 completion-log로 이관한다.
 
-## Product Direction
+---
 
-PawBloom should not compete as a generic pet diary. The primary value proposition is:
+## Plan 1 — Clinic Report Value Proof (base)
 
-> Family/caregiver records become a safe, vet-ready briefing before a clinic visit.
+- **완료일**: 2026-07-04
+- **목표**: PawBloom의 첫 수익화 순간을 강화한다. 보호자가 일상/케어를 기록하면, 임상에서 바로 쓸 수 있는(clinic-ready) 안전한 기록 기반 vet report 미리보기를 본다. 일반 반려 다이어리와 경쟁하지 않는다. 핵심 가치 제안: **가족/보호자 기록이 진료 전 안전한 vet-ready 브리핑이 된다.** 이 슬라이스는 실제 결제/PDF/가족 초대/오프라인/새 AI 프롬프트를 구현하지 않는다 — "왜 돈을 낼 가치가 있는지"를 기존 앱 경험으로 증명한다.
 
-The implementation should make this value visible in four places:
+### 핵심 결정
 
-1. Before signup: the user sees why an account is worth creating.
-2. Today: the pet-first daily view stays warm, but care/report readiness is easier to notice.
-3. Care: today's medication and report readiness come before long configuration forms.
-4. Reports: the screen reads like a clinic artifact, not only a count dashboard.
+가치를 네 지점에서 가시화한다: (1) 가입 전 = 계정 생성 이유, (2) Today = 따뜻한 pet-first 유지하되 care/report readiness 인지 용이, (3) Care = 오늘 투약·report readiness가 긴 설정 폼보다 먼저, (4) Reports = 카운트 대시보드가 아니라 임상 아티팩트처럼 읽힌다.
 
-## Implementation Slice
+**결정론적 report draft 필수 필드** (`reportDraftRecords.ts` 소유):
 
-### Included
+- timeline highlights (타임라인 하이라이트)
+- missing record prompts (누락 기록 프롬프트)
+- vet questions (수의사 확인 질문)
+- English clinic summary preview — non-diagnosis 문구 포함 필수
+- medication adherence count (투약 순응 카운트)
 
-- Auth value preview for vet reports, family care logs, and safe record-based summaries.
-- Mobile layout fixes for Diary and Care form overflow at 390px width.
-- Stronger Today hero readability.
-- Care report readiness card above long forms.
-- Deterministic report draft fields:
-  - timeline highlights
-  - missing record prompts
-  - vet questions
-  - English clinic summary preview
-  - medication adherence count
-- Reports UI that shows a concrete draft, confirmed, and mock-shared state while clearly labeling mock share behavior.
-- Safety copy cleanup so report and care summary surfaces keep the full non-diagnosis disclaimer.
-- Presentation verification guards for the known overflow regressions.
+**Reports 화면 섹션 순서** (이 순서를 반드시 보존):
 
-### Deferred
+1. 상태 알림: draft / confirmed / shared / empty
+2. Report 제목 + 날짜 범위
+3. 전체 안전 disclaimer
+4. English clinic summary preview
+5. Timeline highlights
+6. Missing record prompts
+7. Vet questions
+8. Compact metrics / adherence summary
+9. Before-sharing checklist
+10. 단계 전환 primary action
+11. shared 단계의 mock share link 상태 — expiry 문구 + 명확한 "preview/mock" 표현
 
-- Real AI generation prompt changes.
-- Real share-token viewer integration in the mobile UI.
-- PDF export.
-- RevenueCat, StoreKit, Play Billing, or actual subscription purchase.
-- Family/caregiver invite delivery.
-- Offline outbox persistence/replay.
-- Native iOS/Android preview build generation.
+지표(metrics)는 compact. 큰 반복 카드는 숫자만이 아니라 의미 있는 텍스트를 담을 때만 허용.
 
-## UX Design
-
-### Auth
-
-The auth screen must still explain that care records are sensitive, but the first value copy should be user-facing rather than infrastructure-facing.
-
-Required value bullets:
-
-- 7-day vet report preview
-- Family care log
-- Safe record-based summary
-
-The screen should not mention Supabase or RLS in primary copy. That belongs in lower trust/support copy if shown at all.
-
-### Today
-
-The hero image remains the emotional first signal. The pet name and metadata must be readable over the image on a 390px viewport.
-
-Implementation direction:
-
-- Use a stronger bottom scrim or text backplate.
-- Keep completion and pending medication cards below the hero.
-- Do not add a marketing landing section.
-
-### Diary
-
-The full month calendar currently dominates the first viewport. The implementation should reduce repeated-entry friction.
-
-Direction:
-
-- Keep the existing full calendar available.
-- Add a compact date summary/header above it or make the calendar less visually dominant.
-- Category tiles and first detail fields should be visible sooner.
-- Food fields must stack per meal on narrow mobile:
-  - meal label
-  - provided grams
-  - eaten grams
-
-### Care
-
-Care is the paid-value center. It should feel like a daily treatment workspace, not a long setup form.
-
-Top order:
-
-1. Care/Report segmented control
-2. Vet report readiness card
-3. Today medication list
-4. Quick medication record
-5. Care plan defaults
-6. Condition score and record-based summary
-
-The quick medication form must stack dose fields at 390px:
-
-- prescribed/default amount
-- given today
-
-Care setup should stack medication name and time picker rather than clipping.
-
-### Reports
-
-Reports should lead with the report artifact.
-
-Required sections:
-
-- State notice: draft, confirmed, shared, or empty.
-- Report title and date range.
-- Full safety disclaimer.
-- English clinic summary preview.
-- Timeline highlights.
-- Missing record prompts.
-- Vet questions.
-- Compact metrics/adherence summary.
-- Before-sharing checklist.
-- Primary action for stage transition.
-- Mock share link state for shared stage with expiry copy and clear "preview/mock" language.
-
-Metrics should be compact. Large repeated cards are only acceptable when they carry meaningful text, not just a number.
-
-## Safety Requirements
-
-All report and AI-summary surfaces must show the full required disclaimer:
-
-English:
-
-```text
-This is a record-based summary, not a diagnosis. Contact a veterinarian for medical decisions.
-```
-
-Korean:
-
-```text
-이 내용은 진단이 아니라 기록 기반 요약입니다. 의학적 판단은 수의사에게 문의하세요.
-```
-
-Report and care copy must stay observational:
-
-- allowed: "기록상", "기록되지 않았습니다", "수의사에게 확인할 질문"
-- disallowed: diagnosis, prescription, dose-change advice, "병원에 갈 필요 없음", emergency certainty, disease certainty
-
-Condition trend wording should avoid medical improvement judgment. Use score movement wording:
+**Condition trend는 의학적 개선 판단을 피하고 점수 이동 문구로 표기**:
 
 - "점수 상승"
 - "점수 하락"
 - "점수 유지"
 
-Medication copy may record prescribed/default amount and given-today amount. It must not suggest changing medication dose.
+**Auth**: 사용자 대면 value bullets — 7일 vet report 미리보기 / 가족 care log / 안전한 기록 기반 요약. 주요 카피에 Supabase·RLS 언급 금지(있다면 하단 신뢰/지원 카피로만).
 
-## Architecture
+**Today**: hero 이미지가 감정적 첫 신호로 유지되되, 390px에서 pet name/메타데이터가 이미지 위에서 읽혀야 함(강한 하단 scrim 또는 text backplate). 완료/대기 투약 카드는 hero 아래 유지. 마케팅 랜딩 섹션 추가 금지.
 
-Use the existing frontend architecture:
+**Care는 유료 가치 중심** — 긴 설정 폼이 아니라 매일의 치료 workspace. 상단 순서: (1) Care/Report segmented control → (2) Vet report readiness card → (3) Today medication list → (4) Quick medication record → (5) Care plan defaults → (6) Condition score + 기록 기반 요약.
 
-- `apps/mobile/src/contexts/report/application/reportDraftRecords.ts` owns deterministic report summary logic.
-- `apps/mobile/src/presentation/screens/ReportsScreen.tsx` renders report artifact sections.
-- `apps/mobile/src/presentation/screens/CareModeScreen.tsx` renders report readiness without needing backend changes.
-- `apps/mobile/src/presentation/screens/DiaryDetailPanel.tsx`, `CareMedicationPanel.tsx`, and `CareSetupPanel.tsx` own mobile form layout fixes.
-- `apps/mobile/src/i18n/translations.ts` owns all visible copy.
-- `scripts/verify-presentation-state.mjs` owns static presentation regression guards.
+### 390px 오버플로 수정 지점 + presentation guard 대상
 
-Avoid editing `PawBloomShell.tsx` unless required for navigation or props. It already has unrelated dirty checklist-notice changes.
+- **Diary food**: meal별로 stack — meal label / provided grams / eaten grams (가로 clip 금지). `DiaryDetailPanel.tsx` 소유.
+- **Care dose**: dose 필드 stack — prescribed/default amount / given today. `CareMedicationPanel.tsx` 소유.
+- **Care setup**: medication name과 time picker를 clip 대신 stack. `CareSetupPanel.tsx` 소유.
+- `scripts/verify-presentation-state.mjs`가 위 row 기반 오버플로 패턴을 정적으로 guard하며, 기존 checklist notice 테스트 항목을 보존한다.
 
-## Testing And Verification
+**안전 문구 규칙**: report·care·AI-summary 표면은 전체 non-diagnosis disclaimer 상시 노출(전문은 AI_SAFETY.md). 관찰형 유지 — 허용: "기록상", "기록되지 않았습니다", "수의사에게 확인할 질문". 금지: 진단, 처방, 용량 변경 조언, "병원에 갈 필요 없음", 응급/질병 확신. 투약 카피는 prescribed/default·given-today를 기록할 수 있으나 용량 변경을 제안해서는 안 됨.
 
-Add or update focused tests:
+### 변경된 파일/영역
 
-- `apps/mobile/src/contexts/report/application/reportDraftRecords.test.ts`
-  - missing record prompts
-  - timeline highlights
-  - vet questions
-  - English summary preview includes non-diagnosis wording
-  - condition trend uses score movement wording
-- `scripts/verify-presentation-state.mjs`
-  - guards against known row-based overflow patterns in Diary and Care forms
-  - preserves existing checklist notice test entry
+- `apps/mobile/src/contexts/report/application/reportDraftRecords.ts` — 결정론적 report summary 로직 소유.
+- `apps/mobile/src/presentation/screens/ReportsScreen.tsx` — report 아티팩트 섹션 렌더.
+- `apps/mobile/src/presentation/screens/CareModeScreen.tsx` — backend 변경 없이 report readiness 렌더.
+- `DiaryDetailPanel.tsx` / `CareMedicationPanel.tsx` / `CareSetupPanel.tsx` — 모바일 폼 레이아웃 수정.
+- `apps/mobile/src/i18n/translations.ts` — 모든 노출 카피.
+- `scripts/verify-presentation-state.mjs` — 정적 presentation 회귀 guard.
+- `PawBloomShell.tsx` 편집은 navigation/props 필요 시에만(무관한 dirty checklist-notice 변경 존재).
 
-Required commands before handoff:
+### 남은 후속 항목 (deferred)
 
-```bash
-npm run verify:presentation
-npm run verify:i18n
-npm run verify:ai-safety
-npm run typecheck
-npm run verify
-```
+실제 AI 생성 프롬프트 변경, 실제 share-token viewer 통합, PDF export, RevenueCat/StoreKit/Play Billing 등 실제 구독 결제, 가족/보호자 초대 전달, 오프라인 outbox 영속/replay, 네이티브 iOS/Android preview 빌드 생성. 이 항목들은 이 슬라이스에서 조용히 구현되어서는 안 됨.
 
-## Acceptance Criteria
+---
 
-- Signup screen shows vet report, family log, and safe summary value before form submission.
-- Today hero text is readable on captured 390px viewport.
-- Diary food inputs do not clip horizontally at 390px.
-- Care dose/setup inputs do not clip horizontally at 390px.
-- Care first viewport prioritizes report readiness and today medication over setup.
-- Reports first viewport shows the clinic artifact, full disclaimer, English preview, and primary action.
-- Reports include timeline highlights, missing records, vet questions, and compact adherence/metric information.
-- Confirmed/shared states are concrete and clearly labeled as mock/preview until real share tokens are connected.
-- No new copy violates AI safety policy.
-- `npm run verify` passes.
+## Plan 2 — Diary/Care Edit·Delete & Dashboard (흡수)
 
-## Self-Review
+- **완료일**: 2026-06-28
+- **목표**: 저장 후 기록 수정·삭제를 가능하게 한다. 시간·사료량·물량·변 횟수·투약량·투약 상태는 잘못 입력될 수 있으므로 보호자가 저장 뒤 정정/제거할 수 있어야 한다. Today를 일상 diary/care 작업용 대시보드로 강화한다. DB 모드와 로컬 preview 모드 모두 지원.
 
-- No placeholders remain.
-- Scope is intentionally limited to mobile presentation and deterministic report summary logic.
-- Deferred items are explicit and should not be silently implemented in this slice.
-- Safety language uses the exact required disclaimers.
-- Implementation avoids overwriting existing dirty checklist work.
+### 핵심 결정 (살아있음)
+
+**"one recording UI" — 입력 폼 = 편집 폼 재사용 (원본 결정, 유효)**. 기존 diary 기록 또는 care 투약 기록을 탭하면 저장값이 로드된 동일 폼이 열린다. primary action이 create → update로 바뀌고 파괴적 delete 액션이 활성화된다. 사용자는 하나의 기록 UI만 배워 정정에 재사용한다.
+
+- **Diary edit/delete**: 선택 날짜/주 목록의 각 기록 row가 탭 가능. 탭 시 카테고리 선택 → 상세 패널 열기 → 저장 상세값 로드 → memo·condition score 로드 → update/delete 노출. 편집 필드: 카테고리별 상세값, memo, condition 기록의 condition score, 기록 날짜, 기록 시간. 삭제는 확인 프롬프트 후 → row가 Diary 목록·Today 타임라인에서 사라지고 checklist가 남은 기록으로 재계산. 연결 사진은 이 단계에서 개별 편집 안 함.
+- **Care medication edit/delete**: row 본문 탭 = 투약 편집 폼(condition/illness 명, medication 명, prescribed dose, administered amount, medication status, scheduled/recorded time, reaction/symptom/owner note 로드). compact status control은 빠른 상태 변경용으로 유지. 삭제는 확인 후 → Care Mode에서 사라지고 Today 투약 checklist·Reports draft가 남은 dose로 재계산.
+
+**Today attention strip 신호 목록 (유효)** — Today는 세 질문에 빠르게 답해야 함: 오늘 무엇을 했나 / 무엇이 주의 필요한가 / report에 언급할 만큼 이상한 게 있나. attention strip은 전체 checklist 앞에서 중요 신호 표시:
+
+- 낮은 condition score
+- skipped 또는 partial medication
+- no water record
+- stool concern (변 우려)
+- empty state: "오늘 주의 신호가 아직 없습니다."
+
+**편집/삭제 권한 매트릭스 (Supabase 정책, 유효)** — UI는 실패를 평문 메시지로 노출하고 모든 협업자가 삭제 가능하다고 가정하지 않음:
+
+- Diary update: owner/caregiver
+- **Diary delete: owner**
+- Medication dose update: owner/caregiver/pet sitter
+- **Medication dose delete: owner**
+
+**에러 처리 (유효)**: save 실패 시 폼 값 유지, delete 실패 시 기록 유지, 기존 prominent save feedback 패턴을 update/delete 성공에 재사용, delete는 파괴적 확인 프롬프트, 다른 곳에서 삭제되어 사라진 기록은 edit 모드 종료 후 목록 갱신.
+
+### 후속 설계가 대체한 결정 (deprecated)
+
+06-28 대시보드의 다음 요소는 **후속 설계(home-today-simplification, 07-04 defaults)가 대체**했으므로 이 문서에서 규범으로 채택하지 않는다:
+
+- 대시보드 **quick actions**(add diary / record medication / view report 버튼 묶음).
+- **모드 버튼** 및 대시보드 상단의 명시적 mode navigation.
+- **Care status cycle** (row의 순환형 상태 토글 흐름).
+
+이들은 07-04 defaults 및 home-today 단순화 결정으로 재정의되었다. 나머지 대시보드 순서(pet status hero → attention strip → today plan checklist → care summary → recent timeline)의 정보 신호는 유효하되, 상호작용 진입점은 후속 설계를 따른다.
+
+### 변경된 파일/영역
+
+- `apps/mobile/src/contexts/diary/application/diaryRecords.ts` — diary update/delete mutation, 기존 summary encode/decode 재사용, day·week/range·today 캐시 갱신, mutation 후 `diary` 쿼리 invalidate.
+- `apps/mobile/src/contexts/medication/application/medicationDoseRecords.ts` — 투약 dose 전체 update mutation(기존 quick status mutation 유지), delete mutation, today 투약 캐시 낙관적 갱신, `medication_doses` 쿼리 invalidate.
+- shell이 mutation을 조율해 UI는 presentation-focused 유지.
+
+### 남은 후속 항목 (excluded)
+
+사진 교체/개별 사진 삭제, Diary에서 프로필 기본 루틴 편집, 투약 편집 폼에서 care plan defaults 편집, 전체 audit history/undo, 현행 앱 계약을 넘는 오프라인 replay. 문서 갱신: `docs/exec-plans/active/0003-weekly-execution-checklist.md`에 diary/care edit-delete + Today 대시보드 개선 작업 항목 추가.
+
+---
+
+## Acceptance Criteria (통합)
+
+- 가입 화면이 폼 제출 전 vet report / family log / safe summary 가치를 노출.
+- Today hero 텍스트가 캡처된 390px viewport에서 가독.
+- Diary food 입력이 390px에서 가로 clip 없음.
+- Care dose/setup 입력이 390px에서 가로 clip 없음.
+- Care 첫 viewport가 report readiness와 today medication을 setup보다 우선.
+- Reports 첫 viewport가 임상 아티팩트·전체 disclaimer·English preview·primary action을 표시.
+- Reports가 timeline highlights·missing records·vet questions·compact adherence/metric을 포함.
+- confirmed/shared 상태는 real share token 연결 전까지 구체적이되 mock/preview로 명확 표기.
+- 새 카피가 AI 안전 정책을 위반하지 않음.
+- 저장 기록의 edit/delete가 동작하고, 편집/삭제 후 Today checklist·timeline·Reports draft·Care 목록이 동기 유지.
+- `npm run verify` 통과. (전체 검증/테스트 명령·항목은 completion-log 참조.)

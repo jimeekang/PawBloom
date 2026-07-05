@@ -1,3 +1,9 @@
+---
+owner_model: codex-high
+domain: implementation
+edit_policy: exclusive
+---
+
 # 품질 게이트
 
 작업을 넘기기 전에 아래 명령을 실행한다.
@@ -17,9 +23,12 @@ npm.cmd run verify
 - TypeScript typecheck
 - Architecture boundary check
 - i18n key parity
+- Presentation state logic test
 - AI safety wording check
+- Secret hard-code check
 - Supabase RLS/GRANT check
 - Offline outbox contract check
+- Docs governance check (`verify:docs` — md 300줄 제한 + owner_model 배타 소유 frontmatter)
 
 ## 리뷰 루프
 
