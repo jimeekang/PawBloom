@@ -1,11 +1,12 @@
 import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
+import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
+import { buildMedicationDoseUpdateOfflineMutation } from "../../sync/application/offlineMutationPayload";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote } from "./medicationDosePayload";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
-type DoseInsert = Database["public"]["Tables"]["medication_doses"]["Insert"];
 type DoseUpdate = Database["public"]["Tables"]["medication_doses"]["Update"];
 export type QuickMedicationDoseInput = { scheduleId?: string; doseDate?: string; scheduledTime?: string; conditionName?: string; medicationName: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string; status?: DoseStatus };
 export type UpdateMedicationDoseInput = QuickMedicationDoseInput & { id: string; scheduledTime?: string };
@@ -117,7 +118,10 @@ export function useUpdateMedicationDose(petId: string | null) {
     mutationFn: async (input: UpdateMedicationDoseInput) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
       const { data, error } = await supabase.from("medication_doses").update(buildMedicationDoseUpdatePayload(input)).eq("id", input.id).eq("pet_id", petId).select().single();
-      if (error) throw new Error(error.message);
+      if (error) {
+        await enqueueOfflineMutation(buildMedicationDoseUpdateOfflineMutation({ petId, input: input as unknown as Record<string, unknown> }));
+        throw new Error(error.message);
+      }
       return mapDoseRow(data);
     },
     onSuccess: (dose) => {

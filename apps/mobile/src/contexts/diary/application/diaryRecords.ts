@@ -2,6 +2,8 @@ import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient 
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { uploadDiaryPhoto } from "../../media/application/mediaUpload";
+import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
+import { buildDiaryInsertOfflineMutation } from "../../sync/application/offlineMutationPayload";
 import type { CreateDiaryEntryInput, DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
 import { inferDiaryRecordOrigin } from "./diaryRecordOrigin";
 import { buildDiaryUpdatePayload, buildOccurredAt, buildOccurredAtForTime, isStructuredDailyCategory, type DiaryUpdateInput } from "./diaryRecordPayload";
@@ -132,7 +134,10 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
       };
 
       const { data, error } = await supabase.from("diary_entries").insert(payload).select().single();
-      if (error) throw new Error(error.message);
+      if (error) {
+        await enqueueOfflineMutation(buildDiaryInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown> }));
+        throw new Error(error.message);
+      }
 
       for (const [index, photo] of (input.photos ?? []).entries()) {
         await uploadDiaryPhoto(supabase, userId, petId, data.id, photo, index + 1);
