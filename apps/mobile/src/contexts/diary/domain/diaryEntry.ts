@@ -11,7 +11,7 @@ export type StoolConsistency = "normal" | "soft" | "diarrhea" | "hard";
 export type DiaryDetailInput =
   | { category: "food"; meals: Partial<Record<MealSlot, { offeredGrams?: string; eatenGrams?: string }>>; appetite?: AppetiteLevel }
   | { category: "water"; amountMl?: string; intakeLevel?: RelativeLevel }
-  | { category: "walk"; durationMinutes?: string; intensity?: WalkIntensity; observation?: string }
+  | { category: "walk"; durationMinutes?: string; intensity?: WalkIntensity; observation?: string; stoolObservation?: string; urineObservation?: string; symptomNote?: string }
   | { category: "stool"; count?: string; consistency?: StoolConsistency; hasBloodOrMucus?: boolean }
   | { category: "condition"; energyLevel?: RelativeLevel; discomfortNote?: string }
   | { category: "memo" };

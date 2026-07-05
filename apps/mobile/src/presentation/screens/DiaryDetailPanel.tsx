@@ -80,6 +80,9 @@ function WalkDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { 
     <>
       <TextInput style={styles.input} keyboardType="numeric" value={detail.durationMinutes ?? ""} onChangeText={(value) => onChange({ ...detail, durationMinutes: minutes(value) })} placeholder={t("ko", "diary.walkMinutes")} placeholderTextColor={colors.textSoft} />
       <SegmentedControl value={detail.intensity ?? "normal"} onChange={(intensity) => onChange({ ...detail, intensity })} items={intensityItems} />
+      <TextInput style={styles.input} value={detail.stoolObservation ?? ""} onChangeText={(value) => onChange({ ...detail, stoolObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkStoolObservation")} placeholderTextColor={colors.textSoft} />
+      <TextInput style={styles.input} value={detail.urineObservation ?? ""} onChangeText={(value) => onChange({ ...detail, urineObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkUrineObservation")} placeholderTextColor={colors.textSoft} />
+      <TextInput style={styles.input} value={detail.symptomNote ?? ""} onChangeText={(value) => onChange({ ...detail, symptomNote: value.slice(0, 160) })} placeholder={t("ko", "diary.walkSymptomNote")} placeholderTextColor={colors.textSoft} />
       <TextInput style={styles.input} value={detail.observation ?? ""} onChangeText={(value) => onChange({ ...detail, observation: value.slice(0, 160) })} placeholder={t("ko", "diary.walkObservation")} placeholderTextColor={colors.textSoft} />
     </>
   );

@@ -10,7 +10,7 @@ export type RoutineCategory = "food" | "water" | "walk" | "stool" | "condition" 
 type RoutineDiaryDetail =
   | { category: "food"; meals: PetRoutine["food"]["meals"]; appetite?: PetRoutine["food"]["appetite"] }
   | { category: "water"; amountMl?: string; intakeLevel?: PetRoutine["water"]["intakeLevel"] }
-  | { category: "walk"; durationMinutes?: string; intensity?: PetRoutine["walk"]["intensity"]; observation?: string }
+  | { category: "walk"; durationMinutes?: string; intensity?: PetRoutine["walk"]["intensity"]; observation?: string; stoolObservation?: string; urineObservation?: string; symptomNote?: string }
   | { category: "stool"; count?: string; consistency?: PetRoutine["stool"]["consistency"]; hasBloodOrMucus?: boolean }
   | { category: "condition"; energyLevel?: PetRoutine["condition"]["energyLevel"]; discomfortNote?: string }
   | { category: "memo" };

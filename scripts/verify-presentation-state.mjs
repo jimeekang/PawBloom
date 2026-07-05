@@ -27,6 +27,7 @@ require.extensions[".tsx"] = transpileTypeScriptModule;
 const tests = [
   "apps/mobile/src/contexts/diary/application/diaryRecordOrigin.test.ts",
   "apps/mobile/src/contexts/diary/application/diaryRecordPayload.test.ts",
+  "apps/mobile/src/contexts/diary/application/diaryWalkObservationSummary.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationScheduleRules.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationScheduleRecords.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationDoseRecords.scheduleGuard.test.ts",
