@@ -1,7 +1,7 @@
 import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import type { TodayMedicationAgendaRow } from "./todayMedicationAgenda";
+import type { TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
@@ -9,8 +9,8 @@ import { AppIcon } from "../../design-system/iconography";
 import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard } from "../../design-system/components";
 import { colors, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
-import { createDashboardSummary, getTodayChecklistOrder } from "../liveUiState";
-import type { ChecklistKey } from "../mockUiState";
+import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
+import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
 
 const mochiHero = require("../../../assets/mochi-hero.png");

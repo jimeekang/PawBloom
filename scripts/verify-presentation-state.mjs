@@ -28,20 +28,23 @@ const tests = [
   "apps/mobile/src/contexts/diary/application/diaryRecordOrigin.test.ts",
   "apps/mobile/src/contexts/diary/application/diaryRecordPayload.test.ts",
   "apps/mobile/src/contexts/diary/application/diaryWalkObservationSummary.test.ts",
+  "apps/mobile/src/contexts/diary/application/diaryOfflineReplay.test.ts",
+  "apps/mobile/src/contexts/diary/ui/diaryFormDefaults.test.ts",
+  "apps/mobile/src/contexts/diary/ui/DiaryEntryScreen.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationScheduleRules.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationScheduleRecords.test.ts",
   "apps/mobile/src/contexts/medication/application/medicationDoseRecords.scheduleGuard.test.ts",
+  "apps/mobile/src/contexts/medication/application/medicationOfflineReplay.test.ts",
+  "apps/mobile/src/contexts/medication/application/medicationReminderNotifications.test.ts",
+  "apps/mobile/src/contexts/medication/ui/todayMedicationAgenda.test.ts",
+  "apps/mobile/src/contexts/medication/ui/CareMedicationPanel.test.tsx",
+  "apps/mobile/src/contexts/care/ui/ProfileCareDefaultsPanel.test.tsx",
   "apps/mobile/src/contexts/sync/application/offlineMutationPayload.test.ts",
   "apps/mobile/src/contexts/sync/application/offlineReplayPolicy.test.ts",
   "apps/mobile/src/contexts/sync/application/offlineReplayQueue.test.ts",
-  "apps/mobile/src/presentation/liveUiState.dashboard.test.ts",
+  "apps/mobile/src/design-system/TimePickerField.test.ts",
+  "apps/mobile/src/presentation/shell/todayChecklist.dashboard.test.ts",
   "apps/mobile/src/presentation/screens/HomeDashboardPanel.logic.test.ts",
-  "apps/mobile/src/presentation/screens/todayMedicationAgenda.test.ts",
-  "apps/mobile/src/presentation/notifications/medicationReminderNotifications.test.ts",
-  "apps/mobile/src/presentation/screens/ProfileCareDefaultsPanel.test.tsx",
-  "apps/mobile/src/presentation/screens/CareMedicationPanel.test.tsx",
-  "apps/mobile/src/presentation/screens/DiaryEntryScreen.test.ts",
-  "apps/mobile/src/presentation/ui/TimePickerField.test.ts",
   "apps/mobile/src/presentation/shell/checklistActions.test.ts",
   "apps/mobile/src/presentation/shell/checklistNotice.test.ts",
   "apps/mobile/src/presentation/shell/timelineRouting.test.ts",
@@ -66,17 +69,17 @@ if (!careModeScreen.includes("CareSetupPanel")) {
   throw new Error("care screen must include care plan creation UI in the primary care flow");
 }
 
-const diaryDetailPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/DiaryDetailPanel.tsx"), "utf8");
+const diaryDetailPanel = readFileSync(join(root, "apps/mobile/src/contexts/diary/ui/DiaryDetailPanel.tsx"), "utf8");
 if (/\n\s*mealRow:\s*{[^}]*flexDirection:\s*"row"/s.test(diaryDetailPanel) || /\n\s*mealLabel:\s*{[^}]*width:\s*42/s.test(diaryDetailPanel)) {
   throw new Error("diary food meal fields must remain stacked to avoid narrow mobile clipping");
 }
 
-const careMedicationPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/CareMedicationPanel.tsx"), "utf8");
+const careMedicationPanel = readFileSync(join(root, "apps/mobile/src/contexts/medication/ui/CareMedicationPanel.tsx"), "utf8");
 if (/\n\s*inputGrid:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
   throw new Error("care quick medication dose fields must remain stacked to avoid narrow mobile clipping");
 }
 
-const careSetupPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/CareSetupPanel.tsx"), "utf8");
+const careSetupPanel = readFileSync(join(root, "apps/mobile/src/contexts/care/ui/CareSetupPanel.tsx"), "utf8");
 if (/\n\s*row:\s*{\s*flexDirection:\s*"row"/s.test(careSetupPanel) || /\n\s*timePicker:\s*{\s*width:\s*112/s.test(careSetupPanel)) {
   throw new Error("care setup medication and time fields must remain stacked to avoid narrow mobile clipping");
 }
@@ -85,7 +88,7 @@ if (!careSetupPanel.includes("DatePickerField")) {
   throw new Error("care setup treatment period must use native date picker controls");
 }
 
-const profileCareDefaultsPanel = readFileSync(join(root, "apps/mobile/src/presentation/screens/ProfileCareDefaultsPanel.tsx"), "utf8");
+const profileCareDefaultsPanel = readFileSync(join(root, "apps/mobile/src/contexts/care/ui/ProfileCareDefaultsPanel.tsx"), "utf8");
 if (!profileCareDefaultsPanel.includes("DatePickerField")) {
   throw new Error("profile care treatment period must use native date picker controls");
 }

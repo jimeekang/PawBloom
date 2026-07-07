@@ -5,7 +5,7 @@ import { SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
-import type { DashboardSummary } from "../liveUiState";
+import type { DashboardSummary } from "../shell/todayChecklist";
 import { createCareSummaryDoseRows } from "./HomeDashboardPanel.logic";
 
 type Props = {

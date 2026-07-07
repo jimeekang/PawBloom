@@ -3,40 +3,16 @@ import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database, Json } from "../../../shared-kernel/supabase/database.types";
 import type { Species } from "../../pet/domain/pet";
 import type { PetRoutine, PetRoutineInput } from "../domain/petRoutine";
+import { createDefaultPetRoutine } from "./petRoutineDefaults";
+
+export { createDefaultPetRoutine };
 
 type RoutineRow = Database["public"]["Tables"]["pet_routines"]["Row"];
 type RoutineInsert = Database["public"]["Tables"]["pet_routines"]["Insert"];
-export type RoutineCategory = "food" | "water" | "walk" | "stool" | "condition" | "memo" | "photo";
-type RoutineDiaryDetail =
-  | { category: "food"; meals: PetRoutine["food"]["meals"]; appetite?: PetRoutine["food"]["appetite"] }
-  | { category: "water"; amountMl?: string; intakeLevel?: PetRoutine["water"]["intakeLevel"] }
-  | { category: "walk"; durationMinutes?: string; intensity?: PetRoutine["walk"]["intensity"]; observation?: string; stoolObservation?: string; urineObservation?: string; symptomNote?: string }
-  | { category: "stool"; count?: string; consistency?: PetRoutine["stool"]["consistency"]; hasBloodOrMucus?: boolean }
-  | { category: "condition"; energyLevel?: PetRoutine["condition"]["energyLevel"]; discomfortNote?: string }
-  | { category: "memo" };
 
 export const petRoutineKeys = {
   detail: (petId: string | null, species?: Species) => ["pet_routine", petId, species ?? "dog"] as const,
 };
-
-export function createDefaultPetRoutine(petId: string, species: Species = "dog"): PetRoutine {
-  return { petId, food: { meals: { breakfast: {}, lunch: {}, dinner: {} }, appetite: "normal" }, water: { intakeLevel: "normal" }, walk: { enabled: species === "dog", intensity: "normal" }, stool: { consistency: "normal" }, condition: { energyLevel: "normal" } };
-}
-
-export function getDiaryCategoriesForSpecies(species: Species, walkEnabled = species === "dog"): RoutineCategory[] {
-  return walkEnabled
-    ? ["food", "water", "walk", "stool", "condition", "memo", "photo"]
-    : ["food", "water", "stool", "condition", "memo", "photo"];
-}
-
-export function buildRoutineDiaryDetail(category: RoutineCategory, routine: PetRoutine): RoutineDiaryDetail {
-  if (category === "food") return { category, meals: routine.food.meals, appetite: routine.food.appetite };
-  if (category === "water") return { category, amountMl: routine.water.amountMl, intakeLevel: routine.water.intakeLevel };
-  if (category === "walk") return routine.walk.enabled === false ? { category } : { category, durationMinutes: routine.walk.durationMinutes, intensity: routine.walk.intensity };
-  if (category === "stool") return { category, count: routine.stool.count, consistency: routine.stool.consistency, hasBloodOrMucus: false };
-  if (category === "condition") return { category, energyLevel: routine.condition.energyLevel };
-  return { category: "memo" };
-}
 
 export function usePetRoutine(petId: string | null, species: Species = "dog") {
   return useQuery({

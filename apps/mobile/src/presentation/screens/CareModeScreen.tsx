@@ -6,10 +6,10 @@ import { PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from ".
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
-import { SummaryCard } from "../ui/SummaryCard";
-import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
-import { CareSetupPanel } from "./CareSetupPanel";
-import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "./todayMedicationAgenda";
+import { SummaryCard } from "../../design-system/SummaryCard";
+import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
+import { CareSetupPanel } from "../../contexts/care/ui/CareSetupPanel";
+import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 
 type Segment = "care" | "reports";
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;

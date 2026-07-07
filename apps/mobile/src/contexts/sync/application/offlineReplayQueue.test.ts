@@ -1,72 +1,67 @@
 import type { OfflineMutation } from "../domain/offlineMutation";
+import { registerOfflineReplayHandler } from "./offlineReplayPolicy";
 import { replayPendingOfflineMutations } from "./offlineReplayQueue";
 
-const appliedDiary: OfflineMutation = {
-  id: "offline-diary-1",
-  clientMutationId: "diary-1",
-  aggregate: "diary",
-  operation: "insert",
-  payload: { petId: "pet-1", userId: "user-1", input: { category: "memo", summary: "offline note" } },
-  createdAt: "2026-07-05T01:00:00.000Z",
-  attempts: 0,
-};
-
-const conflictedMedication: OfflineMutation = {
-  id: "offline-medication-1",
-  clientMutationId: "medication-1",
-  aggregate: "medication",
-  operation: "update",
-  payload: { petId: "pet-1", input: { id: "dose-1", medicationName: "Cerenia", status: "completed" } },
-  createdAt: "2026-07-05T01:01:00.000Z",
-  attempts: 0,
-};
+function buildMutation(id: string, aggregate: string): OfflineMutation {
+  return {
+    id,
+    clientMutationId: id.replace("offline-", ""),
+    aggregate,
+    operation: "insert",
+    payload: { petId: "pet-1" },
+    createdAt: "2026-07-05T01:00:00.000Z",
+    attempts: 0,
+  };
+}
 
 export default runReplayQueueTests();
 
 async function runReplayQueueTests() {
+  registerOfflineReplayHandler("queue-applied", "insert", async () => ({ status: "applied", reason: "queue test applied" }));
+  registerOfflineReplayHandler("queue-conflict", "insert", async () => ({ status: "conflict", reason: "queue test conflict" }));
+  registerOfflineReplayHandler("queue-network", "insert", async () => {
+    throw new Error("Network request failed");
+  });
+
   const appliedIds: string[] = [];
   const conflictedIds: string[] = [];
   const retriedIds: string[] = [];
+  const store = {
+    markMutationApplied: async (id: string) => { appliedIds.push(id); },
+    markMutationConflict: async (id: string) => { conflictedIds.push(id); },
+    markMutationRetry: async (id: string) => { retriedIds.push(id); },
+  };
 
   const summary = await replayPendingOfflineMutations({
     store: {
-      listPendingMutations: async () => [appliedDiary, conflictedMedication],
-      markMutationApplied: async (id) => { appliedIds.push(id); },
-      markMutationConflict: async (id) => { conflictedIds.push(id); },
-      markMutationRetry: async (id) => { retriedIds.push(id); },
-    },
-    handlers: {
-      insertDiaryEntry: async () => undefined,
-      getMedicationDose: async () => ({ id: "dose-1", status: "skipped" }),
-      updateMedicationDose: async () => {
-        throw new Error("conflicted mutation must not update");
-      },
+      ...store,
+      listPendingMutations: async () => [buildMutation("offline-applied-1", "queue-applied"), buildMutation("offline-conflict-1", "queue-conflict")],
     },
   });
 
-  if (summary.applied !== 1 || summary.conflicted !== 1 || appliedIds[0] !== "offline-diary-1" || conflictedIds[0] !== "offline-medication-1") {
+  if (summary.applied !== 1 || summary.conflicted !== 1 || appliedIds[0] !== "offline-applied-1" || conflictedIds[0] !== "offline-conflict-1") {
     throw new Error("replay queue must mark applied and conflicted mutations separately");
   }
 
   const retrySummary = await replayPendingOfflineMutations({
     store: {
-      listPendingMutations: async () => [appliedDiary],
-      markMutationApplied: async () => {
-        throw new Error("network failure before completion");
-      },
-      markMutationConflict: async () => undefined,
-      markMutationRetry: async (id) => { retriedIds.push(id); },
-    },
-    handlers: {
-      insertDiaryEntry: async () => {
-        throw new Error("Network request failed");
-      },
-      getMedicationDose: async () => null,
-      updateMedicationDose: async () => undefined,
+      ...store,
+      listPendingMutations: async () => [buildMutation("offline-network-1", "queue-network")],
     },
   });
 
-  if (retrySummary.retried !== 1 || retriedIds.at(-1) !== "offline-diary-1") {
+  if (retrySummary.retried !== 1 || retriedIds.at(-1) !== "offline-network-1") {
     throw new Error("replay queue must keep failed network mutations pending for retry");
+  }
+
+  const unsupportedSummary = await replayPendingOfflineMutations({
+    store: {
+      ...store,
+      listPendingMutations: async () => [buildMutation("offline-unknown-1", "queue-unknown")],
+    },
+  });
+
+  if (unsupportedSummary.unsupported !== 1 || conflictedIds.at(-1) !== "offline-unknown-1") {
+    throw new Error("replay queue must park mutations without a registered handler as conflicts for review");
   }
 }

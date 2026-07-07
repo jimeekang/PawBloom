@@ -1,44 +1,32 @@
-import { buildDiaryInsertOfflineMutation, buildDiaryReplayInsertPayload, buildMedicationDoseReplayUpdatePayload, buildMedicationDoseUpdateOfflineMutation } from "./offlineMutationPayload";
+import { buildOfflineMutation, createClientMutationId, requireString, stringValue, toRecord } from "./offlineMutationPayload";
 
-const diaryMutation = buildDiaryInsertOfflineMutation({
-  petId: "pet-1",
-  userId: "user-1",
-  input: { category: "walk", summary: "", entryDate: "2026-07-05", detail: { category: "walk", durationMinutes: "20" } },
+const mutation = buildOfflineMutation({
+  aggregate: "diary",
+  operation: "insert",
+  payload: { petId: "pet-1", userId: "user-1", input: { category: "walk" } },
   clientMutationId: "mutation-1",
   createdAt: "2026-07-05T00:00:00.000Z",
 });
 
-if (diaryMutation.aggregate !== "diary" || diaryMutation.operation !== "insert") throw new Error("diary insert failures must become diary insert outbox mutations");
-if (diaryMutation.clientMutationId !== "mutation-1" || diaryMutation.attempts !== 0) throw new Error("offline mutation must keep idempotency id and start with zero attempts");
-if (diaryMutation.payload.petId !== "pet-1" || diaryMutation.payload.userId !== "user-1") throw new Error("diary offline payload must keep pet and user ownership context");
+if (mutation.aggregate !== "diary" || mutation.operation !== "insert") throw new Error("offline mutation must keep the aggregate and operation it was built with");
+if (mutation.id !== "offline-mutation-1" || mutation.clientMutationId !== "mutation-1") throw new Error("offline mutation id must derive from the idempotency id");
+if (mutation.attempts !== 0 || mutation.createdAt !== "2026-07-05T00:00:00.000Z") throw new Error("offline mutation must start with zero attempts and keep its creation time");
+if (mutation.payload.petId !== "pet-1" || mutation.payload.userId !== "user-1") throw new Error("offline mutation payload must keep ownership context");
 
-const medicationMutation = buildMedicationDoseUpdateOfflineMutation({
-  petId: "pet-1",
-  input: { id: "dose-1", medicationName: "Cerenia", status: "completed" },
-  clientMutationId: "mutation-2",
-  createdAt: "2026-07-05T00:01:00.000Z",
-});
-
-if (medicationMutation.aggregate !== "medication" || medicationMutation.operation !== "update") throw new Error("medication update failures must become medication update outbox mutations");
-const medicationInput = medicationMutation.payload.input as { id?: string };
-if (medicationInput.id !== "dose-1") throw new Error("medication offline payload must keep the dose update input");
-
-const diaryReplayPayload = buildDiaryReplayInsertPayload({
-  petId: "pet-1",
-  userId: "user-1",
-  clientMutationId: "mutation-1",
-  input: { category: "walk", summary: "walk memo", entryDate: "2026-07-05", occurredTime: "08:30" },
-});
-
-if (diaryReplayPayload.client_mutation_id !== "mutation-1" || diaryReplayPayload.pet_id !== "pet-1") {
-  throw new Error("diary replay insert payload must keep idempotency and ownership fields");
+const generated = buildOfflineMutation({ aggregate: "medication", operation: "update", payload: {} });
+if (!generated.clientMutationId || generated.id !== `offline-${generated.clientMutationId}`) {
+  throw new Error("offline mutation must generate a client mutation id when none is provided");
 }
 
-const medicationReplayPayload = buildMedicationDoseReplayUpdatePayload({
-  clientMutationId: "mutation-2",
-  input: { id: "dose-1", medicationName: "Cerenia", status: "completed", reactionNote: "Settled" },
-});
+if (!createClientMutationId()) throw new Error("client mutation id generation must always produce a value");
+if (toRecord("not-a-record").anything !== undefined || toRecord(null).anything !== undefined) throw new Error("toRecord must coerce non-objects to an empty record");
+if (requireString("value", "label") !== "value") throw new Error("requireString must pass through valid strings");
+if (stringValue("") !== undefined || stringValue("x") !== "x") throw new Error("stringValue must reject empty strings");
 
-if (medicationReplayPayload.client_mutation_id !== "mutation-2" || medicationReplayPayload.status !== "completed" || !medicationReplayPayload.recorded_at) {
-  throw new Error("medication replay update payload must keep idempotency and recorded status fields");
+let requireStringThrew = false;
+try {
+  requireString(undefined, "missing label");
+} catch (error) {
+  requireStringThrew = error instanceof Error && error.message.includes("missing label");
 }
+if (!requireStringThrew) throw new Error("requireString must reject missing values with a labelled error");

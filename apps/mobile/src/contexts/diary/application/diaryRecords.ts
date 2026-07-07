@@ -3,7 +3,7 @@ import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { uploadDiaryPhoto } from "../../media/application/mediaUpload";
 import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
-import { buildDiaryInsertOfflineMutation } from "../../sync/application/offlineMutationPayload";
+import { buildDiaryInsertOfflineMutation } from "./diaryOfflineReplay";
 import type { CreateDiaryEntryInput, DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
 import { inferDiaryRecordOrigin } from "./diaryRecordOrigin";
 import { buildDiaryUpdatePayload, buildOccurredAt, buildOccurredAtForTime, isStructuredDailyCategory, type DiaryUpdateInput } from "./diaryRecordPayload";
@@ -25,9 +25,9 @@ export const diaryKeys = {
   range: (petId: string | null, fromDateKey: string, toDateKey: string) => ["diary", "range", petId, fromDateKey, toDateKey] as const,
 };
 
-export function getLocalDateKey(date = new Date()) {
-  return `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, "0")}-${`${date.getDate()}`.padStart(2, "0")}`;
-}
+import { getLocalDateKey } from "../../../shared-kernel/date";
+
+export { getLocalDateKey };
 
 export function getWeekDateRange(dateKey: string) {
   const date = parseDateKey(dateKey), day = date.getDay();

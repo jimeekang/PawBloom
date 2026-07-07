@@ -11,9 +11,9 @@ import type { PetProfilePhotoInput } from "../../contexts/identity/application/a
 import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
 import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain/carePlan";
 import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
-import { RoutineSettingsPanel } from "./RoutineSettingsPanel";
-import { ProfileCareDefaultsPanel } from "./ProfileCareDefaultsPanel";
-import { DatePickerField } from "../ui/DatePickerField";
+import { RoutineSettingsPanel } from "../../contexts/routine/ui/RoutineSettingsPanel";
+import { ProfileCareDefaultsPanel } from "../../contexts/care/ui/ProfileCareDefaultsPanel";
+import { DatePickerField } from "../../design-system/DatePickerField";
 import { styles } from "./PetOnboardingScreen.styles";
 
 const speciesOptions = ["dog", "cat", "other"] as const;

@@ -4,7 +4,7 @@ import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "./src/design-system/iconography";
 import { AuthProvider, useAuth } from "./src/contexts/identity/application/authContext";
 import { PawBloomShell } from "./src/presentation/PawBloomShell";
-import { AuthScreen } from "./src/presentation/screens/AuthScreen";
+import { AuthScreen } from "./src/contexts/identity/ui/AuthScreen";
 import { PetOnboardingScreen } from "./src/presentation/screens/PetOnboardingScreen";
 import { configureNetworkSync } from "./src/contexts/sync/application/syncStatus";
 import { colors, type as typeStyle } from "./src/design-system/tokens";

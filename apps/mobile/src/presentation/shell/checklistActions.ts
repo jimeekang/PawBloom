@@ -1,8 +1,8 @@
 import type { DiaryCategory, DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { checklistSummary, createChecklistFromRecords } from "../liveUiState";
-import { createLocalDoseRecord } from "../localMedicationState";
-import { createMockDiaryEntry, type ChecklistKey } from "../mockUiState";
+import { checklistSummary, createChecklistFromRecords, type ChecklistKey } from "./todayChecklist";
+import { createLocalDoseRecord } from "../../contexts/medication/ui/localMedicationState";
+import { createLocalDiaryEntry } from "../../contexts/diary/ui/localDiaryState";
 
 export function checklistKeyToDiaryCategory(key: ChecklistKey): DiaryCategory | null {
   if (key === "medication") return null;
@@ -59,7 +59,7 @@ export function createLocalChecklistRecord({
 
   const category = checklistKeyToDiaryCategory(key);
   if (!category) return null;
-  const nextEntry = createMockDiaryEntry(activePetId, { category, summary: checklistSummary(key), entryDate, occurredAt: formatChecklistTime(), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
+  const nextEntry = createLocalDiaryEntry(activePetId, { category, summary: checklistSummary(key), entryDate, occurredAt: formatChecklistTime(), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
   const nextEntries = [nextEntry, ...entries];
   return { nextEntries, nextChecklist: createChecklistFromRecords(nextEntries.filter((entry) => entry.petId === activePetId && entry.entryDate === entryDate), activeDoses), noticeKey: "today.diarySaved" as const, feedbackKind: "checklist" as const };
 }

@@ -1,6 +1,6 @@
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import { checklistKeyToDiaryCategory, createLocalChecklistRecord, isChecklistRecordBlocked } from "./checklistActions";
-import type { ChecklistKey } from "../mockUiState";
+import type { ChecklistKey } from "./todayChecklist";
 
 const emptyChecklist: Record<ChecklistKey, boolean> = {
   food: false,

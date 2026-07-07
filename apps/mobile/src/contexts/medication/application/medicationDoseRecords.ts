@@ -2,7 +2,7 @@ import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient 
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
-import { buildMedicationDoseUpdateOfflineMutation } from "../../sync/application/offlineMutationPayload";
+import { buildMedicationDoseUpdateOfflineMutation } from "./medicationOfflineReplay";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote } from "./medicationDosePayload";

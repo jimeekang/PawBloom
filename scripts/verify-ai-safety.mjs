@@ -43,14 +43,15 @@ if (!safetyText.includes("record-based summary") || !safetyText.includes("진단
 const requiredEnglishDisclaimer = "This is a record-based summary, not a diagnosis. Contact a veterinarian for medical decisions.";
 const requiredKoreanDisclaimer = "이 내용은 진단이 아니라 기록 기반 요약입니다. 의학적 판단은 수의사에게 문의하세요.";
 const translationsText = readFileSync(join(root, "apps/mobile/src/i18n/translations.ts"), "utf8");
-const sampleDataText = readFileSync(join(root, "apps/mobile/src/presentation/sampleData.ts"), "utf8");
+const sampleReportText = readFileSync(join(root, "apps/mobile/src/contexts/report/ui/sampleReport.ts"), "utf8");
+const sampleBriefText = readFileSync(join(root, "apps/mobile/src/contexts/briefing/ui/sampleBrief.ts"), "utf8");
 
 if (!translationsText.includes(requiredEnglishDisclaimer) || !translationsText.includes(requiredKoreanDisclaimer)) {
   failures.push("App translations must keep the exact English and Korean report disclaimer copy.");
 }
 
-if (!sampleDataText.includes(requiredKoreanDisclaimer)) {
-  failures.push("Sample report data must use the exact Korean report disclaimer copy.");
+if (!sampleReportText.includes(requiredKoreanDisclaimer) || !sampleBriefText.includes(requiredKoreanDisclaimer)) {
+  failures.push("Sample report and brief data must use the exact Korean report disclaimer copy.");
 }
 
 if (failures.length) {

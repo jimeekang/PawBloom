@@ -1,5 +1,5 @@
 import type { OfflineMutation } from "../domain/offlineMutation";
-import { replayOfflineMutation, type OfflineReplayHandlers } from "./offlineReplayPolicy";
+import { replayOfflineMutation } from "./offlineReplayPolicy";
 
 export type OfflineReplayStore = {
   listPendingMutations: () => Promise<OfflineMutation[]>;
@@ -15,13 +15,13 @@ export type OfflineReplaySummary = {
   unsupported: number;
 };
 
-export async function replayPendingOfflineMutations(input: { store: OfflineReplayStore; handlers: OfflineReplayHandlers }): Promise<OfflineReplaySummary> {
+export async function replayPendingOfflineMutations(input: { store: OfflineReplayStore }): Promise<OfflineReplaySummary> {
   const summary: OfflineReplaySummary = { applied: 0, conflicted: 0, retried: 0, unsupported: 0 };
   const mutations = await input.store.listPendingMutations();
 
   for (const mutation of mutations) {
     try {
-      const result = await replayOfflineMutation(mutation, input.handlers);
+      const result = await replayOfflineMutation(mutation);
       if (result.status === "applied") {
         await input.store.markMutationApplied(mutation.id);
         summary.applied += 1;
