@@ -12,8 +12,10 @@ import { LanguageProvider, useLanguage } from "./src/i18n/languageContext";
 import { t } from "./src/i18n/translations";
 import { PrimaryButton, SecondaryButton } from "./src/design-system/components";
 import { resolveAppGate } from "./src/presentation/appGate";
+import { configureLocalNotificationPresentation } from "./src/shared-kernel/notifications/localNotificationBootstrap";
 
 configureNetworkSync();
+void configureLocalNotificationPresentation();
 
 const queryClient = new QueryClient({
   defaultOptions: {
