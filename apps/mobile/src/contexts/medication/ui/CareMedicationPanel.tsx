@@ -161,7 +161,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
 }
 
 export function MedicationRow({ dose, onEdit, onStatusPress }: { dose: DoseRecord; onEdit: () => void; onStatusPress: () => void }) {
-  const visual = statusVisual[dose.status];
+  const visual = statusVisual(dose.status);
 
   return (
     <View style={styles.medRow}>
@@ -189,12 +189,12 @@ export function MedicationRow({ dose, onEdit, onStatusPress }: { dose: DoseRecor
   );
 }
 
-const statusVisual: Record<DoseStatus, { label: string; accent: string; icon: string }> = {
-  pending: { label: t("ko", "care.status.pending"), accent: colors.salmon, icon: colors.salmon },
-  completed: { label: t("ko", "care.status.completed"), accent: colors.mint, icon: colors.mintDeep },
-  partial: { label: t("ko", "care.status.partial"), accent: colors.memo, icon: colors.orangeDeep },
-  skipped: { label: t("ko", "care.status.skipped"), accent: colors.inactive, icon: colors.textSoft },
-};
+function statusVisual(status: DoseStatus): { label: string; accent: string; icon: string } {
+  if (status === "pending") return { label: t("ko", "care.status.pending"), accent: colors.salmon, icon: colors.salmon };
+  if (status === "completed") return { label: t("ko", "care.status.completed"), accent: colors.mint, icon: colors.mintDeep };
+  if (status === "partial") return { label: t("ko", "care.status.partial"), accent: colors.memo, icon: colors.orangeDeep };
+  return { label: t("ko", "care.status.skipped"), accent: colors.inactive, icon: colors.textSoft };
+}
 
 const styles = StyleSheet.create({
   sectionTitle: { ...type.sectionTitle },

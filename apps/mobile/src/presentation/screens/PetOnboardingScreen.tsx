@@ -17,13 +17,8 @@ import { DatePickerField } from "../../design-system/DatePickerField";
 import { styles } from "./PetOnboardingScreen.styles";
 
 const speciesOptions = ["dog", "cat", "other"] as const;
-const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
-  dog: "개",
-  cat: "고양이",
-  other: "기타",
-};
 
-export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => void; onProfileSaved?: () => void } = {}) {
+export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void } = {}) {
   const { pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
 
   const [name, setName] = useState("");
@@ -42,6 +37,11 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   const activePhoto = usePetProfilePhotoUrl(activePet?.id);
   const hasPets = pets.length > 0;
   const shouldShowPetSelector = pets.length > 1 && !showCreateForm;
+  const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
+    dog: t("ko", "pet.speciesDog"),
+    cat: t("ko", "pet.speciesCat"),
+    other: t("ko", "pet.speciesOther"),
+  };
 
   useEffect(() => {
     setShowCreateForm(pets.length === 0);
@@ -194,8 +194,8 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
             keyboardType="decimal-pad"
           />
 
-          <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} />
-          <Pressable style={styles.dangerButton} onPress={onDelete}>
+          <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} disabled={loading} />
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: loading }} disabled={loading} style={styles.dangerButton} onPress={onDelete}>
             <AppIcon name="close" size={iconSize.sm} color={colors.coral} />
             <Text style={styles.dangerButtonText}>{t("ko", "pet.delete")}</Text>
           </Pressable>
@@ -203,7 +203,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       ) : null}
 
       {activePet && !showCreateForm && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
-      {activePet && !showCreateForm && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel setup={careSetup} onSave={onSaveCareSetup} /> : null}
+      {activePet && !showCreateForm && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} /> : null}
 
       {showCreateForm ? (
         <View style={styles.card}>
@@ -228,16 +228,16 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
             keyboardType="decimal-pad"
           />
 
-          <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} />
+          <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} disabled={loading} />
         </View>
       ) : null}
 
       {(error ?? authMessage) ? (
-        <NoticeBanner text={error || authMessage || ""} icon={error ? "close" : "check"} />
+        <NoticeBanner text={t("ko", (error ?? authMessage)!)} icon={error ? "close" : "check"} />
       ) : null}
 
       <View style={styles.actionRow}>
-        <SecondaryButton label={t("ko", "auth.signOut")} onPress={signOut} />
+        <SecondaryButton label={t("ko", "auth.signOut")} onPress={signOut} disabled={loading} />
       </View>
 
       {loading ? <Text style={styles.loadingText}>{t("ko", "auth.wait")}</Text> : null}

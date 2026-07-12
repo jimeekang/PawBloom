@@ -30,18 +30,30 @@ export function IconBubble({ name, color, background, size = 58 }: { name: AppIc
   );
 }
 
-export function PrimaryButton({ label, icon, onPress }: { label: string; icon?: AppIconName; onPress?: () => void }) {
+export function PrimaryButton({ label, icon, onPress, disabled = false }: { label: string; icon?: AppIconName; onPress?: () => void; disabled?: boolean }) {
   return (
-    <Pressable style={styles.primaryButton} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      style={[styles.primaryButton, disabled && styles.buttonDisabled]}
+      onPress={onPress}
+    >
       {icon ? <AppIcon name={icon} size={iconSize.sm} color={colors.white} /> : null}
       <Text style={styles.primaryButtonText}>{label}</Text>
     </Pressable>
   );
 }
 
-export function SecondaryButton({ label, icon, onPress }: { label: string; icon?: AppIconName; onPress?: () => void }) {
+export function SecondaryButton({ label, icon, onPress, disabled = false }: { label: string; icon?: AppIconName; onPress?: () => void; disabled?: boolean }) {
   return (
-    <Pressable style={styles.secondaryButton} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      style={[styles.secondaryButton, disabled && styles.buttonDisabled]}
+      onPress={onPress}
+    >
       {icon ? <AppIcon name={icon} size={iconSize.sm} color={colors.orangeDeep} /> : null}
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </Pressable>
@@ -129,6 +141,9 @@ const styles = StyleSheet.create({
     ...type.sectionTitle,
     color: colors.white,
     fontWeight: "700",
+  },
+  buttonDisabled: {
+    opacity: 0.55,
   },
   secondaryButton: {
     minHeight: layout.buttonHeight,

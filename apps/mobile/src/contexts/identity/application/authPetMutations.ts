@@ -1,9 +1,12 @@
-import { useCallback, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { type User } from "@supabase/supabase-js";
 import { type PetProfile } from "../../pet/domain/pet";
 import { supabase } from "../infrastructure/supabaseClient";
 import { createPetRow, deletePetRow, updatePetRow, uploadPetProfilePhoto, type CreatePetInput, type UpdatePetInput } from "./authContextQueries";
+import { savePetProfileWithOptionalPhoto } from "./petProfileSavePolicy";
+import { petDeleteValidationKey, petProfileValidationKey } from "./petProfileValidation";
+import type { IdentityMessageKey } from "./identityMessage";
 
 type AuthPetMutationState = {
   user: User | null;
@@ -11,8 +14,8 @@ type AuthPetMutationState = {
   setLoading: Dispatch<SetStateAction<boolean>>;
   setPets: Dispatch<SetStateAction<PetProfile[]>>;
   setActivePetId: Dispatch<SetStateAction<string | null>>;
-  setAuthMessage: Dispatch<SetStateAction<string | null>>;
-  setError: Dispatch<SetStateAction<string | null>>;
+  setAuthMessage: Dispatch<SetStateAction<IdentityMessageKey | null>>;
+  setError: Dispatch<SetStateAction<IdentityMessageKey | null>>;
 };
 
 export function useAuthPetMutations({
@@ -25,27 +28,38 @@ export function useAuthPetMutations({
   setError,
 }: AuthPetMutationState) {
   const queryClient = useQueryClient();
+  const mutationInFlight = useRef(false);
 
   const createPet = useCallback(
     async (input: CreatePetInput) => {
       const validationError = validatePetRequest(input);
-      if (validationError) return validationError;
+      if (validationError) {
+        clearMessages();
+        setError(validationError);
+        return validationError;
+      }
+      if (mutationInFlight.current) return "auth.wait";
 
+      mutationInFlight.current = true;
       setLoading(true);
       clearMessages();
       try {
-        const createdPet = await createPetRow(supabase!, user!.id, input);
-        if (input.profilePhoto) {
-          await uploadPetProfilePhoto(supabase!, user!.id, createdPet.id, input.profilePhoto);
-          void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", createdPet.id] });
-        }
+        const result = await savePetProfileWithOptionalPhoto({
+          saveProfile: () => createPetRow(supabase!, user!.id, input),
+          savePhoto: input.profilePhoto
+            ? (createdPet) => uploadPetProfilePhoto(supabase!, user!.id, createdPet.id, input.profilePhoto!)
+            : undefined,
+        });
+        const createdPet = result.profile;
         setPets((current) => [createdPet, ...current.filter((pet) => pet.id !== createdPet.id)]);
         setActivePetId(createdPet.id);
-        setAuthMessage("반려동물 프로필이 추가되었습니다.");
+        if (result.photoSaved) void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", createdPet.id] });
+        setAuthMessage(result.photoError ? "pet.photoPartial" : "pet.created");
         return null;
       } catch (rawError) {
-        return handlePetError(rawError, "반려동물 프로필을 추가하지 못했습니다.", setError);
+        return handlePetError(rawError, "pet.createFailed", setError);
       } finally {
+        mutationInFlight.current = false;
         setLoading(false);
       }
     },
@@ -55,23 +69,31 @@ export function useAuthPetMutations({
   const updatePet = useCallback(
     async (input: UpdatePetInput) => {
       const validationError = validatePetRequest(input);
-      if (validationError) return validationError;
+      if (validationError) {
+        clearMessages();
+        setError(validationError);
+        return validationError;
+      }
+      if (mutationInFlight.current) return "auth.wait";
 
+      mutationInFlight.current = true;
       setLoading(true);
       clearMessages();
       try {
-        const nextPet = await updatePetRow(supabase!, input);
-        if (input.profilePhoto) {
-          await uploadPetProfilePhoto(supabase!, user!.id, input.id, input.profilePhoto);
-          void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", input.id] });
-        }
+        const result = await savePetProfileWithOptionalPhoto({
+          saveProfile: () => updatePetRow(supabase!, input),
+          savePhoto: input.profilePhoto ? () => uploadPetProfilePhoto(supabase!, user!.id, input.id, input.profilePhoto!) : undefined,
+        });
+        const nextPet = result.profile;
         setPets((current) => current.map((pet) => (pet.id === nextPet.id ? nextPet : pet)));
         setActivePetId(nextPet.id);
-        setAuthMessage("반려동물 프로필이 수정되었습니다.");
+        if (result.photoSaved) void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", input.id] });
+        setAuthMessage(result.photoError ? "pet.photoPartial" : "pet.updated");
         return null;
       } catch (rawError) {
-        return handlePetError(rawError, "반려동물 프로필을 수정하지 못했습니다.", setError);
+        return handlePetError(rawError, "pet.updateFailed", setError);
       } finally {
+        mutationInFlight.current = false;
         setLoading(false);
       }
     },
@@ -81,8 +103,14 @@ export function useAuthPetMutations({
   const deletePet = useCallback(
     async (petId: string) => {
       const validationError = validateDeleteRequest(petId);
-      if (validationError) return validationError;
+      if (validationError) {
+        clearMessages();
+        setError(validationError);
+        return validationError;
+      }
+      if (mutationInFlight.current) return "auth.wait";
 
+      mutationInFlight.current = true;
       setLoading(true);
       clearMessages();
       try {
@@ -97,11 +125,12 @@ export function useAuthPetMutations({
           });
           return nextPets;
         });
-        setAuthMessage("반려동물 프로필이 삭제되었습니다.");
+        setAuthMessage("pet.deleted");
         return null;
       } catch (rawError) {
-        return handlePetError(rawError, "반려동물 프로필을 삭제하지 못했습니다.", setError);
+        return handlePetError(rawError, "pet.deleteFailed", setError);
       } finally {
+        mutationInFlight.current = false;
         setLoading(false);
       }
     },
@@ -111,20 +140,15 @@ export function useAuthPetMutations({
   return { createPet, updatePet, deletePet };
 
   function validatePetRequest(input: CreatePetInput) {
-    if (!supabase || !user) return "로그인이 필요합니다.";
-    if (!input.name.trim()) return "반려동물 이름은 필수입니다.";
-    return null;
+    return petProfileValidationKey({ configured: Boolean(supabase), userPresent: Boolean(user), name: input.name });
   }
 
   function validateDeleteRequest(petId: string) {
-    if (!supabase || !user) return "로그인이 필요합니다.";
-    if (!petId) return "반려동물 프로필이 필요합니다.";
-    return null;
+    return petDeleteValidationKey({ configured: Boolean(supabase), userPresent: Boolean(user), petId });
   }
 }
 
-function handlePetError(rawError: unknown, fallback: string, setError: Dispatch<SetStateAction<string | null>>) {
-  const nextError = rawError instanceof Error ? rawError.message : fallback;
-  setError(nextError);
-  return nextError;
+function handlePetError(_rawError: unknown, fallback: IdentityMessageKey, setError: Dispatch<SetStateAction<IdentityMessageKey | null>>) {
+  setError(fallback);
+  return fallback;
 }

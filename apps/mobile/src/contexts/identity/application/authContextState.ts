@@ -6,6 +6,9 @@ import { mapDbPet, type PetProfile } from "../../pet/domain/pet";
 import type { AppAuthState } from "./authContextTypes";
 import { useAuthPetMutations } from "./authPetMutations";
 import { ensureProfileRow, loadPetRows } from "./authContextQueries";
+import { authErrorTranslationKey } from "./authErrorMessages";
+import type { IdentityMessageKey } from "./identityMessage";
+import { useAuthActions } from "./useAuthActions";
 
 export function useAuthState() {
   const [initialized, setInitialized] = useState(false);
@@ -14,8 +17,8 @@ export function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [activePetId, setActivePetId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
+  const [error, setError] = useState<IdentityMessageKey | null>(null);
+  const [authMessage, setAuthMessage] = useState<IdentityMessageKey | null>(null);
 
   const activePet = useMemo(() => pets.find((pet) => pet.id === activePetId) ?? pets[0] ?? null, [pets, activePetId]);
 
@@ -46,8 +49,8 @@ export function useAuthState() {
         }
         return nextPets[0]?.id ?? null;
       });
-    } catch (rawError) {
-      setError(rawError instanceof Error ? rawError.message : "반려동물 목록을 불러오지 못했습니다.");
+    } catch {
+      setError("pet.loadFailed");
     }
   }, []);
 
@@ -66,7 +69,7 @@ export function useAuthState() {
     const initialize = async () => {
       const { data, error: sessionError } = await client.auth.getSession();
       if (sessionError) {
-        setError(sessionError.message);
+        setError(authErrorTranslationKey(sessionError));
       }
 
       const currentSession = data.session;
@@ -84,8 +87,12 @@ export function useAuthState() {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       if (nextSession?.user) {
-        await ensureProfileRow(client, nextSession.user);
-        await loadPets();
+        try {
+          await ensureProfileRow(client, nextSession.user);
+          await loadPets();
+        } catch {
+          setError("auth.error.generic");
+        }
       } else {
         setPets([]);
         setActivePetId(null);
@@ -97,83 +104,16 @@ export function useAuthState() {
     };
   }, [loadPets]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    if (!supabase) {
-      return "Supabase 클라이언트가 설정되어 있지 않습니다.";
-    }
-
-    setLoading(true);
-    clearMessages();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return error.message;
-    }
-
-    setAuthMessage("로그인되었습니다.");
-    return null;
-  }, [clearMessages]);
-
-  const signUp = useCallback(async (email: string, password: string) => {
-    if (!supabase) {
-      return "Supabase 클라이언트가 설정되어 있지 않습니다.";
-    }
-
-    setLoading(true);
-    clearMessages();
-
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return error.message;
-    }
-
-    if (data.user) {
-      await ensureProfileRow(supabase, data.user);
-    }
-
-    if (data.user && data.session) {
-      setAuthMessage("회원가입이 완료되었습니다.");
-      return null;
-    }
-
-    if (data.user) {
-      setAuthMessage("회원가입 확인을 위해 이메일을 확인해 주세요.");
-    }
-
-    return null;
-  }, [clearMessages]);
-
-  const signOut = useCallback(async () => {
-    if (!supabase) {
-      return;
-    }
-
-    clearMessages();
-    setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    setSession(null);
-    setUser(null);
-    setPets([]);
-    setActivePetId(null);
-  }, [clearMessages]);
+  const { signIn, signUp, signOut } = useAuthActions({
+    clearMessages,
+    setLoading,
+    setSession,
+    setUser,
+    setPets,
+    setActivePetId,
+    setAuthMessage,
+    setError,
+  });
 
   const { createPet, updatePet, deletePet } = useAuthPetMutations({
     user,

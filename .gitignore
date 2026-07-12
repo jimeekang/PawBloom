@@ -13,3 +13,4 @@ AuthKey_*.p8
 .DS_Store
 Thumbs.db
 supabase/.temp/
+.gstack/

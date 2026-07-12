@@ -1,6 +1,7 @@
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import type { TranslationKey } from "../../../i18n/translations";
+import { t } from "../../../i18n/translations";
 
 export type QuickMedicationFormState = Required<QuickMedicationDoseInput> & {
   scheduledTime: string;
@@ -52,7 +53,7 @@ export function doseStatusUpdateForEdit(currentStatus: DoseStatus, selectedStatu
 }
 
 export function careStatusActionLabel(status: "completed" | "skipped") {
-  return status === "completed" ? "먹였어요" : "못 먹였어요";
+  return t("ko", status === "completed" ? "care.status.given" : "care.status.notGiven");
 }
 
 export function shouldShowTemporaryMedicationForm(expanded: boolean) {

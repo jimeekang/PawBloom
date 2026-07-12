@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
+import { useLanguage } from "../../../i18n/languageContext";
 
 export type DiaryFilter = "day" | "week";
 
@@ -23,6 +24,8 @@ export function DiaryCalendar({
   onSelectDate: (dateKey: string) => void;
   onFilterChange: (filter: DiaryFilter) => void;
 }) {
+  const { language } = useLanguage();
+  const locale = language === "ko" ? "ko-KR" : "en-AU";
   const selectedDate = parseDateKey(selectedDateKey);
   const weeks = createMonthWeeks(selectedDate);
 
@@ -32,14 +35,14 @@ export function DiaryCalendar({
         <Pressable style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}>
           <Text style={styles.monthButtonText}>{t("ko", "diary.prevMonth")}</Text>
         </Pressable>
-        <Text style={styles.monthTitle}>{formatMonth(selectedDate)}</Text>
+        <Text style={styles.monthTitle}>{formatMonth(selectedDate, locale)}</Text>
         <Pressable style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}>
           <Text style={styles.monthButtonText}>{t("ko", "diary.nextMonth")}</Text>
         </Pressable>
       </View>
 
       <View style={styles.weekHeader}>
-        {["월", "화", "수", "목", "금", "토", "일"].map((label) => (
+        {weekdayLabels(locale).map((label) => (
           <Text key={label} style={styles.weekLabel}>{label}</Text>
         ))}
       </View>
@@ -99,8 +102,12 @@ function monthOffsetKey(date: Date, offset: number) {
   return toDateKey(new Date(date.getFullYear(), date.getMonth() + offset, 1));
 }
 
-function formatMonth(date: Date) {
-  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(date);
+function formatMonth(date: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(date);
+}
+
+function weekdayLabels(locale: string) {
+  return Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2026, 0, 5 + index)));
 }
 
 function parseDateKey(dateKey: string) {

@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
-import { t } from "../../../i18n/translations";
+import { t, type TranslationKey } from "../../../i18n/translations";
 import { useAuth } from "../application/authContext";
-
-type AuthMode = "signIn" | "signUp";
+import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type AuthMode } from "./authFormState";
 
 export function AuthScreen() {
   const { signIn, signUp, error, authMessage, loading, resetMessage } = useAuth();
@@ -14,29 +13,40 @@ export function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<TranslationKey | null>(null);
+  const submissionInFlight = useRef(false);
   const isSignUp = mode === "signUp";
 
   async function submit() {
+    if (!canSubmitAuth(loading, submissionInFlight.current)) return;
     resetMessage();
     setLocalError(null);
 
-    if (!email || !password || (isSignUp && !passwordConfirm)) {
-      setLocalError("필수 항목을 모두 입력해 주세요.");
+    const validationKey = authFormValidationKey({ mode, email, password, passwordConfirm });
+    if (validationKey) {
+      setLocalError(validationKey);
       return;
     }
 
-    if (isSignUp && password !== passwordConfirm) {
-      setLocalError("비밀번호 확인이 일치하지 않습니다.");
-      return;
-    }
+    submissionInFlight.current = true;
+    try {
+      if (isSignUp) {
+        await signUp(email, password);
+        return;
+      }
 
-    if (isSignUp) {
-      await signUp(email, password);
-      return;
+      await signIn(email, password);
+    } finally {
+      submissionInFlight.current = false;
     }
+  }
 
-    await signIn(email, password);
+  function changeMode(nextMode: AuthMode) {
+    const next = createAuthModeTransition(nextMode);
+    setMode(next.mode);
+    setLocalError(next.localError);
+    setPasswordConfirm(next.passwordConfirm);
+    resetMessage();
   }
 
   return (
@@ -61,7 +71,7 @@ export function AuthScreen() {
           { label: t("ko", "auth.signUp"), value: "signUp" },
         ]}
         value={mode}
-        onChange={setMode}
+        onChange={changeMode}
       />
 
       <View style={styles.form}>
@@ -95,10 +105,10 @@ export function AuthScreen() {
           />
         ) : null}
 
-        <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} />
+        <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
 
-        {error || localError ? <NoticeBanner text={error ?? localError ?? ""} icon="close" /> : null}
-        {authMessage ? <NoticeBanner text={authMessage} icon="check" /> : null}
+        {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" /> : null}
+        {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
 
         {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
         {isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}

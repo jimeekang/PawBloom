@@ -28,13 +28,14 @@ export type PetProfilePhotoInput = {
   base64?: string | null;
 };
 export async function ensureProfileRow(client: QueryClient, authUser: User): Promise<void> {
-  await (client.from("profiles") as any).upsert(
+  const { error } = await (client.from("profiles") as any).upsert(
     {
       id: authUser.id,
       email: authUser.email ?? null,
     },
     { onConflict: "id" },
   );
+  if (error) throw new Error("profile_upsert_failed");
 }
 
 export async function loadPetRows(client: QueryClient): Promise<PetRecord[]> {
@@ -55,21 +56,12 @@ export async function loadPetRows(client: QueryClient): Promise<PetRecord[]> {
 export async function createPetRow(client: QueryClient, userId: string, input: CreatePetInput): Promise<PersistedPet> {
   const payload = toPetPayload(input);
 
-  const { error: insertError } = (await (client.from("pets") as any)
+  const { data, error } = (await (client.from("pets") as any)
     .insert({
       owner_id: userId,
       ...payload,
-    }) as any);
-
-  if (insertError) {
-    throw new Error(insertError.message ?? "반려동물 프로필을 생성하지 못했습니다.");
-  }
-
-  const { data, error } = (await (client.from("pets") as any)
+    })
     .select(petSelectColumns)
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
     .single()) as {
     data: PetRecord | null;
     error: { message: string } | null;
@@ -128,6 +120,7 @@ export async function uploadPetProfilePhoto(
   });
 
   if (assetError) {
+    await client.storage.from("pet-media").remove([storagePath]);
     throw new Error(assetError.message ?? "반려동물 사진 저장에 실패했습니다.");
   }
 

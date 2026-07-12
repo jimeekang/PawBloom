@@ -79,7 +79,7 @@ function WalkDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { 
   return (
     <>
       <TextInput style={styles.input} keyboardType="numeric" value={detail.durationMinutes ?? ""} onChangeText={(value) => onChange({ ...detail, durationMinutes: minutes(value) })} placeholder={t("ko", "diary.walkMinutes")} placeholderTextColor={colors.textSoft} />
-      <SegmentedControl value={detail.intensity ?? "normal"} onChange={(intensity) => onChange({ ...detail, intensity })} items={intensityItems} />
+      <SegmentedControl value={detail.intensity ?? "normal"} onChange={(intensity) => onChange({ ...detail, intensity })} items={intensityItems()} />
       <TextInput style={styles.input} value={detail.stoolObservation ?? ""} onChangeText={(value) => onChange({ ...detail, stoolObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkStoolObservation")} placeholderTextColor={colors.textSoft} />
       <TextInput style={styles.input} value={detail.urineObservation ?? ""} onChangeText={(value) => onChange({ ...detail, urineObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkUrineObservation")} placeholderTextColor={colors.textSoft} />
       <TextInput style={styles.input} value={detail.symptomNote ?? ""} onChangeText={(value) => onChange({ ...detail, symptomNote: value.slice(0, 160) })} placeholder={t("ko", "diary.walkSymptomNote")} placeholderTextColor={colors.textSoft} />
@@ -92,8 +92,8 @@ function StoolDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, {
   return (
     <>
       <TextInput style={styles.input} keyboardType="numeric" value={detail.count ?? ""} onChangeText={(value) => onChange({ ...detail, count: value.replace(/[^0-9]/g, "").slice(0, 2) })} placeholder={t("ko", "diary.stoolCount")} placeholderTextColor={colors.textSoft} />
-      <SegmentedControl value={detail.consistency ?? "normal"} onChange={(consistency) => onChange({ ...detail, consistency })} items={stoolItems} />
-      <SegmentedControl value={detail.hasBloodOrMucus ? "yes" : "no"} onChange={(value) => onChange({ ...detail, hasBloodOrMucus: value === "yes" })} items={bloodItems} />
+      <SegmentedControl value={detail.consistency ?? "normal"} onChange={(consistency) => onChange({ ...detail, consistency })} items={stoolItems()} />
+      <SegmentedControl value={detail.hasBloodOrMucus ? "yes" : "no"} onChange={(value) => onChange({ ...detail, hasBloodOrMucus: value === "yes" })} items={bloodItems()} />
     </>
   );
 }
@@ -108,15 +108,15 @@ function ConditionDetail({ detail, onChange }: { detail: Extract<DiaryDetailInpu
 }
 
 function LevelControl({ value, onChange }: { value: "less" | "normal" | "more"; onChange: (value: "less" | "normal" | "more") => void }) {
-  return <SegmentedControl value={value} onChange={onChange} items={levelItems} />;
+  return <SegmentedControl value={value} onChange={onChange} items={levelItems()} />;
 }
 
 const mealSlots: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
 const mealLabelKeys = { breakfast: "diary.meal.breakfast", lunch: "diary.meal.lunch", dinner: "diary.meal.dinner", snack: "diary.meal.snack" } as const;
-const levelItems: { label: string; value: "less" | "normal" | "more" }[] = [{ label: t("ko", "diary.level.less"), value: "less" }, { label: t("ko", "diary.level.normal"), value: "normal" }, { label: t("ko", "diary.level.more"), value: "more" }];
-const intensityItems: { label: string; value: "low" | "normal" | "high" }[] = [{ label: t("ko", "diary.intensity.low"), value: "low" }, { label: t("ko", "diary.intensity.normal"), value: "normal" }, { label: t("ko", "diary.intensity.high"), value: "high" }];
-const stoolItems: { label: string; value: "normal" | "soft" | "diarrhea" | "hard" }[] = [{ label: t("ko", "diary.stool.normal"), value: "normal" }, { label: t("ko", "diary.stool.soft"), value: "soft" }, { label: t("ko", "diary.stool.diarrhea"), value: "diarrhea" }, { label: t("ko", "diary.stool.hard"), value: "hard" }];
-const bloodItems: { label: string; value: "no" | "yes" }[] = [{ label: t("ko", "diary.blood.no"), value: "no" }, { label: t("ko", "diary.blood.yes"), value: "yes" }];
+function levelItems(): { label: string; value: "less" | "normal" | "more" }[] { return [{ label: t("ko", "diary.level.less"), value: "less" }, { label: t("ko", "diary.level.normal"), value: "normal" }, { label: t("ko", "diary.level.more"), value: "more" }]; }
+function intensityItems(): { label: string; value: "low" | "normal" | "high" }[] { return [{ label: t("ko", "diary.intensity.low"), value: "low" }, { label: t("ko", "diary.intensity.normal"), value: "normal" }, { label: t("ko", "diary.intensity.high"), value: "high" }]; }
+function stoolItems(): { label: string; value: "normal" | "soft" | "diarrhea" | "hard" }[] { return [{ label: t("ko", "diary.stool.normal"), value: "normal" }, { label: t("ko", "diary.stool.soft"), value: "soft" }, { label: t("ko", "diary.stool.diarrhea"), value: "diarrhea" }, { label: t("ko", "diary.stool.hard"), value: "hard" }]; }
+function bloodItems(): { label: string; value: "no" | "yes" }[] { return [{ label: t("ko", "diary.blood.no"), value: "no" }, { label: t("ko", "diary.blood.yes"), value: "yes" }]; }
 
 function grams(value: string) {
   return value.replace(/[^0-9.]/g, "").slice(0, 5);

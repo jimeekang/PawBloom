@@ -19,7 +19,7 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
               <>
                 <AppIcon name={visual.icon} size={iconSize.md} color={visual.color} />
                 <View style={styles.body}>
-                  <Text style={styles.title}>{visual.label}</Text>
+                  <Text style={styles.title}>{t("ko", visual.labelKey)}</Text>
                   <Text style={styles.summary} numberOfLines={2}>{entry.summary}</Text>
                 </View>
                 <View style={styles.meta}>

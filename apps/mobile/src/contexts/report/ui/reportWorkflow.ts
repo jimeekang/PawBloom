@@ -19,8 +19,8 @@ export function getReportPrimaryAction({
   return report.status === "draft" ? "confirm" : "share";
 }
 
-export function formatReportExpiry(expiresAt: string) {
+export function formatReportExpiry(expiresAt: string, locale = "ko-KR") {
   const date = new Date(expiresAt);
   if (Number.isNaN(date.getTime())) return expiresAt;
-  return new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
 }

@@ -80,7 +80,7 @@ export function HomeScreen({ pet, checklist, entries, doses, medicationAgenda = 
               <View style={styles.checkMark}>
                 <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? colors.mintDeep : colors.textSoft} />
               </View>
-              <Text style={styles.checkLabel} numberOfLines={2}>{item.label}</Text>
+              <Text style={styles.checkLabel} numberOfLines={2}>{t("ko", item.labelKey)}</Text>
             </Pressable>
           );
         })}
@@ -102,7 +102,7 @@ export function HomeScreen({ pet, checklist, entries, doses, medicationAgenda = 
                   </View>
                   <Text style={styles.time}>{entry.occurredAt}</Text>
                   <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
-                  <Text style={styles.timelineTitle}>{item.label}</Text>
+                  <Text style={styles.timelineTitle}>{t("ko", item.labelKey)}</Text>
                   <Text style={styles.timelineValue} numberOfLines={1}>{entry.summary}</Text>
                 </>
               );

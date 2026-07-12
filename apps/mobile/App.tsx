@@ -8,6 +8,8 @@ import { AuthScreen } from "./src/contexts/identity/ui/AuthScreen";
 import { PetOnboardingScreen } from "./src/presentation/screens/PetOnboardingScreen";
 import { configureNetworkSync } from "./src/contexts/sync/application/syncStatus";
 import { colors, type as typeStyle } from "./src/design-system/tokens";
+import { LanguageProvider, useLanguage } from "./src/i18n/languageContext";
+import { t } from "./src/i18n/translations";
 
 configureNetworkSync();
 
@@ -23,9 +25,11 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppBody />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppBody />
+        </AuthProvider>
+      </LanguageProvider>
       <StatusBar style="dark" />
     </QueryClientProvider>
   );
@@ -33,13 +37,14 @@ export default function App() {
 
 function AppBody() {
   const { initialized, configured, user, activePet } = useAuth();
+  const { initialized: languageInitialized } = useLanguage();
 
-  if (!initialized) {
+  if (!initialized || !languageInitialized) {
     return (
       <SafeAreaView style={styles.loadingArea}>
         <View style={styles.loadingWrap}>
           <AppIcon name="shield" size={40} color={colors.orangeDeep} />
-          <Text style={styles.loadingText}>Loading</Text>
+          <Text style={styles.loadingText}>{t("ko", "app.loading")}</Text>
         </View>
       </SafeAreaView>
     );

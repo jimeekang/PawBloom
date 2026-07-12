@@ -1,4 +1,5 @@
 import type { DoseRecord, DoseStatus } from "../../contexts/medication/domain/medication";
+import { t, type TranslationKey } from "../../i18n/translations";
 
 export type CareSummaryDoseRow = {
   id: string;
@@ -8,24 +9,24 @@ export type CareSummaryDoseRow = {
   details: string[];
 };
 
-const statusLabels: Record<DoseStatus, string> = {
-  pending: "아직 투약 전",
-  completed: "정량 투약 완료",
-  partial: "일부만 투약",
-  skipped: "오늘은 건너뜀",
+const statusLabelKeys: Record<DoseStatus, TranslationKey> = {
+  pending: "care.status.pending",
+  completed: "care.status.completed",
+  partial: "care.status.partial",
+  skipped: "care.status.skipped",
 };
 
 export function createCareSummaryDoseRows(doses: DoseRecord[]): CareSummaryDoseRow[] {
   return doses.map((dose) => ({
     id: dose.id,
     title: dose.medicationName,
-    statusLabel: statusLabels[dose.status],
+    statusLabel: t("ko", statusLabelKeys[dose.status]),
     timeLabel: dose.scheduledAt,
     details: [
-      formatDetail("병명/상태", dose.conditionName),
-      formatDetail("처방 용량", dose.dosageLabel),
-      formatDetail("오늘 투약", dose.administeredAmount),
-      formatDetail("메모", dose.reactionNote),
+      formatDetail(t("ko", "care.conditionLabel"), dose.conditionName),
+      formatDetail(t("ko", "care.dosageLabel"), dose.dosageLabel),
+      formatDetail(t("ko", "care.administeredLabel"), dose.administeredAmount),
+      formatDetail(t("ko", "care.reactionLabel"), dose.reactionNote),
     ].filter((detail): detail is string => Boolean(detail)),
   }));
 }

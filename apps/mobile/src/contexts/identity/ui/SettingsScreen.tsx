@@ -3,23 +3,21 @@ import { PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from ".
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
-import type { Language } from "../../../shared-kernel/types";
+import { useLanguage } from "../../../i18n/languageContext";
 
 export function SettingsScreen({
   email,
   configured,
-  language,
-  onLanguageChange,
   onOpenPetProfiles,
   onSignOut,
 }: {
   email?: string;
   configured: boolean;
-  language: Language;
-  onLanguageChange: (language: Language) => void;
   onOpenPetProfiles: () => void;
   onSignOut: () => void;
 }) {
+  const { language, setLanguage } = useLanguage();
+
   return (
     <View style={styles.screen}>
       <SurfaceCard>
@@ -49,7 +47,7 @@ export function SettingsScreen({
           <Text style={styles.title}>{t("ko", "settings.language")}</Text>
           <SegmentedControl
             value={language}
-            onChange={onLanguageChange}
+            onChange={setLanguage}
             items={[
               { label: t("ko", "settings.languageKo"), value: "ko" },
               { label: t("ko", "settings.languageEn"), value: "en" },
@@ -66,7 +64,7 @@ export function SettingsScreen({
             <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.coral }]} />
             <Text style={styles.statusText}>{configured ? t("ko", "settings.supabaseReady") : t("ko", "settings.supabaseMissing")}</Text>
           </View>
-          <Text style={styles.copy}>{t("ko", "settings.plan")}: Free preview</Text>
+          <Text style={styles.copy}>{t("ko", "settings.plan")}: {t("ko", "settings.freePlan")}</Text>
         </View>
       </SurfaceCard>
     </View>
