@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
@@ -12,7 +13,7 @@ export type QuickMedicationDoseInput = { scheduleId?: string; doseDate?: string;
 export type UpdateMedicationDoseInput = QuickMedicationDoseInput & { id: string; scheduledTime?: string };
 type MedicationDoseCareNote = { version: 1; conditionName?: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string };
 export const medicationDoseKeys = {
-  today: (petId: string | null) => ["medication_doses", "today", petId] as const,
+  today: (petId: string | null, dateKey = localDateKey()) => ["medication_doses", "today", petId, dateKey] as const,
   range: (petId: string | null, fromDateKey: string, toDateKey: string) => ["medication_doses", "range", petId, fromDateKey, toDateKey] as const,
 };
 export function mapDoseRow(row: DoseRow): DoseRecord {
@@ -57,13 +58,13 @@ export function decodeMedicationDoseCareNote(value: string | null | undefined): 
   }
 }
 export function useTodayMedicationDoses(petId: string | null) {
+  const todayDateKey = useCurrentLocalDateKey();
   return useQuery({
-    queryKey: medicationDoseKeys.today(petId),
+    queryKey: medicationDoseKeys.today(petId, todayDateKey),
     enabled: Boolean(supabase && petId),
     queryFn: async () => {
       if (!supabase || !petId) return [];
-      const { start, end } = todayRange();
-      return fetchMedicationDoses(petId, start, end, true);
+      return fetchMedicationDoses(petId, { fromDateKey: todayDateKey, toDateKey: todayDateKey, ascending: true });
     },
   });
 }
@@ -73,13 +74,13 @@ export function useMedicationDosesByDateRange(petId: string | null, fromDateKey:
     enabled: Boolean(supabase && petId && fromDateKey && toDateKey),
     queryFn: async () => {
       if (!supabase || !petId) return [];
-      const { start, end } = dateKeyRange(fromDateKey, toDateKey);
-      return fetchMedicationDoses(petId, start, end, false);
+      return fetchMedicationDoses(petId, { fromDateKey, toDateKey, ascending: false });
     },
   });
 }
 export function useCreateMedicationDose(petId: string | null, userId: string | null) {
   const queryClient = useQueryClient();
+  const todayDateKey = useCurrentLocalDateKey();
   return useMutation({
     mutationFn: async (input: QuickMedicationDoseInput) => {
       if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
@@ -94,7 +95,7 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       return mapDoseRow(data);
     },
     onMutate: async (input) => {
-      const todayKey = medicationDoseKeys.today(petId);
+      const todayKey = medicationDoseKeys.today(petId, todayDateKey);
       await queryClient.cancelQueries({ queryKey: todayKey });
       const previousToday = queryClient.getQueryData<DoseRecord[]>(todayKey);
       const status = input.status ?? "pending";
@@ -106,14 +107,14 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
     },
     onError: (_error, _variables, context) => {
       if (!context) return;
-      const todayKey = medicationDoseKeys.today(petId);
+      const todayKey = medicationDoseKeys.today(petId, todayDateKey);
       if (context.previousToday !== undefined) return void queryClient.setQueryData(todayKey, context.previousToday);
       const withoutOptimisticDose = (queryClient.getQueryData<DoseRecord[]>(todayKey) ?? []).filter((item) => item.id !== context.optimisticId);
       if (withoutOptimisticDose.length > 0) queryClient.setQueryData(todayKey, withoutOptimisticDose);
       else queryClient.removeQueries({ queryKey: todayKey, exact: true });
     },
     onSuccess: (dose, _input, context) => {
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), dose));
+      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, todayDateKey), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), dose));
       void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
@@ -153,6 +154,8 @@ export function useDeleteMedicationDose(petId: string | null) {
 }
 export function useUpdateMedicationDoseStatus(petId: string | null) {
   const queryClient = useQueryClient();
+  const todayDateKey = useCurrentLocalDateKey();
+  const todayKey = medicationDoseKeys.today(petId, todayDateKey);
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: DoseStatus }) => {
       if (!supabase) throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
@@ -166,18 +169,18 @@ export function useUpdateMedicationDoseStatus(petId: string | null) {
       return mapDoseRow(data);
     },
     onMutate: async ({ id, status }) => {
-      await queryClient.cancelQueries({ queryKey: medicationDoseKeys.today(petId) });
-      const previousToday = queryClient.getQueryData<DoseRecord[]>(medicationDoseKeys.today(petId));
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId), (current) =>
+      await queryClient.cancelQueries({ queryKey: todayKey });
+      const previousToday = queryClient.getQueryData<DoseRecord[]>(todayKey);
+      queryClient.setQueryData<DoseRecord[]>(todayKey, (current) =>
         (current ?? []).map((item) => (item.id === id ? { ...item, status, recordedAt: buildDoseRecordedAt(status) ?? undefined } : item)),
       );
       return { previousToday };
     },
     onError: (_error, _variables, context) => {
-      if (context?.previousToday) queryClient.setQueryData(medicationDoseKeys.today(petId), context.previousToday);
+      if (context?.previousToday) queryClient.setQueryData(todayKey, context.previousToday);
     },
     onSuccess: (dose) => {
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId), (current) =>
+      queryClient.setQueryData<DoseRecord[]>(todayKey, (current) =>
         (current ?? []).map((item) => (item.id === dose.id ? dose : item)),
       );
     },
@@ -189,33 +192,16 @@ export function useUpdateMedicationDoseStatus(petId: string | null) {
 function cleanOptional(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
-async function fetchMedicationDoses(petId: string, start: string, end: string, ascending: boolean) {
+async function fetchMedicationDoses(petId: string, input: { fromDateKey: string; toDateKey: string; ascending: boolean }) {
   const { data, error } = await supabase!
     .from("medication_doses")
     .select("id,pet_id,schedule_id,dose_date,medication_name,scheduled_at,status,recorded_at,reaction_note,created_by,client_mutation_id,created_at,updated_at")
     .eq("pet_id", petId)
-    .gte("scheduled_at", start)
-    .lt("scheduled_at", end)
-    .order("scheduled_at", { ascending });
+    .gte("dose_date", input.fromDateKey)
+    .lte("dose_date", input.toDateKey)
+    .order("scheduled_at", { ascending: input.ascending });
   if (error) throw new Error(error.message);
   return (data ?? []).map(mapDoseRow);
-}
-function todayRange() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 1);
-  return { start: start.toISOString(), end: end.toISOString() };
-}
-function dateKeyRange(fromDateKey: string, toDateKey: string) {
-  const start = parseDateKey(fromDateKey);
-  const end = parseDateKey(toDateKey);
-  end.setDate(end.getDate() + 1);
-  return { start: start.toISOString(), end: end.toISOString() };
-}
-function parseDateKey(dateKey: string) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, (month ?? 1) - 1, day ?? 1);
 }
 function buildScheduledAtForTime(scheduledTime?: string) {
   const timeMatch = scheduledTime?.match(/^(\d{1,2}):(\d{2})$/);
@@ -242,8 +228,21 @@ function buildScheduledAtForDateTime(doseDate?: string, scheduledTime?: string, 
   }
   return scheduledAt;
 }
-function localDateKey(date = new Date()) {
+export function localDateKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+export function millisecondsUntilNextLocalDate(now = new Date()) {
+  const next = new Date(now);
+  next.setHours(24, 0, 1, 0);
+  return Math.max(1, next.getTime() - now.getTime());
+}
+function useCurrentLocalDateKey() {
+  const [dateKey, setDateKey] = useState(() => localDateKey());
+  useEffect(() => {
+    const timer = setTimeout(() => setDateKey(localDateKey()), millisecondsUntilNextLocalDate());
+    return () => clearTimeout(timer);
+  }, [dateKey]);
+  return dateKey;
 }
 function buildDoseStatusUpdate(status: DoseStatus) {
   const now = new Date();
