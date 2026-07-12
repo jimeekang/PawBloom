@@ -6,6 +6,7 @@ import { getTodayEntriesForPet, useDiaryEntriesController } from "../contexts/di
 import { useAuth } from "../contexts/identity/application/authContext";
 import { SettingsScreen } from "../contexts/identity/ui/SettingsScreen";
 import { rescheduleMedicationReminders } from "../contexts/medication/application/medicationReminderNotifications";
+import { rescheduleMealReminders } from "../contexts/routine/application/mealReminderNotifications";
 import { hasRecordedMedication } from "../contexts/medication/ui/medicationDoseActions";
 import { shouldMarkMedicationChecklist } from "../contexts/medication/ui/localMedicationState";
 import { useMedicationDosesController } from "../contexts/medication/ui/useMedicationDosesController";
@@ -13,6 +14,7 @@ import { buildQuickDoseFromSchedule } from "../contexts/care/application/carePla
 import type { CareMedicationSchedule, CareSetupInput } from "../contexts/care/domain/carePlan";
 import { useCareSetupState } from "../contexts/care/ui/useCareSetupState";
 import { useRoutineDefaults } from "../contexts/routine/ui/useRoutineDefaults";
+import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../contexts/routine/domain/petRoutine";
 import { type PetProfile } from "../contexts/pet/domain/pet";
 import { mockPets } from "../contexts/pet/ui/samplePets";
 import { useReportDraftSummary } from "../contexts/report/application/reportDraftRecords";
@@ -72,6 +74,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: mockPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
   const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
   const reminderScheduleKey = care.activeCareSetup.schedules.map((schedule) => `${schedule.id}:${schedule.localTime}:${schedule.startsOn}:${schedule.endsOn ?? ""}:${schedule.recurrenceIntervalDays}`).join("|");
+  const mealReminderScheduleKey = [routine.activeRoutine.food.mealRemindersEnabled, ...(["breakfast", "lunch", "dinner", "snack"] as RoutineMealSlot[]).map((slot) => `${slot}:${routine.activeRoutine.food.meals[slot]?.localTime ?? ""}`)].join("|");
   useEffect(() => {
     if (!databaseMode || care.activeCareSetup.schedules.length === 0) return;
     const refresh = () => void refreshMedicationReminders(care.activeCareSetup.schedules, false).catch(() => undefined);
@@ -79,6 +82,13 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
     return () => subscription.remove();
   }, [activePet.id, activePet.name, databaseMode, language, reminderScheduleKey, userId]);
+  useEffect(() => {
+    if (!databaseMode || !userId) return;
+    const refresh = () => void refreshMealReminders(routine.activeRoutine, false).catch(() => undefined);
+    refresh();
+    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
+    return () => subscription.remove();
+  }, [activePet.id, activePet.name, databaseMode, language, mealReminderScheduleKey, userId]);
   const medication = useMedicationDosesController({
     activePetId: activePet.id,
     databaseMode,
@@ -153,6 +163,17 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     return savedSetup;
   }
 
+  async function saveRoutineAndRefreshMealReminders(input: PetRoutineInput) {
+    await routine.saveRoutine(input);
+    if (!databaseMode || !userId) return;
+    try {
+      const scheduled = await refreshMealReminders({ ...input, petId: activePet.id }, true);
+      setNotice(scheduled ? t("ko", "routine.mealReminderScheduled") : t("ko", "routine.mealReminderPermissionDenied"));
+    } catch {
+      setNotice(t("ko", "routine.mealReminderScheduleFailed"));
+    }
+  }
+
   function refreshMedicationReminders(schedules: CareMedicationSchedule[], requestPermission: boolean, previousScheduleIds: string[] = schedules.map((schedule) => schedule.id)) {
     if (!userId) return Promise.resolve(false);
     return rescheduleMedicationReminders({
@@ -163,6 +184,24 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       schedules,
       previousScheduleIds,
       fromDate: getLocalDateKey(),
+      requestPermission,
+    });
+  }
+
+  function refreshMealReminders(nextRoutine: PetRoutine, requestPermission: boolean) {
+    if (!userId) return Promise.resolve(false);
+    return rescheduleMealReminders({
+      userId,
+      petId: activePet.id,
+      petName: activePet.name,
+      title: t("ko", "routine.mealReminderTitle").replace("{petName}", activePet.name),
+      slotLabels: {
+        breakfast: t("ko", "routine.breakfast"),
+        lunch: t("ko", "routine.lunch"),
+        dinner: t("ko", "routine.dinner"),
+        snack: t("ko", "diary.meal.snack"),
+      },
+      routine: nextRoutine,
       requestPermission,
     });
   }
@@ -181,7 +220,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.appFrame}>
           <PetSettingsHeader onBack={() => setShowPetSettings(false)} />
-          <PetOnboardingScreen routine={routine.activeRoutine} onSaveRoutine={routine.saveRoutine} careSetup={care.activeCareSetup} onSaveCareSetup={saveCareSetupAndRefreshReminders} onProfileSaved={() => showSaveFeedback("petProfile")} />
+          <PetOnboardingScreen routine={routine.activeRoutine} onSaveRoutine={saveRoutineAndRefreshMealReminders} careSetup={care.activeCareSetup} onSaveCareSetup={saveCareSetupAndRefreshReminders} onProfileSaved={() => showSaveFeedback("petProfile")} />
           <SaveFeedbackBar feedback={saveFeedback} onDismiss={hideSaveFeedback} />
         </View>
       </SafeAreaView>

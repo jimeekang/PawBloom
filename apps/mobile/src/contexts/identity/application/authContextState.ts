@@ -12,8 +12,8 @@ import type { IdentityMessageKey } from "./identityMessage";
 import { useAuthActions } from "./useAuthActions";
 import { clearAccountScopedQueryCache, isCurrentAccountWork } from "./authAccountBoundary";
 import { cancelMedicationRemindersForAccount, setActiveMedicationReminderAccount } from "../../medication/application/medicationReminderNotifications";
+import { cancelMealRemindersForAccount, setActiveMealReminderAccount } from "../../routine/application/mealReminderNotifications";
 import { usePendingMediaCleanupRetry } from "./usePendingMediaCleanupRetry";
-
 export function useAuthState() {
   const [initialized, setInitialized] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -29,7 +29,6 @@ export function useAuthState() {
   const petLoadRevisionRef = useRef(0);
   const petListReadyRef = useRef(false);
   const queryClient = useQueryClient();
-
   const activePet = useMemo(() => pets.find((pet) => pet.id === activePetId) ?? pets[0] ?? null, [pets, activePetId]);
   const loading = authLoading || petMutationLoading;
 
@@ -99,8 +98,10 @@ export function useAuthState() {
       petLoadRevisionRef.current += 1;
       petListReadyRef.current = false;
       setActiveMedicationReminderAccount(nextUserId);
+      setActiveMealReminderAccount(nextUserId);
       if (previousUserId) {
         void cancelMedicationRemindersForAccount(previousUserId).catch(() => undefined);
+        void cancelMealRemindersForAccount(previousUserId).catch(() => undefined);
       }
       setPets([]);
       setActivePetId(null);
