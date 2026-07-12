@@ -2,19 +2,20 @@ import { useMemo, useState, type ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ActiveCareSetup } from "../../contexts/care/domain/carePlan";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
-import { SummaryCard } from "../../design-system/SummaryCard";
 import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
 import { CareSetupPanel } from "../../contexts/care/ui/CareSetupPanel";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
+import { CareReportPanel } from "./CareReportPanel";
 
 type Segment = "care" | "reports";
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
 
 export function CareModeScreen({
+  petId,
   doses,
   medicationAgenda = [],
   onAgendaStatusChange,
@@ -26,7 +27,11 @@ export function CareModeScreen({
   onGenerateReport,
   conditionScore,
   careSetup,
+  canManageCare = true,
+  canDeleteDose = true,
+  canManageReports = true,
 }: {
+  petId: string;
   doses: DoseRecord[];
   medicationAgenda?: TodayMedicationAgendaRow[];
   onAgendaStatusChange?: (row: TodayMedicationAgendaRow, status: "completed" | "skipped" | "partial") => void;
@@ -38,6 +43,9 @@ export function CareModeScreen({
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
+  canManageCare?: boolean;
+  canDeleteDose?: boolean;
+  canManageReports?: boolean;
 }) {
   const [segment, setSegment] = useState<Segment>("care");
 
@@ -54,6 +62,7 @@ export function CareModeScreen({
 
       {segment === "care" ? (
         <CarePanel
+          petId={petId}
           doses={doses}
           medicationAgenda={medicationAgenda}
           onAgendaStatusChange={onAgendaStatusChange}
@@ -65,15 +74,19 @@ export function CareModeScreen({
           onGenerateReport={onGenerateReport}
           conditionScore={conditionScore}
           careSetup={careSetup}
+          canManageCare={canManageCare}
+          canDeleteDose={canDeleteDose}
+          canManageReports={canManageReports}
         />
       ) : (
-        <ReportPanel onShare={onGenerateReport} />
+        <CareReportPanel onOpenReports={onGenerateReport} canManageReports={canManageReports} />
       )}
     </View>
   );
 }
 
 function CarePanel({
+  petId,
   doses,
   medicationAgenda,
   onAgendaStatusChange,
@@ -85,7 +98,11 @@ function CarePanel({
   onGenerateReport,
   conditionScore,
   careSetup,
+  canManageCare,
+  canDeleteDose,
+  canManageReports,
 }: {
+  petId: string;
   doses: DoseRecord[];
   medicationAgenda: TodayMedicationAgendaRow[];
   onAgendaStatusChange?: (row: TodayMedicationAgendaRow, status: "completed" | "skipped" | "partial") => void;
@@ -97,6 +114,9 @@ function CarePanel({
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
+  canManageCare: boolean;
+  canDeleteDose: boolean;
+  canManageReports: boolean;
 }) {
   const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
   const [temporaryFormOpen, setTemporaryFormOpen] = useState(false);
@@ -106,7 +126,9 @@ function CarePanel({
 
   return (
     <>
-      <CareSetupPanel setup={careSetup} onSave={onSaveCareSetup} onUseSchedule={onUseSchedule} />
+      {canManageCare
+        ? <CareSetupPanel petId={petId} setup={careSetup} onSave={onSaveCareSetup} onUseSchedule={onUseSchedule} />
+        : <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" />}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.todayMedicationTitle")}</Text>
@@ -120,7 +142,7 @@ function CarePanel({
       </View>
 
       <SecondaryButton label={t("ko", "care.temporaryAdd")} icon="add" onPress={() => setTemporaryFormOpen((current) => !current)} />
-      {temporaryFormOpen || editingDose ? <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} /> : null}
+      {temporaryFormOpen || editingDose ? <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} canDelete={canDeleteDose} /> : null}
 
       <SurfaceCard>
         <Text style={styles.sectionTitle}>{t("ko", "care.scheduleSummaryTitle")}</Text>
@@ -134,7 +156,9 @@ function CarePanel({
         <Text style={styles.sectionTitle}>{t("ko", "care.conditionFromDiaryTitle")}</Text>
         <Text style={styles.reportCopy}>{conditionScore ? `${t("ko", "care.latestCondition")} ${conditionScore}/5` : t("ko", "care.conditionFromDiaryCopy")}</Text>
       </SurfaceCard>
-      <PrimaryButton label={t("ko", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
+      {canManageReports
+        ? <PrimaryButton label={t("ko", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
+        : <NoticeBanner text={t("ko", "permission.reportCareTeamOnly")} icon="shield" />}
     </>
   );
 }
@@ -167,19 +191,6 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
         </Pressable>
       ) : null}
     </View>
-  );
-}
-
-function ReportPanel({ onShare }: { onShare: () => void }) {
-  return (
-    <>
-      <SummaryCard />
-      <SurfaceCard>
-        <Text style={styles.sectionTitle}>{t("ko", "care.readyForVetReview")}</Text>
-        <Text style={styles.reportCopy}>{t("ko", "care.readyCopy")}</Text>
-      </SurfaceCard>
-      <PrimaryButton label={t("ko", "care.shareReportLink")} icon="reports" onPress={onShare} />
-    </>
   );
 }
 

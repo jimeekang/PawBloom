@@ -4,18 +4,19 @@ export const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-export function jsonResponse(body: unknown, status = 200) {
+export function jsonResponse(body: unknown, status = 200, additionalHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       ...corsHeaders,
+      ...additionalHeaders,
       "Content-Type": "application/json",
     },
   });
 }
 
-export function errorResponse(message: string, status = 400) {
-  return jsonResponse({ error: message }, status);
+export function errorResponse(message: string, status = 400, additionalHeaders: Record<string, string> = {}) {
+  return jsonResponse({ error: message }, status, additionalHeaders);
 }
 
 export async function readJson<T>(request: Request): Promise<T> {
@@ -25,4 +26,3 @@ export async function readJson<T>(request: Request): Promise<T> {
     throw new Error("Invalid JSON body");
   }
 }
-

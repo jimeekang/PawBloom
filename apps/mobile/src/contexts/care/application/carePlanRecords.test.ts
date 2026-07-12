@@ -1,5 +1,5 @@
 import type { CareMedicationSchedule } from "../domain/carePlan";
-import { buildQuickDoseFromSchedule, mapCareSetupForTest, normalizeCareLocalTime } from "./carePlanRecords";
+import { buildCareScheduleRequests, buildQuickDoseFromSchedule, mapCareSetupForTest, normalizeCareLocalTime } from "./carePlanRecords";
 
 const schedule: CareMedicationSchedule = {
   id: "schedule-1",
@@ -74,6 +74,7 @@ const setup = mapCareSetupForTest([condition], [plan], [medication], [medication
 if (setup.condition?.name !== "구토") throw new Error("care setup must expose active condition name");
 if (setup.condition?.status !== "active") throw new Error("care setup must expose active condition status");
 if (setup.plan?.title !== "위장 케어") throw new Error("care setup must expose active plan title");
+if (setup.plans[0]?.conditionId !== "condition-1") throw new Error("care setup must keep each plan's linked condition id");
 if (setup.schedules[0]?.medicationName !== "Cerenia") throw new Error("care setup schedules must include medication name");
 if (setup.schedules[0]?.localTime !== "08:00:00") throw new Error("care setup schedules must keep local medication time");
 if (setup.schedules[0]?.startsOn !== "2026-06-30") throw new Error("care setup schedules must keep treatment start date");
@@ -99,6 +100,14 @@ const secondMedication = {
   dosage_label: "얇게 1회",
 };
 
+const secondPlan = {
+  ...plan,
+  id: "plan-2",
+  condition_id: "condition-2",
+  title: "피부 케어",
+  instructions: "저녁에 관찰",
+};
+
 const secondSchedule = {
   ...medicationSchedule,
   id: "schedule-2",
@@ -111,12 +120,13 @@ const secondSchedule = {
 
 const multiSetup = mapCareSetupForTest(
   [secondCondition, condition],
-  [plan],
+  [secondPlan, plan],
   [medication, secondMedication],
   [medicationSchedule, secondSchedule],
 );
 
 if (multiSetup.conditions.length !== 2) throw new Error("care setup must expose all active conditions");
+if (multiSetup.plans.length !== 2 || multiSetup.plans[0]?.conditionId !== "condition-2") throw new Error("care setup must expose every plan keyed to its condition");
 if (multiSetup.conditions[0]?.name !== "피부염") throw new Error("care setup must keep newest condition first");
 if (multiSetup.schedules.length !== 2) throw new Error("care setup must expose all medication schedules");
 if (multiSetup.schedules[1]?.conditionId !== "condition-2") throw new Error("schedule must expose linked condition id");
@@ -130,3 +140,8 @@ if (normalizeCareLocalTime("") !== "08:00:00") throw new Error("empty care local
 if (normalizeCareLocalTime("ab:cd") !== "08:00:00") throw new Error("invalid care local time must fall back to 08:00:00");
 if (normalizeCareLocalTime("24:00") !== "08:00:00") throw new Error("out-of-range care local time must fall back to 08:00:00");
 if (normalizeCareLocalTime("9") !== "09:00:00") throw new Error("hour-only care local time must use zero minutes");
+
+const scheduleRequests = buildCareScheduleRequests({ localTimes: ["08:30", "20:30", "08:30"], scheduleIds: ["schedule-1", "schedule-2", "duplicate"] });
+if (scheduleRequests.length !== 2 || scheduleRequests[0]?.id !== "schedule-1" || scheduleRequests[1]?.id !== "schedule-2") {
+  throw new Error("care setup persistence must update existing schedule ids and remove duplicate local times");
+}

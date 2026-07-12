@@ -43,6 +43,7 @@ const checklistMapped = mapDiaryRow({
   created_at: "2026-07-01T08:00:00.000Z",
   updated_at: "2026-07-01T08:00:00.000Z",
   record_origin: "checklist",
+  superseded_by: null,
   media_assets: [],
 });
 
@@ -62,6 +63,7 @@ const legacyChecklistMapped = mapDiaryRow({
   client_mutation_id: null,
   created_at: "2026-07-01T08:00:00.000Z",
   updated_at: "2026-07-01T08:00:00.000Z",
+  superseded_by: null,
   media_assets: [],
 } as unknown as Parameters<typeof mapDiaryRow>[0]);
 

@@ -33,18 +33,20 @@ export function useReportDraftSummary({
   activePetId,
   databaseMode,
   livePetId,
+  userId,
   entries,
   doses,
 }: {
   activePetId: string;
   databaseMode: boolean;
   livePetId: string | null;
+  userId: string | null;
   entries: DiaryEntry[];
   doses: DoseRecord[];
 }) {
   const range = useMemo(() => getLast7DayReportRange(), []);
-  const diaryQuery = useDiaryEntriesByDateRange(livePetId, range.fromDateKey, range.toDateKey);
-  const dosesQuery = useMedicationDosesByDateRange(livePetId, range.fromDateKey, range.toDateKey);
+  const diaryQuery = useDiaryEntriesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
+  const dosesQuery = useMedicationDosesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
   return useMemo(() => {
     const reportEntries = databaseMode
       ? diaryQuery.data ?? []

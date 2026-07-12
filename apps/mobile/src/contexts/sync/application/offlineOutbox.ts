@@ -107,6 +107,27 @@ export function createNativeOutboxStore({
     return mutations;
   }
 
+  async function countConflictedMutations() {
+    const userId = await resolveUserId();
+    if (!userId) return 0;
+    await initializeOutbox();
+    const rows = await databaseProvider().getAllAsync<{ count: number }>(
+      `select count(*) as count from ${NATIVE_OUTBOX_TABLE}
+       where user_id = ? and status = 'conflict'`,
+      userId,
+    );
+    return await userStillCurrent(userId) ? rows[0]?.count ?? 0 : 0;
+  }
+
+  async function clearConflictedMutations(expectedUserId?: string) {
+    await mutateOwnedRow(expectedUserId, async (userId) => {
+      await databaseProvider().runAsync(
+        `delete from ${NATIVE_OUTBOX_TABLE} where user_id = ? and status = 'conflict'`,
+        userId,
+      );
+    });
+  }
+
   async function markMutationApplied(id: string, expectedUserId?: string) {
     await mutateOwnedRow(expectedUserId, async (userId) => {
       await databaseProvider().runAsync(
@@ -200,6 +221,8 @@ export function createNativeOutboxStore({
     initializeOutbox,
     enqueueOfflineMutation,
     listPendingMutations,
+    countConflictedMutations,
+    clearConflictedMutations,
     markMutationApplied,
     markMutationConflict,
     markMutationRetry,
@@ -211,11 +234,15 @@ const nativeOutbox = createNativeOutboxStore();
 export const initializeOutbox = nativeOutbox.initializeOutbox;
 export const enqueueOfflineMutation = nativeOutbox.enqueueOfflineMutation;
 export const listPendingMutations = nativeOutbox.listPendingMutations;
+export const countConflictedMutations = nativeOutbox.countConflictedMutations;
+export const clearConflictedMutations = nativeOutbox.clearConflictedMutations;
 export const markMutationApplied = nativeOutbox.markMutationApplied;
 export const markMutationConflict = nativeOutbox.markMutationConflict;
 export const markMutationRetry = nativeOutbox.markMutationRetry;
 export const offlineOutboxStore = {
   listPendingMutations,
+  countConflictedMutations,
+  clearConflictedMutations,
   markMutationApplied,
   markMutationConflict,
   markMutationRetry,

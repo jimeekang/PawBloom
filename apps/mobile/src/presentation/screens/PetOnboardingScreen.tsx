@@ -15,11 +15,12 @@ import { RoutineSettingsPanel } from "../../contexts/routine/ui/RoutineSettingsP
 import { ProfileCareDefaultsPanel } from "../../contexts/care/ui/ProfileCareDefaultsPanel";
 import { DatePickerField } from "../../design-system/DatePickerField";
 import { styles } from "./PetOnboardingScreen.styles";
+import { can } from "../../shared-kernel/permissions";
 
 const speciesOptions = ["dog", "cat", "other"] as const;
 
 export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void } = {}) {
-  const { pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
+  const { user, pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
 
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
@@ -34,9 +35,11 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   const [editSpecies, setEditSpecies] = useState<(typeof speciesOptions)[number]>("dog");
   const [photo, setPhoto] = useState<PetProfilePhotoInput | undefined>();
   const [editPhoto, setEditPhoto] = useState<PetProfilePhotoInput | undefined>();
-  const activePhoto = usePetProfilePhotoUrl(activePet?.id);
+  const activePhoto = usePetProfilePhotoUrl(activePet?.id, user?.id ?? null);
   const hasPets = pets.length > 0;
   const shouldShowPetSelector = pets.length > 1 && !showCreateForm;
+  const canManageActivePet = activePet ? can(activePet.role, "pet.update") && can(activePet.role, "pet.photo.update") && can(activePet.role, "pet.delete") : false;
+  const canManageCareDefaults = activePet ? can(activePet.role, "routine.update") && can(activePet.role, "care.update") : false;
   const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
     dog: t("ko", "pet.speciesDog"),
     cat: t("ko", "pet.speciesCat"),
@@ -94,7 +97,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   };
 
   const onUpdate = async () => {
-    if (!activePet) {
+    if (!activePet || !canManageActivePet) {
       return;
     }
 
@@ -111,7 +114,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   };
 
   const onDelete = () => {
-    if (!activePet) {
+    if (!activePet || !canManageActivePet) {
       return;
     }
 
@@ -168,7 +171,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
         </View>
       ) : null}
 
-      {activePet && !showCreateForm ? (
+      {activePet && !showCreateForm && canManageActivePet ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.editTitle")}</Text>
           <View style={styles.row}>
@@ -202,8 +205,11 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
         </View>
       ) : null}
 
-      {activePet && !showCreateForm && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
-      {activePet && !showCreateForm && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} /> : null}
+      {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("ko", "permission.petOwnerOnly")} icon="shield" /> : null}
+
+      {activePet && !showCreateForm && canManageCareDefaults && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
+      {activePet && !showCreateForm && canManageCareDefaults && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} /> : null}
+      {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" /> : null}
 
       {showCreateForm ? (
         <View style={styles.card}>

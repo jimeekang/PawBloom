@@ -1,21 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
-import type { MedicationScheduleInput } from "../domain/medicationSchedule";
-import { buildMedicationScheduleInsertRows, mapMedicationSchedules } from "./medicationSchedulePayload";
+import { mapMedicationSchedules } from "./medicationSchedulePayload";
 export { buildMedicationScheduleInsertRows, buildScheduledMedicationDoseInput, mapMedicationSchedules, mapMedicationSchedulesForTest, normalizeMedicationLocalTime } from "./medicationSchedulePayload";
 
 type MedicationRow = Database["public"]["Tables"]["medications"]["Row"];
 type ScheduleRow = Database["public"]["Tables"]["medication_schedules"]["Row"];
 
 export const medicationScheduleKeys = {
-  byPet: (petId: string | null) => ["medication_schedules", "by_pet", petId] as const,
+  byPet: (petId: string | null, userId: string | null = null) => ["medication_schedules", "by_pet", petId, userId] as const,
 };
 
-export function useMedicationSchedules(petId: string | null) {
+export function useMedicationSchedules(petId: string | null, userId: string | null = null) {
   return useQuery({
-    queryKey: medicationScheduleKeys.byPet(petId),
-    enabled: Boolean(supabase && petId),
+    queryKey: medicationScheduleKeys.byPet(petId, userId),
+    enabled: Boolean(supabase && petId && userId),
     queryFn: async () => {
       if (!supabase || !petId) return [];
       const [medications, schedules] = await Promise.all([
@@ -25,21 +24,6 @@ export function useMedicationSchedules(petId: string | null) {
       const error = medications.error ?? schedules.error;
       if (error) throw new Error(error.message);
       return mapMedicationSchedules(medications.data ?? [], schedules.data ?? []);
-    },
-  });
-}
-
-export function useCreateMedicationSchedule() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: MedicationScheduleInput) => {
-      if (!supabase) throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
-      const { error } = await supabase.from("medication_schedules").insert(buildMedicationScheduleInsertRows(input));
-      if (error) throw new Error(error.message);
-      return true;
-    },
-    onSuccess: (_result, input) => {
-      void queryClient.invalidateQueries({ queryKey: medicationScheduleKeys.byPet(input.petId) });
     },
   });
 }

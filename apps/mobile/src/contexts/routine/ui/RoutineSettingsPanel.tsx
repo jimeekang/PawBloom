@@ -1,24 +1,39 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../domain/petRoutine";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 
-export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine; onSave: (routine: PetRoutineInput) => void }) {
+export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine; onSave: (routine: PetRoutineInput) => void | Promise<void> }) {
   const [draft, setDraft] = useState<PetRoutine>(routine);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     setDraft(routine);
+    setError(null);
   }, [routine]);
 
   const updateMeal = (slot: RoutineMealSlot, offeredGrams: string) => {
     setDraft((current) => ({ ...current, food: { ...current.food, meals: { ...current.food.meals, [slot]: { offeredGrams: offeredGrams.slice(0, 5) } } } }));
   };
 
-  const save = () => {
+  const save = async () => {
+    if (savingRef.current) return;
     const { food, water, walk, stool, condition } = draft;
-    onSave({ food, water, walk, stool, condition });
+    savingRef.current = true;
+    setIsSaving(true);
+    setError(null);
+    try {
+      await onSave({ food, water, walk, stool, condition });
+    } catch {
+      setError(t("ko", "routine.saveFailed"));
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -46,7 +61,8 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
           <TextInput style={styles.inputFull} value={draft.walk.durationMinutes ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, walk: { ...current.walk, durationMinutes: value.slice(0, 4) } }))} placeholder={t("ko", "routine.walk")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
         )}
         <SegmentedControl value={draft.condition.energyLevel ?? "normal"} onChange={(energyLevel) => setDraft((current) => ({ ...current, condition: { energyLevel } }))} items={[{ label: t("ko", "diary.level.less"), value: "less" }, { label: t("ko", "diary.level.normal"), value: "normal" }, { label: t("ko", "diary.level.more"), value: "more" }]} />
-        <PrimaryButton label={t("ko", "routine.save")} icon="check" onPress={save} />
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <PrimaryButton label={t("ko", "routine.save")} icon="check" onPress={save} disabled={isSaving} />
       </View>
     </SurfaceCard>
   );
@@ -67,6 +83,10 @@ const styles = StyleSheet.create({
     ...type.caption,
     color: colors.text,
     fontWeight: "600",
+  },
+  errorText: {
+    ...type.caption,
+    color: colors.coral,
   },
   grid: {
     flexDirection: "row",

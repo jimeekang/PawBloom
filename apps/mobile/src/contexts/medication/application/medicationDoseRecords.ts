@@ -8,6 +8,7 @@ import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, decodeMedication
 import { localDateKey, useCurrentLocalDateKey } from "./medicationDoseDate";
 import { findMedicationDoseInCachedLists, removeMedicationDoseFromCachedLists, replaceMedicationDoseInCachedLists } from "./medicationDoseCache";
 import { enqueueMedicationDoseInsert, enqueueMedicationDoseUpdate } from "./medicationDoseOfflineQueue";
+import { deleteMedicationDoseWithRetry } from "./medicationDoseDeletion";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, decodeMedicationDoseCareNote, encodeMedicationDoseCareNote } from "./medicationDosePayload";
 export { removeMedicationDoseFromList, replaceMedicationDoseInList } from "./medicationDoseCache";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
@@ -15,8 +16,8 @@ type DoseUpdate = Database["public"]["Tables"]["medication_doses"]["Update"];
 export type QuickMedicationDoseInput = { scheduleId?: string; doseDate?: string; scheduledTime?: string; conditionName?: string; medicationName: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string; status?: DoseStatus };
 export type UpdateMedicationDoseInput = QuickMedicationDoseInput & { id: string; scheduledTime?: string };
 export const medicationDoseKeys = {
-  today: (petId: string | null, dateKey = localDateKey()) => ["medication_doses", "today", petId, dateKey] as const,
-  range: (petId: string | null, fromDateKey: string, toDateKey: string) => ["medication_doses", "range", petId, fromDateKey, toDateKey] as const,
+  today: (petId: string | null, dateKey = localDateKey(), userId: string | null = null) => ["medication_doses", "today", petId, dateKey, userId] as const,
+  range: (petId: string | null, fromDateKey: string, toDateKey: string, userId: string | null = null) => ["medication_doses", "range", petId, fromDateKey, toDateKey, userId] as const,
 };
 export function mapDoseRow(row: DoseRow): DoseRecord {
   const careNote = decodeMedicationDoseCareNote(row.reaction_note);
@@ -44,21 +45,21 @@ export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInpu
 
   return payload;
 }
-export function useTodayMedicationDoses(petId: string | null) {
+export function useTodayMedicationDoses(petId: string | null, userId: string | null = null) {
   const todayDateKey = useCurrentLocalDateKey();
   return useQuery({
-    queryKey: medicationDoseKeys.today(petId, todayDateKey),
-    enabled: Boolean(supabase && petId),
+    queryKey: medicationDoseKeys.today(petId, todayDateKey, userId),
+    enabled: Boolean(supabase && petId && userId),
     queryFn: async () => {
       if (!supabase || !petId) return [];
       return fetchMedicationDoses(petId, { fromDateKey: todayDateKey, toDateKey: todayDateKey, ascending: true });
     },
   });
 }
-export function useMedicationDosesByDateRange(petId: string | null, fromDateKey: string, toDateKey: string) {
+export function useMedicationDosesByDateRange(petId: string | null, fromDateKey: string, toDateKey: string, userId: string | null = null) {
   return useQuery({
-    queryKey: medicationDoseKeys.range(petId, fromDateKey, toDateKey),
-    enabled: Boolean(supabase && petId && fromDateKey && toDateKey),
+    queryKey: medicationDoseKeys.range(petId, fromDateKey, toDateKey, userId),
+    enabled: Boolean(supabase && petId && userId && fromDateKey && toDateKey),
     queryFn: async () => {
       if (!supabase || !petId) return [];
       return fetchMedicationDoses(petId, { fromDateKey, toDateKey, ascending: false });
@@ -89,7 +90,7 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       }
     },
     onMutate: async (input) => {
-      const todayKey = medicationDoseKeys.today(petId, todayDateKey);
+      const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
       await queryClient.cancelQueries({ queryKey: todayKey });
       const previousToday = queryClient.getQueryData<DoseRecord[]>(todayKey);
       const status = input.status ?? "pending";
@@ -101,26 +102,26 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
     },
     onError: (_error, _variables, context) => {
       if (!context) return;
-      const todayKey = medicationDoseKeys.today(petId, todayDateKey);
+      const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
       if (context.previousToday !== undefined) return void queryClient.setQueryData(todayKey, context.previousToday);
       const withoutOptimisticDose = (queryClient.getQueryData<DoseRecord[]>(todayKey) ?? []).filter((item) => item.id !== context.optimisticId);
       if (withoutOptimisticDose.length > 0) queryClient.setQueryData(todayKey, withoutOptimisticDose);
       else queryClient.removeQueries({ queryKey: todayKey, exact: true });
     },
     onSuccess: (result, _input, context) => {
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, todayDateKey), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), result.dose));
+      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, todayDateKey, userId), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), result.dose));
       if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
 }
-export function useUpdateMedicationDose(petId: string | null) {
+export function useUpdateMedicationDose(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: UpdateMedicationDoseInput) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
       const clientMutationId = createClientMutationId();
       const updatePayload = buildMedicationDoseUpdatePayload(input, clientMutationId);
-      const currentDose = findMedicationDoseInCachedLists(queryClient, petId, input.id);
+      const currentDose = findMedicationDoseInCachedLists(queryClient, petId, userId, input.id);
       try {
         const { data, error } = await supabase.from("medication_doses").update(updatePayload).eq("id", input.id).eq("pet_id", petId).select().single();
         if (error) {
@@ -138,36 +139,35 @@ export function useUpdateMedicationDose(petId: string | null) {
       }
     },
     onSuccess: (result) => {
-      replaceMedicationDoseInCachedLists(queryClient, petId, result.dose);
+      replaceMedicationDoseInCachedLists(queryClient, petId, userId, result.dose);
       if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
 }
-export function useDeleteMedicationDose(petId: string | null) {
+export function useDeleteMedicationDose(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
-      const { data, error } = await supabase.from("medication_doses").delete().eq("id", id).eq("pet_id", petId).select().single();
-      if (error) throw new Error(error.message);
-      return mapDoseRow(data);
+      const data = await deleteMedicationDoseWithRetry(supabase, petId, id);
+      return { id, dose: data ? mapDoseRow(data) : null };
     },
-    onSuccess: (dose) => {
-      removeMedicationDoseFromCachedLists(queryClient, petId, dose.id);
+    onSuccess: (result) => {
+      removeMedicationDoseFromCachedLists(queryClient, petId, userId, result.id);
       void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
 }
-export function useUpdateMedicationDoseStatus(petId: string | null) {
+export function useUpdateMedicationDoseStatus(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
   const todayDateKey = useCurrentLocalDateKey();
-  const todayKey = medicationDoseKeys.today(petId, todayDateKey);
+  const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: DoseStatus }) => {
       if (!supabase || !petId) throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
       const clientMutationId = createClientMutationId();
       const updatePayload = buildDoseStatusUpdate(status, clientMutationId);
-      const currentDose = findMedicationDoseInCachedLists(queryClient, petId, id);
+      const currentDose = findMedicationDoseInCachedLists(queryClient, petId, userId, id);
       try {
         const { data, error } = await supabase.from("medication_doses").update(updatePayload).eq("id", id).eq("pet_id", petId).select().single();
         if (error) {

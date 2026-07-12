@@ -11,13 +11,13 @@ type RoutineRow = Database["public"]["Tables"]["pet_routines"]["Row"];
 type RoutineInsert = Database["public"]["Tables"]["pet_routines"]["Insert"];
 
 export const petRoutineKeys = {
-  detail: (petId: string | null, species?: Species) => ["pet_routine", petId, species ?? "dog"] as const,
+  detail: (petId: string | null, species?: Species, userId: string | null = null) => ["pet_routine", petId, species ?? "dog", userId] as const,
 };
 
-export function usePetRoutine(petId: string | null, species: Species = "dog") {
+export function usePetRoutine(petId: string | null, species: Species = "dog", userId: string | null = null) {
   return useQuery({
-    queryKey: petRoutineKeys.detail(petId, species),
-    enabled: Boolean(supabase && petId),
+    queryKey: petRoutineKeys.detail(petId, species, userId),
+    enabled: Boolean(supabase && petId && userId),
     queryFn: async () => {
       if (!supabase || !petId) return null;
       const { data, error } = await supabase.from("pet_routines").select("id,pet_id,routine,created_by,created_at,updated_at").eq("pet_id", petId).maybeSingle();
@@ -38,8 +38,8 @@ export function useUpsertPetRoutine(petId: string | null, userId: string | null,
       return mapRoutineRow(data, species);
     },
     onSuccess: (routine) => {
-      queryClient.setQueriesData({ queryKey: ["pet_routine", petId] }, routine);
-      void queryClient.invalidateQueries({ queryKey: ["pet_routine", petId] });
+      queryClient.setQueryData(petRoutineKeys.detail(petId, species, userId), routine);
+      void queryClient.invalidateQueries({ queryKey: petRoutineKeys.detail(petId, species, userId) });
     },
   });
 }

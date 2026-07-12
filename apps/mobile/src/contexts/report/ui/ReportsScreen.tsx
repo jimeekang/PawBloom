@@ -6,6 +6,7 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../..
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
+import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { ReportListSection, ReportMetricsCard, ReportShareCard } from "./ReportArtifactSections";
 import { createReportArtifactSnapshot, type ReportArtifactSnapshot } from "./reportArtifactSnapshot";
 import { getReportPrimaryAction, type ReportWorkflowAction, type ReportWorkflowError } from "./reportWorkflow";
@@ -14,25 +15,28 @@ type Props = {
   report: GeneratedVetReport | null;
   reportSummary: ReportDraftSummary;
   canGenerate: boolean;
-  blockedReason: Extract<ReportWorkflowError, "accountRequired" | "petRequired" | "empty"> | null;
+  canConfirm: boolean;
+  canShare: boolean;
+  blockedReason: Extract<ReportWorkflowError, "accountRequired" | "petRequired" | "empty" | "permission"> | null;
   error: ReportWorkflowError | null;
   pendingAction: ReportWorkflowAction | null;
   isBusy: boolean;
   onGenerate: () => void;
   onConfirm: () => void;
   onShare: () => void;
+  onRevoke: () => void | Promise<void>;
   onReset: () => void;
   onNewDiary: () => void;
 };
 
-export function ReportsScreen({ report, reportSummary, canGenerate, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onReset, onNewDiary }: Props) {
+export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, canShare, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onRevoke, onReset, onNewDiary }: Props) {
   const stage = report?.status ?? "empty";
   const stageContent = stageCopy[stage];
   const artifactSnapshot = report ? createReportArtifactSnapshot(report.payload) : null;
   const displayedSummary = artifactSnapshot ?? reportSummary;
   const hasDisplayedRecords = Boolean(report) || reportSummary.hasRecords;
   const conditionTrend = conditionTrendCopy(displayedSummary);
-  const primaryAction = getReportPrimaryAction({ report, hasRecords: hasDisplayedRecords, canGenerate, isBusy });
+  const primaryAction = getReportPrimaryAction({ report, hasRecords: hasDisplayedRecords, canGenerate, canConfirm, canShare, isBusy });
   const visibleError = error ?? (blockedReason === "empty" ? null : blockedReason);
   const preview = report?.englishSummary ?? reportSummary.englishPreview;
 
@@ -45,6 +49,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, blockedReaso
   return (
     <View style={styles.screen}>
       <NoticeBanner text={t("ko", stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
+      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("ko", "permission.reportOwnerConfirmation")} icon="shield" /> : null}
       {visibleError ? <NoticeBanner text={t("ko", workflowErrorKey[visibleError])} icon="close" /> : null}
 
       <SurfaceCard>
@@ -79,7 +84,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, blockedReaso
             <CheckRow copyKey="reports.confirmMedication" />
             <CheckRow copyKey="reports.reviewNotes" />
           </SurfaceCard>
-          {report && report.confirmedByOwner && report.status !== "draft" ? <ReportShareCard shareUrl={report.shareUrl} expiresAt={report.expiresAt} /> : null}
+          {report && report.confirmedByOwner && report.status !== "draft" && report.shareUrl && report.expiresAt ? <ReportShareCard shareUrl={report.shareUrl} expiresAt={report.expiresAt} /> : null}
         </>
       ) : (
         <SurfaceCard>
@@ -91,6 +96,18 @@ export function ReportsScreen({ report, reportSummary, canGenerate, blockedReaso
       <View style={styles.actions}>
         {pendingAction ? <NoticeBanner text={t("ko", pendingLabelKey[pendingAction])} icon={actionIcon[pendingAction]} /> : null}
         {!pendingAction && primaryAction ? <PrimaryButton label={t("ko", primaryLabelKey(primaryAction, report?.status))} icon={actionIcon[primaryAction]} onPress={runPrimaryAction} /> : null}
+        {report?.status === "shared" && canShare && !isBusy ? (
+          <SecondaryButton
+            label={t("ko", "reports.revokeLink")}
+            icon="close"
+            onPress={() => void confirmDestructiveAction({
+              title: t("ko", "reports.revokeTitle"),
+              message: t("ko", "reports.revokeCopy"),
+              cancelText: t("ko", "reports.revokeCancel"),
+              confirmText: t("ko", "reports.revokeConfirm"),
+            }, async () => { await onRevoke(); return true; })}
+          />
+        ) : null}
         {report && !isBusy ? <SecondaryButton label={t("ko", "reports.newReport")} icon="report" onPress={onReset} /> : null}
         <SecondaryButton label={t("ko", "reports.addMoreRecords")} icon="diary" onPress={onNewDiary} />
       </View>
@@ -127,10 +144,10 @@ function primaryLabelKey(action: ReportWorkflowAction, status?: VetReportStatus)
 const conditionTrendKey: Record<ReportDraftSummary["conditionTrend"]["direction"], TranslationKey> = {
   none: "reports.conditionTrend.none", stable: "reports.conditionTrend.stable", improving: "reports.conditionTrend.improving", declining: "reports.conditionTrend.declining",
 };
-const actionIcon: Record<ReportWorkflowAction, AppIconName> = { generate: "report", confirm: "check", share: "share" };
-const pendingLabelKey: Record<ReportWorkflowAction, TranslationKey> = { generate: "reports.generateInProgress", confirm: "reports.confirmInProgress", share: "reports.shareInProgress" };
+const actionIcon: Record<ReportWorkflowAction, AppIconName> = { generate: "report", confirm: "check", share: "share", revoke: "close" };
+const pendingLabelKey: Record<ReportWorkflowAction, TranslationKey> = { generate: "reports.generateInProgress", confirm: "reports.confirmInProgress", share: "reports.shareInProgress", revoke: "reports.revokeInProgress" };
 const workflowErrorKey: Record<ReportWorkflowError, TranslationKey> = {
-  accountRequired: "reports.accountRequired", petRequired: "reports.petRequired", empty: "reports.emptyState", generate: "reports.generateFailed", confirm: "reports.confirmFailed", share: "reports.shareFailed",
+  accountRequired: "reports.accountRequired", petRequired: "reports.petRequired", empty: "reports.emptyState", permission: "permission.reportCareTeamOnly", load: "reports.loadFailed", generate: "reports.generateFailed", confirm: "reports.confirmFailed", share: "reports.shareFailed", revoke: "reports.revokeFailed",
 };
 const stageCopy: Record<"empty" | VetReportStatus, { titleKey: TranslationKey; noticeKey: TranslationKey }> = {
   empty: { titleKey: "reports.previewTitle", noticeKey: "reports.previewNotice" },

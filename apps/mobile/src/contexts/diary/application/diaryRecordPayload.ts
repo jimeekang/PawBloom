@@ -2,11 +2,11 @@ import type { CreateDiaryEntryInput, DiaryCategory } from "../domain/diaryEntry"
 import { defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
 
 export type DiaryUpdateInput = CreateDiaryEntryInput & { id: string; occurredTime?: string };
-export type DiaryUpdatePayload = { category: DiaryCategory; summary: string; condition_score: number | null; entry_date: string; record_origin: "diary" | "checklist"; updated_at: string; occurred_at?: string };
+export type DiaryUpdatePayload = { summary: string; condition_score: number | null; record_origin: "diary" | "checklist"; updated_at: string; occurred_at?: string };
 
 export function buildDiaryUpdatePayload(input: DiaryUpdateInput): DiaryUpdatePayload {
   const entryDate = input.entryDate ?? getLocalDateKey();
-  const payload = { category: input.category, summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultDiarySummary(input.category), condition_score: input.category === "condition" ? input.conditionScore ?? 3 : null, entry_date: entryDate, record_origin: input.origin === "checklist" ? "checklist" as const : "diary" as const, updated_at: new Date().toISOString() };
+  const payload = { summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultDiarySummary(input.category), condition_score: input.category === "condition" ? input.conditionScore ?? 3 : null, record_origin: input.origin === "checklist" ? "checklist" as const : "diary" as const, updated_at: new Date().toISOString() };
   const occurredAt = buildOccurredAtForTime(entryDate, input.occurredTime);
   return occurredAt ? { ...payload, occurred_at: occurredAt } : payload;
 }

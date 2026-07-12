@@ -1,4 +1,4 @@
-import type { UUID } from "../../../shared-kernel/types";
+import type { PetMemberRole, UUID } from "../../../shared-kernel/types";
 
 export type Species = "dog" | "cat" | "other";
 
@@ -11,6 +11,7 @@ export type PetProfile = {
   ageLabel: string;
   weightKg: number;
   careMode: boolean;
+  role: PetMemberRole;
 };
 
 export type PetRecord = {
@@ -22,7 +23,7 @@ export type PetRecord = {
   weight_kg: number | null;
 };
 
-export function mapDbPet(record: PetRecord): PetProfile {
+export function mapDbPet(record: PetRecord, role: PetMemberRole): PetProfile {
   return {
     id: record.id,
     name: record.name,
@@ -32,6 +33,7 @@ export function mapDbPet(record: PetRecord): PetProfile {
     ageLabel: humanizeAgeLabel(record.birthdate),
     weightKg: record.weight_kg ?? 0,
     careMode: true,
+    role,
   };
 }
 

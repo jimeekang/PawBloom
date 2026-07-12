@@ -1,5 +1,9 @@
 import { type SupabaseClient, type User } from "@supabase/supabase-js";
-import type { Database } from "../../../shared-kernel/supabase/database.types";
+import type { Database, Json } from "../../../shared-kernel/supabase/database.types";
+import type { PetMemberRole } from "../../../shared-kernel/types";
+import { decodeMediaCleanupEnvelope, removeQueuedMediaObjects } from "../../media/application/mediaCleanup";
+import { resolveSupportedPhotoContentType } from "../../media/application/mediaUpload";
+import { isRetriableOfflineError } from "../../sync/application/offlineErrorPolicy";
 import { mapDbPet, normalizeSpecies, type PetProfile, type PetRecord } from "../../pet/domain/pet";
 
 export type CreatePetInput = {
@@ -16,6 +20,11 @@ export type UpdatePetInput = CreatePetInput & {
 };
 
 export type PersistedPet = PetProfile;
+export { deletePetRow } from "./petDeletion";
+
+export type LoadedPetRecord = PetRecord & {
+  membershipRole: PetMemberRole;
+};
 
 type QueryClient = {
   from: (table: string) => any;
@@ -38,7 +47,7 @@ export async function ensureProfileRow(client: QueryClient, authUser: User): Pro
   if (error) throw new Error("profile_upsert_failed");
 }
 
-export async function loadPetRows(client: QueryClient): Promise<PetRecord[]> {
+export async function loadPetRows(client: QueryClient, userId: string): Promise<LoadedPetRecord[]> {
   const { data, error } = (await (client.from("pets") as any)
     .select(petSelectColumns)
     .order("created_at", { ascending: false })) as {
@@ -50,7 +59,30 @@ export async function loadPetRows(client: QueryClient): Promise<PetRecord[]> {
     throw new Error(error?.message ?? "반려동물 목록을 불러오지 못했습니다.");
   }
 
-  return data;
+  if (data.length === 0) return [];
+
+  const petIds = data.map((pet) => pet.id);
+  const { data: memberships, error: membershipError } = (await (client.from("pet_members") as any)
+    .select("pet_id,role,starts_at,ends_at")
+    .eq("user_id", userId)
+    .in("pet_id", petIds)) as {
+    data: Array<{ pet_id: string; role: string; starts_at?: string | null; ends_at?: string | null }> | null;
+    error: { message: string } | null;
+  };
+
+  if (membershipError || !memberships) {
+    throw new Error(membershipError?.message ?? "반려동물 권한을 불러오지 못했습니다.");
+  }
+
+  const rolesByPetId = new Map<string, PetMemberRole>();
+  for (const membership of memberships) {
+    if (isPetMemberRole(membership.role) && isMembershipActive(membership)) rolesByPetId.set(membership.pet_id, membership.role);
+  }
+
+  return data.flatMap((pet) => {
+    const membershipRole = rolesByPetId.get(pet.id);
+    return membershipRole ? [{ ...pet, membershipRole }] : [];
+  });
 }
 
 export async function createPetRow(client: QueryClient, userId: string, input: CreatePetInput): Promise<PersistedPet> {
@@ -71,7 +103,7 @@ export async function createPetRow(client: QueryClient, userId: string, input: C
     throw new Error(error?.message ?? "반려동물 프로필을 생성하지 못했습니다.");
   }
 
-  return mapDbPet(data);
+  return mapDbPet(data, "owner");
 }
 
 export async function updatePetRow(client: QueryClient, input: UpdatePetInput): Promise<PersistedPet> {
@@ -88,16 +120,16 @@ export async function updatePetRow(client: QueryClient, input: UpdatePetInput): 
     throw new Error(error?.message ?? "반려동물 프로필을 수정하지 못했습니다.");
   }
 
-  return mapDbPet(data);
+  return mapDbPet(data, "owner");
 }
 
 export async function uploadPetProfilePhoto(
   client: SupabaseClient<Database>,
-  userId: string,
+  _userId: string,
   petId: string,
   photo: PetProfilePhotoInput,
 ): Promise<string> {
-  const contentType = resolvePhotoContentType(photo);
+  const contentType = resolveSupportedPhotoContentType(photo);
   const extension = extensionForContentType(contentType);
   const safeName = photo.fileName?.replace(/[^a-zA-Z0-9._-]/g, "-") || `profile.${extension}`;
   const storagePath = `${petId}/profile/${Date.now()}-${safeName}`;
@@ -112,18 +144,34 @@ export async function uploadPetProfilePhoto(
     throw new Error(uploadError.message ?? "반려동물 사진 업로드에 실패했습니다.");
   }
 
-  const { error: assetError } = await client.from("media_assets").insert({
-    pet_id: petId,
-    storage_path: storagePath,
-    content_type: contentType,
-    created_by: userId,
-  });
-
-  if (assetError) {
-    await client.storage.from("pet-media").remove([storagePath]);
-    throw new Error(assetError.message ?? "반려동물 사진 저장에 실패했습니다.");
+  const rpcArgs = {
+      p_pet_id: petId,
+      p_storage_path: storagePath,
+      p_content_type: contentType,
+  };
+  let assetResult: Json | null = null;
+  let lastError: unknown = new Error("반려동물 사진 저장에 실패했습니다.");
+  let ambiguousAttempt = false;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const result = await client.rpc("replace_pet_profile_photo_v1", rpcArgs);
+      if (!result.error && result.data) { assetResult = result.data; break; }
+      lastError = Object.assign(new Error(result.error?.message ?? "반려동물 사진 저장에 실패했습니다."), { code: result.error?.code });
+    } catch (error) {
+      lastError = error;
+    }
+    if (!isRetriableOfflineError(lastError)) break;
+    ambiguousAttempt = true;
+  }
+  if (!assetResult) {
+    if (!ambiguousAttempt) {
+      await client.storage.from("pet-media").remove([storagePath]);
+    }
+    throw lastError;
   }
 
+  const { cleanupPaths } = decodeMediaCleanupEnvelope<{ storage_path: string }>(assetResult);
+  await removeQueuedMediaObjects(client, cleanupPaths);
   return storagePath;
 }
 
@@ -135,21 +183,6 @@ export function buildPhotoUploadBody(photo: PetProfilePhotoInput): ArrayBuffer |
   }
 
   return fetchPhotoBlob(photo.uri);
-}
-
-export async function deletePetRow(client: QueryClient, petId: string): Promise<void> {
-  const { count, error } = (await (client.from("pets") as any).delete({ count: "exact" }).eq("id", petId)) as {
-    count: number | null;
-    error: { message: string } | null;
-  };
-
-  if (error) {
-    throw new Error(error.message ?? "반려동물 프로필을 삭제하지 못했습니다.");
-  }
-
-  if (count === 0) {
-    throw new Error("반려동물 프로필을 삭제하지 못했습니다.");
-  }
 }
 
 function toPetPayload(input: CreatePetInput) {
@@ -168,11 +201,6 @@ function extensionForContentType(contentType: string) {
   if (contentType === "image/png") return "png";
   if (contentType === "image/webp") return "webp";
   return "jpg";
-}
-
-function resolvePhotoContentType(photo: PetProfilePhotoInput) {
-  if (photo.base64) return "image/jpeg";
-  return photo.mimeType?.startsWith("image/") ? photo.mimeType : "image/jpeg";
 }
 
 async function fetchPhotoBlob(uri: string) {
@@ -214,3 +242,15 @@ function decodeBase64ToArrayBuffer(base64: string) {
 }
 
 const petSelectColumns = "id,name,species,breed,birthdate,weight_kg";
+
+function isPetMemberRole(value: string): value is PetMemberRole {
+  return value === "owner" || value === "caregiver" || value === "pet_sitter";
+}
+
+function isMembershipActive(membership: { starts_at?: string | null; ends_at?: string | null }, now = Date.now()) {
+  const startsAt = membership.starts_at ? Date.parse(membership.starts_at) : null;
+  const endsAt = membership.ends_at ? Date.parse(membership.ends_at) : null;
+  if (startsAt !== null && (!Number.isFinite(startsAt) || startsAt > now)) return false;
+  if (endsAt !== null && (!Number.isFinite(endsAt) || endsAt < now)) return false;
+  return true;
+}

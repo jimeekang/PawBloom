@@ -7,13 +7,7 @@ const STORAGE_PREFIX = "pawbloom.sync_outbox.v2";
 const LOCK_PREFIX = "pawbloom.sync_outbox.lock";
 
 type OutboxStatus = "pending" | "conflict";
-type PersistedOutboxRow = {
-  mutation: OfflineMutation;
-  attempts: number;
-  status: OutboxStatus;
-  lastError?: string;
-  updatedAt: string;
-};
+type PersistedOutboxRow = { mutation: OfflineMutation; attempts: number; status: OutboxStatus; lastError?: string; updatedAt: string };
 
 export type WebStorageLike = {
   getItem: (key: string) => string | null;
@@ -73,6 +67,16 @@ export function createWebOutboxStore({
       .sort((left, right) => left.mutation.createdAt.localeCompare(right.mutation.createdAt))
       .map((row) => cloneOutboxValue({ ...row.mutation, attempts: row.attempts, queuedByUserId: userId })));
     return pending ?? [];
+  }
+
+  async function countConflictedMutations() {
+    const userId = await resolveUserId();
+    if (!userId) return 0;
+    return await withUserLock(userId, () => readRows(userId).filter((row) => row.status === "conflict").length) ?? 0;
+  }
+
+  async function clearConflictedMutations(expectedUserId?: string) {
+    await mutateCurrentRows((rows) => rows.filter((row) => row.status !== "conflict"), expectedUserId);
   }
 
   async function markMutationApplied(id: string, expectedUserId?: string) {
@@ -190,18 +194,22 @@ export function createWebOutboxStore({
     return readMemoryRows(userId);
   }
 
-  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
+  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
 }
 
 const webOutbox = createWebOutboxStore();
 export const initializeOutbox = webOutbox.initializeOutbox;
 export const enqueueOfflineMutation = webOutbox.enqueueOfflineMutation;
 export const listPendingMutations = webOutbox.listPendingMutations;
+export const countConflictedMutations = webOutbox.countConflictedMutations;
+export const clearConflictedMutations = webOutbox.clearConflictedMutations;
 export const markMutationApplied = webOutbox.markMutationApplied;
 export const markMutationConflict = webOutbox.markMutationConflict;
 export const markMutationRetry = webOutbox.markMutationRetry;
 export const offlineOutboxStore = {
   listPendingMutations,
+  countConflictedMutations,
+  clearConflictedMutations,
   markMutationApplied,
   markMutationConflict,
   markMutationRetry,

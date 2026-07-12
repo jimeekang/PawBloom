@@ -9,13 +9,16 @@ export type ActiveCareCondition = {
   name: string;
   status: CareConditionStatus;
   startsOn?: string;
+  endsOn?: string;
 };
 
 export type ActiveCarePlanSummary = {
   id: UUID;
+  conditionId?: UUID;
   title: string;
   instructions?: string;
   startsOn?: string;
+  endsOn?: string;
 };
 
 export type CareMedicationSchedule = {
@@ -33,6 +36,7 @@ export type CareMedicationSchedule = {
 
 export type ActiveCareSetup = {
   conditions: ActiveCareCondition[];
+  plans: ActiveCarePlanSummary[];
   condition?: ActiveCareCondition;
   plan?: ActiveCarePlanSummary;
   conditionName?: string;
@@ -42,6 +46,11 @@ export type ActiveCareSetup = {
 };
 
 export type CareSetupInput = {
+  clientMutationId?: UUID;
+  conditionId?: UUID;
+  planId?: UUID;
+  medicationId?: UUID;
+  scheduleIds?: UUID[];
   conditionName: string;
   planTitle: string;
   medicationName: string;

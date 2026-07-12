@@ -1,4 +1,4 @@
-import { useCallback, useRef, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { type User } from "@supabase/supabase-js";
 import { type PetProfile } from "../../pet/domain/pet";
@@ -7,9 +7,11 @@ import { createPetRow, deletePetRow, updatePetRow, uploadPetProfilePhoto, type C
 import { savePetProfileWithOptionalPhoto } from "./petProfileSavePolicy";
 import { petDeleteValidationKey, petProfileValidationKey } from "./petProfileValidation";
 import type { IdentityMessageKey } from "./identityMessage";
+import { isCurrentAccountWork } from "./authAccountBoundary";
 
 type AuthPetMutationState = {
   user: User | null;
+  getActiveUserId: () => string | null;
   clearMessages: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setPets: Dispatch<SetStateAction<PetProfile[]>>;
@@ -20,6 +22,7 @@ type AuthPetMutationState = {
 
 export function useAuthPetMutations({
   user,
+  getActiveUserId,
   clearMessages,
   setLoading,
   setPets,
@@ -29,6 +32,17 @@ export function useAuthPetMutations({
 }: AuthPetMutationState) {
   const queryClient = useQueryClient();
   const mutationInFlight = useRef(false);
+  const mutationEpoch = useRef(0);
+  const renderedUserId = useRef(user?.id ?? null);
+
+  useEffect(() => {
+    const nextUserId = user?.id ?? null;
+    if (renderedUserId.current === nextUserId) return;
+    renderedUserId.current = nextUserId;
+    mutationEpoch.current += 1;
+    mutationInFlight.current = false;
+    setLoading(false);
+  }, [setLoading, user?.id]);
 
   const createPet = useCallback(
     async (input: CreatePetInput) => {
@@ -40,30 +54,36 @@ export function useAuthPetMutations({
       }
       if (mutationInFlight.current) return "auth.wait";
 
+      const requestUserId = user?.id ?? null;
+      const requestEpoch = mutationEpoch.current;
       mutationInFlight.current = true;
       setLoading(true);
       clearMessages();
       try {
         const result = await savePetProfileWithOptionalPhoto({
-          saveProfile: () => createPetRow(supabase!, user!.id, input),
+          saveProfile: () => createPetRow(supabase!, requestUserId!, input),
           savePhoto: input.profilePhoto
-            ? (createdPet) => uploadPetProfilePhoto(supabase!, user!.id, createdPet.id, input.profilePhoto!)
+            ? (createdPet) => uploadPetProfilePhoto(supabase!, requestUserId!, createdPet.id, input.profilePhoto!)
             : undefined,
         });
+        if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         const createdPet = result.profile;
         setPets((current) => [createdPet, ...current.filter((pet) => pet.id !== createdPet.id)]);
         setActivePetId(createdPet.id);
-        if (result.photoSaved) void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", createdPet.id] });
+        if (result.photoSaved) void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", createdPet.id, requestUserId] });
         setAuthMessage(result.photoError ? "pet.photoPartial" : "pet.created");
         return null;
       } catch (rawError) {
+        if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         return handlePetError(rawError, "pet.createFailed", setError);
       } finally {
-        mutationInFlight.current = false;
-        setLoading(false);
+        if (mutationEpoch.current === requestEpoch) {
+          mutationInFlight.current = false;
+          setLoading(false);
+        }
       }
     },
-    [clearMessages, queryClient, setActivePetId, setAuthMessage, setError, setLoading, setPets, user],
+    [clearMessages, getActiveUserId, queryClient, setActivePetId, setAuthMessage, setError, setLoading, setPets, user],
   );
 
   const updatePet = useCallback(
@@ -76,28 +96,34 @@ export function useAuthPetMutations({
       }
       if (mutationInFlight.current) return "auth.wait";
 
+      const requestUserId = user?.id ?? null;
+      const requestEpoch = mutationEpoch.current;
       mutationInFlight.current = true;
       setLoading(true);
       clearMessages();
       try {
         const result = await savePetProfileWithOptionalPhoto({
           saveProfile: () => updatePetRow(supabase!, input),
-          savePhoto: input.profilePhoto ? () => uploadPetProfilePhoto(supabase!, user!.id, input.id, input.profilePhoto!) : undefined,
+          savePhoto: input.profilePhoto ? () => uploadPetProfilePhoto(supabase!, requestUserId!, input.id, input.profilePhoto!) : undefined,
         });
+        if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         const nextPet = result.profile;
         setPets((current) => current.map((pet) => (pet.id === nextPet.id ? nextPet : pet)));
         setActivePetId(nextPet.id);
-        if (result.photoSaved) void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", input.id] });
+        if (result.photoSaved) void queryClient.invalidateQueries({ queryKey: ["pet-profile-photo-url", input.id, requestUserId] });
         setAuthMessage(result.photoError ? "pet.photoPartial" : "pet.updated");
         return null;
       } catch (rawError) {
+        if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         return handlePetError(rawError, "pet.updateFailed", setError);
       } finally {
-        mutationInFlight.current = false;
-        setLoading(false);
+        if (mutationEpoch.current === requestEpoch) {
+          mutationInFlight.current = false;
+          setLoading(false);
+        }
       }
     },
-    [clearMessages, queryClient, setActivePetId, setAuthMessage, setError, setLoading, setPets, user],
+    [clearMessages, getActiveUserId, queryClient, setActivePetId, setAuthMessage, setError, setLoading, setPets, user],
   );
 
   const deletePet = useCallback(
@@ -110,11 +136,14 @@ export function useAuthPetMutations({
       }
       if (mutationInFlight.current) return "auth.wait";
 
+      const requestUserId = user?.id ?? null;
+      const requestEpoch = mutationEpoch.current;
       mutationInFlight.current = true;
       setLoading(true);
       clearMessages();
       try {
         await deletePetRow(supabase!, petId);
+        if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         setPets((current) => {
           const nextPets = current.filter((pet) => pet.id !== petId);
           setActivePetId((currentActivePetId) => {
@@ -128,13 +157,16 @@ export function useAuthPetMutations({
         setAuthMessage("pet.deleted");
         return null;
       } catch (rawError) {
+        if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         return handlePetError(rawError, "pet.deleteFailed", setError);
       } finally {
-        mutationInFlight.current = false;
-        setLoading(false);
+        if (mutationEpoch.current === requestEpoch) {
+          mutationInFlight.current = false;
+          setLoading(false);
+        }
       }
     },
-    [clearMessages, setActivePetId, setAuthMessage, setError, setLoading, setPets, user],
+    [clearMessages, getActiveUserId, setActivePetId, setAuthMessage, setError, setLoading, setPets, user],
   );
 
   return { createPet, updatePet, deletePet };

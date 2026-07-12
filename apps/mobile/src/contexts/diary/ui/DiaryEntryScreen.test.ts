@@ -1,5 +1,5 @@
 import type { CreateDiaryEntryInput } from "../domain/diaryEntry";
-import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, resolveRemoteDiarySaveOutcome, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 
 if (isDiaryDetailPanelOpenAfterSave(true) !== false) {
@@ -24,6 +24,15 @@ if (resolveDiarySaveTime("24:00", true) !== undefined) {
 
 if (resolveDiarySaveTime("24:00", false, new Date(2026, 0, 1, 9, 7)) !== "09:07") {
   throw new Error("untouched create time must use current time at save");
+}
+
+const firstMutation = resolvePendingDiaryCreateMutation(null, "same-draft", () => "mutation-1");
+const retryMutation = resolvePendingDiaryCreateMutation(firstMutation, "same-draft", () => "mutation-2");
+const changedMutation = resolvePendingDiaryCreateMutation(firstMutation, "changed-draft", () => "mutation-3");
+if (retryMutation.id !== "mutation-1") throw new Error("a failed diary save must reuse its idempotency id on unchanged retry");
+if (changedMutation.id !== "mutation-3") throw new Error("editing a failed diary draft must allocate a new idempotency id");
+if (resolveRemoteDiarySaveOutcome(true) !== "queued" || resolveRemoteDiarySaveOutcome(false) !== "saved") {
+  throw new Error("offline queue acceptance must be a successful queued outcome, not a failed diary save");
 }
 
 const createInputWithTime: CreateDiaryEntryInput = { category: "memo", summary: "late note", occurredTime: "21:35" };
@@ -164,6 +173,10 @@ if (getDiarySummaryForSave("memo", "  slept well  ") !== "slept well") {
   throw new Error("memo diary category must save trimmed memo text");
 }
 
+if (getDiarySummaryForSave("photo", "hidden memo from another category") !== "") {
+  throw new Error("photo saves must not persist a memo field that is hidden by the photo-only form");
+}
+
 const samplePhotos = [{ uri: "file:///photo.jpg" }];
 if (getDiaryPhotosForSave("photo", samplePhotos, false) !== samplePhotos) {
   throw new Error("photo diary category must save selected photos when creating");
@@ -175,4 +188,12 @@ if (getDiaryPhotosForSave("photo", samplePhotos, true) !== undefined) {
 
 if (getDiaryPhotosForSave("memo", samplePhotos, false) !== undefined) {
   throw new Error("non-photo diary categories must not save photos");
+}
+
+declare const require: (moduleName: string) => unknown;
+declare const process: { cwd(): string };
+const { readFileSync } = require("node:fs") as { readFileSync(path: string, encoding: "utf8"): string };
+const diaryScreenSource = readFileSync(`${process.cwd()}/apps/mobile/src/contexts/diary/ui/DiaryEntryScreen.tsx`, "utf8");
+if (!diaryScreenSource.includes("if (!editingEntry)") || !diaryScreenSource.includes("disabled={Boolean(editingEntry)}")) {
+  throw new Error("diary edit mode must keep category immutable until an atomic conversion workflow exists");
 }

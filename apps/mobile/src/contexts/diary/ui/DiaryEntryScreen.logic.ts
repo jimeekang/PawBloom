@@ -50,6 +50,18 @@ export function shouldApplyInitialEditingEntry({
   return Boolean(nextEntryId) && nextEntryId !== currentEditingEntryId && nextEntryId !== lastAppliedEntryId;
 }
 
+export function resolvePendingDiaryCreateMutation(
+  current: { fingerprint: string; id: string } | null,
+  fingerprint: string,
+  createId: () => string,
+) {
+  return current?.fingerprint === fingerprint ? current : { fingerprint, id: createId() };
+}
+
+export function resolveRemoteDiarySaveOutcome(queued: boolean) {
+  return queued ? "queued" as const : "saved" as const;
+}
+
 export function formatDiaryTime(date = new Date()) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }

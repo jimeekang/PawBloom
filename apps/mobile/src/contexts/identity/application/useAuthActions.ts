@@ -9,6 +9,7 @@ import type { IdentityMessageKey } from "./identityMessage";
 
 type AuthActionState = {
   clearMessages: () => void;
+  onSignedOut: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setSession: Dispatch<SetStateAction<Session | null>>;
   setUser: Dispatch<SetStateAction<User | null>>;
@@ -20,6 +21,7 @@ type AuthActionState = {
 
 export function useAuthActions({
   clearMessages,
+  onSignedOut,
   setLoading,
   setSession,
   setUser,
@@ -105,6 +107,7 @@ export function useAuthActions({
         return;
       }
 
+      onSignedOut();
       setSession(null);
       setUser(null);
       setPets([]);
@@ -115,7 +118,7 @@ export function useAuthActions({
       actionInFlight.current = false;
       setLoading(false);
     }
-  }, [clearMessages, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
+  }, [clearMessages, onSignedOut, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
 
   return { signIn, signUp, signOut };
 }

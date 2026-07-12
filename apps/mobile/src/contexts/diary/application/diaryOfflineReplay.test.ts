@@ -1,4 +1,4 @@
-import { buildDiaryInsertOfflineMutation, buildDiaryReplayInsertPayload } from "./diaryOfflineReplay";
+import { buildDiaryInsertOfflineMutation, buildDiaryReplayCanonicalUpdatePayload, buildDiaryReplayInsertPayload } from "./diaryOfflineReplay";
 
 const diaryMutation = buildDiaryInsertOfflineMutation({
   petId: "pet-1",
@@ -26,6 +26,15 @@ if (diaryReplayPayload.client_mutation_id !== "mutation-1" || diaryReplayPayload
 if (diaryReplayPayload.category !== "walk" || diaryReplayPayload.entry_date !== "2026-07-05") {
   throw new Error("diary replay insert payload must keep the recorded category and entry date");
 }
+
+const canonicalUpdate = buildDiaryReplayCanonicalUpdatePayload(diaryReplayPayload, "2026-07-05T08:31:00.000Z");
+if (canonicalUpdate.record_origin !== "diary" || canonicalUpdate.summary !== diaryReplayPayload.summary || canonicalUpdate.occurred_at !== diaryReplayPayload.occurred_at) {
+  throw new Error("diary-origin replay conflicts must reconcile the canonical row with the original offline content");
+}
+if ("client_mutation_id" in canonicalUpdate || "pet_id" in canonicalUpdate || "created_by" in canonicalUpdate || "category" in canonicalUpdate || "entry_date" in canonicalUpdate) {
+  throw new Error("canonical reconciliation must not transfer immutable ownership, category, date, or idempotency fields");
+}
+if (canonicalUpdate.updated_at !== "2026-07-05T08:31:00.000Z") throw new Error("canonical reconciliation must retain the offline mutation's logical write time");
 
 const fallbackPayload = buildDiaryReplayInsertPayload({
   petId: "pet-1",

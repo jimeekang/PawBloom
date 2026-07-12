@@ -3,7 +3,9 @@ import { buildOfflineMutation, requireString, stringValue, toRecord, type BaseOf
 import { registerOfflineReplayHandler, type OfflineReplayResult } from "../../sync/application/offlineReplayPolicy";
 import type { OfflineMutation } from "../../sync/domain/offlineMutation";
 import type { DiaryCategory } from "../domain/diaryEntry";
+import { isStructuredDailyCategory } from "./diaryRecordPayload";
 import { defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
+import { resolveDiaryUniqueConflict, shouldApplyDiaryReplayOverCanonical } from "./diaryUniqueConflict";
 
 export function buildDiaryInsertOfflineMutation(input: BaseOfflineMutationInput & { petId: string; userId: string; input: Record<string, unknown> }): OfflineMutation {
   return buildOfflineMutation({
@@ -42,11 +44,83 @@ async function replayDiaryInsert(mutation: OfflineMutation): Promise<OfflineRepl
     clientMutationId: mutation.clientMutationId,
   });
   const { error } = await supabase.from("diary_entries").insert(insertPayload);
-  if (error && error.code !== "23505") throw new Error(error.message);
-  return { status: "applied", reason: "diary insert replayed" };
+  if (!error) return { status: "applied", reason: "diary insert replayed" };
+  if (error.code !== "23505") throw new Error(error.message);
+
+  const mutationMatch = await findReplayEntryByClientMutationId(insertPayload.pet_id, insertPayload.client_mutation_id);
+  const canonical = !mutationMatch && isStructuredDailyCategory(insertPayload.category)
+    ? await findReplayCanonicalEntry(insertPayload.pet_id, insertPayload.category, insertPayload.entry_date)
+    : null;
+  const action = resolveDiaryUniqueConflict({
+    category: insertPayload.category,
+    origin: insertPayload.record_origin,
+    hasClientMutationMatch: Boolean(mutationMatch),
+    hasCanonical: Boolean(canonical),
+  });
+
+  if (action === "already-applied") return { status: "applied", reason: "diary insert was already replayed" };
+  if (action === "keep-canonical") return { status: "applied", reason: "checklist replay kept the existing daily diary record" };
+  if (action === "update-canonical" && canonical) {
+    if (!shouldApplyDiaryReplayOverCanonical(mutation.createdAt, canonical.updated_at)) {
+      return { status: "conflict", reason: "newer canonical diary content was kept" };
+    }
+    const { data: updated, error: updateError } = await supabase
+      .from("diary_entries")
+      .update(buildDiaryReplayCanonicalUpdatePayload(insertPayload, mutation.createdAt))
+      .eq("id", canonical.id)
+      .eq("pet_id", insertPayload.pet_id)
+      .is("superseded_by", null)
+      .lte("updated_at", mutation.createdAt)
+      .select("id")
+      .maybeSingle();
+    if (updateError) throw new Error(updateError.message);
+    if (!updated) return { status: "conflict", reason: "canonical diary content changed during replay and was kept" };
+    return { status: "applied", reason: "offline diary reconciled the active daily record" };
+  }
+
+  return { status: "conflict", reason: "diary insert conflicts with an unrelated unique record" };
 }
 
 registerOfflineReplayHandler("diary", "insert", replayDiaryInsert);
+
+type DiaryReplayInsertPayload = ReturnType<typeof buildDiaryReplayInsertPayload>;
+
+export function buildDiaryReplayCanonicalUpdatePayload(payload: DiaryReplayInsertPayload, updatedAt = new Date().toISOString()) {
+  return {
+    summary: payload.summary,
+    condition_score: payload.condition_score,
+    occurred_at: payload.occurred_at,
+    record_origin: "diary" as const,
+    updated_at: updatedAt,
+  };
+}
+
+async function findReplayEntryByClientMutationId(petId: string, clientMutationId: string) {
+  const { supabase } = await import("../../../shared-kernel/supabase/client");
+  const { data, error } = await supabase!
+    .from("diary_entries")
+    .select("id")
+    .eq("pet_id", petId)
+    .eq("client_mutation_id", clientMutationId)
+    .is("superseded_by", null)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function findReplayCanonicalEntry(petId: string, category: DiaryCategory, entryDate: string) {
+  const { supabase } = await import("../../../shared-kernel/supabase/client");
+  const { data, error } = await supabase!
+    .from("diary_entries")
+    .select("id,updated_at")
+    .eq("pet_id", petId)
+    .eq("category", category)
+    .eq("entry_date", entryDate)
+    .is("superseded_by", null)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
 
 function normalizeDiaryCategory(value: unknown): DiaryCategory {
   return value === "food" || value === "water" || value === "walk" || value === "stool" || value === "condition" || value === "photo" ? value : "memo";

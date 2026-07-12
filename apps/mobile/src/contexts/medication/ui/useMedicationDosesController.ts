@@ -23,11 +23,11 @@ type Params = {
 };
 
 export function useMedicationDosesController({ activePetId, databaseMode, livePetId, userId, fallbackPetId, schedules, onNotice, onSaved, onLocalDoseSaved, onLocalDosesChanged }: Params) {
-  const dosesQuery = useTodayMedicationDoses(livePetId);
+  const dosesQuery = useTodayMedicationDoses(livePetId, userId);
   const createMedicationDose = useCreateMedicationDose(livePetId, userId);
-  const updateMedicationDose = useUpdateMedicationDose(livePetId);
-  const deleteMedicationDose = useDeleteMedicationDose(livePetId);
-  const updateMedicationDoseStatus = useUpdateMedicationDoseStatus(livePetId);
+  const updateMedicationDose = useUpdateMedicationDose(livePetId, userId);
+  const deleteMedicationDose = useDeleteMedicationDose(livePetId, userId);
+  const updateMedicationDoseStatus = useUpdateMedicationDoseStatus(livePetId, userId);
   const [doses, setDoses] = useState<DoseRecord[]>(() => buildSampleDoses(fallbackPetId));
 
   const activeDoses = useMemo(() => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId)), [activePetId, databaseMode, doses, dosesQuery.data]);

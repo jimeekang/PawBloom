@@ -11,3 +11,7 @@ if (inferDiaryRecordOrigin({ summary: "식사 체크리스트가 기록되었습
 if (inferDiaryRecordOrigin({ summary: "아침 80g/100g" }) !== "diary") {
   throw new Error("normal diary summaries must remain diary origin");
 }
+
+if (inferDiaryRecordOrigin({ storedOrigin: "unexpected", summary: "ordinary record" }) !== "diary") {
+  throw new Error("unknown stored origins must fail closed to a supported diary origin");
+}

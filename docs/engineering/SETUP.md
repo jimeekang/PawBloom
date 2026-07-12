@@ -20,8 +20,9 @@ PawBloom 신규 개발자를 위한 로컬 개발 환경 구축 문서. 0002 MVP
 
 - Mobile app은 Supabase service role key와 OpenAI API key를 **절대 포함하지
   않는다.** AI 호출은 Supabase Edge Function에서만 수행한다.
-- Supabase generated DB type은 infrastructure boundary 파일
-  `apps/mobile/src/shared-kernel/supabase/database.types.ts`에 둔다.
+- Supabase generated DB type 원본은
+  `apps/mobile/generated-supabase/database.types.ts`에 두고, shared-kernel의
+  `database.types.ts`는 이 파일을 type-only로 다시 export한다.
 - 사용자 문구는 `apps/mobile/src/i18n/translations.ts`에 둔다.
 - 스타일은 `apps/mobile/src/design-system`의 token/icon/typography/spacing을
   기준으로 한다.
@@ -89,22 +90,23 @@ http://127.0.0.1:8082/
 ### 3. Supabase local setup
 
 local stack을 띄우고, migration을 적용하고, generated DB type을 최신화한다.
-`gen types` 출력 경로가 곧 domain boundary 파일이다.
+`gen types` 출력 경로는 generated 원본이며 shared-kernel boundary가 이를
+type-only로 다시 export한다.
 
 ```powershell
 npx supabase --version
 npx supabase login
 npx supabase start
 npx supabase db reset
-npx supabase gen types typescript --local > apps/mobile/src/shared-kernel/supabase/database.types.ts
+npx supabase gen types typescript --local --schema public > apps/mobile/generated-supabase/database.types.ts
 npm.cmd run verify
 ```
 
 - `supabase start`: Docker 기반 local Postgres/Auth/Storage/Edge 실행
 - `supabase db reset`: `supabase/migrations/**`를 처음부터 재적용해 local DB
   baseline을 확정
-- `gen types --local`: local schema 기준 TypeScript type 생성 후 위 경로로
-  덮어씀. schema 변경 시마다 재실행한다.
+- `gen types --local --schema public`: local public schema 기준 TypeScript type을
+  generated 원본 경로에 덮어쓴다. schema 변경 시마다 재실행한다.
 
 관련 config/파일: `supabase/config.toml`, `supabase/migrations/**`.
 

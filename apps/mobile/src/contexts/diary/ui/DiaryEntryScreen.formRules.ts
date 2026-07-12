@@ -15,7 +15,7 @@ export function getDiaryDetailForSave(category: DiaryCategory, detail: DiaryDeta
 }
 
 export function getDiarySummaryForSave(category: DiaryCategory, memo: string) {
-  return category === "memo" || category === "photo" ? memo.trim() : "";
+  return category === "memo" ? memo.trim() : "";
 }
 
 export function getDiaryPhotosForSave(category: DiaryCategory, photos: DiaryPhotoInput[], isEditing: boolean) {

@@ -9,7 +9,7 @@ const payload = buildDiaryUpdatePayload({
   id: "entry-1",
 });
 
-if (payload.entry_date !== "2026-06-28") throw new Error("update payload must keep selected date");
+if ("entry_date" in payload || "category" in payload) throw new Error("update payload must keep the persisted date and category immutable");
 if (payload.occurred_at !== new Date(2026, 5, 28, 8, 15, 0, 0).toISOString()) throw new Error("update payload must store edited time on the local selected date");
 if (!String(payload.summary).includes("\"version\":1")) throw new Error("update payload must encode structured detail");
 if (payload.record_origin !== "diary") throw new Error("diary update payload must persist record origin after the migration");

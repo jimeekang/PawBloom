@@ -7,6 +7,7 @@ import type { DiaryFilter } from "./DiaryCalendar";
 import type { DraftDiaryEntry } from "./draftDiaryEntry";
 import { buildSampleDiaryEntries } from "./sampleDiaryEntries";
 import { createLocalDiaryEntry, getTodayEntriesForPet, updateLocalDiaryEntry } from "./localDiaryState";
+import { resolveRemoteDiarySaveOutcome } from "./DiaryEntryScreen.logic";
 
 type Params = {
   activePetId: string;
@@ -21,17 +22,17 @@ type Params = {
 };
 
 export function useDiaryEntriesController({ activePetId, databaseMode, livePetId, userId, fallbackPetId, onNotice, onSaved, onLocalEntrySaved, onLocalEntriesChanged }: Params) {
-  const diaryQuery = useTodayDiaryEntries(livePetId);
+  const diaryQuery = useTodayDiaryEntries(livePetId, userId);
   const createDiaryEntry = useCreateDiaryEntry(livePetId, userId);
-  const updateDiaryEntry = useUpdateDiaryEntry(livePetId);
-  const deleteDiaryEntry = useDeleteDiaryEntry(livePetId);
+  const updateDiaryEntry = useUpdateDiaryEntry(livePetId, userId);
+  const deleteDiaryEntry = useDeleteDiaryEntry(livePetId, userId);
   const [entries, setEntries] = useState<DiaryEntry[]>(() => buildSampleDiaryEntries(fallbackPetId));
   const [selectedDiaryDate, setSelectedDiaryDate] = useState(getLocalDateKey());
   const [diaryFilter, setDiaryFilter] = useState<DiaryFilter>("day");
   const [timelineEditEntry, setTimelineEditEntry] = useState<DiaryEntry | null>(null);
   const selectedWeekRange = useMemo(() => getWeekDateRange(selectedDiaryDate), [selectedDiaryDate]);
-  const diaryDateQuery = useDiaryEntriesByDate(livePetId, selectedDiaryDate);
-  const diaryWeekQuery = useDiaryEntriesByDateRange(livePetId, selectedWeekRange.fromDateKey, selectedWeekRange.toDateKey);
+  const diaryDateQuery = useDiaryEntriesByDate(livePetId, selectedDiaryDate, userId);
+  const diaryWeekQuery = useDiaryEntriesByDateRange(livePetId, selectedWeekRange.fromDateKey, selectedWeekRange.toDateKey, userId);
 
   const activeEntries = useMemo(() => (databaseMode ? diaryQuery.data ?? [] : entries.filter((entry) => entry.petId === activePetId && entry.entryDate === getLocalDateKey())), [activePetId, databaseMode, diaryQuery.data, entries]);
 
@@ -47,8 +48,13 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
   function saveDiaryEntry(draft: DraftDiaryEntry) {
     if (databaseMode) {
       return createDiaryEntry
-        .mutateAsync({ category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredAt, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos })
-        .then(() => { onNotice(t("ko", "today.diarySavedRemote")); onSaved(); })
+        .mutateAsync({ category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredAt, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId })
+        .then((result) => {
+          const outcome = resolveRemoteDiarySaveOutcome(result.queued);
+          onNotice(t("ko", outcome === "queued" ? "today.diaryQueued" : "today.diarySavedRemote"));
+          onSaved();
+          return outcome;
+        })
         .catch((error: Error) => { onNotice(error.message); throw error; });
     }
     const nextEntry = createLocalDiaryEntry(activePetId, draft);
@@ -56,6 +62,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     onLocalEntrySaved(nextEntry);
     onNotice(t("ko", "today.diarySaved"));
     onSaved();
+    return "saved" as const;
   }
 
   async function updateDiaryRecord(draft: DraftDiaryEntry & { id: string; occurredTime: string }) {

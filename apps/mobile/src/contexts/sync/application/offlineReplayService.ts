@@ -1,4 +1,5 @@
 import { offlineOutboxStore } from "./offlineOutbox";
+import { publishOfflineConflictChange } from "./offlineConflictEvents";
 import { replayPendingOfflineMutations } from "./offlineReplayQueue";
 
 let replayInFlight: Promise<unknown> | null = null;
@@ -9,6 +10,7 @@ export function replayOutboxOnce() {
     store: offlineOutboxStore,
   }).finally(() => {
     replayInFlight = null;
+    publishOfflineConflictChange();
   });
   return replayInFlight;
 }

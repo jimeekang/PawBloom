@@ -17,6 +17,7 @@ const mochiHero = require("../../../assets/mochi-hero.png");
 
 type Props = {
   pet: PetProfile;
+  userId?: string | null;
   checklist: Record<ChecklistKey, boolean>;
   entries: DiaryEntry[];
   doses: DoseRecord[];
@@ -30,9 +31,9 @@ type Props = {
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const timeline = entries.slice(0, 4);
-  const profilePhoto = usePetProfilePhotoUrl(pet.id);
+  const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
   const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
   const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder, medicationAgenda);
@@ -103,7 +104,7 @@ export function HomeScreen({ pet, checklist, entries, doses, medicationAgenda = 
                   <Text style={styles.time}>{entry.occurredAt}</Text>
                   <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
                   <Text style={styles.timelineTitle}>{t("ko", item.labelKey)}</Text>
-                  <Text style={styles.timelineValue} numberOfLines={1}>{entry.summary}</Text>
+                  <Text style={styles.timelineValue} numberOfLines={1}>{entry.category === "photo" ? t("ko", "category.photo") : entry.summary}</Text>
                 </>
               );
               return onTimelineEntryPress ? (

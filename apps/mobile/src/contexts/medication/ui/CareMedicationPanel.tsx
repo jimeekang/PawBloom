@@ -16,9 +16,10 @@ export type QuickMedicationFormProps = {
   onUpdate?: (input: QuickMedicationDoseInput & { id: string; scheduledTime?: string }) => void | Promise<void>;
   onDelete?: (dose: DoseRecord) => void | Promise<boolean | void>;
   onCancelEdit?: () => void;
+  canDelete?: boolean;
 };
 
-export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDelete, onCancelEdit }: QuickMedicationFormProps) {
+export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDelete, onCancelEdit, canDelete = true }: QuickMedicationFormProps) {
   const [conditionName, setConditionName] = useState("");
   const [medicationName, setMedicationName] = useState("");
   const [dosageLabel, setDosageLabel] = useState("");
@@ -150,9 +151,11 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         {isEditing ? (
           <View style={styles.editActions}>
             <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} />
-            <Pressable style={styles.dangerButton} onPress={isSaving ? undefined : deleteDose}>
-              <Text style={styles.dangerButtonText}>{t("ko", "care.quickDoseDelete")}</Text>
-            </Pressable>
+            {canDelete ? (
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={deleteDose}>
+                <Text style={styles.dangerButtonText}>{t("ko", "care.quickDoseDelete")}</Text>
+              </Pressable>
+            ) : <NoticeBanner text={t("ko", "permission.medicationDeleteOwnerOnly")} icon="shield" />}
           </View>
         ) : null}
       </View>

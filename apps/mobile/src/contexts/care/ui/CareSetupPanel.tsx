@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../domain/carePlan";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
@@ -7,69 +7,71 @@ import { colors, iconSize, radius, spacing, type } from "../../../design-system/
 import { t } from "../../../i18n/translations";
 import { DatePickerField } from "../../../design-system/DatePickerField";
 import { TimePickerField } from "../../../design-system/TimePickerField";
+import { buildCareSetupInput, careSetupDraftKey, createCareSetupFormDraft, isCareSetupDraftEmpty } from "./careSetupForm";
+import { isCurrentCareSetupSave, nextCareSetupSaveScope, resolvePendingCareSetupMutation, type CareSetupSaveScope } from "./careSetupSaveGuard";
+import { createUuid } from "../../../shared-kernel/uuid";
 
-type RepeatOption = "daily" | "custom";
-
-export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: ActiveCareSetup; onSave: (input: CareSetupInput) => void; onUseSchedule: (schedule: CareMedicationSchedule) => void }) {
-  const [conditionName, setConditionName] = useState(setup.conditionName ?? "");
-  const [planTitle, setPlanTitle] = useState(setup.planTitle ?? "");
-  const [medicationName, setMedicationName] = useState("");
-  const [dosageLabel, setDosageLabel] = useState("");
-  const [localTime, setLocalTime] = useState("08:00");
-  const [startsOn, setStartsOn] = useState(setup.schedules[0]?.startsOn ?? getLocalDateKey());
-  const [endsOn, setEndsOn] = useState(setup.schedules[0]?.endsOn ?? "");
-  const [repeat, setRepeat] = useState<RepeatOption>(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? "custom" : "daily");
-  const [repeatInterval, setRepeatInterval] = useState(String(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? setup.schedules[0].recurrenceIntervalDays : 2));
+export function CareSetupPanel({ petId, setup, onSave, onUseSchedule }: { petId?: string; setup: ActiveCareSetup; onSave: (input: CareSetupInput) => Promise<ActiveCareSetup>; onUseSchedule: (schedule: CareMedicationSchedule) => void }) {
+  const [draft, setDraft] = useState(() => createCareSetupFormDraft(setup, false));
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
+  const saveScopeRef = useRef<CareSetupSaveScope>({ petId: petId ?? null, generation: 0 });
+  const pendingMutationRef = useRef<{ fingerprint: string; id: string } | null>(null);
+  saveScopeRef.current = nextCareSetupSaveScope(saveScopeRef.current, petId);
+  const setupKey = careSetupDraftKey(setup, petId);
 
   useEffect(() => {
-    setConditionName(setup.conditionName ?? "");
-    setPlanTitle(setup.planTitle ?? "");
-    setStartsOn(setup.schedules[0]?.startsOn ?? getLocalDateKey());
-    setEndsOn(setup.schedules[0]?.endsOn ?? "");
-    setRepeat(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? "custom" : "daily");
-    setRepeatInterval(String(setup.schedules[0]?.recurrenceIntervalDays && setup.schedules[0].recurrenceIntervalDays > 1 ? setup.schedules[0].recurrenceIntervalDays : 2));
+    savingRef.current = false;
+    setIsSaving(false);
+    setDraft(createCareSetupFormDraft(setup, false));
     setError(null);
-  }, [setup.conditionName, setup.planTitle, setup.schedules]);
+    pendingMutationRef.current = null;
+  }, [setupKey]);
 
-  const save = () => {
-    const nextConditionName = conditionName.trim();
-    const nextPlanTitle = planTitle.trim();
-    const nextMedicationName = medicationName.trim();
-
-    if (!nextConditionName && !nextPlanTitle && !nextMedicationName) {
+  const save = async () => {
+    if (savingRef.current) return;
+    if (isCareSetupDraftEmpty(draft)) {
       setError(t("ko", "care.setupRequired"));
       return;
     }
 
-    onSave({
-      conditionName: nextConditionName,
-      planTitle: nextPlanTitle,
-      medicationName: nextMedicationName,
-      dosageLabel: dosageLabel.trim(),
-      localTime: localTime.trim(),
-      startsOn,
-      endsOn,
-      recurrenceIntervalDays: repeat === "daily" ? 1 : Number(repeatInterval) || 1,
-    });
+    savingRef.current = true;
+    setIsSaving(true);
     setError(null);
-    setMedicationName("");
-    setDosageLabel("");
+    const requestScope = saveScopeRef.current;
+    const input = buildCareSetupInput(setup, draft, false);
+    const pendingMutation = resolvePendingCareSetupMutation(pendingMutationRef.current, JSON.stringify(input), createUuid);
+    pendingMutationRef.current = pendingMutation;
+    try {
+      const savedSetup = await onSave({ ...input, clientMutationId: pendingMutation.id });
+      if (!isCurrentCareSetupSave(saveScopeRef.current, requestScope)) return;
+      setDraft(createCareSetupFormDraft(savedSetup, false));
+      pendingMutationRef.current = null;
+    } catch (saveError) {
+      if (!isCurrentCareSetupSave(saveScopeRef.current, requestScope)) return;
+      setError(saveError instanceof Error ? saveError.message : t("ko", "care.setupSaveFailed"));
+    } finally {
+      if (isCurrentCareSetupSave(saveScopeRef.current, requestScope)) {
+        savingRef.current = false;
+        setIsSaving(false);
+      }
+    }
   };
 
   const updateConditionName = (value: string) => {
-    setConditionName(value.slice(0, 80));
-    if (value.trim() || planTitle.trim() || medicationName.trim()) setError(null);
+    setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }));
+    if (value.trim() || draft.planTitle.trim() || draft.medicationName.trim()) setError(null);
   };
 
   const updatePlanTitle = (value: string) => {
-    setPlanTitle(value.slice(0, 80));
-    if (conditionName.trim() || value.trim() || medicationName.trim()) setError(null);
+    setDraft((current) => ({ ...current, planTitle: value.slice(0, 80) }));
+    if (draft.conditionName.trim() || value.trim() || draft.medicationName.trim()) setError(null);
   };
 
   const updateMedicationName = (value: string) => {
-    setMedicationName(value.slice(0, 80));
-    if (conditionName.trim() || planTitle.trim() || value.trim()) setError(null);
+    setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }));
+    if (draft.conditionName.trim() || draft.planTitle.trim() || value.trim()) setError(null);
   };
 
   return (
@@ -83,28 +85,28 @@ export function CareSetupPanel({ setup, onSave, onUseSchedule }: { setup: Active
             <Text style={styles.activeMeta}>{setup.condition?.name ?? t("ko", "care.noConditionLinked")}</Text>
           </View>
         ) : null}
-        <TextInput style={styles.input} value={conditionName} onChangeText={updateConditionName} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <TextInput style={styles.input} value={planTitle} onChangeText={updatePlanTitle} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput style={styles.input} value={draft.conditionName} onChangeText={updateConditionName} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput style={styles.input} value={draft.planTitle} onChangeText={updatePlanTitle} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
         <View style={styles.row}>
-          <TextInput style={[styles.input, styles.flex]} value={medicationName} onChangeText={updateMedicationName} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+          <TextInput style={[styles.input, styles.flex]} value={draft.medicationName} onChangeText={updateMedicationName} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
           <View style={styles.timePicker}>
-            <TimePickerField value={localTime} onChange={setLocalTime} />
+            <TimePickerField value={draft.times[0] ?? "08:00"} onChange={(localTime) => setDraft((current) => ({ ...current, times: [localTime] }))} />
           </View>
         </View>
-        <TextInput style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
         <Text style={styles.label}>{t("ko", "care.setupPeriod")}</Text>
-        <DatePickerField value={startsOn} onChange={setStartsOn} placeholder={t("ko", "care.setupStartDate")} />
-        <DatePickerField value={endsOn} onChange={setEndsOn} placeholder={t("ko", "care.setupEndDate")} allowClear clearLabel={t("ko", "care.setupClearDate")} />
+        <DatePickerField value={draft.startsOn} onChange={(startsOn) => setDraft((current) => ({ ...current, startsOn }))} placeholder={t("ko", "care.setupStartDate")} />
+        <DatePickerField value={draft.endsOn} onChange={(endsOn) => setDraft((current) => ({ ...current, endsOn }))} placeholder={t("ko", "care.setupEndDate")} allowClear clearLabel={t("ko", "care.setupClearDate")} />
         <Text style={styles.label}>{t("ko", "care.setupRepeat")}</Text>
-        <SegmentedControl value={repeat} onChange={setRepeat} items={[{ label: t("ko", "care.setupEveryDay"), value: "daily" }, { label: t("ko", "care.setupCustomRepeat"), value: "custom" }]} />
-        {repeat === "custom" ? (
+        <SegmentedControl value={draft.repeat} onChange={(repeat) => setDraft((current) => ({ ...current, repeat }))} items={[{ label: t("ko", "care.setupEveryDay"), value: "daily" }, { label: t("ko", "care.setupCustomRepeat"), value: "custom" }]} />
+        {draft.repeat === "custom" ? (
           <View style={styles.repeatRow}>
-            <TextInput style={[styles.input, styles.repeatInput]} value={repeatInterval} onChangeText={(value) => setRepeatInterval(value.replace(/[^0-9]/g, "").slice(0, 2))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
+            <TextInput style={[styles.input, styles.repeatInput]} value={draft.repeatDays} onChangeText={(value) => setDraft((current) => ({ ...current, repeatDays: value.replace(/[^0-9]/g, "").slice(0, 2) }))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
             <Text style={styles.repeatSuffix}>{t("ko", "care.setupCustomRepeatSuffix")}</Text>
           </View>
         ) : null}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={save} />
+        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} />
         {setup.schedules.map((schedule) => (
           <Pressable key={schedule.id} style={styles.scheduleRow} onPress={() => onUseSchedule(schedule)}>
             <AppIcon name="medication" size={iconSize.md} color={colors.orangeDeep} />
@@ -141,8 +143,3 @@ const styles = StyleSheet.create({
   scheduleMeta: { ...type.caption, color: colors.textMuted },
   useText: { ...type.caption, color: colors.orangeDeep, fontWeight: "700" },
 });
-
-function getLocalDateKey() {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}

@@ -16,7 +16,7 @@ type Params = {
 };
 
 export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode, livePetId, userId, fallbackPet, onNotice, onSaved }: Params) {
-  const routineQuery = usePetRoutine(livePetId, activePetSpecies);
+  const routineQuery = usePetRoutine(livePetId, activePetSpecies, userId);
   const upsertRoutine = useUpsertPetRoutine(livePetId, userId, activePetSpecies);
   const [localRoutine, setLocalRoutine] = useState(() => createDefaultPetRoutine(fallbackPet.id, fallbackPet.species));
 
@@ -26,17 +26,21 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
     return createDefaultPetRoutine(activePetId, activePetSpecies);
   }, [activePetId, activePetSpecies, databaseMode, localRoutine, routineQuery.data]);
 
-  function saveRoutine(input: PetRoutineInput) {
+  async function saveRoutine(input: PetRoutineInput) {
     if (!databaseMode) {
       setLocalRoutine({ ...input, petId: activePetId });
       onNotice(t("ko", "routine.saved"));
       onSaved();
       return;
     }
-    void upsertRoutine.mutateAsync(input).then(() => {
+    try {
+      await upsertRoutine.mutateAsync(input);
       onNotice(t("ko", "routine.saved"));
       onSaved();
-    }).catch((error: Error) => onNotice(error.message));
+    } catch (error) {
+      onNotice(t("ko", "routine.saveFailed"));
+      throw error;
+    }
   }
 
   return { activeRoutine, saveRoutine };

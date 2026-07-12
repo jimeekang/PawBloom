@@ -56,6 +56,15 @@ async function runNativeOutboxTests() {
   await store.markMutationConflict(row.id, "changed", row.queuedByUserId);
   await store.markMutationRetry(row.id, "still offline", row.queuedByUserId);
   assert((await store.listPendingMutations()).length === 0, "retry must not revive a conflicted row");
+  assert(await store.countConflictedMutations() === 1, "native conflict count must include only the signed-in user's parked rows");
+  userId = "user-b";
+  assert(await store.countConflictedMutations() === 0, "native conflict count must not expose another account's rows");
+  await store.clearConflictedMutations();
+  assert((await store.listPendingMutations()).length === 1, "clearing conflicts must preserve the current account's pending work");
+  userId = "user-a";
+  assert(await store.countConflictedMutations() === 1, "another account must not clear the owner's parked conflicts");
+  await store.clearConflictedMutations("user-a");
+  assert(await store.countConflictedMutations() === 0, "reviewed native conflicts must be removable for the current account");
 
   database.rows.push({
     user_id: "user-a",
@@ -75,6 +84,9 @@ async function runNativeOutboxTests() {
   const raceStore = createNativeOutboxStore({ databaseProvider: () => database, userIdProvider: async () => userId });
   userId = "user-a";
   assert((await raceStore.listPendingMutations()).length === 0, "auth must be revalidated after the SQLite read");
+  userId = "user-a";
+  database.afterNextRead = () => { userId = "user-b"; };
+  assert(await raceStore.countConflictedMutations() === 0, "a conflict count read must be discarded when the account changes");
 }
 
 class FakeDatabase {
@@ -95,8 +107,10 @@ class FakeDatabase {
         this.rows.push({ user_id: userId, id, client_mutation_id: clientMutationId, payload, created_at: createdAt, attempts, status: "pending" });
       }
     } else if (sql.includes("delete from")) {
-      const [userId, id] = params as [string, string];
-      this.rows = this.rows.filter((row) => row.user_id !== userId || row.id !== id);
+      const [userId, id] = params as [string, string?];
+      this.rows = sql.includes("status = 'conflict'")
+        ? this.rows.filter((row) => row.user_id !== userId || row.status !== "conflict")
+        : this.rows.filter((row) => row.user_id !== userId || row.id !== id);
     } else if (sql.includes("Malformed offline mutation payload")) {
       const [, userId, id] = params as [string, string, string];
       this.updatePending(userId, id, "Malformed offline mutation payload", true);
@@ -109,6 +123,12 @@ class FakeDatabase {
 
   async getAllAsync<T>(sql: string, ...params: unknown[]): Promise<T[]> {
     const [userId, id] = params as [string, string?];
+    if (sql.includes("count(*)")) {
+      const count = this.rows.filter((row) => row.user_id === userId && row.status === "conflict").length;
+      this.afterNextRead?.();
+      this.afterNextRead = undefined;
+      return [{ count } as T];
+    }
     const rows = this.rows
       .filter((row) => row.user_id === userId && row.status === "pending" && (!id || row.id === id))
       .sort((left, right) => left.created_at.localeCompare(right.created_at));

@@ -39,6 +39,7 @@ export type CreateDiaryEntryInput = {
   origin?: DiaryRecordOrigin;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photos?: DiaryPhotoInput[];
+  clientMutationId?: UUID;
 };
 
 export type DiaryPhotoInput = {

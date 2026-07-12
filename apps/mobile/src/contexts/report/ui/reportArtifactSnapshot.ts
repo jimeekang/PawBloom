@@ -19,9 +19,9 @@ export type ReportArtifactSnapshot = {
 
 export function createReportArtifactSnapshot(payload: VetReportPayload): ReportArtifactSnapshot {
   const scores = payload.entries
-    .filter((entry): entry is typeof entry & { condition_score: 1 | 2 | 3 | 4 | 5 } => isConditionScore(entry.condition_score))
-    .sort((left, right) => left.occurred_at.localeCompare(right.occurred_at))
-    .map((entry) => entry.condition_score);
+    .filter((entry): entry is typeof entry & { conditionScore: 1 | 2 | 3 | 4 | 5 } => isConditionScore(entry.conditionScore))
+    .sort((left, right) => left.occurredAt.localeCompare(right.occurredAt))
+    .map((entry) => entry.conditionScore);
   const latestScore = scores.at(-1);
   const previousScore = scores.at(-2);
   const medicationAttentionCount = payload.medicationDoses.filter((dose) => dose.status === "partial" || dose.status === "skipped").length;
@@ -45,12 +45,17 @@ export function createReportArtifactSnapshot(payload: VetReportPayload): ReportA
 
 function createTimelineItems(payload: VetReportPayload) {
   const entries = payload.entries.map((entry) => ({
-    sortKey: entry.occurred_at,
-    text: `${entry.occurred_at} · ${entry.category} · ${entry.summary} · condition_score: ${entry.condition_score ?? "null"}`,
+    sortKey: entry.occurredAt,
+    text: `${entry.occurredAt} · ${entry.category} · ${entry.summary} · condition score: ${entry.conditionScore ?? "none"}`,
   }));
   const doses = payload.medicationDoses.map((dose) => ({
-    sortKey: dose.scheduled_at,
-    text: `${dose.scheduled_at} · ${dose.medication_name} · ${dose.status} · reaction_note: ${dose.reaction_note ?? "null"}`,
+    sortKey: dose.scheduledAt,
+    text: [
+      `${dose.scheduledAt} · ${dose.medicationName} · ${dose.status}`,
+      dose.dosageLabel ? `prescribed: ${dose.dosageLabel}` : "",
+      dose.administeredAmount ? `given: ${dose.administeredAmount}` : "",
+      dose.reactionNote ? `reaction: ${dose.reactionNote}` : "",
+    ].filter(Boolean).join(" · "),
   }));
 
   return [...entries, ...doses]
@@ -64,7 +69,7 @@ function formatPetDetails(payload: VetReportPayload) {
     `name: ${payload.pet.name}`,
     `species: ${payload.pet.species}`,
     `breed: ${payload.pet.breed ?? "null"}`,
-    `weight_kg: ${payload.pet.weight_kg ?? "null"}`,
+    `weight_kg: ${payload.pet.weightKg ?? "null"}`,
   ].join(" · ");
 }
 

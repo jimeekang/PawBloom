@@ -8,43 +8,37 @@ export type PhotoUploadInput = {
   base64?: string | null;
 };
 
-export async function uploadDiaryPhoto(
+export type UploadedPhotoObject = {
+  storagePath: string;
+  contentType: string;
+};
+
+export async function uploadDiaryPhotoObject(
   client: SupabaseClient<Database>,
-  userId: string,
   petId: string,
   diaryEntryId: string,
   photo: PhotoUploadInput,
   index: number,
-) {
-  const contentType = resolvePhotoContentType(photo);
+): Promise<UploadedPhotoObject> {
+  const contentType = resolveSupportedPhotoContentType(photo);
   const extension = extensionForContentType(contentType);
   const safeName = photo.fileName?.replace(/[^a-zA-Z0-9._-]/g, "-") || `diary.${extension}`;
-  const storagePath = `${petId}/diary/${diaryEntryId}/${Date.now()}-${index}-${safeName}`;
+  const storagePath = `${petId}/diary/${diaryEntryId}/${index}-${safeName}`;
   const uploadBody = await buildPhotoUploadBody(photo);
 
-  const { error: uploadError } = await client.storage.from("pet-media").upload(storagePath, uploadBody, {
+  const { error } = await client.storage.from("pet-media").upload(storagePath, uploadBody, {
     contentType,
-    upsert: false,
+    upsert: true,
   });
 
-  if (uploadError) {
-    throw new Error(uploadError.message ?? "사진 업로드에 실패했습니다.");
-  }
+  if (error) throw new Error(error.message ?? "사진 업로드에 실패했습니다.");
+  return { storagePath, contentType };
+}
 
-  const { error: assetError } = await client.from("media_assets").insert({
-    pet_id: petId,
-    diary_entry_id: diaryEntryId,
-    storage_path: storagePath,
-    content_type: contentType,
-    created_by: userId,
-  });
-
-  if (assetError) {
-    await client.storage.from("pet-media").remove([storagePath]);
-    throw new Error(assetError.message ?? "사진 기록 저장에 실패했습니다.");
-  }
-
-  return storagePath;
+export async function removeUploadedPhotoObjects(client: SupabaseClient<Database>, storagePaths: string[]) {
+  if (storagePaths.length === 0) return;
+  const { error } = await client.storage.from("pet-media").remove(storagePaths);
+  if (error) throw new Error(error.message ?? "업로드된 사진 정리에 실패했습니다.");
 }
 
 export function buildPhotoUploadBody(photo: PhotoUploadInput & { base64: string }): ArrayBuffer;
@@ -63,9 +57,11 @@ function extensionForContentType(contentType: string) {
   return "jpg";
 }
 
-function resolvePhotoContentType(photo: PhotoUploadInput) {
+export function resolveSupportedPhotoContentType(photo: PhotoUploadInput) {
   if (photo.base64) return "image/jpeg";
-  return photo.mimeType?.startsWith("image/") ? photo.mimeType : "image/jpeg";
+  if (photo.mimeType === "image/jpeg" || photo.mimeType === "image/png" || photo.mimeType === "image/webp") return photo.mimeType;
+  if (photo.mimeType?.startsWith("image/")) throw new Error("JPEG, PNG, WebP 사진만 저장할 수 있습니다.");
+  return "image/jpeg";
 }
 
 async function fetchPhotoBlob(uri: string) {

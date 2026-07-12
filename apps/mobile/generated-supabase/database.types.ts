@@ -18,7 +18,6 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
-          dose_date: string
           id: string
           payload: Json
           pet_id: string
@@ -27,7 +26,6 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
-          dose_date?: string
           id?: string
           payload: Json
           pet_id: string
@@ -36,7 +34,6 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
-          dose_date?: string
           id?: string
           payload?: Json
           pet_id?: string
@@ -199,8 +196,9 @@ export type Database = {
           id: string
           occurred_at: string
           pet_id: string
-          record_origin: "diary" | "checklist"
+          record_origin: string
           summary: string
+          superseded_by: string | null
           updated_at: string
         }
         Insert: {
@@ -213,8 +211,9 @@ export type Database = {
           id?: string
           occurred_at?: string
           pet_id: string
-          record_origin?: "diary" | "checklist"
+          record_origin?: string
           summary: string
+          superseded_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -227,8 +226,9 @@ export type Database = {
           id?: string
           occurred_at?: string
           pet_id?: string
-          record_origin?: "diary" | "checklist"
+          record_origin?: string
           summary?: string
+          superseded_by?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -237,6 +237,13 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diary_entries_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "diary_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -344,7 +351,7 @@ export type Database = {
           client_mutation_id?: string | null
           created_at?: string
           created_by: string
-          dose_date?: string
+          dose_date: string
           id?: string
           medication_name: string
           pet_id: string
@@ -489,41 +496,6 @@ export type Database = {
           },
         ]
       }
-      pet_routines: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          pet_id: string
-          routine: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          pet_id: string
-          routine?: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          pet_id?: string
-          routine?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pet_routines_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       pet_members: {
         Row: {
           created_at: string
@@ -557,6 +529,41 @@ export type Database = {
             foreignKeyName: "pet_members_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_routines: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          pet_id: string
+          routine: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          pet_id: string
+          routine?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          pet_id?: string
+          routine?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_routines_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
             referencedRelation: "pets"
             referencedColumns: ["id"]
           },
@@ -630,6 +637,7 @@ export type Database = {
           id: string
           last_accessed_at: string | null
           report_id: string
+          revoked_at: string | null
           token_hash: string
         }
         Insert: {
@@ -639,6 +647,7 @@ export type Database = {
           id?: string
           last_accessed_at?: string | null
           report_id: string
+          revoked_at?: string | null
           token_hash: string
         }
         Update: {
@@ -648,6 +657,7 @@ export type Database = {
           id?: string
           last_accessed_at?: string | null
           report_id?: string
+          revoked_at?: string | null
           token_hash?: string
         }
         Relationships: [
@@ -775,27 +785,91 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_media_cleanup_v1: {
+        Args: { p_storage_paths: string[] }
+        Returns: number
+      }
       confirm_vet_report: {
-        Args: {
-          target_pet_id: string
-          target_report_id: string
-        }
+        Args: { target_pet_id: string; target_report_id: string }
         Returns: {
           confirmed_by_owner: boolean
           id: string
           status: Database["public"]["Enums"]["report_status"]
         }[]
       }
-      mark_vet_report_shared: {
+      create_photo_diary_entry: {
         Args: {
-          target_pet_id: string
-          target_report_id: string
+          p_client_mutation_id: string
+          p_entry_date: string
+          p_entry_id: string
+          p_media: Json
+          p_occurred_at: string
+          p_pet_id: string
+          p_summary: string
         }
         Returns: {
-          confirmed_by_owner: boolean
+          category: Database["public"]["Enums"]["diary_entry_category"]
+          client_mutation_id: string | null
+          condition_score: number | null
+          created_at: string
+          created_by: string
+          entry_date: string
           id: string
-          status: Database["public"]["Enums"]["report_status"]
-        }[]
+          occurred_at: string
+          pet_id: string
+          record_origin: string
+          summary: string
+          superseded_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "diary_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_vet_report_draft_v1: {
+        Args: {
+          p_created_by: string
+          p_english_summary: string
+          p_payload: Json
+          p_pet_id: string
+          p_range_days: number
+        }
+        Returns: string
+      }
+      delete_diary_entry_v1: {
+        Args: { p_entry_id: string; p_pet_id: string }
+        Returns: Json
+      }
+      delete_pet_v1: { Args: { p_pet_id: string }; Returns: Json }
+      issue_vet_report_share_v1: {
+        Args: {
+          p_actor_id: string
+          p_expires_at: string
+          p_pet_id: string
+          p_report_id: string
+          p_token_hash: string
+        }
+        Returns: Json
+      }
+      list_pending_media_cleanup_v1: { Args: never; Returns: string[] }
+      replace_pet_profile_photo_v1: {
+        Args: {
+          p_content_type: string
+          p_pet_id: string
+          p_storage_path: string
+        }
+        Returns: Json
+      }
+      revoke_vet_report_share_v1: {
+        Args: { p_actor_id: string; p_pet_id: string; p_report_id: string }
+        Returns: Json
+      }
+      save_care_setup_v1: {
+        Args: { p_pet_id: string; p_request: Json }
+        Returns: Json
       }
     }
     Enums: {

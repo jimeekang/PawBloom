@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
+export const petProfilePhotoKey = (petId: string | null | undefined, userId: string | null) => ["pet-profile-photo-url", petId, userId] as const;
 
-export function usePetProfilePhotoUrl(petId: string | null | undefined) {
+export function usePetProfilePhotoUrl(petId: string | null | undefined, userId: string | null = null) {
   return useQuery({
-    queryKey: ["pet-profile-photo-url", petId],
-    enabled: Boolean(supabase && petId),
+    queryKey: petProfilePhotoKey(petId, userId),
+    enabled: Boolean(supabase && petId && userId),
     staleTime: 45 * 60 * 1000,
     refetchOnMount: "always",
     queryFn: async () => {

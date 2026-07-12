@@ -11,6 +11,7 @@ export type AppAuthState = {
   user: User | null;
   pets: PetProfile[];
   activePet: PetProfile | null;
+  petLoadStatus: "idle" | "loading" | "ready" | "error";
   error: IdentityMessageKey | null;
   authMessage: IdentityMessageKey | null;
   signIn: (email: string, password: string) => Promise<IdentityMessageKey | null>;
@@ -21,5 +22,6 @@ export type AppAuthState = {
   deletePet: (petId: string) => Promise<IdentityMessageKey | null>;
   selectPet: (petId: string) => void;
   selectNextPet: () => void;
+  retryPetLoad: () => void;
   resetMessage: () => void;
 };

@@ -1,28 +1,33 @@
 import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
-import { uploadDiaryPhoto } from "../../media/application/mediaUpload";
 import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
+import { isRetriableOfflineError } from "../../sync/application/offlineErrorPolicy";
+import { createUuid } from "../../../shared-kernel/uuid";
 import { buildDiaryInsertOfflineMutation } from "./diaryOfflineReplay";
+import { deleteDiaryEntryAtomic } from "./diaryDeletion";
 import type { CreateDiaryEntryInput, DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
 import { inferDiaryRecordOrigin } from "./diaryRecordOrigin";
 import { buildDiaryUpdatePayload, buildOccurredAt, buildOccurredAtForTime, isStructuredDailyCategory, type DiaryUpdateInput } from "./diaryRecordPayload";
+import { diaryEntrySelect, fetchDiaryEntryByClientMutationId, fetchExistingDailyStructuredEntry, updateCanonicalStructuredEntry, type DiaryRowWithMedia } from "./diaryRecordQueries";
 import { decodeDiarySummary, defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
+import { createPhotoDiaryEntryAtomic } from "./diaryPhotoRecords";
+import { resolveDiaryUniqueConflict } from "./diaryUniqueConflict";
 
 export { buildDiaryUpdatePayload } from "./diaryRecordPayload";
 export { decodeDiarySummary, encodeDiarySummary } from "./diarySummary";
 
 type DiaryRow = Database["public"]["Tables"]["diary_entries"]["Row"];
 type DiaryInsert = Database["public"]["Tables"]["diary_entries"]["Insert"];
-type DiaryRowWithMedia = DiaryRow & { media_assets?: { id: string }[] | null };
 
-export const diaryEntrySelect = "id,pet_id,category,occurred_at,summary,condition_score,entry_date,record_origin,created_by,client_mutation_id,created_at,updated_at,media_assets(id)";
+export { diaryEntrySelect } from "./diaryRecordQueries";
 
 export type UpdateDiaryEntryInput = DiaryUpdateInput;
+export type CreateDiaryEntryResult = { entry: DiaryEntry; queued: boolean };
 
 export const diaryKeys = {
-  date: (petId: string | null, dateKey: string) => ["diary", "date", petId, dateKey] as const,
-  range: (petId: string | null, fromDateKey: string, toDateKey: string) => ["diary", "range", petId, fromDateKey, toDateKey] as const,
+  date: (petId: string | null, dateKey: string, userId: string | null = null) => ["diary", "date", petId, dateKey, userId] as const,
+  range: (petId: string | null, fromDateKey: string, toDateKey: string, userId: string | null = null) => ["diary", "range", petId, fromDateKey, toDateKey, userId] as const,
 };
 
 import { getLocalDateKey } from "../../../shared-kernel/date";
@@ -58,52 +63,51 @@ export function removeDiaryEntryFromList<T extends { id: string }>(entries: T[] 
   return (entries ?? []).filter((entry) => entry.id !== id);
 }
 
-export function useDiaryEntriesByDate(petId: string | null, dateKey: string) {
+export function useDiaryEntriesByDate(petId: string | null, dateKey: string, userId: string | null = null) {
   return useQuery({
-    queryKey: diaryKeys.date(petId, dateKey),
-    enabled: Boolean(supabase && petId && dateKey),
+    queryKey: diaryKeys.date(petId, dateKey, userId),
+    enabled: Boolean(supabase && petId && userId && dateKey),
     queryFn: async () => (!supabase || !petId ? [] : fetchDiaryEntries(petId, dateKey, dateKey)),
   });
 }
 
-export function useDiaryEntriesByDateRange(petId: string | null, fromDateKey: string, toDateKey: string) {
+export function useDiaryEntriesByDateRange(petId: string | null, fromDateKey: string, toDateKey: string, userId: string | null = null) {
   return useQuery({
-    queryKey: diaryKeys.range(petId, fromDateKey, toDateKey),
-    enabled: Boolean(supabase && petId && fromDateKey && toDateKey),
+    queryKey: diaryKeys.range(petId, fromDateKey, toDateKey, userId),
+    enabled: Boolean(supabase && petId && userId && fromDateKey && toDateKey),
     queryFn: async () => (!supabase || !petId ? [] : fetchDiaryEntries(petId, fromDateKey, toDateKey)),
   });
 }
 
-export function useTodayDiaryEntries(petId: string | null) { return useDiaryEntriesByDate(petId, getLocalDateKey()); }
+export function useTodayDiaryEntries(petId: string | null, userId: string | null = null) { return useDiaryEntriesByDate(petId, getLocalDateKey(), userId); }
 
-export function useUpdateDiaryEntry(petId: string | null) {
+export function useUpdateDiaryEntry(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: UpdateDiaryEntryInput) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
-      const { data, error } = await supabase.from("diary_entries").update(buildDiaryUpdatePayload(input)).eq("id", input.id).eq("pet_id", petId).select(diaryEntrySelect).single();
+      const { data, error } = await supabase.from("diary_entries").update(buildDiaryUpdatePayload(input)).eq("id", input.id).eq("pet_id", petId).is("superseded_by", null).select(diaryEntrySelect).single();
       if (error) throw new Error(error.message);
       return mapDiaryRow(data as DiaryRowWithMedia);
     },
     onSuccess: (entry) => {
-      removeDiaryEntryFromCachedLists(queryClient, petId, entry.id);
-      upsertDiaryEntryInCachedLists(queryClient, petId, entry);
+      removeDiaryEntryFromCachedLists(queryClient, petId, userId, entry.id);
+      upsertDiaryEntryInCachedLists(queryClient, petId, userId, entry);
       void queryClient.invalidateQueries({ queryKey: ["diary"] });
     },
   });
 }
 
-export function useDeleteDiaryEntry(petId: string | null) {
+export function useDeleteDiaryEntry(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
-      const { data, error } = await supabase.from("diary_entries").delete().eq("id", id).eq("pet_id", petId).select(diaryEntrySelect).single();
-      if (error) throw new Error(error.message);
-      return mapDiaryRow(data as DiaryRowWithMedia);
+      const deleted = await deleteDiaryEntryAtomic(supabase, petId, id);
+      return { id, entry: deleted ? mapDiaryRow(deleted) : null };
     },
-    onSuccess: (entry) => {
-      removeDiaryEntryFromCachedLists(queryClient, petId, entry.id);
+    onSuccess: (result) => {
+      removeDiaryEntryFromCachedLists(queryClient, petId, userId, result.id);
       void queryClient.invalidateQueries({ queryKey: ["diary"] });
     },
   });
@@ -116,12 +120,16 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
       if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
       if ((input.photos?.length ?? 0) > 5) throw new Error("하루 사진은 최대 5장까지 저장할 수 있습니다.");
       const entryDate = input.entryDate ?? getLocalDateKey();
+      const clientMutationId = input.clientMutationId ?? createUuid();
+      if (input.category === "photo") {
+        if (!input.photos?.length) throw new Error("저장할 사진을 한 장 이상 선택해 주세요.");
+        return { entry: mapDiaryRow(await createPhotoDiaryEntryAtomic({ client: supabase, petId, input: { ...input, entryDate }, entryId: clientMutationId, clientMutationId })), queued: false };
+      }
+      if (input.photos?.length) throw new Error("사진은 사진 카테고리에서만 저장할 수 있습니다.");
       const existingEntry = isStructuredDailyCategory(input.category) ? await fetchExistingDailyStructuredEntry(petId, input.category, entryDate) : null;
       if (existingEntry) {
-        if (input.origin === "checklist") return mapDiaryRow(existingEntry);
-        const { data, error } = await supabase.from("diary_entries").update(buildDiaryUpdatePayload({ ...input, id: existingEntry.id, entryDate, origin: "diary" })).eq("id", existingEntry.id).eq("pet_id", petId).select(diaryEntrySelect).single();
-        if (error) throw new Error(error.message);
-        return mapDiaryRow(data as DiaryRowWithMedia);
+        if (input.origin === "checklist") return { entry: mapDiaryRow(existingEntry), queued: false };
+        return { entry: mapDiaryRow(await updateCanonicalStructuredEntry(petId, existingEntry.id, input, entryDate)), queued: false };
       }
       const payload: DiaryInsert = {
         pet_id: petId,
@@ -132,40 +140,63 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
         entry_date: entryDate,
         record_origin: input.origin === "checklist" ? "checklist" : "diary",
         occurred_at: buildOccurredAtForTime(entryDate, input.occurredTime) ?? buildOccurredAt(entryDate),
+        client_mutation_id: clientMutationId,
       };
 
-      const { data, error } = await supabase.from("diary_entries").insert(payload).select(diaryEntrySelect).single();
+      let insertResult;
+      try {
+        insertResult = await supabase.from("diary_entries").insert(payload).select(diaryEntrySelect).single();
+      } catch (error) {
+        if (!isRetriableOfflineError(error)) throw error;
+        await enqueueOfflineMutation(buildDiaryInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown>, clientMutationId }));
+        return { entry: mapQueuedDiaryEntry(payload, clientMutationId), queued: true };
+      }
+      const { data, error } = insertResult;
       if (error) {
-        await enqueueOfflineMutation(buildDiaryInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown> }));
+        if (error.code === "23505") {
+          const mutationMatch = await fetchDiaryEntryByClientMutationId(petId, clientMutationId);
+          const canonical = !mutationMatch && isStructuredDailyCategory(input.category)
+            ? await fetchExistingDailyStructuredEntry(petId, input.category, entryDate)
+            : null;
+          const action = resolveDiaryUniqueConflict({
+            category: input.category,
+            origin: input.origin === "checklist" ? "checklist" : "diary",
+            hasClientMutationMatch: Boolean(mutationMatch),
+            hasCanonical: Boolean(canonical),
+          });
+          if (action === "already-applied" && mutationMatch) return { entry: mapDiaryRow(mutationMatch), queued: false };
+          if (action === "keep-canonical" && canonical) return { entry: mapDiaryRow(canonical), queued: false };
+          if (action === "update-canonical" && canonical) {
+            return { entry: mapDiaryRow(await updateCanonicalStructuredEntry(petId, canonical.id, input, entryDate)), queued: false };
+          }
+        }
+        if (isRetriableOfflineError(error)) {
+          await enqueueOfflineMutation(buildDiaryInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown>, clientMutationId }));
+          return { entry: mapQueuedDiaryEntry(payload, clientMutationId), queued: true };
+        }
         throw new Error(error.message);
       }
 
-      for (const [index, photo] of (input.photos ?? []).entries()) {
-        await uploadDiaryPhoto(supabase, userId, petId, data.id, photo, index + 1);
-      }
-
-      return mapDiaryRow({ ...data, media_assets: input.photos?.map((_, index) => ({ id: `${data.id}-${index}` })) ?? [] } as DiaryRowWithMedia);
+      return { entry: mapDiaryRow({ ...data, media_assets: [] } as DiaryRowWithMedia), queued: false };
     },
-    onSuccess: (entry) => {
-      upsertDiaryEntryInCachedLists(queryClient, petId, entry);
-      void queryClient.invalidateQueries({ queryKey: ["diary"] });
+    onSuccess: (result) => {
+      upsertDiaryEntryInCachedLists(queryClient, petId, userId, result.entry);
+      if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["diary"] });
     },
   });
 }
 
-async function fetchExistingDailyStructuredEntry(petId: string, category: DiaryCategory, entryDate: string) {
-  const { data, error } = await supabase!
-    .from("diary_entries")
-    .select(diaryEntrySelect)
-    .eq("pet_id", petId)
-    .eq("category", category)
-    .eq("entry_date", entryDate)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return data as DiaryRowWithMedia | null;
+function mapQueuedDiaryEntry(payload: DiaryInsert, clientMutationId: string) {
+  const queuedAt = new Date().toISOString();
+  return mapDiaryRow({
+    ...payload,
+    id: clientMutationId,
+    client_mutation_id: clientMutationId,
+    created_at: queuedAt,
+    updated_at: queuedAt,
+    superseded_by: null,
+    media_assets: [],
+  } as DiaryRowWithMedia);
 }
 
 async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: string) {
@@ -175,6 +206,7 @@ async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: 
     .eq("pet_id", petId)
     .gte("entry_date", fromDateKey)
     .lte("entry_date", toDateKey)
+    .is("superseded_by", null)
     .order("occurred_at", { ascending: false });
 
   if (error) {
@@ -202,20 +234,20 @@ function normalizeScore(value: number | null): 1 | 2 | 3 | 4 | 5 | undefined {
 
 export function upsertDiaryEntryInList<T extends { id: string }>(entries: T[] | undefined, entry: T) { return [entry, ...removeDiaryEntryFromList(entries, entry.id)]; }
 
-function removeDiaryEntryFromCachedLists(queryClient: QueryClient, petId: string | null, id: string) {
+function removeDiaryEntryFromCachedLists(queryClient: QueryClient, petId: string | null, userId: string | null, id: string) {
   for (const [queryKey, current] of queryClient.getQueriesData<DiaryEntry[]>({ queryKey: ["diary"] })) {
-    if (Array.isArray(current) && isDiaryListCacheForPet(queryKey, petId)) queryClient.setQueryData<DiaryEntry[]>(queryKey, removeDiaryEntryFromList(current, id));
+    if (Array.isArray(current) && isDiaryListCacheForPet(queryKey, petId, userId)) queryClient.setQueryData<DiaryEntry[]>(queryKey, removeDiaryEntryFromList(current, id));
   }
 }
 
-function upsertDiaryEntryInCachedLists(queryClient: QueryClient, petId: string | null, entry: DiaryEntry) {
+function upsertDiaryEntryInCachedLists(queryClient: QueryClient, petId: string | null, userId: string | null, entry: DiaryEntry) {
   for (const [queryKey, current] of queryClient.getQueriesData<DiaryEntry[]>({ queryKey: ["diary"] })) {
-    if (Array.isArray(current) && isDiaryListCacheForPet(queryKey, petId) && cacheIncludesEntryDate(queryKey, entry.entryDate)) queryClient.setQueryData<DiaryEntry[]>(queryKey, upsertDiaryEntryInList(current, entry));
+    if (Array.isArray(current) && isDiaryListCacheForPet(queryKey, petId, userId) && cacheIncludesEntryDate(queryKey, entry.entryDate)) queryClient.setQueryData<DiaryEntry[]>(queryKey, upsertDiaryEntryInList(current, entry));
   }
 }
 
-function isDiaryListCacheForPet(queryKey: QueryKey, petId: string | null) {
-  return queryKey[0] === "diary" && (queryKey[1] === "date" || queryKey[1] === "range") && queryKey[2] === petId;
+function isDiaryListCacheForPet(queryKey: QueryKey, petId: string | null, userId: string | null) {
+  return queryKey[0] === "diary" && (queryKey[1] === "date" || queryKey[1] === "range") && queryKey[2] === petId && queryKey.at(-1) === userId;
 }
 
 function cacheIncludesEntryDate(queryKey: QueryKey, entryDate: string) {

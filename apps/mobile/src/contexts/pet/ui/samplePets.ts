@@ -9,6 +9,7 @@ const samplePet: PetProfile = {
   ageLabel: "4살",
   weightKg: 8.4,
   careMode: true,
+  role: "owner",
 };
 
 export const mockPets: PetProfile[] = [
