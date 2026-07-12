@@ -19,6 +19,7 @@ edit_policy: exclusive
 - [02. 제품 UX](02-product-ux.md) — 화면별 사용성 진단과 개선 방향.
 - [03. 엔지니어링](03-engineering.md) — 아키텍처·구현 상태·기술 부채 실측.
 - [04. 비즈니스·수익화](04-business-monetization.md) — 과금 모델·전환·수익화 준비도.
+- [05. 디자인 시스템·UI/UX 전수 감사 (2026-07-12)](05-design-system-audit.md) — 토큰·컴포넌트 규격 위반, 접근성·상태 피드백 결함 실측, 글로벌 디자인 리파인 근거.
 
 ## 감사 이력 요약 (Product Analysis, 2026-07-04, archived)
 
