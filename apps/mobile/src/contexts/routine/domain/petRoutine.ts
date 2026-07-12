@@ -9,7 +9,7 @@ export type RoutineAppetite = "good" | "normal" | "low" | "refused";
 export type PetRoutine = {
   id?: UUID;
   petId: UUID;
-  food: { meals: Partial<Record<RoutineMealSlot, { offeredGrams?: string }>>; appetite?: RoutineAppetite };
+  food: { meals: Partial<Record<RoutineMealSlot, { offeredGrams?: string; localTime?: string }>>; appetite?: RoutineAppetite; mealRemindersEnabled?: boolean };
   water: { amountMl?: string; intakeLevel?: RoutineRelativeLevel };
   walk: { enabled?: boolean; durationMinutes?: string; intensity?: RoutineWalkIntensity };
   stool: { count?: string; consistency?: RoutineStoolConsistency };
@@ -17,3 +17,7 @@ export type PetRoutine = {
 };
 
 export type PetRoutineInput = Omit<PetRoutine, "id" | "petId">;
+
+export function isValidMealReminderTime(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
