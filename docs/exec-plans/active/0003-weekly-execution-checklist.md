@@ -25,17 +25,16 @@ edit_policy: exclusive
 - 작업 단위마다 작은 검증을 먼저 실행하고, handoff 전에는 반드시 `npm run verify`를 실행한다.
 - 기능 단위 완료 시 커밋 후 원격 브랜치 `codex/routine-diary-care-defaults`에 push.
 
-## 현재 기준 상태 (2026-07-05)
+## 현재 기준 상태 (2026-07-12)
 
-- Branch: `codex/routine-diary-care-defaults` / Remote: `origin/codex/routine-diary-care-defaults`
-- Latest commits: `4d1ce4a feat: edit diary care records and dashboard`, `9edcf3d chore: add codex run environment checks`
+- Latest commit: `88c88d5 feat: complete functional QA and atomic persistence` (브랜치는 현재 작업 워크트리 기준)
 - Required verification: `npm run verify`
 - Expo dev URL: `http://localhost:8081/` 또는 `http://localhost:3200/` (실행 명령에 따라 다름)
-- **진행 상태:** Week 1 완료 · **Week 2 진행 중** · Week 3~4 미착수.
+- **진행 상태:** Week 1 완료 · Week 2 Day 8~12 구현 커밋 확인(세부 검증은 Day 14 checkpoint에서 일괄) · Day 13~14 잔여 · Week 3 기간 진입.
 
 ## ▶ 다음 즉시 작업
 
-**Week 2 Day 8 `Care condition과 care plan 생성`** (아래 참조). 그 다음 Day 9 medication schedule.
+**투약·식사 시간 로컬 알림 슬라이스 [0004](./0004-reminder-notifications-plan.md)** (2026-07-12 사용자 우선 지시). 완료 후 Week 2 잔여 Day 13(가족 초대 skeleton) → Day 14 checkpoint 순으로 복귀.
 
 ---
 
@@ -50,6 +49,8 @@ edit_policy: exclusive
 ## Week 2 — Care Plan · Medication Schedule · Walk · Offline (진행 중)
 
 **기간:** 2026-07-03 금 ~ 2026-07-09 목. **목표:** Care Mode를 임시 dose 기록에서 care plan 중심 흐름으로 확장하고, 산책/오프라인 저장 MVP 경로를 만든다.
+
+> 2026-07-12 확인: Day 8~12 산출물은 커밋 이력으로 확인됨(`6432844` care plan, `ea98713` medication schedule, `24ad354` walk, `7a8b0b8` outbox, `077acdc` replay + QA 후속 커밋). 체크박스는 Day 14 checkpoint에서 일괄 검증 후 채운다.
 
 ### Day 8: Care condition과 care plan 생성
 **신규:** `care/application/carePlanRecords.ts`, `care/domain/carePlan.ts`. **수정:** `CareModeScreen.tsx`, `i18n/translations.ts`
@@ -260,3 +261,4 @@ edit_policy: exclusive
 - [ ] Quick medication은 아직 실제 schedule 기반 flow가 아니다. Week 2 Day 9에서 schedule 기반으로 확장.
 - [ ] Offline outbox contract는 있으나 실제 SQLite persistence/replay는 Week 2 Day 11-12에서 구현.
 - [ ] Family/caregiver 초대는 membership 기반 skeleton부터(Day 13) 만들고 실제 email delivery는 beta 이후로 분리.
+- [ ] 알림 표시 계층 결손: `setNotificationHandler`·Android 채널·`app.json` expo-notifications 플러그인이 없어 투약 알림이 포그라운드에서 표시되지 않는다. [0004](./0004-reminder-notifications-plan.md) Task 1에서 해결.
