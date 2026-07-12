@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../domain/carePlan";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, font, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { DatePickerField } from "../../../design-system/DatePickerField";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -89,9 +89,7 @@ export function CareSetupPanel({ petId, setup, onSave, onUseSchedule }: { petId?
         <TextInput style={styles.input} value={draft.planTitle} onChangeText={updatePlanTitle} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
         <View style={styles.row}>
           <TextInput style={[styles.input, styles.flex]} value={draft.medicationName} onChangeText={updateMedicationName} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-          <View style={styles.timePicker}>
-            <TimePickerField value={draft.times[0] ?? "08:00"} onChange={(localTime) => setDraft((current) => ({ ...current, times: [localTime] }))} />
-          </View>
+          <TimePickerField value={draft.times[0] ?? "08:00"} onChange={(localTime) => setDraft((current) => ({ ...current, times: [localTime] }))} />
         </View>
         <TextInput style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
         <Text style={styles.label}>{t("ko", "care.setupPeriod")}</Text>
@@ -106,7 +104,7 @@ export function CareSetupPanel({ petId, setup, onSave, onUseSchedule }: { petId?
           </View>
         ) : null}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} />
+        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} disabled={isSaving} />
         {setup.schedules.map((schedule) => (
           <Pressable key={schedule.id} style={styles.scheduleRow} onPress={() => onUseSchedule(schedule)}>
             <AppIcon name="medication" size={iconSize.md} color={colors.orangeDeep} />
@@ -132,8 +130,7 @@ const styles = StyleSheet.create({
   activeMeta: { ...type.caption, color: colors.summaryAccent },
   row: { gap: spacing.sm },
   flex: { flex: 1 },
-  input: { ...type.body, minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
-  timePicker: {},
+  input: { ...type.body, minHeight: layout.inputHeight, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
   repeatRow: { gap: spacing.sm },
   repeatInput: { maxWidth: 96 },
   repeatSuffix: { ...type.caption, color: colors.textMuted },
@@ -141,5 +138,5 @@ const styles = StyleSheet.create({
   scheduleRow: { minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
   scheduleTitle: { ...type.bodyStrong },
   scheduleMeta: { ...type.caption, color: colors.textMuted },
-  useText: { ...type.caption, color: colors.orangeDeep, fontWeight: "700" },
+  useText: { ...type.caption, color: colors.orangeDeep, fontWeight: font.weight.bold },
 });

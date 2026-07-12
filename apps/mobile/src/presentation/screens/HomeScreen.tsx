@@ -7,7 +7,7 @@ import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
 import { AppIcon } from "../../design-system/iconography";
 import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard } from "../../design-system/components";
-import { colors, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
+import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
@@ -134,13 +134,13 @@ const styles = StyleSheet.create({
   },
   heroImage: { borderRadius: radius.xl },
   heroOverlay: { flex: 1, justifyContent: "flex-end", padding: spacing.xxl, backgroundColor: colors.heroScrim },
-  heroName: { ...type.heroTitle, textShadowColor: "rgba(0, 0, 0, 0.32)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
-  heroMeta: { ...type.sectionTitle, color: colors.white, marginTop: spacing.xs, textShadowColor: "rgba(0, 0, 0, 0.28)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },
+  heroName: { ...type.heroTitle, textShadowColor: colors.heroScrim, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+  heroMeta: { ...type.sectionTitle, color: colors.white, marginTop: spacing.xs, textShadowColor: colors.heroScrim, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },
   heroInfo: { marginTop: spacing.md, gap: spacing.md },
   heroSummary: { flexDirection: "row", gap: spacing.sm },
   heroSummaryItem: { flex: 1, minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, justifyContent: "center" },
   heroSummaryLabel: { ...type.caption },
-  heroSummaryValue: { ...type.sectionTitle, color: colors.text, fontWeight: "700", marginTop: spacing.xxs },
+  heroSummaryValue: { ...type.sectionTitle, color: colors.text, fontWeight: font.weight.bold, marginTop: spacing.xxs },
   noticeWrap: { marginTop: spacing.md },
   checklist: {
     flexDirection: "row",

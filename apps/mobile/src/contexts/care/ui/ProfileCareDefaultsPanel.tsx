@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
-import { colors, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { DatePickerField } from "../../../design-system/DatePickerField";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -155,7 +155,7 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
         </Pressable>
         <Text style={styles.copy}>{t("ko", "pet.careDefaultsSavedHint")}</Text>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} />
+        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} disabled={isSaving} />
       </View>
     </SurfaceCard>
   );
@@ -173,15 +173,15 @@ const styles = StyleSheet.create({
   medicationOptionTitle: { ...type.bodyStrong, color: colors.text },
   medicationOptionTitleSelected: { color: colors.orangeDeep },
   medicationOptionMeta: { ...type.caption, color: colors.textMuted },
-  input: { ...type.body, minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
+  input: { ...type.body, minHeight: layout.inputHeight, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
   repeatRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   repeatInput: { width: 96, flex: 0 },
   repeatSuffix: { ...type.body, color: colors.textMuted, flex: 1 },
   timeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   timeField: { flex: 1 },
-  removeTimeButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  removeTimeButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   removeTimeText: { ...type.sectionTitle, color: colors.textMuted },
-  addTimeButton: { minHeight: 42, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  addTimeButton: { minHeight: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   addTimeText: { ...type.bodyStrong, color: colors.orangeDeep },
   errorText: { ...type.caption, color: colors.coral },
 });

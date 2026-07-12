@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: radius.full,
     backgroundColor: colors.orangeDeep,
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   body: {
     ...type.body,

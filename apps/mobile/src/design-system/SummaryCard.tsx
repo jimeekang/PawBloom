@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "./iconography";
 import { IconBubble } from "./components";
-import { colors, iconSize, radius, spacing, type } from "./tokens";
+import { colors, font, iconSize, radius, spacing, type } from "./tokens";
 import { t } from "../i18n/translations";
 
 export function SummaryCard() {
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   diagnosisText: {
     ...type.caption,
     color: colors.diagnosis,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
     flex: 1,
   },
   cloudBadge: {

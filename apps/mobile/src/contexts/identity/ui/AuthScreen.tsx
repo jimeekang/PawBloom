@@ -107,7 +107,7 @@ export function AuthScreen() {
 
         <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
 
-        {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" /> : null}
+        {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
         {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
 
         {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   input: {
-    minHeight: 52,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,

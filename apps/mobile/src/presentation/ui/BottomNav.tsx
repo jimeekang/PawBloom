@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon, type AppIconName } from "../../design-system/iconography";
-import { colors, iconSize, layout, spacing, type } from "../../design-system/tokens";
+import { colors, font, iconSize, layout, spacing, type } from "../../design-system/tokens";
 import { t, type TranslationKey } from "../../i18n/translations";
 
 export type MainTab = "today" | "diary" | "care" | "reports" | "settings";
@@ -19,7 +19,14 @@ export function BottomNav({ activeTab, onChange }: { activeTab: MainTab; onChang
       {navItems.map((item) => {
         const active = activeTab === item.key;
         return (
-          <Pressable key={item.key} style={styles.item} onPress={() => onChange(item.key)}>
+          <Pressable
+            key={item.key}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={t("ko", item.labelKey)}
+            style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+            onPress={() => onChange(item.key)}
+          >
             <AppIcon name={active && item.activeIcon ? item.activeIcon : item.icon} size={iconSize.md} color={active ? colors.orangeDeep : colors.textMuted} />
             <Text style={[styles.label, active && styles.labelActive]}>{t("ko", item.labelKey)}</Text>
           </Pressable>
@@ -45,12 +52,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
   },
+  itemPressed: {
+    opacity: 0.6,
+  },
   label: {
     ...type.tiny,
     color: colors.textMuted,
   },
   labelActive: {
     color: colors.orangeDeep,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
 });

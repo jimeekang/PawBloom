@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
+import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { AppIcon } from "../../design-system/iconography";
 import { t } from "../../i18n/translations";
 
@@ -10,12 +10,8 @@ type HomeHeaderProps = {
   canSwitchPet: boolean;
 };
 
-type DiaryHeaderProps = {
+type BackHeaderProps = {
   onBack: () => void;
-};
-
-type ReportsHeaderProps = {
-  onSignOut: () => void;
 };
 
 export function HomeHeader({ petName, onPetPress, onManagePets, canSwitchPet }: HomeHeaderProps) {
@@ -26,35 +22,43 @@ export function HomeHeader({ petName, onPetPress, onManagePets, canSwitchPet }: 
         <Text style={styles.brandText}>PawBloom</Text>
       </View>
       <View style={styles.headerActions}>
-        <Pressable style={[styles.petSwitch, !canSwitchPet && styles.petSwitchDisabled]} onPress={onPetPress} disabled={!canSwitchPet}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canSwitchPet }}
+          hitSlop={6}
+          style={({ pressed }) => [styles.petSwitch, pressed && canSwitchPet && styles.petSwitchPressed, !canSwitchPet && styles.petSwitchDisabled]}
+          onPress={onPetPress}
+          disabled={!canSwitchPet}
+        >
           <AppIcon name="pet" size={iconSize.sm} color={canSwitchPet ? colors.orangeDeep : colors.textMuted} />
           <Text style={styles.petSwitchText}>{petName}</Text>
         </Pressable>
-        <View style={styles.bellWrap}>
-          <AppIcon name="bell" size={iconSize.lg} color={colors.text} />
-          <View style={styles.notificationDot} />
-        </View>
+        <AppIcon name="bell" size={iconSize.lg} color={colors.text} />
       </View>
     </View>
   );
 }
 
-export function DiaryHeader({ onBack }: DiaryHeaderProps) {
+export function DiaryHeader({ onBack }: BackHeaderProps) {
   return (
     <View style={styles.header}>
       <AppIconButton iconName="back" onPress={onBack} />
       <Text style={styles.screenTitle}>{t("ko", "diary.title")}</Text>
-      <AppIcon name="calendar" size={iconSize.lg} color={colors.text} />
+      <View style={styles.headerSpacer}>
+        <AppIcon name="calendar" size={iconSize.md} color={colors.textSoft} />
+      </View>
     </View>
   );
 }
 
-export function PetSettingsHeader({ onBack }: DiaryHeaderProps) {
+export function PetSettingsHeader({ onBack }: BackHeaderProps) {
   return (
     <View style={styles.header}>
       <AppIconButton iconName="back" onPress={onBack} />
       <Text style={styles.screenTitle}>{t("ko", "pet.manageTitle")}</Text>
-      <AppIcon name="pet" size={iconSize.lg} color={colors.text} />
+      <View style={styles.headerSpacer}>
+        <AppIcon name="pet" size={iconSize.md} color={colors.textSoft} />
+      </View>
     </View>
   );
 }
@@ -99,7 +103,7 @@ export function SettingsHeader() {
 
 function AppIconButton({ iconName, onPress }: { iconName: "back"; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={styles.headerIconTouch}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.headerIconTouch, pressed && styles.headerIconTouchPressed]}>
       <AppIcon name={iconName} size={iconSize.lg} color={colors.text} />
     </Pressable>
   );
@@ -108,9 +112,9 @@ function AppIconButton({ iconName, onPress }: { iconName: "back"; onPress: () =>
 const styles = StyleSheet.create({
   header: {
     minHeight: 70,
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -126,18 +130,21 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   petSwitch: {
-    minHeight: 34,
+    minHeight: 38,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+  },
+  petSwitchPressed: {
+    backgroundColor: colors.surfaceWarm,
   },
   petSwitchDisabled: {
     opacity: 0.6,
@@ -145,21 +152,7 @@ const styles = StyleSheet.create({
   petSwitchText: {
     ...type.caption,
     color: colors.text,
-    fontWeight: "600",
-  },
-  bellWrap: {
-    position: "relative",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: 2,
-    right: 1,
-    width: 8,
-    height: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.coral,
-    borderWidth: 1,
-    borderColor: colors.appBackground,
+    fontWeight: font.weight.semibold,
   },
   screenTitle: {
     ...type.screenTitle,
@@ -177,18 +170,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  signOutText: {
-    ...type.caption,
-    color: colors.orangeDeep,
-    fontWeight: "600",
-  },
   headerIconTouch: {
     width: 44,
     height: 44,
     justifyContent: "center",
   },
+  headerIconTouchPressed: {
+    opacity: 0.6,
+  },
   headerSpacer: {
     width: 44,
     height: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
 });
