@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
@@ -6,6 +5,7 @@ import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
 import { buildMedicationDoseInsertOfflineMutation, buildMedicationDoseUpdateOfflineMutation } from "./medicationOfflineReplay";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
+import { localDateKey, useCurrentLocalDateKey } from "./medicationDoseDate";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote } from "./medicationDosePayload";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
 type DoseUpdate = Database["public"]["Tables"]["medication_doses"]["Update"];
@@ -227,22 +227,6 @@ function buildScheduledAtForDateTime(doseDate?: string, scheduledTime?: string, 
     scheduledAt.setHours(Number(timeMatch[1]), Number(timeMatch[2]), 0, 0);
   }
   return scheduledAt;
-}
-export function localDateKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-export function millisecondsUntilNextLocalDate(now = new Date()) {
-  const next = new Date(now);
-  next.setHours(24, 0, 1, 0);
-  return Math.max(1, next.getTime() - now.getTime());
-}
-function useCurrentLocalDateKey() {
-  const [dateKey, setDateKey] = useState(() => localDateKey());
-  useEffect(() => {
-    const timer = setTimeout(() => setDateKey(localDateKey()), millisecondsUntilNextLocalDate());
-    return () => clearTimeout(timer);
-  }, [dateKey]);
-  return dateKey;
 }
 function buildDoseStatusUpdate(status: DoseStatus) {
   const now = new Date();

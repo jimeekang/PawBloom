@@ -1,4 +1,5 @@
-import { localDateKey, medicationDoseKeys, millisecondsUntilNextLocalDate } from "./medicationDoseRecords";
+import { medicationDoseKeys } from "./medicationDoseRecords";
+import { localDateKey, millisecondsUntilNextLocalDate } from "./medicationDoseDate";
 
 // Regression: ISSUE-MED-DATE-003 — yesterday's cached dose was reused after midnight.
 // Found by /qa on 2026-07-12.
