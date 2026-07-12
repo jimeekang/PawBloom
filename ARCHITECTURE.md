@@ -21,7 +21,7 @@ PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도
 
 - `identity`: Auth profile, 언어, 계정 설정
 - `pet`: 반려동물 프로필, 종, 품종, 나이, 체중
-- `routine`: 반려동물별 기본 식사량, 물, 산책, 배변, 컨디션 기준값
+- `routine`: 반려동물별 기본 식사량·식사 시간, 식사 알림, 물, 산책, 배변, 컨디션 기준값
 - `diary`: 식사, 물, 산책, 배변, 컨디션, 메모, 사진. 컨디션 점수의 원천
 - `care`: 질병/상태, care plan, 프로필 기반 케어 기본값
 - `medication`: 약 일정, 투약 기간, 반복 간격, 로컬 알림, 오늘 투약 체크, 임시 투약, 누락, 부분 투약, 완료
@@ -30,6 +30,8 @@ PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도
 - `media`: 사진/영상과 Supabase Storage metadata
 - `subscription`: Free, Plus, Family entitlement gate
 - `sync`: 오프라인 outbox와 idempotent replay
+
+로컬 알림 표시 부트스트랩은 기능별 context가 아니라 `shared-kernel/notifications/localNotificationBootstrap.ts`가 소유한다. 앱 시작 시 한 번 실행해 포그라운드 배너/리스트 표시와 Android 기본 알림 채널을 설정하며, 알림 예약 규칙 자체는 `medication`과 `routine` application 계층이 각각 소유한다.
 
 프로필 화면은 `pet`, `routine`, `care`, `medication` use case를 조합할 수 있지만, 병명/상태와 약 일정의 데이터 소유권은 `care`와 `medication` context에 둔다.
 

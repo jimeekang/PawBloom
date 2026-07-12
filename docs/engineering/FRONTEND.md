@@ -23,12 +23,25 @@ edit_policy: exclusive
 - **Edge Function 호출**: typed request/response wrapper 없이 직접 호출하지 않는다. 모든 Edge Function 호출은 typed wrapper를 통한다.
 - **Supabase secret**: 앱 코드에 hard-code하지 않는다.
 
+## 로컬 알림 공통 계약
+
+모든 로컬 알림은 `apps/mobile/src/shared-kernel/notifications/localNotificationBootstrap.ts`에서 앱 시작 시 표시 핸들러를 멱등 설정한다. 이 모듈은 알림 종류를 알지 않으며, 웹에서는 동적 `expo-notifications` import와 네이티브 설정을 수행하지 않는다.
+
+알림 기능은 자기 계정·기능 namespace만 조회하고 취소한다.
+
+- 투약: `medication:${userId}:...` (`daily` 또는 날짜형 suffix)
+- 식사: `meal:${userId}:${petId}:${slot}`
+- 식사 알림은 `routine/application/mealReminderNotifications.ts`가 소유하고, `HH:mm` 유효 시간만 `DAILY` 트리거로 예약한다. 펫당 슬롯 최대 4개이며 시간 미설정 또는 토글 off인 슬롯은 예약하지 않는다.
+- 계정 전환·로그아웃 시 `authContextState.ts`가 이전 계정의 `medication:`과 `meal:` 예약을 각각 취소한다. 한 기능이 다른 기능의 prefix를 조회·취소하지 않는다.
+- 예약 저장 흐름에서만 권한을 요청하고, 앱 시작·포그라운드 복귀·펫 전환 재예약은 현재 권한을 확인하기만 한다. 웹의 예약·취소는 조용한 no-op이다.
+- iOS 전역 pending 안전 예산은 투약 예약이 60개로 관리한다. 식사 알림은 슬롯당 DAILY 1개(펫당 최대 4개)이므로 별도 전역 예산을 만들지 않고, 투약 예약이 다른 pending 알림을 포함해 남은 용량을 계산한다.
+
 ## 투약 알림 로컬 예약
 
 투약 알림은 기기 로컬 알림(expo-notifications)으로만 예약한다. 서버 push에 의존하지 않는다.
 
 - **구현 위치**: `apps/mobile/src/contexts/medication/application/medicationReminderNotifications.ts`.
-- **알림 identifier 규약**: 날짜형은 `medication:${scheduleId}:${dateKey}`, 무기한 매일형은 `medication:${scheduleId}:daily` 형식이다. 이 접두사(`medication:`)와 알림 `data.petId`로 소유 범위를 판별한다.
+- **알림 identifier 규약**: 최종 예약 identifier는 날짜형 `medication:${userId}:${scheduleId}:${dateKey}`, 무기한 매일형 `medication:${userId}:${scheduleId}:daily` 형식이다. 이 접두사(`medication:`), 알림 `data.userId`, `data.petId`로 소유 범위를 판별한다.
 - **예약 범위**: 이미 시작한 무기한 매일 일정은 네이티브 `DAILY` 반복 알림 1개를 쓴다. 그 외 일정은 `scheduleAppliesOnDate`로 가까운 시각부터 계산하고, 다른 앱 알림을 제외한 전역 안전 예산 60개 안에서 날짜형 알림을 채운다. 앱 시작·포그라운드 복귀 때 권한을 다시 묻지 않고 rolling 일정을 보충한다.
 - **재예약(reschedule)**: 저장 완료 후 반환된 최신 일정으로 새 알림을 먼저 설치한 다음, 현재 반려동물의 이전 알림만 제거한다. 다른 반려동물 알림은 유지하며, 설치 중 실패해도 아직 대체되지 않은 기존 알림은 취소하지 않는다. 저장 버튼 흐름에서만 알림 권한을 요청한다.
 - **trigger 계산**: `triggerDate`는 `dateKey`와 스케줄의 `localTime`(`HH:mm`)으로 기기 로컬 시각을 만든다. `SchedulableTriggerInputTypes.DATE`를 사용한다.
