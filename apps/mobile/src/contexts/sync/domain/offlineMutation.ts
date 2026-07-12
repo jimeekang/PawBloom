@@ -8,4 +8,6 @@ export type OfflineMutation = {
   payload: Record<string, unknown>;
   createdAt: string;
   attempts: number;
+  /** Store-owned replay lease. Callers must not set or persist this value. */
+  queuedByUserId?: string;
 };

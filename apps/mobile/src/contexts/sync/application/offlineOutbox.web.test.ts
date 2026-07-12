@@ -48,18 +48,19 @@ async function verifyAccountIsolationPersistenceAndCloning() {
 
   userId = "user/b";
   assert((await store.listPendingMutations()).length === 0, "one user must not read another user's queue");
-  await store.enqueueOfflineMutation(mutation("user-b", "2026-07-12T00:02:00.000Z"));
-
+  const userALease = pending[0]!;
+  await store.enqueueOfflineMutation({ ...userALease, queuedByUserId: undefined });
+  assert(!await store.ownsMutationForCurrentUser(userALease), "an account switch must invalidate a web replay lease");
+  await store.markMutationApplied(userALease.id, userALease.queuedByUserId);
+  assert((await store.listPendingMutations()).length === 1, "a switched account must not acknowledge the old account's row");
   userId = null;
   assert((await store.listPendingMutations()).length === 0, "a missing session must return no replay candidates");
   await store.enqueueOfflineMutation(mutation("signed-out", "2026-07-12T00:03:00.000Z"));
-
   userId = "user/a";
   pending = await store.listPendingMutations();
   assert(pending.length === 2 && !pending.some((row) => row.id === "offline-signed-out"),
     "signed-out writes must not enter a later user's queue");
-  assert(fixture.values.has(webOutboxStorageKey("user/a")) && fixture.values.has(webOutboxStorageKey("user/b")),
-    "each authenticated user must have a separate storage key");
+  assert(fixture.values.has(webOutboxStorageKey("user/a")) && fixture.values.has(webOutboxStorageKey("user/b")), "each user needs a separate key");
 }
 
 async function verifyLegacyRowsAreDiscarded() {
@@ -252,7 +253,6 @@ function createMemoryStorage(options: { failWrites?: boolean } = {}) {
   };
   return { storage, values };
 }
-
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }

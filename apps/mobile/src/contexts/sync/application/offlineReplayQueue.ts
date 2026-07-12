@@ -3,9 +3,10 @@ import { replayOfflineMutation } from "./offlineReplayPolicy";
 
 export type OfflineReplayStore = {
   listPendingMutations: () => Promise<OfflineMutation[]>;
-  markMutationApplied: (id: string) => Promise<void>;
-  markMutationConflict: (id: string, reason: string) => Promise<void>;
-  markMutationRetry: (id: string, reason: string) => Promise<void>;
+  markMutationApplied: (id: string, expectedUserId?: string) => Promise<void>;
+  markMutationConflict: (id: string, reason: string, expectedUserId?: string) => Promise<void>;
+  markMutationRetry: (id: string, reason: string, expectedUserId?: string) => Promise<void>;
+  ownsMutationForCurrentUser?: (mutation: OfflineMutation) => Promise<boolean>;
 };
 
 export type OfflineReplaySummary = {
@@ -20,23 +21,24 @@ export async function replayPendingOfflineMutations(input: { store: OfflineRepla
   const mutations = await input.store.listPendingMutations();
 
   for (const mutation of mutations) {
+    if (input.store.ownsMutationForCurrentUser && !await input.store.ownsMutationForCurrentUser(mutation)) break;
     try {
       const result = await replayOfflineMutation(mutation);
       if (result.status === "applied") {
-        await input.store.markMutationApplied(mutation.id);
+        await input.store.markMutationApplied(mutation.id, mutation.queuedByUserId);
         summary.applied += 1;
       } else if (result.status === "conflict") {
-        await input.store.markMutationConflict(mutation.id, result.reason);
+        await input.store.markMutationConflict(mutation.id, result.reason, mutation.queuedByUserId);
         summary.conflicted += 1;
       } else if (result.status === "unsupported") {
-        await input.store.markMutationConflict(mutation.id, result.reason);
+        await input.store.markMutationConflict(mutation.id, result.reason, mutation.queuedByUserId);
         summary.unsupported += 1;
       } else {
-        await input.store.markMutationRetry(mutation.id, result.reason);
+        await input.store.markMutationRetry(mutation.id, result.reason, mutation.queuedByUserId);
         summary.retried += 1;
       }
     } catch (error) {
-      await input.store.markMutationRetry(mutation.id, getErrorMessage(error));
+      await input.store.markMutationRetry(mutation.id, getErrorMessage(error), mutation.queuedByUserId);
       summary.retried += 1;
     }
   }

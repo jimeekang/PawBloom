@@ -1,5 +1,6 @@
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { OfflineMutation } from "../domain/offlineMutation";
+import { cloneOutboxValue, isOfflineMutation, withoutQueuedOwner } from "./offlineOutboxSerialization";
 
 export const LEGACY_WEB_OUTBOX_KEY = "pawbloom.sync_outbox.v1";
 const STORAGE_PREFIX = "pawbloom.sync_outbox.v2";
@@ -59,7 +60,8 @@ export function createWebOutboxStore({
     await mutateCurrentRows((rows) => {
       const duplicate = rows.some((row) => row.mutation.id === mutation.id || row.mutation.clientMutationId === mutation.clientMutationId);
       if (duplicate) return rows;
-      return [...rows, { mutation: deepClone(mutation), attempts: mutation.attempts, status: "pending", updatedAt: mutation.createdAt }];
+      const storedMutation = withoutQueuedOwner(mutation);
+      return [...rows, { mutation: cloneOutboxValue(storedMutation), attempts: storedMutation.attempts, status: "pending", updatedAt: storedMutation.createdAt }];
     });
   }
 
@@ -69,25 +71,33 @@ export function createWebOutboxStore({
     const pending = await withUserLock(userId, () => readRows(userId)
       .filter((row) => row.status === "pending")
       .sort((left, right) => left.mutation.createdAt.localeCompare(right.mutation.createdAt))
-      .map((row) => deepClone({ ...row.mutation, attempts: row.attempts })));
+      .map((row) => cloneOutboxValue({ ...row.mutation, attempts: row.attempts, queuedByUserId: userId })));
     return pending ?? [];
   }
 
-  async function markMutationApplied(id: string) {
-    await mutateCurrentRows((rows) => rows.filter((row) => row.mutation.id !== id));
+  async function markMutationApplied(id: string, expectedUserId?: string) {
+    await mutateCurrentRows((rows) => rows.filter((row) => row.mutation.id !== id), expectedUserId);
   }
 
-  async function markMutationConflict(id: string, reason: string) {
-    await mutateCurrentRows((rows) => updateRows(rows, id, reason, "conflict"));
+  async function markMutationConflict(id: string, reason: string, expectedUserId?: string) {
+    await mutateCurrentRows((rows) => updateRows(rows, id, reason, "conflict"), expectedUserId);
   }
 
-  async function markMutationRetry(id: string, reason: string) {
-    await mutateCurrentRows((rows) => updateRows(rows, id, reason));
+  async function markMutationRetry(id: string, reason: string, expectedUserId?: string) {
+    await mutateCurrentRows((rows) => updateRows(rows, id, reason), expectedUserId);
   }
 
-  async function mutateCurrentRows(update: (rows: PersistedOutboxRow[]) => PersistedOutboxRow[]) {
+  async function ownsMutationForCurrentUser(mutation: OfflineMutation) {
     const userId = await resolveUserId();
-    if (!userId) return;
+    if (!userId || mutation.queuedByUserId !== userId) return false;
+    const owned = await withUserLock(userId, () => readRows(userId)
+      .some((row) => row.status === "pending" && row.mutation.id === mutation.id));
+    return owned === true;
+  }
+
+  async function mutateCurrentRows(update: (rows: PersistedOutboxRow[]) => PersistedOutboxRow[], expectedUserId?: string) {
+    const userId = await resolveUserId();
+    if (!userId || (expectedUserId && expectedUserId !== userId)) return;
     await withUserLock(userId, () => writeRows(userId, update(readRows(userId))));
   }
 
@@ -136,7 +146,7 @@ export function createWebOutboxStore({
   }
 
   function writeRows(userId: string, rows: PersistedOutboxRow[]) {
-    const cloned = deepClone(rows);
+    const cloned = cloneOutboxValue(rows);
     if (memoryOnly) return void writeMemoryRows(userId, cloned);
     try {
       const storage = storageProvider();
@@ -167,11 +177,11 @@ export function createWebOutboxStore({
   }
 
   function readMemoryRows(userId: string) {
-    return deepClone(memoryRows.get(userId) ?? []);
+    return cloneOutboxValue(memoryRows.get(userId) ?? []);
   }
 
   function writeMemoryRows(userId: string, rows: PersistedOutboxRow[]) {
-    memoryRows.set(userId, deepClone(rows));
+    memoryRows.set(userId, cloneOutboxValue(rows));
   }
 
   function switchToMemory(userId: string, rows: PersistedOutboxRow[]) {
@@ -180,7 +190,7 @@ export function createWebOutboxStore({
     return readMemoryRows(userId);
   }
 
-  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, markMutationApplied, markMutationConflict, markMutationRetry };
+  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
 }
 
 const webOutbox = createWebOutboxStore();
@@ -190,7 +200,13 @@ export const listPendingMutations = webOutbox.listPendingMutations;
 export const markMutationApplied = webOutbox.markMutationApplied;
 export const markMutationConflict = webOutbox.markMutationConflict;
 export const markMutationRetry = webOutbox.markMutationRetry;
-export const offlineOutboxStore = { listPendingMutations, markMutationApplied, markMutationConflict, markMutationRetry };
+export const offlineOutboxStore = {
+  listPendingMutations,
+  markMutationApplied,
+  markMutationConflict,
+  markMutationRetry,
+  ownsMutationForCurrentUser: webOutbox.ownsMutationForCurrentUser,
+};
 
 function updateRows(rows: PersistedOutboxRow[], id: string, reason: string, nextStatus?: OutboxStatus) {
   const updatedAt = new Date().toISOString();
@@ -224,7 +240,7 @@ async function browserLock<T>(name: string, task: () => T | Promise<T>) {
 function parseRows(value: string): PersistedOutboxRow[] {
   const parsed: unknown = JSON.parse(value);
   if (!Array.isArray(parsed) || !parsed.every(isPersistedOutboxRow)) throw new Error("Malformed web outbox data.");
-  return deepClone(parsed);
+  return cloneOutboxValue(parsed);
 }
 
 function isPersistedOutboxRow(value: unknown): value is PersistedOutboxRow {
@@ -232,18 +248,4 @@ function isPersistedOutboxRow(value: unknown): value is PersistedOutboxRow {
   const row = value as Partial<PersistedOutboxRow>;
   return (row.status === "pending" || row.status === "conflict") && Number.isInteger(row.attempts)
     && typeof row.updatedAt === "string" && isOfflineMutation(row.mutation);
-}
-
-function isOfflineMutation(value: unknown): value is OfflineMutation {
-  if (!value || typeof value !== "object") return false;
-  const mutation = value as Partial<OfflineMutation>;
-  return typeof mutation.id === "string" && typeof mutation.clientMutationId === "string" && typeof mutation.aggregate === "string"
-    && (mutation.operation === "insert" || mutation.operation === "update" || mutation.operation === "delete")
-    && Boolean(mutation.payload && typeof mutation.payload === "object" && !Array.isArray(mutation.payload))
-    && typeof mutation.createdAt === "string" && Number.isInteger(mutation.attempts);
-}
-
-function deepClone<T>(value: T): T {
-  try { if (typeof globalThis.structuredClone === "function") return globalThis.structuredClone(value); } catch { /* JSON fallback */ }
-  return JSON.parse(JSON.stringify(value)) as T;
 }

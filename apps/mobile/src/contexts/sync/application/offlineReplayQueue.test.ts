@@ -64,4 +64,21 @@ async function runReplayQueueTests() {
   if (unsupportedSummary.unsupported !== 1 || conflictedIds.at(-1) !== "offline-unknown-1") {
     throw new Error("replay queue must park mutations without a registered handler as conflicts for review");
   }
+
+  let replayedAfterAccountSwitch = false;
+  registerOfflineReplayHandler("queue-account-switch", "insert", async () => {
+    replayedAfterAccountSwitch = true;
+    return { status: "applied", reason: "must not run" };
+  });
+  const switchedMutation = { ...buildMutation("offline-user-a", "queue-account-switch"), queuedByUserId: "user-a" };
+  const switchedSummary = await replayPendingOfflineMutations({
+    store: {
+      ...store,
+      listPendingMutations: async () => [switchedMutation],
+      ownsMutationForCurrentUser: async () => false,
+    },
+  });
+  if (replayedAfterAccountSwitch || switchedSummary.applied + switchedSummary.conflicted + switchedSummary.retried + switchedSummary.unsupported !== 0) {
+    throw new Error("replay queue must stop before dispatch when the authenticated account changes");
+  }
 }
