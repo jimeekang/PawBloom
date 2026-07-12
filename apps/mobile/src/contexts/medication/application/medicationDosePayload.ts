@@ -1,5 +1,7 @@
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 
+type MedicationDoseCareNote = { version: 1; conditionName?: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string };
+
 export type MedicationDoseInsertPayload = {
   pet_id: string;
   created_by: string;
@@ -58,10 +60,48 @@ export function mergeSavedDoseIntoList(doses: DoseRecord[], saved: DoseRecord) {
   })];
 }
 
+export function mapMedicationDoseInsertPayloadToRecord(payload: MedicationDoseInsertPayload, id: string): DoseRecord {
+  const careNote = decodeMedicationDoseCareNote(payload.reaction_note);
+  return {
+    id,
+    petId: payload.pet_id,
+    scheduleId: payload.schedule_id ?? undefined,
+    doseDate: payload.dose_date,
+    medicationName: payload.medication_name,
+    scheduledAt: formatTime(payload.scheduled_at),
+    status: payload.status,
+    recordedAt: payload.recorded_at ?? undefined,
+    ...careNote,
+  };
+}
+
+export function mergeMedicationDoseUpdatePayloadIntoRecord(current: DoseRecord, payload: Record<string, unknown>): DoseRecord {
+  const careNote = typeof payload.reaction_note === "string" || payload.reaction_note === null ? decodeMedicationDoseCareNote(payload.reaction_note) : {};
+  return {
+    ...current,
+    medicationName: typeof payload.medication_name === "string" ? payload.medication_name : current.medicationName,
+    scheduledAt: typeof payload.scheduled_at === "string" ? formatTime(payload.scheduled_at) : current.scheduledAt,
+    status: isDoseStatus(payload.status) ? payload.status : current.status,
+    recordedAt: payload.recorded_at === null ? undefined : typeof payload.recorded_at === "string" ? payload.recorded_at : current.recordedAt,
+    ...careNote,
+  };
+}
+
 export function encodeMedicationDoseCareNote(input: Pick<MedicationDosePayloadInput, "conditionName" | "dosageLabel" | "administeredAmount" | "reactionNote">): string | null {
   const careNote = { version: 1, conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), reactionNote: cleanOptional(input.reactionNote) };
   if (!careNote.conditionName && !careNote.dosageLabel && !careNote.administeredAmount && !careNote.reactionNote) return null;
   return JSON.stringify(careNote);
+}
+
+export function decodeMedicationDoseCareNote(value: string | null | undefined): Omit<MedicationDoseCareNote, "version"> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value) as Partial<MedicationDoseCareNote>;
+    if (parsed.version !== 1) return { reactionNote: value };
+    return { conditionName: cleanOptional(parsed.conditionName), dosageLabel: cleanOptional(parsed.dosageLabel), administeredAmount: cleanOptional(parsed.administeredAmount), reactionNote: cleanOptional(parsed.reactionNote) };
+  } catch {
+    return { reactionNote: value };
+  }
 }
 
 export function buildDoseRecordedAt(status: DoseStatus, recordedAt = new Date()) {
@@ -87,4 +127,12 @@ function localDateKey(date = new Date()) {
 
 function cleanOptional(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
+}
+
+function isDoseStatus(value: unknown): value is DoseStatus {
+  return value === "pending" || value === "completed" || value === "skipped" || value === "partial";
 }

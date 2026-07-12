@@ -1,17 +1,19 @@
-import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
-import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
-import { buildMedicationDoseInsertOfflineMutation, buildMedicationDoseUpdateOfflineMutation } from "./medicationOfflineReplay";
+import { isRetriableOfflineError, offlineErrorMessage } from "../../sync/application/offlineErrorPolicy";
+import { createClientMutationId } from "../../sync/application/offlineMutationPayload";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
-import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
+import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, decodeMedicationDoseCareNote, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
 import { localDateKey, useCurrentLocalDateKey } from "./medicationDoseDate";
-export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote } from "./medicationDosePayload";
+import { findMedicationDoseInCachedLists, removeMedicationDoseFromCachedLists, replaceMedicationDoseInCachedLists } from "./medicationDoseCache";
+import { enqueueMedicationDoseInsert, enqueueMedicationDoseUpdate } from "./medicationDoseOfflineQueue";
+export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, decodeMedicationDoseCareNote, encodeMedicationDoseCareNote } from "./medicationDosePayload";
+export { removeMedicationDoseFromList, replaceMedicationDoseInList } from "./medicationDoseCache";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
 type DoseUpdate = Database["public"]["Tables"]["medication_doses"]["Update"];
 export type QuickMedicationDoseInput = { scheduleId?: string; doseDate?: string; scheduledTime?: string; conditionName?: string; medicationName: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string; status?: DoseStatus };
 export type UpdateMedicationDoseInput = QuickMedicationDoseInput & { id: string; scheduledTime?: string };
-type MedicationDoseCareNote = { version: 1; conditionName?: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string };
 export const medicationDoseKeys = {
   today: (petId: string | null, dateKey = localDateKey()) => ["medication_doses", "today", petId, dateKey] as const,
   range: (petId: string | null, fromDateKey: string, toDateKey: string) => ["medication_doses", "range", petId, fromDateKey, toDateKey] as const,
@@ -29,10 +31,11 @@ export function nextDoseStatus(status: DoseStatus): DoseStatus {
 export function shouldCountDoseAsMedicationRecorded(status: DoseStatus) {
   return status !== "pending";
 }
-export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInput): DoseUpdate {
+export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInput, clientMutationId?: string): DoseUpdate {
   const scheduledAt = buildScheduledAtForTime(input.scheduledTime);
   const payload: DoseUpdate = { medication_name: input.medicationName.trim() || "투약", reaction_note: encodeMedicationDoseCareNote(input), updated_at: new Date().toISOString() };
 
+  if (clientMutationId) payload.client_mutation_id = clientMutationId;
   if (scheduledAt) payload.scheduled_at = scheduledAt;
   if (input.status) {
     payload.status = input.status;
@@ -40,22 +43,6 @@ export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInpu
   }
 
   return payload;
-}
-export function removeMedicationDoseFromList<T extends { id: string }>(doses: T[] | undefined, id: string) {
-  return (doses ?? []).filter((dose) => dose.id !== id);
-}
-export function replaceMedicationDoseInList<T extends { id: string }>(doses: T[] | undefined, saved: T) {
-  return (doses ?? []).map((dose) => (dose.id === saved.id ? saved : dose));
-}
-export function decodeMedicationDoseCareNote(value: string | null | undefined): Omit<MedicationDoseCareNote, "version"> {
-  if (!value) return {};
-  try {
-    const parsed = JSON.parse(value) as Partial<MedicationDoseCareNote>;
-    if (parsed.version !== 1) return { reactionNote: value };
-    return { conditionName: cleanOptional(parsed.conditionName), dosageLabel: cleanOptional(parsed.dosageLabel), administeredAmount: cleanOptional(parsed.administeredAmount), reactionNote: cleanOptional(parsed.reactionNote) };
-  } catch {
-    return { reactionNote: value };
-  }
 }
 export function useTodayMedicationDoses(petId: string | null) {
   const todayDateKey = useCurrentLocalDateKey();
@@ -84,15 +71,22 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
   return useMutation({
     mutationFn: async (input: QuickMedicationDoseInput) => {
       if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
-      const status = input.status ?? "pending";
+      const clientMutationId = createClientMutationId();
       const now = new Date();
-      const payload = buildMedicationDoseInsertPayload({ ...input, petId, userId, now });
-      const { data, error } = await supabase.from("medication_doses").insert(payload).select().single();
-      if (error) {
-        await enqueueOfflineMutation(buildMedicationDoseInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown> }));
-        throw new Error(error.message);
+      const payload = buildMedicationDoseInsertPayload({ ...input, petId, userId, now, clientMutationId });
+      try {
+        const { data, error } = await supabase.from("medication_doses").insert(payload).select().single();
+        if (error) {
+          if (!isRetriableOfflineError(error)) throw new Error(error.message);
+          const dose = await enqueueMedicationDoseInsert({ petId, userId, formInput: { ...input }, insertPayload: payload, clientMutationId });
+          return { dose, queued: true };
+        }
+        return { dose: mapDoseRow(data), queued: false };
+      } catch (error) {
+        if (!isRetriableOfflineError(error)) throw new Error(offlineErrorMessage(error));
+        const dose = await enqueueMedicationDoseInsert({ petId, userId, formInput: { ...input }, insertPayload: payload, clientMutationId });
+        return { dose, queued: true };
       }
-      return mapDoseRow(data);
     },
     onMutate: async (input) => {
       const todayKey = medicationDoseKeys.today(petId, todayDateKey);
@@ -113,9 +107,9 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       if (withoutOptimisticDose.length > 0) queryClient.setQueryData(todayKey, withoutOptimisticDose);
       else queryClient.removeQueries({ queryKey: todayKey, exact: true });
     },
-    onSuccess: (dose, _input, context) => {
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, todayDateKey), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), dose));
-      void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+    onSuccess: (result, _input, context) => {
+      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, todayDateKey), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), result.dose));
+      if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
 }
@@ -124,16 +118,28 @@ export function useUpdateMedicationDose(petId: string | null) {
   return useMutation({
     mutationFn: async (input: UpdateMedicationDoseInput) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
-      const { data, error } = await supabase.from("medication_doses").update(buildMedicationDoseUpdatePayload(input)).eq("id", input.id).eq("pet_id", petId).select().single();
-      if (error) {
-        await enqueueOfflineMutation(buildMedicationDoseUpdateOfflineMutation({ petId, input: input as unknown as Record<string, unknown> }));
-        throw new Error(error.message);
+      const clientMutationId = createClientMutationId();
+      const updatePayload = buildMedicationDoseUpdatePayload(input, clientMutationId);
+      const currentDose = findMedicationDoseInCachedLists(queryClient, petId, input.id);
+      try {
+        const { data, error } = await supabase.from("medication_doses").update(updatePayload).eq("id", input.id).eq("pet_id", petId).select().single();
+        if (error) {
+          if (!isRetriableOfflineError(error)) throw new Error(error.message);
+          if (!currentDose) throw new Error("오프라인 수정 원본을 찾지 못했습니다.");
+          const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { ...input }, updatePayload: { ...updatePayload }, clientMutationId, currentDose });
+          return { dose, queued: true };
+        }
+        return { dose: mapDoseRow(data), queued: false };
+      } catch (error) {
+        if (!isRetriableOfflineError(error)) throw new Error(offlineErrorMessage(error));
+        if (!currentDose) throw new Error("오프라인 수정 원본을 찾지 못했습니다.");
+        const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { ...input }, updatePayload: { ...updatePayload }, clientMutationId, currentDose });
+        return { dose, queued: true };
       }
-      return mapDoseRow(data);
     },
-    onSuccess: (dose) => {
-      replaceMedicationDoseInCachedLists(queryClient, petId, dose);
-      void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+    onSuccess: (result) => {
+      replaceMedicationDoseInCachedLists(queryClient, petId, result.dose);
+      if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
 }
@@ -158,15 +164,25 @@ export function useUpdateMedicationDoseStatus(petId: string | null) {
   const todayKey = medicationDoseKeys.today(petId, todayDateKey);
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: DoseStatus }) => {
-      if (!supabase) throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
-      const { data, error } = await supabase
-        .from("medication_doses")
-        .update(buildDoseStatusUpdate(status))
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      return mapDoseRow(data);
+      if (!supabase || !petId) throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
+      const clientMutationId = createClientMutationId();
+      const updatePayload = buildDoseStatusUpdate(status, clientMutationId);
+      const currentDose = findMedicationDoseInCachedLists(queryClient, petId, id);
+      try {
+        const { data, error } = await supabase.from("medication_doses").update(updatePayload).eq("id", id).eq("pet_id", petId).select().single();
+        if (error) {
+          if (!isRetriableOfflineError(error)) throw new Error(error.message);
+          if (!currentDose) throw new Error("오프라인 투약 원본을 찾지 못했습니다.");
+          const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { id, status }, updatePayload, clientMutationId, currentDose });
+          return { dose, queued: true };
+        }
+        return { dose: mapDoseRow(data), queued: false };
+      } catch (error) {
+        if (!isRetriableOfflineError(error)) throw new Error(offlineErrorMessage(error));
+        if (!currentDose) throw new Error("오프라인 투약 원본을 찾지 못했습니다.");
+        const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { id, status }, updatePayload, clientMutationId, currentDose });
+        return { dose, queued: true };
+      }
     },
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: todayKey });
@@ -179,13 +195,13 @@ export function useUpdateMedicationDoseStatus(petId: string | null) {
     onError: (_error, _variables, context) => {
       if (context?.previousToday) queryClient.setQueryData(todayKey, context.previousToday);
     },
-    onSuccess: (dose) => {
+    onSuccess: (result) => {
       queryClient.setQueryData<DoseRecord[]>(todayKey, (current) =>
-        (current ?? []).map((item) => (item.id === dose.id ? dose : item)),
+        (current ?? []).map((item) => (item.id === result.dose.id ? result.dose : item)),
       );
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+    onSettled: (result) => {
+      if (!result?.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
 }
@@ -228,23 +244,10 @@ function buildScheduledAtForDateTime(doseDate?: string, scheduledTime?: string, 
   }
   return scheduledAt;
 }
-function buildDoseStatusUpdate(status: DoseStatus) {
+function buildDoseStatusUpdate(status: DoseStatus, clientMutationId: string) {
   const now = new Date();
-  return { status, recorded_at: buildDoseRecordedAt(status, now), updated_at: now.toISOString() };
+  return { status, recorded_at: buildDoseRecordedAt(status, now), client_mutation_id: clientMutationId, updated_at: now.toISOString() };
 }
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
-}
-function removeMedicationDoseFromCachedLists(queryClient: QueryClient, petId: string | null, id: string) {
-  for (const [queryKey, current] of queryClient.getQueriesData<DoseRecord[]>({ queryKey: ["medication_doses"] })) {
-    if (Array.isArray(current) && isMedicationDoseListCacheForPet(queryKey, petId)) queryClient.setQueryData<DoseRecord[]>(queryKey, removeMedicationDoseFromList(current, id));
-  }
-}
-function replaceMedicationDoseInCachedLists(queryClient: QueryClient, petId: string | null, saved: DoseRecord) {
-  for (const [queryKey, current] of queryClient.getQueriesData<DoseRecord[]>({ queryKey: ["medication_doses"] })) {
-    if (Array.isArray(current) && isMedicationDoseListCacheForPet(queryKey, petId)) queryClient.setQueryData<DoseRecord[]>(queryKey, replaceMedicationDoseInList(current, saved));
-  }
-}
-function isMedicationDoseListCacheForPet(queryKey: QueryKey, petId: string | null) {
-  return queryKey[0] === "medication_doses" && (queryKey[1] === "today" || queryKey[1] === "range") && queryKey[2] === petId;
 }
