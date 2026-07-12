@@ -4,6 +4,12 @@ import { SurfaceCard } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
+import { formatReportExpiry } from "./reportWorkflow";
+
+type ReportMetricSummary = Pick<
+  ReportDraftSummary,
+  "diaryCount" | "medicationCompletedCount" | "medicationPendingCount" | "medicationAttentionCount"
+>;
 
 export function ReportListSection({ icon, title, items }: { icon: AppIconName; title: string; items: string[] }) {
   return (
@@ -13,8 +19,8 @@ export function ReportListSection({ icon, title, items }: { icon: AppIconName; t
         <Text style={styles.title}>{title}</Text>
       </View>
       <View style={styles.list}>
-        {items.map((item) => (
-          <View key={item} style={styles.listRow}>
+        {items.map((item, index) => (
+          <View key={`${index}:${item}`} style={styles.listRow}>
             <View style={styles.listDot} />
             <Text style={styles.body}>{item}</Text>
           </View>
@@ -24,10 +30,11 @@ export function ReportListSection({ icon, title, items }: { icon: AppIconName; t
   );
 }
 
-export function ReportMetricsCard({ summary, conditionTrend }: { summary: ReportDraftSummary; conditionTrend: string }) {
+export function ReportMetricsCard({ summary, conditionTrend, petDetails }: { summary: ReportMetricSummary; conditionTrend: string; petDetails?: string }) {
   return (
     <SurfaceCard>
       <Text style={styles.title}>{t("ko", "reports.recordCounts")}</Text>
+      {petDetails ? <Text selectable style={styles.petDetails}>{petDetails}</Text> : null}
       <MetricRow icon="diary" label={t("ko", "reports.diaryCount")} value={`${summary.diaryCount}`} />
       <MetricRow icon="condition" label={t("ko", "reports.conditionTrend")} value={conditionTrend} />
       <MetricRow
@@ -42,16 +49,18 @@ export function ReportMetricsCard({ summary, conditionTrend }: { summary: Report
   );
 }
 
-export function MockShareCard() {
+export function ReportShareCard({ shareUrl, expiresAt }: { shareUrl: string; expiresAt: string }) {
   return (
     <SurfaceCard>
       <View style={styles.sectionTitleRow}>
         <AppIcon name="share" size={iconSize.sm} color={colors.orangeDeep} />
-        <Text style={styles.title}>{t("ko", "reports.mockShareTitle")}</Text>
+        <Text style={styles.title}>{t("ko", "reports.actualShareTitle")}</Text>
       </View>
-      <Text style={styles.body}>{t("ko", "reports.mockShareCopy")}</Text>
-      <Text style={styles.mockUrl}>{t("ko", "reports.mockShareUrl")}</Text>
-      <Text style={styles.shareCaption}>{t("ko", "reports.mockShareExpiry")}</Text>
+      <Text style={styles.body}>{t("ko", "reports.actualShareCopy")}</Text>
+      <Text style={styles.shareLabel}>{t("ko", "reports.shareUrlLabel")}</Text>
+      <Text selectable style={styles.shareUrl}>{shareUrl}</Text>
+      <Text style={styles.shareCaption}>{t("ko", "reports.actualShareExpiry").replace("{expiry}", formatReportExpiry(expiresAt))}</Text>
+      <Text style={styles.shareCaption}>{t("ko", "reports.selectableLink")}</Text>
     </SurfaceCard>
   );
 }
@@ -94,6 +103,11 @@ const styles = StyleSheet.create({
     ...type.body,
     flex: 1,
   },
+  petDetails: {
+    ...type.caption,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+  },
   metricRow: {
     minHeight: 42,
     flexDirection: "row",
@@ -111,10 +125,15 @@ const styles = StyleSheet.create({
     textAlign: "right",
     maxWidth: "48%",
   },
-  mockUrl: {
+  shareLabel: {
+    ...type.caption,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+  },
+  shareUrl: {
     ...type.bodyStrong,
     color: colors.diagnosis,
-    marginTop: spacing.md,
+    marginTop: spacing.xs,
   },
   shareCaption: {
     ...type.caption,

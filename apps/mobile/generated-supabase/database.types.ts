@@ -775,7 +775,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      confirm_vet_report: {
+        Args: {
+          target_pet_id: string
+          target_report_id: string
+        }
+        Returns: {
+          confirmed_by_owner: boolean
+          id: string
+          status: Database["public"]["Enums"]["report_status"]
+        }[]
+      }
+      mark_vet_report_shared: {
+        Args: {
+          target_pet_id: string
+          target_report_id: string
+        }
+        Returns: {
+          confirmed_by_owner: boolean
+          id: string
+          status: Database["public"]["Enums"]["report_status"]
+        }[]
+      }
     }
     Enums: {
       diary_entry_category:

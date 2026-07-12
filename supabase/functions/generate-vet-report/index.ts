@@ -17,25 +17,35 @@ Deno.serve(async (request) => {
     const supabase = serviceClient();
     const user = await requireUser(request, supabase);
     const body = await readJson<RequestBody>(request);
+    if (!body.petId || ![3, 7, 14].includes(body.rangeDays)) {
+      throw new Error("A valid pet and report range are required");
+    }
     await requirePetMember(supabase, body.petId, user.id, ["owner", "caregiver"]);
 
     const since = new Date(Date.now() - body.rangeDays * 24 * 60 * 60 * 1000).toISOString();
-    const [{ data: pet }, { data: entries }, { data: doses }] = await Promise.all([
+    const [petResult, entriesResult, dosesResult] = await Promise.all([
       supabase.from("pets").select("name,species,breed,weight_kg").eq("id", body.petId).single(),
       supabase.from("diary_entries").select("category,summary,occurred_at,condition_score").eq("pet_id", body.petId).gte("occurred_at", since),
       supabase.from("medication_doses").select("medication_name,status,scheduled_at,reaction_note").eq("pet_id", body.petId).gte("scheduled_at", since),
     ]);
+    if (petResult.error) throw petResult.error;
+    if (entriesResult.error) throw entriesResult.error;
+    if (dosesResult.error) throw dosesResult.error;
+
+    const pet = petResult.data;
+    const entries = entriesResult.data;
+    const doses = dosesResult.data;
 
     const englishSummary = [
-      `${pet?.name ?? "The pet"} has ${entries?.length ?? 0} diary records and ${doses?.length ?? 0} medication records in the last ${body.rangeDays} days.`,
+      `${pet.name} has ${entries.length} diary records and ${doses.length} medication records in the last ${body.rangeDays} days.`,
       "The report is based only on owner-entered records.",
       disclaimer,
     ].join(" ");
 
     const payload = {
       pet,
-      entries: entries ?? [],
-      medicationDoses: doses ?? [],
+      entries,
+      medicationDoses: doses,
       disclaimer,
     };
 
@@ -77,4 +87,3 @@ Deno.serve(async (request) => {
     return errorResponse(error instanceof Error ? error.message : "Failed to generate report", 400);
   }
 });
-

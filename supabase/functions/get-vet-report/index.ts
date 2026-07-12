@@ -27,12 +27,15 @@ Deno.serve(async (request) => {
 
     const { data: report, error: reportError } = await supabase
       .from("vet_reports")
-      .select("id,range_days,status,english_summary,payload,created_at")
+      .select("id,range_days,status,english_summary,payload,confirmed_by_owner,created_at")
       .eq("id", share.report_id)
       .single();
 
     if (reportError || !report) {
       return errorResponse("Report not found", 404);
+    }
+    if (!report.confirmed_by_owner || report.status === "draft") {
+      return errorResponse("Report has not been confirmed for sharing", 404);
     }
 
     await supabase.from("report_share_tokens").update({ last_accessed_at: new Date().toISOString() }).eq("id", share.id);
@@ -49,4 +52,3 @@ Deno.serve(async (request) => {
     return errorResponse(error instanceof Error ? error.message : "Failed to read report", 400);
   }
 });
-
