@@ -3,55 +3,36 @@ import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "./iconography";
 import { colors, iconSize, radius, spacing, type } from "./tokens";
-import { formatTimeValue, parseTimeValue } from "./TimePickerField.logic";
+import { displayTimeValue, formatTimeValue, parseTimeValue } from "./TimePickerField.logic";
 
 type Props = {
   value: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 };
 
-export function TimePickerField({ value, onChange }: Props) {
+export function TimePickerField({ value, placeholder = "", onChange }: Props) {
   const [open, setOpen] = useState(false);
   const selectedDate = parseTimeValue(value);
 
   function handleValueChange(_event: DateTimePickerChangeEvent, date?: Date) {
-    if (Platform.OS !== "ios") setOpen(false);
+    setOpen(false);
     if (!date) return;
     onChange(formatTimeValue(date));
   }
 
-  if (Platform.OS === "ios") {
-    return (
-      <View style={styles.iosWrap}>
-        <AppIcon name="time" size={iconSize.md} color={colors.orangeDeep} />
-        <DateTimePicker value={selectedDate} mode="time" display="compact" onValueChange={handleValueChange} />
-      </View>
-    );
-  }
-
   return (
     <View>
-      <Pressable style={styles.androidButton} onPress={() => setOpen(true)}>
+      <Pressable accessibilityRole="button" accessibilityLabel={displayTimeValue(value, placeholder)} style={styles.androidButton} onPress={() => setOpen(true)}>
         <AppIcon name="time" size={iconSize.md} color={colors.orangeDeep} />
-        <Text style={styles.value}>{value}</Text>
+        <Text style={[styles.value, !value && styles.placeholder]}>{displayTimeValue(value, placeholder)}</Text>
       </Pressable>
-      {open ? <DateTimePicker value={selectedDate} mode="time" display="default" onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
+      {open ? <DateTimePicker value={selectedDate} mode="time" display={Platform.OS === "ios" ? "spinner" : "default"} onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  iosWrap: {
-    minHeight: 48,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
   androidButton: {
     minHeight: 48,
     borderRadius: radius.md,
@@ -65,5 +46,8 @@ const styles = StyleSheet.create({
   },
   value: {
     ...type.bodyStrong,
+  },
+  placeholder: {
+    color: colors.textSoft,
   },
 });

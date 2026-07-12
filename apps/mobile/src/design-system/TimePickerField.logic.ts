@@ -12,3 +12,7 @@ export function parseTimeValue(value: string, fallback = new Date()) {
 export function formatTimeValue(date: Date) {
   return `${`${date.getHours()}`.padStart(2, "0")}:${`${date.getMinutes()}`.padStart(2, "0")}`;
 }
+
+export function displayTimeValue(value: string, placeholder: string) {
+  return value || placeholder;
+}

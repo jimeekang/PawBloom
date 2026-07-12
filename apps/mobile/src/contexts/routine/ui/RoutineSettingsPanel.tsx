@@ -60,7 +60,7 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
           {(["breakfast", "lunch", "dinner"] as const).map((slot) => (
             <View key={slot} style={styles.timeRow}>
               <Text style={styles.timeLabel}>{t("ko", `routine.${slot}` as "routine.breakfast" | "routine.lunch" | "routine.dinner")}</Text>
-              <TimePickerField value={draft.food.meals[slot]?.localTime ?? ""} onChange={(value) => setDraft((current) => updateMealTime(current, slot, value))} />
+              <TimePickerField value={draft.food.meals[slot]?.localTime ?? ""} placeholder={t("ko", "routine.mealTimeUnset")} onChange={(value) => setDraft((current) => updateMealTime(current, slot, value))} />
               {draft.food.meals[slot]?.localTime ? <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "routine.mealTimeClear")} onPress={() => setDraft((current) => updateMealTime(current, slot, undefined))}><Text style={styles.clearTime}>{t("ko", "routine.mealTimeClear")}</Text></Pressable> : null}
             </View>
           ))}

@@ -1,4 +1,4 @@
-import { formatTimeValue, parseTimeValue } from "./TimePickerField.logic";
+import { displayTimeValue, formatTimeValue, parseTimeValue } from "./TimePickerField.logic";
 
 const fallback = new Date(2026, 5, 30, 8, 30, 0, 0);
 
@@ -14,4 +14,8 @@ if (formatTimeValue(invalid) !== "08:30") {
 
 if (formatTimeValue(new Date(2026, 5, 30, 21, 9, 0, 0)) !== "21:09") {
   throw new Error("time picker values must format as HH:mm");
+}
+
+if (displayTimeValue("", "미설정") !== "미설정" || displayTimeValue("08:30", "미설정") !== "08:30") {
+  throw new Error("empty time picker values must remain visibly unset");
 }
