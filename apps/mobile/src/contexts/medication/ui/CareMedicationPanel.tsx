@@ -7,7 +7,7 @@ import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
-import { createEmptyQuickMedicationState, createQuickMedicationEditState, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete } from "./careMedicationPanelState";
+import { createEmptyQuickMedicationState, createQuickMedicationEditState, doseStatusUpdateForEdit, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete } from "./careMedicationPanelState";
 
 export type QuickMedicationSaveHandler = (input: QuickMedicationDoseInput) => void | Promise<void>;
 export type QuickMedicationFormProps = {
@@ -69,7 +69,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
 
     try {
       if (editingDose && onUpdate) {
-        await onUpdate({ id: editingDose.id, conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status, scheduledTime });
+        await onUpdate({ id: editingDose.id, conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status: doseStatusUpdateForEdit(editingDose.status, status), scheduledTime });
         onCancelEdit?.();
       } else {
         await onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status });

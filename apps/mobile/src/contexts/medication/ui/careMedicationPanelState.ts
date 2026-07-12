@@ -47,6 +47,10 @@ export function shouldCloseMedicationEditAfterDelete(deleted: boolean | void) {
   return deleted !== false;
 }
 
+export function doseStatusUpdateForEdit(currentStatus: DoseStatus, selectedStatus: DoseStatus) {
+  return currentStatus === selectedStatus ? undefined : selectedStatus;
+}
+
 export function careStatusActionLabel(status: "completed" | "skipped") {
   return status === "completed" ? "먹였어요" : "못 먹였어요";
 }

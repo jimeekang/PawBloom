@@ -22,6 +22,7 @@ export function createLocalDoseRecord(petId: string, input: QuickMedicationDoseI
 
 export function updateLocalDoseRecord(current: DoseRecord, input: QuickMedicationDoseInput & { scheduledTime?: string }): DoseRecord {
   const status = input.status ?? current.status;
+  const statusChanged = input.status !== undefined && input.status !== current.status;
 
   return {
     ...current,
@@ -31,7 +32,7 @@ export function updateLocalDoseRecord(current: DoseRecord, input: QuickMedicatio
     administeredAmount: input.administeredAmount?.trim() || undefined,
     scheduledAt: input.scheduledTime || current.scheduledAt,
     status,
-    recordedAt: status === "pending" ? undefined : new Date().toISOString(),
+    recordedAt: statusChanged ? (status === "pending" ? undefined : new Date().toISOString()) : current.recordedAt,
     reactionNote: input.reactionNote?.trim() || undefined,
   };
 }
