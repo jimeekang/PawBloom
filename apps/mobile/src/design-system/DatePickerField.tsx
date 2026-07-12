@@ -18,8 +18,9 @@ export function DatePickerField({ value, onChange, placeholder, allowClear = fal
   const selectedDate = parseDateValue(value);
   const displayValue = value || placeholder;
 
-  function handleValueChange(_event: DateTimePickerChangeEvent, date: Date) {
+  function handleValueChange(_event: DateTimePickerChangeEvent, date?: Date) {
     if (Platform.OS !== "ios") setOpen(false);
+    if (!date) return;
     onChange(formatDateValue(date));
   }
 

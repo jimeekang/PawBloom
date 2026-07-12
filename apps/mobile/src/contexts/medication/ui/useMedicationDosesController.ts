@@ -59,11 +59,11 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
   }
 
   function updateDoseRecord(input: UpdateMedicationDoseInput) {
-    return saveMedicationDoseEdit({ input, updateMedicationDose, activePetId, databaseMode, setDoses, onLocalDosesChanged, setNotice: onNotice, onSaved });
+    return saveMedicationDoseEdit({ input, updateMedicationDose, activePetId, databaseMode, doses, setDoses, onLocalDosesChanged, setNotice: onNotice, onSaved });
   }
 
   function deleteDoseRecord(dose: DoseRecord) {
-    return confirmAndDeleteMedicationDose({ dose, deleteMedicationDose, activePetId, databaseMode, setDoses, onLocalDosesChanged, setNotice: onNotice, onSaved });
+    return confirmAndDeleteMedicationDose({ dose, deleteMedicationDose, activePetId, databaseMode, doses, setDoses, onLocalDosesChanged, setNotice: onNotice, onSaved });
   }
 
   return {

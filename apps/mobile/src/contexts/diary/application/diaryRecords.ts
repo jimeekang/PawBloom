@@ -16,7 +16,7 @@ type DiaryRow = Database["public"]["Tables"]["diary_entries"]["Row"];
 type DiaryInsert = Database["public"]["Tables"]["diary_entries"]["Insert"];
 type DiaryRowWithMedia = DiaryRow & { media_assets?: { id: string }[] | null };
 
-const diaryEntrySelect = "id,pet_id,category,occurred_at,summary,condition_score,entry_date,created_by,client_mutation_id,created_at,updated_at,media_assets(id)";
+export const diaryEntrySelect = "id,pet_id,category,occurred_at,summary,condition_score,entry_date,record_origin,created_by,client_mutation_id,created_at,updated_at,media_assets(id)";
 
 export type UpdateDiaryEntryInput = DiaryUpdateInput;
 
@@ -130,10 +130,11 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
         summary: encodeDiarySummary({ category: input.category, memo: input.summary, detail: input.detail }) || defaultDiarySummary(input.category),
         condition_score: input.category === "condition" ? input.conditionScore ?? 3 : null,
         entry_date: entryDate,
+        record_origin: input.origin === "checklist" ? "checklist" : "diary",
         occurred_at: buildOccurredAtForTime(entryDate, input.occurredTime) ?? buildOccurredAt(entryDate),
       };
 
-      const { data, error } = await supabase.from("diary_entries").insert(payload).select().single();
+      const { data, error } = await supabase.from("diary_entries").insert(payload).select(diaryEntrySelect).single();
       if (error) {
         await enqueueOfflineMutation(buildDiaryInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown> }));
         throw new Error(error.message);
@@ -143,7 +144,7 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
         await uploadDiaryPhoto(supabase, userId, petId, data.id, photo, index + 1);
       }
 
-      return mapDiaryRow({ ...data, media_assets: input.photos?.map((_, index) => ({ id: `${data.id}-${index}` })) ?? [] });
+      return mapDiaryRow({ ...data, media_assets: input.photos?.map((_, index) => ({ id: `${data.id}-${index}` })) ?? [] } as DiaryRowWithMedia);
     },
     onSuccess: (entry) => {
       upsertDiaryEntryInCachedLists(queryClient, petId, entry);

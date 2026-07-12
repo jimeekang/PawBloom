@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useActiveCareSetup, useCreateCareSetup } from "../application/carePlanRecords";
-import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../domain/carePlan";
-import { getLocalDateKey } from "../../../shared-kernel/date";
+import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
 import { t } from "../../../i18n/translations";
+import { buildNextLocalCareSetup } from "./careSetupLocalState";
 
 type Params = {
   databaseMode: boolean;
@@ -20,9 +20,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
 
   function saveCareSetup(input: CareSetupInput) {
     if (!databaseMode) {
-      const condition = input.conditionName ? { id: `local-condition-${Date.now()}`, name: input.conditionName, status: "active" as const } : undefined;
-      const schedule: CareMedicationSchedule = { id: `local-schedule-${Date.now()}`, medicationId: `local-medication-${Date.now()}`, medicationName: input.medicationName || t("ko", "care.quickMedicationName"), dosageLabel: input.dosageLabel || "-", conditionId: condition?.id, conditionName: input.conditionName, localTime: `${input.localTime || "08:00"}:00`, startsOn: input.startsOn || getLocalDateKey(), endsOn: input.endsOn || undefined, recurrenceIntervalDays: input.recurrenceIntervalDays ?? 1 };
-      setLocalCareSetup({ conditions: condition ? [condition, ...localCareSetup.conditions] : localCareSetup.conditions, conditionName: input.conditionName, planTitle: input.planTitle, schedules: [schedule, ...localCareSetup.schedules] });
+      setLocalCareSetup(buildNextLocalCareSetup(localCareSetup, input));
       onNotice(t("ko", "care.setupSaved"));
       onSaved();
       return;

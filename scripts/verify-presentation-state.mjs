@@ -39,6 +39,7 @@ const tests = [
   "apps/mobile/src/contexts/medication/ui/todayMedicationAgenda.test.ts",
   "apps/mobile/src/contexts/medication/ui/CareMedicationPanel.test.tsx",
   "apps/mobile/src/contexts/care/ui/ProfileCareDefaultsPanel.test.tsx",
+  "apps/mobile/src/contexts/care/ui/useCareSetupState.test.ts",
   "apps/mobile/src/contexts/sync/application/offlineMutationPayload.test.ts",
   "apps/mobile/src/contexts/sync/application/offlineReplayPolicy.test.ts",
   "apps/mobile/src/contexts/sync/application/offlineReplayQueue.test.ts",

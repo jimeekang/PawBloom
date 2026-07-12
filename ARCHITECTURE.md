@@ -48,7 +48,7 @@ apps/mobile/src/contexts/<context>/
 레이어 규칙:
 
 - `domain`은 `shared-kernel`만 import한다.
-- `application`은 자기 `domain`, 자기 `infrastructure` 인터페이스, `shared-kernel`만 import한다.
+- `application`은 자기 `domain`, 자기 `infrastructure` 인터페이스, `shared-kernel`을 import한다. 다른 context와 협력해야 하면 상대 context의 `application` use case나 `domain` 타입만 명시적으로 import한다.
 - `infrastructure`는 자기 `domain`, 생성된 Supabase type, provider client를 import한다.
 - `ui`는 자기 `application`, 자기 `domain`, 공유 UI primitive를 import한다.
 - `apps/mobile/src/App.tsx`는 앱 wiring 역할이며 context를 조합할 수 있다.

@@ -10,6 +10,4 @@ const payload = buildDiaryUpdatePayload({
   id: "entry-1",
 });
 
-if ("record_origin" in payload) {
-  throw new Error("diary update payload must not require record_origin until the live database has the migration");
-}
+if (payload.record_origin !== "diary") throw new Error("diary update payload must promote detailed edits to diary origin");

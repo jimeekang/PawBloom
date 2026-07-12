@@ -16,6 +16,7 @@ type AddMedicationDoseAction = (input: QuickMedicationDoseInput) => Promise<void
 type MedicationDoseActionArgs = {
   activePetId: string;
   databaseMode: boolean;
+  doses: DoseRecord[];
   setDoses: Dispatch<SetStateAction<DoseRecord[]>>;
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => void;
   setNotice: (notice: string) => void;
@@ -46,11 +47,8 @@ export async function saveMedicationDoseEdit({
     return;
   }
 
-  let nextDoses: DoseRecord[] = [];
-  args.setDoses((current) => {
-    nextDoses = current.map((dose) => (dose.id === input.id ? updateLocalDoseRecord(dose, input) : dose));
-    return nextDoses;
-  });
+  const nextDoses = args.doses.map((dose) => (dose.id === input.id ? updateLocalDoseRecord(dose, input) : dose));
+  args.setDoses(nextDoses);
   args.onLocalDosesChanged(nextDoses);
   args.setNotice(t("ko", "today.medicationEdited"));
   args.onSaved("medication");
@@ -77,11 +75,8 @@ export function confirmAndDeleteMedicationDose({
       }
     }
 
-    let nextDoses: DoseRecord[] = [];
-    args.setDoses((current) => {
-      nextDoses = current.filter((item) => item.id !== dose.id);
-      return nextDoses;
-    });
+    const nextDoses = args.doses.filter((item) => item.id !== dose.id);
+    args.setDoses(nextDoses);
     args.onLocalDosesChanged(nextDoses);
     args.setNotice(t("ko", "today.medicationDeleted"));
     args.onSaved("medication");

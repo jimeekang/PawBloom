@@ -2,7 +2,7 @@ import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient 
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
-import { buildMedicationDoseUpdateOfflineMutation } from "./medicationOfflineReplay";
+import { buildMedicationDoseInsertOfflineMutation, buildMedicationDoseUpdateOfflineMutation } from "./medicationOfflineReplay";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, mergeSavedDoseIntoList } from "./medicationDosePayload";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote } from "./medicationDosePayload";
@@ -84,7 +84,10 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       const now = new Date();
       const payload = buildMedicationDoseInsertPayload({ ...input, petId, userId, now });
       const { data, error } = await supabase.from("medication_doses").insert(payload).select().single();
-      if (error) throw new Error(error.message);
+      if (error) {
+        await enqueueOfflineMutation(buildMedicationDoseInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown> }));
+        throw new Error(error.message);
+      }
       return mapDoseRow(data);
     },
     onMutate: async (input) => {

@@ -27,7 +27,7 @@ edit_policy: exclusive
 
 투약 알림은 기기 로컬 알림(expo-notifications)으로만 예약한다. 서버 push에 의존하지 않는다.
 
-- **구현 위치**: `apps/mobile/src/presentation/notifications/medicationReminderNotifications.ts`.
+- **구현 위치**: `apps/mobile/src/contexts/medication/application/medicationReminderNotifications.ts`.
 - **알림 identifier 규약**: `medication:${scheduleId}:${dateKey}` 형식. 이 접두사(`medication:`)로 기존 예약을 식별·취소한다.
 - **예약 범위**: 오늘(`fromDate`) 기준 앞으로 **30일** 치를 예약한다(`buildMedicationReminderRequests`의 `daysAhead: 30`). 각 날짜마다 `scheduleAppliesOnDate`로 해당 일정이 그 날에 적용되는지 확인한 뒤에만 요청을 만든다.
 - **재예약(reschedule)**: 사용자가 일정, 기간, 반복 간격, 시간을 바꾸면 `rescheduleMedicationReminders`가 `medication:` 접두사를 가진 기존 로컬 알림을 모두 취소하고 다시 예약한다. 권한이 없으면(`requestPermissionsAsync` 미허용) `false`를 반환하고 예약하지 않는다.
@@ -53,7 +53,7 @@ Home 타임라인 항목 탭 동작은 Diary record origin으로 분기한다.
 
 Diary 입력 화면은 선택한 카테고리에 따라 노출 필드를 헬퍼로 결정한다. `DiaryEntryScreen.tsx`는 이 헬퍼 결과만 신뢰하고 화면에서 조건 분기를 중복 작성하지 않는다.
 
-- **구현 위치**: `apps/mobile/src/presentation/screens/DiaryEntryScreen.formRules.ts`.
+- **구현 위치**: `apps/mobile/src/contexts/diary/ui/DiaryEntryScreen.formRules.ts`.
 - **구조화 카테고리 집합**: `food`, `water`, `walk`, `stool`, `condition`.
 - **`getDiaryCategoryFormState(category)`** → `{ showsDetail, showsMemo, showsPhotos }`:
   - `showsDetail`: 구조화 카테고리일 때만 true (전용 상세 입력 노출).

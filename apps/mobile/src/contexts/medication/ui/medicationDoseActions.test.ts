@@ -17,9 +17,8 @@ let feedbackCount = 0;
 
 const common = {
   activePetId: "pet-1",
-  setDoses: (updater: DoseRecord[] | ((current: DoseRecord[]) => DoseRecord[])) => {
-    doses = typeof updater === "function" ? updater(doses) : updater;
-  },
+  doses,
+  setDoses: (updater: DoseRecord[] | ((current: DoseRecord[]) => DoseRecord[])) => { doses = typeof updater === "function" ? updater(doses) : updater; },
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => {
     medicationRecorded = hasRecordedMedication(nextDoses, "pet-1");
   },
@@ -34,6 +33,7 @@ const common = {
 async function exerciseLocalUpdate() {
   await saveMedicationDoseEdit({
     ...common,
+    doses,
     databaseMode: false,
     input: { id: dose.id, medicationName: "Amoxi", status: "completed", scheduledTime: "09:30" },
     updateMedicationDose: { mutateAsync: async () => undefined },
@@ -47,6 +47,7 @@ async function exerciseRemoteUpdateFailure() {
   try {
     await saveMedicationDoseEdit({
       ...common,
+      doses,
       databaseMode: true,
       input: { id: dose.id, medicationName: "Amoxi", status: "partial" },
       updateMedicationDose: { mutateAsync: async () => { throw new Error("network failed"); } },
@@ -66,6 +67,7 @@ async function exerciseConfirmedDelete() {
   try {
     const deleted = await confirmAndDeleteMedicationDose({
       ...common,
+      doses,
       databaseMode: false,
       dose,
       deleteMedicationDose: { mutateAsync: async () => undefined },
@@ -76,8 +78,30 @@ async function exerciseConfirmedDelete() {
   }
 }
 
-void exerciseLocalUpdate();
-void exerciseRemoteUpdateFailure();
-void exerciseConfirmedDelete();
+async function exerciseDeferredStateUpdate() {
+  const pending = { ...dose, status: "pending" as const };
+  let deferredDoses: DoseRecord[] = [pending];
+  let recalculatedWithCompletedDose = false;
+  await saveMedicationDoseEdit({
+    ...common,
+    doses: deferredDoses,
+    databaseMode: false,
+    input: { id: pending.id, medicationName: pending.medicationName, status: "completed" },
+    updateMedicationDose: { mutateAsync: async () => undefined },
+    setDoses: (next) => {
+      if (typeof next === "function") return;
+      deferredDoses = next;
+    },
+    onLocalDosesChanged: (nextDoses) => {
+      recalculatedWithCompletedDose = nextDoses[0]?.status === "completed";
+    },
+  });
+
+  if (!recalculatedWithCompletedDose || deferredDoses[0]?.status !== "completed") {
+    throw new Error("local medication edit must not rely on synchronous React state updater execution");
+  }
+}
+
+export default Promise.all([exerciseLocalUpdate(), exerciseRemoteUpdateFailure(), exerciseConfirmedDelete(), exerciseDeferredStateUpdate()]);
 void notice;
 void feedbackCount;

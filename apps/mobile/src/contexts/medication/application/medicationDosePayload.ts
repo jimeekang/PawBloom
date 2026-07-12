@@ -10,6 +10,7 @@ export type MedicationDoseInsertPayload = {
   status: DoseStatus;
   recorded_at: string | null;
   reaction_note: string | null;
+  client_mutation_id?: string | null;
 };
 
 export type MedicationDosePayloadInput = {
@@ -24,6 +25,7 @@ export type MedicationDosePayloadInput = {
   status?: DoseStatus;
   petId?: string;
   userId?: string;
+  clientMutationId?: string;
   now?: Date;
 };
 
@@ -41,6 +43,7 @@ export function buildMedicationDoseInsertPayload(input: MedicationDosePayloadInp
     status,
     recorded_at: buildDoseRecordedAt(status, now),
     reaction_note: encodeMedicationDoseCareNote(input),
+    client_mutation_id: input.clientMutationId ?? null,
   };
 }
 

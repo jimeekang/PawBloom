@@ -14,8 +14,9 @@ export function TimePickerField({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const selectedDate = parseTimeValue(value);
 
-  function handleValueChange(_event: DateTimePickerChangeEvent, date: Date) {
+  function handleValueChange(_event: DateTimePickerChangeEvent, date?: Date) {
     if (Platform.OS !== "ios") setOpen(false);
+    if (!date) return;
     onChange(formatTimeValue(date));
   }
 

@@ -18,7 +18,8 @@ if (!generated.clientMutationId || generated.id !== `offline-${generated.clientM
   throw new Error("offline mutation must generate a client mutation id when none is provided");
 }
 
-if (!createClientMutationId()) throw new Error("client mutation id generation must always produce a value");
+const generatedId = createClientMutationId();
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(generatedId)) throw new Error("client mutation id generation must produce a database UUID");
 if (toRecord("not-a-record").anything !== undefined || toRecord(null).anything !== undefined) throw new Error("toRecord must coerce non-objects to an empty record");
 if (requireString("value", "label") !== "value") throw new Error("requireString must pass through valid strings");
 if (stringValue("") !== undefined || stringValue("x") !== "x") throw new Error("stringValue must reject empty strings");
