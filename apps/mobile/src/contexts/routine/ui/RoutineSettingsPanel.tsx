@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../domain/petRoutine";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
+import { TimePickerField } from "../../../design-system/TimePickerField";
+import { setMealRemindersEnabled, updateMealTime } from "./routineSettingsState";
 
 export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine; onSave: (routine: PetRoutineInput) => void | Promise<void> }) {
   const [draft, setDraft] = useState<PetRoutine>(routine);
@@ -17,7 +19,7 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
   }, [routine]);
 
   const updateMeal = (slot: RoutineMealSlot, offeredGrams: string) => {
-    setDraft((current) => ({ ...current, food: { ...current.food, meals: { ...current.food.meals, [slot]: { offeredGrams: offeredGrams.slice(0, 5) } } } }));
+    setDraft((current) => ({ ...current, food: { ...current.food, meals: { ...current.food.meals, [slot]: { ...current.food.meals[slot], offeredGrams: offeredGrams.slice(0, 5) } } } }));
   };
 
   const save = async () => {
@@ -47,6 +49,21 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
           <TextInput style={styles.input} value={draft.food.meals.dinner?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("dinner", value)} placeholder={t("ko", "routine.dinner")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
           <TextInput style={styles.input} value={draft.water.amountMl ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, water: { ...current.water, amountMl: value.slice(0, 5) } }))} placeholder={t("ko", "routine.water")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
           <TextInput style={styles.input} value={draft.stool.count ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, stool: { ...current.stool, count: value.slice(0, 3) } }))} placeholder={t("ko", "routine.stool")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+        </View>
+        <Text style={styles.label}>{t("ko", "routine.mealTimesTitle")}</Text>
+        <SegmentedControl
+          value={draft.food.mealRemindersEnabled === false ? "off" : "on"}
+          onChange={(value) => setDraft((current) => setMealRemindersEnabled(current, value === "on"))}
+          items={[{ label: t("ko", "routine.mealRemindersOn"), value: "on" }, { label: t("ko", "routine.mealRemindersOff"), value: "off" }]}
+        />
+        <View style={styles.timeGrid}>
+          {(["breakfast", "lunch", "dinner"] as const).map((slot) => (
+            <View key={slot} style={styles.timeRow}>
+              <Text style={styles.timeLabel}>{t("ko", `routine.${slot}` as "routine.breakfast" | "routine.lunch" | "routine.dinner")}</Text>
+              <TimePickerField value={draft.food.meals[slot]?.localTime ?? ""} onChange={(value) => setDraft((current) => updateMealTime(current, slot, value))} />
+              {draft.food.meals[slot]?.localTime ? <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "routine.mealTimeClear")} onPress={() => setDraft((current) => updateMealTime(current, slot, undefined))}><Text style={styles.clearTime}>{t("ko", "routine.mealTimeClear")}</Text></Pressable> : null}
+            </View>
+          ))}
         </View>
         <Text style={styles.label}>{t("ko", "routine.walkOptional")}</Text>
         <SegmentedControl
@@ -92,6 +109,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  timeGrid: {
+    gap: spacing.sm,
+  },
+  timeRow: {
+    gap: spacing.xs,
+  },
+  timeLabel: {
+    ...type.caption,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  clearTime: {
+    ...type.tiny,
+    color: colors.orangeDeep,
+    fontWeight: "600",
   },
   input: {
     ...type.body,
