@@ -1,10 +1,13 @@
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { join, relative } from "node:path";
 
 const require = createRequire(import.meta.url);
 const ts = require(join(process.cwd(), "apps/mobile/node_modules/typescript"));
 const root = process.cwd();
+const testTimeoutMs = positiveInteger(process.env.PAWBLOOM_TEST_TIMEOUT_MS, 15_000);
+const childTimeoutMs = Math.max(1, testTimeoutMs - 1_000);
 
 const transpileTypeScriptModule = (module, filename) => {
   const source = require("node:fs").readFileSync(filename, "utf8");
@@ -24,36 +27,38 @@ const transpileTypeScriptModule = (module, filename) => {
 require.extensions[".ts"] = transpileTypeScriptModule;
 require.extensions[".tsx"] = transpileTypeScriptModule;
 
-const tests = [
-  "apps/mobile/src/contexts/diary/application/diaryRecordOrigin.test.ts",
-  "apps/mobile/src/contexts/diary/application/diaryRecordPayload.test.ts",
-  "apps/mobile/src/contexts/diary/application/diaryWalkObservationSummary.test.ts",
-  "apps/mobile/src/contexts/diary/application/diaryOfflineReplay.test.ts",
-  "apps/mobile/src/contexts/diary/ui/diaryFormDefaults.test.ts",
-  "apps/mobile/src/contexts/diary/ui/DiaryEntryScreen.test.ts",
-  "apps/mobile/src/contexts/medication/application/medicationScheduleRules.test.ts",
-  "apps/mobile/src/contexts/medication/application/medicationScheduleRecords.test.ts",
-  "apps/mobile/src/contexts/medication/application/medicationDoseRecords.scheduleGuard.test.ts",
-  "apps/mobile/src/contexts/medication/application/medicationOfflineReplay.test.ts",
-  "apps/mobile/src/contexts/medication/application/medicationReminderNotifications.test.ts",
-  "apps/mobile/src/contexts/medication/ui/todayMedicationAgenda.test.ts",
-  "apps/mobile/src/contexts/medication/ui/CareMedicationPanel.test.tsx",
-  "apps/mobile/src/contexts/care/ui/ProfileCareDefaultsPanel.test.tsx",
-  "apps/mobile/src/contexts/care/ui/useCareSetupState.test.ts",
-  "apps/mobile/src/contexts/sync/application/offlineMutationPayload.test.ts",
-  "apps/mobile/src/contexts/sync/application/offlineReplayPolicy.test.ts",
-  "apps/mobile/src/contexts/sync/application/offlineReplayQueue.test.ts",
-  "apps/mobile/src/design-system/TimePickerField.test.ts",
-  "apps/mobile/src/presentation/shell/todayChecklist.dashboard.test.ts",
-  "apps/mobile/src/presentation/screens/HomeDashboardPanel.logic.test.ts",
-  "apps/mobile/src/presentation/shell/checklistActions.test.ts",
-  "apps/mobile/src/presentation/shell/checklistNotice.test.ts",
-  "apps/mobile/src/presentation/shell/timelineRouting.test.ts",
-];
+const tests = findTestFiles(join(root, "apps/mobile/src"));
+const testRunner = join(root, "scripts/run-presentation-test.mjs");
+const testFailures = [];
 
 for (const test of tests) {
-  const loaded = require(join(root, test));
-  if (loaded.default && typeof loaded.default.then === "function") await loaded.default;
+  const testPath = relative(root, test).replaceAll("\\", "/");
+  const result = spawnSync(process.execPath, [testRunner, testPath], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, PAWBLOOM_TEST_FILE_TIMEOUT_MS: String(childTimeoutMs) },
+    killSignal: "SIGKILL",
+    maxBuffer: 4 * 1024 * 1024,
+    timeout: testTimeoutMs,
+  });
+
+  if (result.error?.code === "ETIMEDOUT") {
+    testFailures.push(`TIMEOUT ${testPath}: exceeded ${testTimeoutMs}ms; child process was terminated.`);
+    continue;
+  }
+
+  if (result.error) {
+    testFailures.push(`RUNNER ERROR ${testPath}: ${result.error.message}`);
+    continue;
+  }
+
+  if (result.status !== 0) {
+    testFailures.push([result.stdout, result.stderr].filter(Boolean).join("\n").trim() || `${testPath} exited with status ${result.status}`);
+  }
+}
+
+if (testFailures.length) {
+  throw new Error(`Presentation tests failed (${testFailures.length}/${tests.length}):\n${testFailures.join("\n\n")}`);
 }
 
 const homeScreen = readFileSync(join(root, "apps/mobile/src/presentation/screens/HomeScreen.tsx"), "utf8");
@@ -123,3 +128,18 @@ if (/mode/i.test(careEyebrowEn) || /mode/i.test(careCopyEn)) {
 }
 
 console.log(`Presentation state verification passed (${tests.length} test file checked, wording checked).`);
+
+function findTestFiles(directory) {
+  return readdirSync(directory)
+    .flatMap((entry) => {
+      const path = join(directory, entry);
+      return statSync(path).isDirectory() ? findTestFiles(path) : [path];
+    })
+    .filter((path) => /\.test\.(ts|tsx)$/.test(path))
+    .sort();
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
