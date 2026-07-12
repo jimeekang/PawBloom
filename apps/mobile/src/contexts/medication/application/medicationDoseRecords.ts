@@ -43,6 +43,9 @@ export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInpu
 export function removeMedicationDoseFromList<T extends { id: string }>(doses: T[] | undefined, id: string) {
   return (doses ?? []).filter((dose) => dose.id !== id);
 }
+export function replaceMedicationDoseInList<T extends { id: string }>(doses: T[] | undefined, saved: T) {
+  return (doses ?? []).map((dose) => (dose.id === saved.id ? saved : dose));
+}
 export function decodeMedicationDoseCareNote(value: string | null | undefined): Omit<MedicationDoseCareNote, "version"> {
   if (!value) return {};
   try {
@@ -128,7 +131,7 @@ export function useUpdateMedicationDose(petId: string | null) {
       return mapDoseRow(data);
     },
     onSuccess: (dose) => {
-      removeMedicationDoseFromCachedLists(queryClient, petId, dose.id);
+      replaceMedicationDoseInCachedLists(queryClient, petId, dose);
       void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
     },
   });
@@ -252,6 +255,11 @@ function formatTime(value: string) {
 function removeMedicationDoseFromCachedLists(queryClient: QueryClient, petId: string | null, id: string) {
   for (const [queryKey, current] of queryClient.getQueriesData<DoseRecord[]>({ queryKey: ["medication_doses"] })) {
     if (Array.isArray(current) && isMedicationDoseListCacheForPet(queryKey, petId)) queryClient.setQueryData<DoseRecord[]>(queryKey, removeMedicationDoseFromList(current, id));
+  }
+}
+function replaceMedicationDoseInCachedLists(queryClient: QueryClient, petId: string | null, saved: DoseRecord) {
+  for (const [queryKey, current] of queryClient.getQueriesData<DoseRecord[]>({ queryKey: ["medication_doses"] })) {
+    if (Array.isArray(current) && isMedicationDoseListCacheForPet(queryKey, petId)) queryClient.setQueryData<DoseRecord[]>(queryKey, replaceMedicationDoseInList(current, saved));
   }
 }
 function isMedicationDoseListCacheForPet(queryKey: QueryKey, petId: string | null) {
