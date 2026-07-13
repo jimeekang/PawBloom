@@ -199,7 +199,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
 
           <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} disabled={loading} />
           <Pressable accessibilityRole="button" accessibilityState={{ disabled: loading }} disabled={loading} style={styles.dangerButton} onPress={onDelete}>
-            <AppIcon name="close" size={iconSize.sm} color={colors.coral} />
+            <AppIcon name="close" size={iconSize.sm} color={colors.danger} />
             <Text style={styles.dangerButtonText}>{t("ko", "pet.delete")}</Text>
           </Pressable>
         </View>

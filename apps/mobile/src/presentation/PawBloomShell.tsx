@@ -236,7 +236,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         {activeTab === "reports" ? <ReportsHeader /> : null}
         {activeTab === "settings" ? <SettingsHeader /> : null}
 
-        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, activeTab === "today" && styles.homeScrollContent]} showsVerticalScrollIndicator={false}>
+        <ScrollView key={activeTab} style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <OfflineConflictNotice key={userId ?? "signed-out"} userId={userId} />
           {activeTab !== "today" && nonHomeNotice ? <NoticeBanner text={nonHomeNotice} icon="shield" /> : null}
           {activeTab === "today" ? <HomeScreen pet={activePet} userId={userId} checklist={checklist} entries={diary.activeEntries} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} walkEnabled={routine.activeRoutine.walk.enabled !== false} includeMedication showMedicationSummary={hasCareRecords} notice={homeNotice} onChecklistToggle={toggleChecklist} onViewTimelineAll={() => { diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day"); setActiveTab("diary"); }} onTimelineEntryPress={openTimelineEntry} /> : null}

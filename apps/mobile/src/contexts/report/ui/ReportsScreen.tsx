@@ -4,7 +4,7 @@ import type { GeneratedVetReport } from "../application/vetReportContract";
 import type { VetReportStatus } from "../domain/vetReport";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, font, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { ReportListSection, ReportMetricsCard, ReportShareCard } from "./ReportArtifactSections";
@@ -50,7 +50,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
     <View style={styles.screen}>
       <NoticeBanner text={t("ko", stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
       {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("ko", "permission.reportOwnerConfirmation")} icon="shield" /> : null}
-      {visibleError ? <NoticeBanner text={t("ko", workflowErrorKey[visibleError])} icon="close" /> : null}
+      {visibleError ? <NoticeBanner text={t("ko", workflowErrorKey[visibleError])} icon="close" tone="error" /> : null}
 
       <SurfaceCard>
         <View style={styles.reportHeader}>
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   notice: { marginTop: spacing.lg, borderRadius: radius.sm, backgroundColor: colors.summaryBg, padding: spacing.md, flexDirection: "row", gap: spacing.sm },
   noticeText: { ...type.caption, flex: 1, color: colors.diagnosis },
   previewBlock: { marginTop: spacing.lg, gap: spacing.xs },
-  blockLabel: { ...type.caption, color: colors.orangeDeep, fontWeight: "700" },
+  blockLabel: { ...type.caption, color: colors.orangeDeep, fontWeight: font.weight.bold },
   previewText: { ...type.body, color: colors.text },
   checkRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.md },
   body: { ...type.body, flex: 1 },

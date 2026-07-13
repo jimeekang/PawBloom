@@ -23,7 +23,7 @@ export function DiaryEntryActions({ editing, isSaving, saveBlockedByRole, canDel
       {editing ? <SecondaryButton label={t("ko", "diary.cancelEdit")} onPress={onCancel} disabled={isSaving} /> : null}
       {editing && canDelete ? (
         <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={onDelete}>
-          <AppIcon name="close" size={iconSize.sm} color={colors.coral} />
+          <AppIcon name="close" size={iconSize.sm} color={colors.danger} />
           <Text style={styles.dangerButtonText}>{t("ko", "diary.delete")}</Text>
         </Pressable>
       ) : null}

@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon, type AppIconName } from "./iconography";
-import { colors, iconSize, layout, radius, shadow, spacing, type } from "./tokens";
+import { colors, font, iconSize, layout, radius, shadow, spacing, type } from "./tokens";
 
 export function SurfaceCard({ children, padded = true }: PropsWithChildren<{ padded?: boolean }>) {
   return <View style={[styles.surface, padded && styles.padded]}>{children}</View>;
@@ -36,7 +36,7 @@ export function PrimaryButton({ label, icon, onPress, disabled = false }: { labe
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
-      style={[styles.primaryButton, disabled && styles.buttonDisabled]}
+      style={({ pressed }) => [styles.primaryButton, pressed && !disabled && styles.primaryButtonPressed, disabled && styles.buttonDisabled]}
       onPress={onPress}
     >
       {icon ? <AppIcon name={icon} size={iconSize.sm} color={colors.white} /> : null}
@@ -51,7 +51,7 @@ export function SecondaryButton({ label, icon, onPress, disabled = false }: { la
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
-      style={[styles.secondaryButton, disabled && styles.buttonDisabled]}
+      style={({ pressed }) => [styles.secondaryButton, pressed && !disabled && styles.secondaryButtonPressed, disabled && styles.buttonDisabled]}
       onPress={onPress}
     >
       {icon ? <AppIcon name={icon} size={iconSize.sm} color={colors.orangeDeep} /> : null}
@@ -62,16 +62,19 @@ export function SecondaryButton({ label, icon, onPress, disabled = false }: { la
 
 export function OutlineIconButton({ icon, onPress }: { icon: AppIconName; onPress?: () => void }) {
   return (
-    <Pressable style={styles.outlineIconButton} onPress={onPress}>
+    <Pressable accessibilityRole="button" style={({ pressed }) => [styles.outlineIconButton, pressed && styles.outlineIconButtonPressed]} onPress={onPress}>
       <AppIcon name={icon} size={iconSize.md} color={colors.text} />
     </Pressable>
   );
 }
 
-export function NoticeBanner({ text, icon = "check" }: { text: string; icon?: AppIconName }) {
+export type NoticeTone = "success" | "error";
+
+export function NoticeBanner({ text, icon = "check", tone = "success" }: { text: string; icon?: AppIconName; tone?: NoticeTone }) {
+  const isError = tone === "error";
   return (
-    <View style={styles.noticeBanner}>
-      <AppIcon name={icon} size={iconSize.sm} color={colors.mintDeep} />
+    <View style={[styles.noticeBanner, isError && styles.noticeBannerError]}>
+      <AppIcon name={icon} size={iconSize.sm} color={isError ? colors.danger : colors.mintDeep} />
       <Text style={styles.noticeText}>{text}</Text>
     </View>
   );
@@ -89,7 +92,13 @@ export function SegmentedControl<T extends string>({
   return (
     <View style={styles.segmented}>
       {items.map((item) => (
-        <Pressable key={item.value} style={[styles.segment, value === item.value && styles.segmentActive]} onPress={() => onChange(item.value)}>
+        <Pressable
+          key={item.value}
+          accessibilityRole="button"
+          accessibilityState={{ selected: value === item.value }}
+          style={[styles.segment, value === item.value && styles.segmentActive]}
+          onPress={() => onChange(item.value)}
+        >
           <Text style={[styles.segmentText, value === item.value && styles.segmentTextActive]}>{item.label}</Text>
         </Pressable>
       ))}
@@ -119,9 +128,9 @@ const styles = StyleSheet.create({
     ...type.sectionTitle,
   },
   sectionAction: {
-    ...type.tiny,
+    ...type.caption,
     color: colors.orangeDeep,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   iconBubble: {
     alignItems: "center",
@@ -137,10 +146,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     ...shadow.card,
   },
+  primaryButtonPressed: {
+    backgroundColor: colors.orangePressed,
+  },
   primaryButtonText: {
     ...type.sectionTitle,
     color: colors.white,
-    fontWeight: "700",
+    fontWeight: font.weight.bold,
   },
   buttonDisabled: {
     opacity: 0.55,
@@ -156,19 +168,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
   },
+  secondaryButtonPressed: {
+    backgroundColor: colors.surfaceWarm,
+  },
   secondaryButtonText: {
     ...type.bodyStrong,
     color: colors.orangeDeep,
   },
   outlineIconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
+  },
+  outlineIconButtonPressed: {
+    backgroundColor: colors.surfaceWarm,
   },
   segmented: {
     flexDirection: "row",
@@ -184,10 +202,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   segmentActive: {
     backgroundColor: colors.surfacePeach,
-    borderWidth: 1,
     borderColor: colors.segmentActiveBorder,
   },
   segmentText: {
@@ -196,7 +215,7 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: colors.orangeDeep,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   noticeBanner: {
     minHeight: 42,
@@ -205,9 +224,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+  },
+  noticeBannerError: {
+    backgroundColor: colors.dangerBg,
+    borderColor: colors.dangerBorder,
   },
   noticeText: {
     ...type.caption,

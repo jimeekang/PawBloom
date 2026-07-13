@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SegmentedControl, SurfaceCard } from "../../../design-system/components";
-import { colors, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, font, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     ...type.sectionTitle,
   },
   monthButton: {
-    minHeight: 34,
+    minHeight: 44,
     minWidth: 54,
     alignItems: "center",
     justifyContent: "center",
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   monthButtonText: {
     ...type.caption,
     color: colors.orangeDeep,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   weekHeader: {
     flexDirection: "row",
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   dayToday: {
     borderWidth: 1,
-    borderColor: colors.mint,
+    borderColor: colors.segmentActiveBorder,
   },
   daySelected: {
     backgroundColor: colors.orange,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   dayText: {
     ...type.caption,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   dayMuted: {
     color: colors.textSoft,

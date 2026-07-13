@@ -3,7 +3,7 @@ import type { ActiveCareSetup } from "../domain/carePlan";
 import type { DoseRecord } from "../../medication/domain/medication";
 import { SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, font, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 
 export function VetReportReadinessCard({
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   status: {
     ...type.caption,
     color: colors.textMuted,
-    fontWeight: "700",
+    fontWeight: font.weight.bold,
   },
   statusReady: {
     color: colors.mintDeep,

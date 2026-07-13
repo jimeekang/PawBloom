@@ -4,7 +4,7 @@ import type { QuickMedicationDoseInput } from "../application/medicationDoseReco
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { createEmptyQuickMedicationState, createQuickMedicationEditState, doseStatusUpdateForEdit, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete } from "./careMedicationPanelState";
@@ -126,8 +126,8 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         <TextInput style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
         {isEditing ? <TimePickerField value={scheduledTime} onChange={setScheduledTime} /> : null}
         <View style={styles.inputGrid}>
-          <TextInput style={[styles.input, styles.inputHalf]} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
-          <TextInput style={[styles.input, styles.inputHalf]} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
+          <TextInput style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+          <TextInput style={styles.input} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
         </View>
         <SegmentedControl
           value={status}
@@ -147,10 +147,10 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
           placeholder={t("ko", "care.reactionPlaceholder")}
           placeholderTextColor={colors.textSoft}
         />
-        <PrimaryButton label={t("ko", isEditing ? "care.quickDoseUpdate" : "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} />
+        <PrimaryButton label={t("ko", isEditing ? "care.quickDoseUpdate" : "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} disabled={isSaving} />
         {isEditing ? (
           <View style={styles.editActions}>
-            <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} />
+            <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
             {canDelete ? (
               <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={deleteDose}>
                 <Text style={styles.dangerButtonText}>{t("ko", "care.quickDoseDelete")}</Text>
@@ -181,7 +181,14 @@ export function MedicationRow({ dose, onEdit, onStatusPress }: { dose: DoseRecor
         </View>
         <Text style={styles.medTime}>{dose.scheduledAt}</Text>
       </Pressable>
-      <Pressable style={[styles.doneCircle, dose.status === "completed" && styles.doneCircleActive]} onPress={onStatusPress}>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: dose.status === "completed" }}
+        accessibilityLabel={`${dose.medicationName} · ${visual.label}`}
+        hitSlop={10}
+        style={[styles.doneCircle, dose.status === "completed" && styles.doneCircleActive]}
+        onPress={onStatusPress}
+      >
         {dose.status === "completed" ? (
           <AppIcon name="check" size={iconSize.sm} color={colors.white} />
         ) : (
@@ -204,7 +211,7 @@ const styles = StyleSheet.create({
   quickForm: { gap: spacing.md },
   input: {
     ...type.body,
-    minHeight: 46,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -213,10 +220,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   inputGrid: { gap: spacing.sm },
-  inputHalf: {},
   editActions: { gap: spacing.sm },
-  dangerButton: { minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: colors.salmon, alignItems: "center", justifyContent: "center" },
-  dangerButtonText: { ...type.bodyStrong, color: colors.salmon },
+  dangerButton: { minHeight: layout.inputHeight, borderRadius: radius.md, borderWidth: 1, borderColor: colors.dangerBorder, alignItems: "center", justifyContent: "center" },
+  dangerButtonText: { ...type.bodyStrong, color: colors.danger },
   noteInput: { minHeight: 78, textAlignVertical: "top" },
   medRow: {
     minHeight: 88,

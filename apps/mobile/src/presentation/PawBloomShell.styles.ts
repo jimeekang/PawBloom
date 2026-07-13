@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { colors, layout } from "../design-system/tokens";
+import { colors, layout, spacing } from "../design-system/tokens";
 
 export const styles = StyleSheet.create({
   safeArea: {
@@ -18,9 +18,6 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: layout.screenPadding,
-    paddingBottom: layout.bottomNavHeight + 24,
-  },
-  homeScrollContent: {
-    paddingTop: 0,
+    paddingBottom: spacing.xxxl,
   },
 });

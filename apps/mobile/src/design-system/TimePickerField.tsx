@@ -2,7 +2,7 @@ import DateTimePicker, { type DateTimePickerChangeEvent } from "@react-native-co
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "./iconography";
-import { colors, iconSize, radius, spacing, type } from "./tokens";
+import { colors, iconSize, layout, radius, spacing, type } from "./tokens";
 import { displayTimeValue, formatTimeValue, parseTimeValue } from "./TimePickerField.logic";
 
 type Props = {
@@ -34,7 +34,7 @@ export function TimePickerField({ value, placeholder = "", onChange }: Props) {
 
 const styles = StyleSheet.create({
   androidButton: {
-    minHeight: 48,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,

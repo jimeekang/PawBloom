@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../domain/petRoutine";
 import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
-import { colors, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, font, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { setMealRemindersEnabled, updateMealTime } from "./routineSettingsState";
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   label: {
     ...type.caption,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   errorText: {
     ...type.caption,
@@ -119,17 +119,17 @@ const styles = StyleSheet.create({
   timeLabel: {
     ...type.caption,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   clearTime: {
     ...type.tiny,
     color: colors.orangeDeep,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   input: {
     ...type.body,
     width: "48%",
-    minHeight: 44,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   inputFull: {
     ...type.body,
-    minHeight: 44,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,

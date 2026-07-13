@@ -41,7 +41,7 @@ export function OfflineConflictNotice({ userId }: { userId: string | null }) {
   return (
     <View style={styles.container}>
       <NoticeBanner text={notice} icon="shield" />
-      {clearFailed ? <NoticeBanner text={t("ko", "sync.clearConflictsFailed")} icon="shield" /> : null}
+      {clearFailed ? <NoticeBanner text={t("ko", "sync.clearConflictsFailed")} icon="shield" tone="error" /> : null}
       <SecondaryButton
         label={t("ko", clearing ? "sync.clearingConflicts" : "sync.clearReviewedConflicts")}
         icon="close"

@@ -2,7 +2,7 @@ import DateTimePicker, { type DateTimePickerChangeEvent } from "@react-native-co
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "./iconography";
-import { colors, iconSize, radius, spacing, type } from "./tokens";
+import { colors, font, iconSize, layout, radius, spacing, type } from "./tokens";
 import { formatDateValue, parseDateValue } from "./DatePickerField.logic";
 
 type Props = {
@@ -59,7 +59,7 @@ export function DatePickerField({ value, onChange, placeholder, allowClear = fal
 
 const styles = StyleSheet.create({
   wrap: {
-    minHeight: 48,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   androidButton: {
-    minHeight: 48,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     color: colors.textSoft,
-    fontWeight: "400",
+    fontWeight: font.weight.regular,
   },
   clearButton: {
     minHeight: 36,
@@ -109,6 +109,6 @@ const styles = StyleSheet.create({
   clearText: {
     ...type.caption,
     color: colors.orangeDeep,
-    fontWeight: "700",
+    fontWeight: font.weight.bold,
   },
 });

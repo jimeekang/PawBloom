@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { colors, layout, radius, spacing, type } from "../../design-system/tokens";
+import { colors, font, layout, radius, spacing, type } from "../../design-system/tokens";
 
 export const styles = StyleSheet.create({
   scroll: {
@@ -65,7 +65,7 @@ export const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   speciesPill: {
-    minHeight: 34,
+    minHeight: 40,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
@@ -83,10 +83,10 @@ export const styles = StyleSheet.create({
   },
   speciesTextActive: {
     color: colors.orangeDeep,
-    fontWeight: "600",
+    fontWeight: font.weight.semibold,
   },
   input: {
-    minHeight: 48,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -125,10 +125,10 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   dangerButton: {
-    minHeight: 46,
+    minHeight: layout.buttonHeight,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.coral,
+    borderColor: colors.dangerBorder,
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     flexDirection: "row",
@@ -138,7 +138,7 @@ export const styles = StyleSheet.create({
   },
   dangerButtonText: {
     ...type.bodyStrong,
-    color: colors.coral,
+    color: colors.danger,
   },
   actionRow: {
     marginTop: spacing.xs,

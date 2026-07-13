@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { DiaryCategory, DiaryDetailInput, MealSlot } from "../domain/diaryEntry";
 import { SegmentedControl, SurfaceCard } from "../../../design-system/components";
-import { colors, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 
 type Props = {
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   input: {
     ...type.body,
-    minHeight: 44,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
@@ -157,11 +157,11 @@ const styles = StyleSheet.create({
   },
   compactInput: {
     ...type.body,
-    minHeight: 42,
+    minHeight: layout.inputHeight,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
 });
