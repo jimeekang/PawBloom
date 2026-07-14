@@ -31,7 +31,7 @@
 **Interfaces:**
 - Produces: `TranslationKey`에 아래 신규 키 14개가 추가됨. 이후 태스크들이 이 키를 사용한다.
 
-- [ ] **Step 1: en 블록에 신규 키 추가**
+- [x] **Step 1: en 블록에 신규 키 추가**
 
 `"care.conditionLabel": ...`으로 시작하는 en 블록의 care 키 라인(약 31행) 끝에 이어서 추가:
 
@@ -39,7 +39,7 @@
     "care.addMedication": "Add medication", "care.addScope.today": "Today only", "care.addScope.short": "A few days", "care.addScope.daily": "Every day", "care.addDailyHint": "Medicines taken every day are managed in the profile's care defaults, so reminders and reports stay in one place.", "care.addDailyManage": "Manage in profile", "care.shortTermTitle": "Short-term medication", "care.shortTermEndDate": "End date", "care.shortTermPeriodInvalid": "Choose an end date on or after the start date.", "care.shortTermSave": "Save medication course", "care.scheduleUntil": "until {date}", "care.scheduleMore": "Show {count} more", "care.manageRoutineInProfile": "Daily routines are managed in the profile →", "care.editShort": "Edit", "care.removeTimeA11y": "Remove medication time",
 ```
 
-- [ ] **Step 2: ko 블록에 같은 키 추가**
+- [x] **Step 2: ko 블록에 같은 키 추가**
 
 ko 블록의 `"care.conditionLabel": ...` 라인(약 84행) 끝에 이어서 추가:
 
@@ -47,7 +47,7 @@ ko 블록의 `"care.conditionLabel": ...` 라인(약 84행) 끝에 이어서 추
     "care.addMedication": "약 추가", "care.addScope.today": "오늘만", "care.addScope.short": "며칠간", "care.addScope.daily": "매일", "care.addDailyHint": "매일 먹는 약은 프로필의 케어 기본값에서 관리해요. 알림과 리포트가 한곳에서 이어집니다.", "care.addDailyManage": "프로필에서 관리하기", "care.shortTermTitle": "며칠간 복용약", "care.shortTermEndDate": "종료일", "care.shortTermPeriodInvalid": "종료일은 시작일과 같거나 이후로 선택해 주세요.", "care.shortTermSave": "복용 일정 저장", "care.scheduleUntil": "~{date}까지", "care.scheduleMore": "외 {count}개 더 보기", "care.manageRoutineInProfile": "매일 반복 루틴은 프로필에서 관리해요 →", "care.editShort": "수정", "care.removeTimeA11y": "복용 시간 삭제",
 ```
 
-- [ ] **Step 3: 기존 키 값 변경 (키 이름은 유지, en/ko 양쪽)**
+- [x] **Step 3: 기존 키 값 변경 (키 이름은 유지, en/ko 양쪽)**
 
 | 키 | en 새 값 | ko 새 값 |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ ko 블록의 `"care.conditionLabel": ...` 라인(약 84행) 끝에 이어서 추
 | `care.temporaryMedicationLabel` | `Added today` | `오늘 추가한 약` |
 | `care.scheduleSummaryCopy` | `Saved medicines appear here after you add one or save a profile routine.` | `약을 추가하거나 프로필 루틴을 저장하면 여기에 표시됩니다.` |
 
-- [ ] **Step 4: 검증**
+- [x] **Step 4: 검증**
 
 Run: `npm run verify:i18n`
 Expected: `i18n verification passed (N keys).` (en/ko 동수)
@@ -63,7 +63,7 @@ Expected: `i18n verification passed (N keys).` (en/ko 동수)
 Run: `npm run typecheck`
 Expected: 에러 없음
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/src/i18n/translations.ts
@@ -92,7 +92,7 @@ git commit -m "feat(i18n): add care medication-add scope keys, retire temporary 
 
 **배경 (구현자 주의):** `CareSetupInput`에 `medicationId`/`scheduleIds`를 **넣지 않으면** 영속 계층(`carePlanPersistence.ts`)이 새 medication + schedule 행을 만들고 기존 스케줄은 그대로 둔다 (프로필의 "+새 약" 흐름이 이미 이 경로를 사용). 며칠간 폼은 항상 이 additive 경로를 타야 하므로 id 필드를 절대 채우지 않는다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **Step 1: 실패하는 테스트 작성**
 
 `apps/mobile/src/contexts/care/ui/shortTermMedicationForm.test.ts`:
 
@@ -124,12 +124,12 @@ if (input.conditionName !== "기침" || input.dosageLabel !== "1정" || input.pl
 if (input.recurrenceIntervalDays !== 1) throw new Error("short-term course must repeat daily");
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/contexts/care/ui/shortTermMedicationForm.test.ts`
 Expected: FAIL — `Cannot find module './shortTermMedicationForm'`
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `apps/mobile/src/contexts/care/ui/shortTermMedicationForm.ts`:
 
@@ -186,12 +186,12 @@ export function buildShortTermCareSetupInput(draft: ShortTermMedicationDraft): C
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/contexts/care/ui/shortTermMedicationForm.test.ts`
 Expected: exit 0, 출력 없음
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/src/contexts/care/ui/shortTermMedicationForm.ts apps/mobile/src/contexts/care/ui/shortTermMedicationForm.test.ts
@@ -212,7 +212,7 @@ git commit -m "feat(care): add short-term medication draft logic"
 
 **레이아웃 주의:** 입력 필드는 전부 세로 스택. `timeRow`(시간 피커 + 44px 삭제 버튼)만 row — `ProfileCareDefaultsPanel`에서 이미 승인된 패턴과 동일. `panel` 스타일에 `flexDirection: "row"`를 절대 넣지 않는다 (Task 6에서 이 파일에 정적 가드가 걸린다). 에러 텍스트는 `colors.danger` (교정 #6 — coral 금지).
 
-- [ ] **Step 1: 타입 레벨 테스트 작성**
+- [x] **Step 1: 타입 레벨 테스트 작성**
 
 `apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.test.tsx`:
 
@@ -233,12 +233,12 @@ void props;
 void withoutOnSaved;
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.test.tsx`
 Expected: FAIL — `Cannot find module './ShortTermMedicationForm'`
 
-- [ ] **Step 3: 구현**
+- [x] **Step 3: 구현**
 
 `apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.tsx`:
 
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 4: 통과 확인 + 타입체크**
+- [x] **Step 4: 통과 확인 + 타입체크**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.test.tsx`
 Expected: exit 0
@@ -340,7 +340,7 @@ Expected: exit 0
 Run: `npm run typecheck`
 Expected: 에러 없음
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.tsx apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.test.tsx
@@ -362,7 +362,7 @@ git commit -m "feat(care): add short-term medication form component"
 - Produces (Task 6이 사용): `CareMedicationAddCard({ petId, onAddDose, onSaveCareSetup, onOpenProfileCare, onSaved })` — `petId: string`, `onAddDose: QuickMedicationSaveHandler`, `onSaveCareSetup: (input: CareSetupInput) => Promise<ActiveCareSetup>`, `onOpenProfileCare: () => void`, `onSaved: () => void`.
 - QuickMedicationForm은 이 태스크부터 **SurfaceCard 없이** 렌더된다 (호출측 래핑 책임).
 
-- [ ] **Step 1: QuickMedicationForm 언랩**
+- [x] **Step 1: QuickMedicationForm 언랩**
 
 `CareMedicationPanel.tsx`의 `QuickMedicationForm` return을 다음으로 변경 (기존 `<SurfaceCard><View style={styles.quickForm}>` → `<View style={styles.quickForm}>`, 닫는 태그도 대응):
 
@@ -390,7 +390,7 @@ git commit -m "feat(care): add short-term medication form component"
 import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl } from "../../../design-system/components";
 ```
 
-- [ ] **Step 2: 기존 호출부 시각 유지**
+- [x] **Step 2: 기존 호출부 시각 유지**
 
 `CareModeScreen.tsx:145`를 SurfaceCard로 감싼다 (SurfaceCard는 이미 import되어 있음):
 
@@ -402,7 +402,7 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl } from "
       ) : null}
 ```
 
-- [ ] **Step 3: 타입 레벨 테스트 작성**
+- [x] **Step 3: 타입 레벨 테스트 작성**
 
 `apps/mobile/src/presentation/screens/CareMedicationAddCard.test.tsx`:
 
@@ -422,12 +422,12 @@ const props: ComponentProps<typeof CareMedicationAddCard> = {
 void props;
 ```
 
-- [ ] **Step 4: 실패 확인**
+- [x] **Step 4: 실패 확인**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/presentation/screens/CareMedicationAddCard.test.tsx`
 Expected: FAIL — `Cannot find module './CareMedicationAddCard'`
 
-- [ ] **Step 5: 구현**
+- [x] **Step 5: 구현**
 
 `apps/mobile/src/presentation/screens/CareMedicationAddCard.tsx`:
 
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
 
 `key={petId}`는 펫 전환 시 며칠간 폼 draft를 리셋하기 위한 remount 키다.
 
-- [ ] **Step 6: 통과 확인 + 전체 검증**
+- [x] **Step 6: 통과 확인 + 전체 검증**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/presentation/screens/CareMedicationAddCard.test.tsx`
 Expected: exit 0
@@ -500,7 +500,7 @@ Expected: exit 0
 Run: `npm run typecheck && npm run verify:presentation`
 Expected: 모두 통과 (CareMedicationAddCard는 아직 어디서도 렌더되지 않음 — Task 6에서 배선)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/mobile/src/contexts/medication/ui/CareMedicationPanel.tsx apps/mobile/src/presentation/screens/CareModeScreen.tsx apps/mobile/src/presentation/screens/CareMedicationAddCard.tsx apps/mobile/src/presentation/screens/CareMedicationAddCard.test.tsx
@@ -518,7 +518,7 @@ git commit -m "feat(care): add medication add card with scope branches"
 - Consumes: Task 1의 `care.editShort` 키, Task 4의 언랩된 QuickMedicationForm.
 - Produces: 편집 폼이 해당 아젠다 행 바로 아래 인라인 렌더됨. 하단 토글 폼은 추가 전용이 됨 (Task 6에서 AddCard로 대체).
 
-- [ ] **Step 1: 상태 버튼을 가로 배치로 (교정 #1)**
+- [x] **Step 1: 상태 버튼을 가로 배치로 (교정 #1)**
 
 styles 변경:
 
@@ -530,7 +530,7 @@ styles 변경:
 
 주의: 이 두 개는 짧은 고정 라벨 **버튼**이라 390px 세로 스택 가드 대상이 아니다. 입력 필드는 건드리지 않는다.
 
-- [ ] **Step 2: 헤더 카운트의 가짜 링크 어포던스 제거 (교정 #3)**
+- [x] **Step 2: 헤더 카운트의 가짜 링크 어포던스 제거 (교정 #3)**
 
 `linkText` 스타일을 두 용도로 분리한다. 섹션 헤더의 카운트는 muted 캡션으로:
 
@@ -543,7 +543,7 @@ styles에 추가:
   countText: { ...type.caption, color: colors.textMuted },
 ```
 
-- [ ] **Step 3: 행 편집 트리거 교정 (교정 #2)**
+- [x] **Step 3: 행 편집 트리거 교정 (교정 #2)**
 
 `MedicationAgendaRow`의 편집 Pressable을:
 
@@ -561,7 +561,7 @@ styles 변경/추가 (`linkText` 스타일은 삭제):
   editText: { ...type.caption, color: colors.orangeDeep },
 ```
 
-- [ ] **Step 4: 편집 폼을 행 아래 인라인으로 이동**
+- [x] **Step 4: 편집 폼을 행 아래 인라인으로 이동**
 
 `CarePanel`의 medList 렌더를 다음으로 교체:
 
@@ -601,12 +601,12 @@ styles에 추가:
   medListItem: { gap: spacing.sm },
 ```
 
-- [ ] **Step 5: 검증**
+- [x] **Step 5: 검증**
 
 Run: `npm run typecheck && npm run verify:presentation`
 Expected: 모두 통과
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/mobile/src/presentation/screens/CareModeScreen.tsx
@@ -635,7 +635,7 @@ git commit -m "fix(care): row action buttons, real edit affordance, inline dose 
 
 **중요:** 가드 스크립트가 (a) `CareModeScreen`에 `"CareSetupPanel"` 문자열 포함을 강제하고 (b) `CareSetupPanel.tsx` 파일을 `readFileSync`로 읽는다. 따라서 **화면 재구성·파일 삭제·가드 갱신은 반드시 이 태스크의 단일 커밋**으로 묶는다. `docs/design/DESIGN_QA.md`는 이 가드의 줄 번호를 참조하지만 exclusive 문서이므로 수정하지 않는다 (커밋 메시지에 명시).
 
-- [ ] **Step 1: 스케줄 요약 로직 테스트 작성**
+- [x] **Step 1: 스케줄 요약 로직 테스트 작성**
 
 `apps/mobile/src/presentation/screens/careScheduleSummary.test.ts`:
 
@@ -656,12 +656,12 @@ const few = partitionCareSchedules(["a", "b", "c"], false);
 if (few.visible.length !== 3 || few.hiddenCount !== 0) throw new Error("lists at the preview limit must not show a more button");
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/presentation/screens/careScheduleSummary.test.ts`
 Expected: FAIL — `Cannot find module './careScheduleSummary'`
 
-- [ ] **Step 3: 로직 구현**
+- [x] **Step 3: 로직 구현**
 
 `apps/mobile/src/presentation/screens/careScheduleSummary.ts`:
 
@@ -690,7 +690,7 @@ export function partitionCareSchedules<S>(schedules: S[], expanded: boolean): { 
 Run: `node scripts/run-presentation-test.mjs apps/mobile/src/presentation/screens/careScheduleSummary.test.ts`
 Expected: exit 0
 
-- [ ] **Step 4: CareModeScreen 전면 교체**
+- [x] **Step 4: CareModeScreen 전면 교체**
 
 `apps/mobile/src/presentation/screens/CareModeScreen.tsx` 전체를 다음 내용으로 교체:
 
@@ -951,7 +951,7 @@ const styles = StyleSheet.create({
 
 주의: `CareSetupPanel`·`MedicationRow` import와 `temporaryFormOpen` 상태가 이 교체로 사라진다 (교정 #7 포함).
 
-- [ ] **Step 5: PawBloomShell 배선**
+- [x] **Step 5: PawBloomShell 배선**
 
 `apps/mobile/src/presentation/PawBloomShell.tsx:244`의 `<CareModeScreen ...>` 호출에 prop 추가:
 
@@ -961,7 +961,7 @@ onOpenProfileCare={() => setShowPetSettings(true)}
 
 (`setShowPetSettings`는 같은 컴포넌트의 기존 state setter — SettingsScreen의 `onOpenPetProfiles`가 이미 동일하게 사용.)
 
-- [ ] **Step 6: 가드 스크립트 갱신**
+- [x] **Step 6: 가드 스크립트 갱신**
 
 `scripts/verify-presentation-state.mjs`에서 두 블록을 교체.
 
@@ -1002,7 +1002,7 @@ if (/\n\s*panel:\s*{[^}]*flexDirection:\s*"row"/s.test(shortTermMedicationForm))
 }
 ```
 
-- [ ] **Step 7: CareSetupPanel 삭제 + 잔여 참조 확인**
+- [x] **Step 7: CareSetupPanel 삭제 + 잔여 참조 확인**
 
 ```bash
 git rm apps/mobile/src/contexts/care/ui/CareSetupPanel.tsx
@@ -1010,12 +1010,12 @@ grep -rn "CareSetupPanel" apps/mobile/src scripts
 ```
 Expected: grep 결과 없음 (있으면 해당 참조를 이 태스크에서 정리)
 
-- [ ] **Step 8: 전체 검증**
+- [x] **Step 8: 전체 검증**
 
 Run: `npm run typecheck && npm run verify:presentation && npm run verify:architecture && npm run verify:i18n`
 Expected: 모두 통과
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A
@@ -1038,7 +1038,7 @@ references old guard line numbers; owner model to reconcile."
 **Interfaces:**
 - Produces: `CareMedicationPanel.tsx`는 `QuickMedicationForm`(+타입들)만 export. `MedicationRow`와 `statusVisual`은 삭제됨.
 
-- [ ] **Step 1: MedicationRow 컴포넌트 삭제**
+- [x] **Step 1: MedicationRow 컴포넌트 삭제**
 
 `CareMedicationPanel.tsx`에서 제거:
 - `MedicationRow` 함수 전체 (export function MedicationRow ... 끝까지)
@@ -1048,7 +1048,7 @@ references old guard line numbers; owner model to reconcile."
 
 유지: `QuickMedicationForm`이 쓰는 `sectionTitle`, `quickForm`, `input`, `inputGrid`(다음 스텝에서 rename), `noteInput`, `editActions`, `dangerButton`, `dangerButtonText`.
 
-- [ ] **Step 2: inputGrid → inputStack rename (레이아웃 변경 없음)**
+- [x] **Step 2: inputGrid → inputStack rename (레이아웃 변경 없음)**
 
 같은 파일에서 `styles.inputGrid` 사용처와 스타일 정의를 `inputStack`으로 rename:
 
@@ -1070,13 +1070,13 @@ if (/\n\s*inputGrid:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
 if (/\n\s*inputStack:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
 ```
 
-- [ ] **Step 3: 테스트 정리**
+- [x] **Step 3: 테스트 정리**
 
 `CareMedicationPanel.test.tsx`에서 제거:
 - import의 `MedicationRow`
 - `rowProps` 선언 블록과 `void rowProps;` 라인
 
-- [ ] **Step 4: 검증**
+- [x] **Step 4: 검증**
 
 ```bash
 grep -rn "MedicationRow" apps/mobile/src/contexts/medication/ui apps/mobile/src/presentation
@@ -1086,7 +1086,7 @@ Expected: 결과 없음 (application 레이어의 DB row 타입 alias `Medicatio
 Run: `npm run typecheck && npm run verify:presentation`
 Expected: 모두 통과
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/src/contexts/medication/ui/CareMedicationPanel.tsx apps/mobile/src/contexts/medication/ui/CareMedicationPanel.test.tsx scripts/verify-presentation-state.mjs
@@ -1100,7 +1100,7 @@ git commit -m "refactor(medication): drop dead MedicationRow, rename inputGrid t
 **Files:**
 - Modify: `apps/mobile/src/contexts/care/ui/ProfileCareDefaultsPanel.tsx`
 
-- [ ] **Step 1: 시간 삭제 버튼 a11y 라벨 교정 (#10)**
+- [x] **Step 1: 시간 삭제 버튼 a11y 라벨 교정 (#10)**
 
 144행 부근:
 
@@ -1113,7 +1113,7 @@ git commit -m "refactor(medication): drop dead MedicationRow, rename inputGrid t
                 accessibilityLabel={t("ko", "care.removeTimeA11y")}
 ```
 
-- [ ] **Step 2: 에러 색상 시멘틱 통일 (#6)**
+- [x] **Step 2: 에러 색상 시멘틱 통일 (#6)**
 
 styles:
 
@@ -1126,7 +1126,7 @@ styles:
   errorText: { ...type.caption, color: colors.danger },
 ```
 
-- [ ] **Step 3: 검증 + Commit**
+- [x] **Step 3: 검증 + Commit**
 
 Run: `npm run typecheck && npm run verify:presentation`
 Expected: 통과
@@ -1143,7 +1143,7 @@ git commit -m "fix(care): profile defaults a11y label and danger error color"
 **Files:**
 - Modify: `apps/mobile/src/i18n/translations.ts`
 
-- [ ] **Step 1: 후보 키 사용처 grep**
+- [x] **Step 1: 후보 키 사용처 grep**
 
 CareSetupPanel 삭제와 임시 투약 흐름 대체로 미사용이 되었을 후보들. **각 키마다 grep으로 0건 확인 후에만 삭제** (en/ko 양쪽 동시):
 
@@ -1155,14 +1155,14 @@ done
 
 Expected 참고: `care.useToday`/`care.setupStartDate`/`care.setupPeriod`는 새 코드가 사용하므로 1건 이상 → **유지**. 0건인 키만 삭제.
 
-- [ ] **Step 2: 0건 키를 en/ko 양쪽에서 삭제**
+- [x] **Step 2: 0건 키를 en/ko 양쪽에서 삭제**
 
-- [ ] **Step 3: 최종 전체 검증**
+- [x] **Step 3: 최종 전체 검증**
 
 Run: `npm run verify:i18n && npm run typecheck && npm run verify:presentation && npm run verify:architecture`
 Expected: 모두 통과
 
-- [ ] **Step 4: 육안 확인 (환경이 허용하면)**
+- [x] **Step 4: 육안 확인 (환경이 허용하면)**
 
 ```bash
 npm run mobile:export-web && npm run mobile:preview-web
@@ -1177,7 +1177,7 @@ Browser로 `http://127.0.0.1:8082` 접속, viewport `390x844`:
 
 브라우저 접근이 차단되면 이 스텝은 건너뛰고 커밋 메시지에 "visual check pending" 명시.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/mobile/src/i18n/translations.ts
