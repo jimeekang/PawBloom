@@ -71,8 +71,13 @@ if (careModeScreen.includes("CareRecordPanel")) {
   throw new Error("care screen must not include the duplicate care record input panel");
 }
 
-if (!careModeScreen.includes("CareSetupPanel")) {
-  throw new Error("care screen must include care plan creation UI in the primary care flow");
+if (!careModeScreen.includes("CareMedicationAddCard")) {
+  throw new Error("care screen must include the add-medication entry point in the primary care flow");
+}
+
+const careMedicationAddCard = readFileSync(join(root, "apps/mobile/src/presentation/screens/CareMedicationAddCard.tsx"), "utf8");
+if (!careMedicationAddCard.includes("ShortTermMedicationForm")) {
+  throw new Error("add-medication card must keep care plan creation (short-term course) reachable from the care flow");
 }
 
 const diaryDetailPanel = readFileSync(join(root, "apps/mobile/src/contexts/diary/ui/DiaryDetailPanel.tsx"), "utf8");
@@ -85,13 +90,13 @@ if (/\n\s*inputGrid:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
   throw new Error("care quick medication dose fields must remain stacked to avoid narrow mobile clipping");
 }
 
-const careSetupPanel = readFileSync(join(root, "apps/mobile/src/contexts/care/ui/CareSetupPanel.tsx"), "utf8");
-if (/\n\s*row:\s*{\s*flexDirection:\s*"row"/s.test(careSetupPanel) || /\n\s*timePicker:\s*{\s*width:\s*112/s.test(careSetupPanel)) {
-  throw new Error("care setup medication and time fields must remain stacked to avoid narrow mobile clipping");
+const shortTermMedicationForm = readFileSync(join(root, "apps/mobile/src/contexts/care/ui/ShortTermMedicationForm.tsx"), "utf8");
+if (/\n\s*panel:\s*{[^}]*flexDirection:\s*"row"/s.test(shortTermMedicationForm)) {
+  throw new Error("short-term medication fields must remain stacked to avoid narrow mobile clipping");
 }
 
-if (!careSetupPanel.includes("DatePickerField")) {
-  throw new Error("care setup treatment period must use native date picker controls");
+if (!shortTermMedicationForm.includes("DatePickerField")) {
+  throw new Error("short-term medication course period must use native date picker controls");
 }
 
 const profileCareDefaultsPanel = readFileSync(join(root, "apps/mobile/src/contexts/care/ui/ProfileCareDefaultsPanel.tsx"), "utf8");

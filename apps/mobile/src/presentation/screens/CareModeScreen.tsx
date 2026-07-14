@@ -1,36 +1,21 @@
 import { useMemo, useState, type ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { ActiveCareSetup } from "../../contexts/care/domain/carePlan";
+import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../../contexts/care/domain/carePlan";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
-import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
-import { CareSetupPanel } from "../../contexts/care/ui/CareSetupPanel";
+import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
+import { CareMedicationAddCard } from "./CareMedicationAddCard";
 import { CareReportPanel } from "./CareReportPanel";
+import { partitionCareSchedules, schedulePeriodBadge } from "./careScheduleSummary";
 
 type Segment = "care" | "reports";
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
 
-export function CareModeScreen({
-  petId,
-  doses,
-  medicationAgenda = [],
-  onAgendaStatusChange,
-  onAddDose,
-  onUpdateDose,
-  onDeleteDose,
-  onSaveCareSetup,
-  onUseSchedule,
-  onGenerateReport,
-  conditionScore,
-  careSetup,
-  canManageCare = true,
-  canDeleteDose = true,
-  canManageReports = true,
-}: {
+type CareModeScreenProps = {
   petId: string;
   doses: DoseRecord[];
   medicationAgenda?: TodayMedicationAgendaRow[];
@@ -38,15 +23,18 @@ export function CareModeScreen({
   onAddDose: QuickMedicationSaveHandler;
   onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
   onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
-  onSaveCareSetup: ComponentProps<typeof CareSetupPanel>["onSave"];
-  onUseSchedule: ComponentProps<typeof CareSetupPanel>["onUseSchedule"];
+  onSaveCareSetup: (input: CareSetupInput) => Promise<ActiveCareSetup>;
+  onUseSchedule: (schedule: CareMedicationSchedule) => void;
+  onOpenProfileCare: () => void;
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
   canManageCare?: boolean;
   canDeleteDose?: boolean;
   canManageReports?: boolean;
-}) {
+};
+
+export function CareModeScreen({ canManageCare = true, canDeleteDose = true, canManageReports = true, ...props }: CareModeScreenProps) {
   const [segment, setSegment] = useState<Segment>("care");
 
   return (
@@ -61,25 +49,9 @@ export function CareModeScreen({
       />
 
       {segment === "care" ? (
-        <CarePanel
-          petId={petId}
-          doses={doses}
-          medicationAgenda={medicationAgenda}
-          onAgendaStatusChange={onAgendaStatusChange}
-          onAddDose={onAddDose}
-          onUpdateDose={onUpdateDose}
-          onDeleteDose={onDeleteDose}
-          onSaveCareSetup={onSaveCareSetup}
-          onUseSchedule={onUseSchedule}
-          onGenerateReport={onGenerateReport}
-          conditionScore={conditionScore}
-          careSetup={careSetup}
-          canManageCare={canManageCare}
-          canDeleteDose={canDeleteDose}
-          canManageReports={canManageReports}
-        />
+        <CarePanel {...props} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canManageReports} />
       ) : (
-        <CareReportPanel onOpenReports={onGenerateReport} canManageReports={canManageReports} />
+        <CareReportPanel onOpenReports={props.onGenerateReport} canManageReports={canManageReports} />
       )}
     </View>
   );
@@ -88,47 +60,36 @@ export function CareModeScreen({
 function CarePanel({
   petId,
   doses,
-  medicationAgenda,
+  medicationAgenda = [],
   onAgendaStatusChange,
   onAddDose,
   onUpdateDose,
   onDeleteDose,
   onSaveCareSetup,
   onUseSchedule,
+  onOpenProfileCare,
   onGenerateReport,
   conditionScore,
   careSetup,
   canManageCare,
   canDeleteDose,
   canManageReports,
-}: {
-  petId: string;
-  doses: DoseRecord[];
-  medicationAgenda: TodayMedicationAgendaRow[];
-  onAgendaStatusChange?: (row: TodayMedicationAgendaRow, status: "completed" | "skipped" | "partial") => void;
-  onAddDose: QuickMedicationSaveHandler;
-  onUpdateDose: (input: Parameters<QuickMedicationUpdateHandler>[0]) => void | Promise<void>;
-  onDeleteDose: (dose: DoseRecord) => void | Promise<boolean | void>;
-  onSaveCareSetup: ComponentProps<typeof CareSetupPanel>["onSave"];
-  onUseSchedule: ComponentProps<typeof CareSetupPanel>["onUseSchedule"];
-  onGenerateReport: () => void;
-  conditionScore?: number;
-  careSetup: ActiveCareSetup;
+}: Omit<CareModeScreenProps, "canManageCare" | "canDeleteDose" | "canManageReports"> & {
   canManageCare: boolean;
   canDeleteDose: boolean;
   canManageReports: boolean;
 }) {
   const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
-  const [temporaryFormOpen, setTemporaryFormOpen] = useState(false);
+  const [addCardOpen, setAddCardOpen] = useState(false);
+  const [schedulesExpanded, setSchedulesExpanded] = useState(false);
   const editingDose = useMemo(() => doses.find((dose) => dose.id === editingDoseId) ?? null, [doses, editingDoseId]);
   const agendaRows = medicationAgenda.length > 0 ? medicationAgenda : doses.map((dose) => ({ source: "dose" as const, doseId: dose.id, scheduleId: dose.scheduleId, doseDate: dose.doseDate ?? "", medicationName: dose.medicationName, conditionName: dose.conditionName, dosageLabel: dose.dosageLabel, scheduledTime: dose.scheduledAt, status: dose.status }));
   const pendingCount = agendaRows.filter((row) => row.status === "pending").length;
+  const { visible: visibleSchedules, hiddenCount } = partitionCareSchedules(careSetup.schedules, schedulesExpanded);
 
   return (
     <>
-      {canManageCare
-        ? <CareSetupPanel petId={petId} setup={careSetup} onSave={onSaveCareSetup} onUseSchedule={onUseSchedule} />
-        : <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" />}
+      {!canManageCare ? <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" /> : null}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.todayMedicationTitle")}</Text>
@@ -152,19 +113,39 @@ function CarePanel({
         })}
       </View>
 
-      <SecondaryButton label={t("ko", "care.temporaryAdd")} icon="add" onPress={() => setTemporaryFormOpen((current) => !current)} />
-      {temporaryFormOpen ? (
-        <SurfaceCard>
-          <QuickMedicationForm onSave={onAddDose} />
-        </SurfaceCard>
+      {canManageCare ? (
+        <>
+          <SecondaryButton label={t("ko", "care.addMedication")} icon="add" onPress={() => setAddCardOpen((current) => !current)} />
+          {addCardOpen ? <CareMedicationAddCard petId={petId} onAddDose={onAddDose} onSaveCareSetup={onSaveCareSetup} onOpenProfileCare={onOpenProfileCare} onSaved={() => setAddCardOpen(false)} /> : null}
+        </>
       ) : null}
 
       <SurfaceCard>
-        <Text style={styles.sectionTitle}>{t("ko", "care.scheduleSummaryTitle")}</Text>
-        <Text style={styles.reportCopy}>{t("ko", "care.scheduleSummaryCopy")}</Text>
-        {careSetup.schedules.slice(0, 3).map((schedule) => (
-          <Text key={schedule.id} style={styles.emptyText}>{schedule.localTime.slice(0, 5)} · {schedule.medicationName}</Text>
-        ))}
+        <View style={styles.scheduleCard}>
+          <Text style={styles.sectionTitle}>{t("ko", "care.scheduleSummaryTitle")}</Text>
+          {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t("ko", "care.scheduleSummaryCopy")}</Text> : null}
+          {visibleSchedules.map((schedule) => {
+            const badge = schedulePeriodBadge(schedule);
+            return (
+              <Pressable key={schedule.id} style={styles.scheduleRow} disabled={!canManageCare} onPress={() => onUseSchedule(schedule)}>
+                <AppIcon name="medication" size={iconSize.md} color={colors.orangeDeep} />
+                <View style={styles.scheduleBody}>
+                  <Text style={styles.medTitle}>{schedule.localTime.slice(0, 5)} · {schedule.medicationName}</Text>
+                  <Text style={styles.medMeta}>{schedule.dosageLabel}{badge ? ` · ${badge}` : ""}</Text>
+                </View>
+                {canManageCare ? <Text style={styles.useText}>{t("ko", "care.useToday")}</Text> : null}
+              </Pressable>
+            );
+          })}
+          {hiddenCount > 0 ? (
+            <Pressable accessibilityRole="button" style={styles.moreButton} onPress={() => setSchedulesExpanded(true)}>
+              <Text style={styles.moreText}>{t("ko", "care.scheduleMore").replace("{count}", String(hiddenCount))}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable accessibilityRole="button" style={styles.profileLinkButton} onPress={onOpenProfileCare}>
+            <Text style={styles.profileLinkText}>{t("ko", "care.manageRoutineInProfile")}</Text>
+          </Pressable>
+        </View>
       </SurfaceCard>
 
       <SurfaceCard>
@@ -251,6 +232,14 @@ const styles = StyleSheet.create({
   skipButtonText: { ...type.bodyStrong, color: colors.textMuted },
   editButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md },
   editText: { ...type.caption, color: colors.orangeDeep },
+  scheduleCard: { gap: spacing.sm },
+  scheduleRow: { minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
+  scheduleBody: { flex: 1 },
+  useText: { ...type.caption, color: colors.orangeDeep },
+  moreButton: { minHeight: 44, alignItems: "center", justifyContent: "center" },
+  moreText: { ...type.bodyStrong, color: colors.orangeDeep },
+  profileLinkButton: { minHeight: 44, justifyContent: "center" },
+  profileLinkText: { ...type.caption, color: colors.orangeDeep },
   emptyText: {
     ...type.body,
     color: colors.textMuted,
