@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
@@ -118,48 +118,46 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   }
 
   return (
-    <SurfaceCard>
-      <View style={styles.quickForm}>
-        <Text style={styles.sectionTitle}>{t("ko", isEditing ? "care.quickDoseEditTitle" : "care.quickDoseTitle")}</Text>
-        <NoticeBanner text={notice} icon="medication" />
-        <TextInput style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <TextInput style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-        {isEditing ? <TimePickerField value={scheduledTime} onChange={setScheduledTime} /> : null}
-        <View style={styles.inputGrid}>
-          <TextInput style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
-          <TextInput style={styles.input} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
-        </View>
-        <SegmentedControl
-          value={status}
-          onChange={setStatus}
-          items={[
-            { label: t("ko", "care.status.completedShort"), value: "completed" },
-            { label: t("ko", "care.status.partialShort"), value: "partial" },
-            { label: t("ko", "care.status.skippedShort"), value: "skipped" },
-            { label: t("ko", "care.status.pendingShort"), value: "pending" },
-          ]}
-        />
-        <TextInput
-          multiline
-          style={[styles.input, styles.noteInput]}
-          value={reactionNote}
-          onChangeText={(value) => setReactionNote(value.slice(0, 300))}
-          placeholder={t("ko", "care.reactionPlaceholder")}
-          placeholderTextColor={colors.textSoft}
-        />
-        <PrimaryButton label={t("ko", isEditing ? "care.quickDoseUpdate" : "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} disabled={isSaving} />
-        {isEditing ? (
-          <View style={styles.editActions}>
-            <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
-            {canDelete ? (
-              <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={deleteDose}>
-                <Text style={styles.dangerButtonText}>{t("ko", "care.quickDoseDelete")}</Text>
-              </Pressable>
-            ) : <NoticeBanner text={t("ko", "permission.medicationDeleteOwnerOnly")} icon="shield" />}
-          </View>
-        ) : null}
+    <View style={styles.quickForm}>
+      <Text style={styles.sectionTitle}>{t("ko", isEditing ? "care.quickDoseEditTitle" : "care.quickDoseTitle")}</Text>
+      <NoticeBanner text={notice} icon="medication" />
+      <TextInput style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <TextInput style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+      {isEditing ? <TimePickerField value={scheduledTime} onChange={setScheduledTime} /> : null}
+      <View style={styles.inputGrid}>
+        <TextInput style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput style={styles.input} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
       </View>
-    </SurfaceCard>
+      <SegmentedControl
+        value={status}
+        onChange={setStatus}
+        items={[
+          { label: t("ko", "care.status.completedShort"), value: "completed" },
+          { label: t("ko", "care.status.partialShort"), value: "partial" },
+          { label: t("ko", "care.status.skippedShort"), value: "skipped" },
+          { label: t("ko", "care.status.pendingShort"), value: "pending" },
+        ]}
+      />
+      <TextInput
+        multiline
+        style={[styles.input, styles.noteInput]}
+        value={reactionNote}
+        onChangeText={(value) => setReactionNote(value.slice(0, 300))}
+        placeholder={t("ko", "care.reactionPlaceholder")}
+        placeholderTextColor={colors.textSoft}
+      />
+      <PrimaryButton label={t("ko", isEditing ? "care.quickDoseUpdate" : "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} disabled={isSaving} />
+      {isEditing ? (
+        <View style={styles.editActions}>
+          <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
+          {canDelete ? (
+            <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={deleteDose}>
+              <Text style={styles.dangerButtonText}>{t("ko", "care.quickDoseDelete")}</Text>
+            </Pressable>
+          ) : <NoticeBanner text={t("ko", "permission.medicationDeleteOwnerOnly")} icon="shield" />}
+        </View>
+      ) : null}
+    </View>
   );
 }
 

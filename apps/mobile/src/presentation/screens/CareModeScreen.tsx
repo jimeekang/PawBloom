@@ -142,7 +142,11 @@ function CarePanel({
       </View>
 
       <SecondaryButton label={t("ko", "care.temporaryAdd")} icon="add" onPress={() => setTemporaryFormOpen((current) => !current)} />
-      {temporaryFormOpen || editingDose ? <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} canDelete={canDeleteDose} /> : null}
+      {temporaryFormOpen || editingDose ? (
+        <SurfaceCard>
+          <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} canDelete={canDeleteDose} />
+        </SurfaceCard>
+      ) : null}
 
       <SurfaceCard>
         <Text style={styles.sectionTitle}>{t("ko", "care.scheduleSummaryTitle")}</Text>

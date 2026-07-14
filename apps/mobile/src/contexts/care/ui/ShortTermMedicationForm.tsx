@@ -7,7 +7,7 @@ import { t } from "../../../i18n/translations";
 import { DatePickerField } from "../../../design-system/DatePickerField";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { getLocalDateKey } from "../../../shared-kernel/date";
-import { buildShortTermCareSetupInput, createShortTermMedicationDraft, shortTermDraftErrorKey } from "./shortTermMedicationForm";
+import { buildShortTermCareSetupInput, createShortTermMedicationDraft, shortTermDraftErrorKey } from "./shortTermMedicationDraft";
 
 export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: CareSetupInput) => Promise<ActiveCareSetup>; onSaved?: () => void }) {
   const [draft, setDraft] = useState(() => createShortTermMedicationDraft(getLocalDateKey()));

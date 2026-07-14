@@ -74,9 +74,11 @@ git commit -m "feat(i18n): add care medication-add scope keys, retire temporary 
 
 ### Task 2: 며칠간 복용약 폼 로직 (TDD)
 
+> **실행 중 변경:** macOS 대소문자 무시 파일시스템에서 `shortTermMedicationForm.ts`가 Task 3의 `ShortTermMedicationForm.tsx`와 케이스 충돌(TS1149)을 일으켜, 로직 모듈은 `shortTermMedicationDraft.ts`(테스트 포함)로 리네임됨. 아래 본문의 원래 파일명은 이 이름으로 읽을 것.
+
 **Files:**
-- Create: `apps/mobile/src/contexts/care/ui/shortTermMedicationForm.ts`
-- Test: `apps/mobile/src/contexts/care/ui/shortTermMedicationForm.test.ts`
+- Create: `apps/mobile/src/contexts/care/ui/shortTermMedicationDraft.ts`
+- Test: `apps/mobile/src/contexts/care/ui/shortTermMedicationDraft.test.ts`
 
 **Interfaces:**
 - Consumes: `CareSetupInput` (`../domain/carePlan`), `TranslationKey` (`../../../i18n/translations`), Task 1의 `care.shortTermPeriodInvalid` 키.
