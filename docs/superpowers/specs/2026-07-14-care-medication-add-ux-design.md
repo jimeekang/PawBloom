@@ -1,3 +1,9 @@
+---
+owner_model: claude-opus-4.8-extra
+domain: product-design
+edit_policy: exclusive
+---
+
 # 케어 탭 약 추가 UX 재설계 + 레이아웃 교정 기획
 
 - 날짜: 2026-07-14

@@ -11,7 +11,6 @@ const checklist: Record<ChecklistKey, boolean> = {
   condition: true,
   memo: false,
   medication: true,
-  night: false,
 };
 
 const entries: DiaryEntry[] = [
@@ -26,7 +25,7 @@ const doses: DoseRecord[] = [
 
 const summary = createDashboardSummary(checklist, entries, doses);
 
-if (summary.completedCount !== 4 || summary.totalCount !== 8) throw new Error("dashboard summary must count completed checklist items");
+if (summary.completedCount !== 4 || summary.totalCount !== 7) throw new Error("dashboard summary must count completed checklist items");
 if (summary.pendingMedicationCount !== 1) throw new Error("dashboard summary must count pending medication doses");
 if (!summary.attentionSignals.some((signal) => signal.includes("컨디션"))) throw new Error("dashboard summary must flag low condition score");
 if (!summary.attentionSignals.some((signal) => signal.includes("물"))) throw new Error("dashboard summary must flag missing water record");
@@ -37,6 +36,7 @@ const diaryOnlyKeys = getTodayChecklistOrder({ walkEnabled: false, includeMedica
 if (diaryOnlyKeys.includes("walk")) throw new Error("today checklist must hide walk when the pet routine disables walks");
 if (diaryOnlyKeys.includes("medication")) throw new Error("today checklist must hide medication only when the caller explicitly suppresses it");
 if (!diaryOnlyKeys.includes("condition")) throw new Error("today checklist must keep condition in the normal diary flow");
+if (!diaryOnlyKeys.includes("memo")) throw new Error("today checklist must expose memo in the normal diary flow");
 
 const careKeys = getTodayChecklistOrder({ walkEnabled: true, includeMedication: true });
 if (!careKeys.includes("walk")) throw new Error("today checklist must show walk when enabled");
