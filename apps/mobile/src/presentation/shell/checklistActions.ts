@@ -6,7 +6,7 @@ import { createLocalDiaryEntry } from "../../contexts/diary/ui/localDiaryState";
 
 export function checklistKeyToDiaryCategory(key: ChecklistKey): DiaryCategory | null {
   if (key === "medication") return null;
-  return key === "night" ? "memo" : key;
+  return key;
 }
 
 export function isChecklistRecordBlocked({

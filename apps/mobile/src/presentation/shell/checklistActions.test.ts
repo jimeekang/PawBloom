@@ -10,7 +10,6 @@ const emptyChecklist: Record<ChecklistKey, boolean> = {
   condition: false,
   memo: false,
   medication: false,
-  night: false,
 };
 
 const todayMemo: DiaryEntry = {
@@ -20,7 +19,7 @@ const todayMemo: DiaryEntry = {
   origin: "diary",
   entryDate: "2026-06-30",
   occurredAt: "21:00",
-  summary: "night note",
+  summary: "memo note",
 };
 
 const todayFood: DiaryEntry = {
@@ -33,15 +32,15 @@ const todayFood: DiaryEntry = {
   summary: "breakfast",
 };
 
-if (checklistKeyToDiaryCategory("night") !== "memo") {
-  throw new Error("night checklist records must edit the memo diary category");
+if (checklistKeyToDiaryCategory("memo") !== "memo") {
+  throw new Error("memo checklist records must use the memo diary category");
 }
 
-if (!isChecklistRecordBlocked({ key: "night", checklist: emptyChecklist, entries: [todayMemo], entryDate: "2026-06-30", pendingKeys: [] })) {
+if (!isChecklistRecordBlocked({ key: "memo", checklist: emptyChecklist, entries: [todayMemo], entryDate: "2026-06-30", pendingKeys: [] })) {
   throw new Error("today checklist must block duplicate diary records for the same category");
 }
 
-if (isChecklistRecordBlocked({ key: "night", checklist: emptyChecklist, entries: [todayMemo], entryDate: "2026-06-29", pendingKeys: [] })) {
+if (isChecklistRecordBlocked({ key: "memo", checklist: emptyChecklist, entries: [todayMemo], entryDate: "2026-06-29", pendingKeys: [] })) {
   throw new Error("today checklist must allow the same category on another day");
 }
 

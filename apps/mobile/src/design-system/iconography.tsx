@@ -31,7 +31,6 @@ export const icon = {
   condition: { family: "ion", name: "heart" },
   memo: { family: "ion", name: "document-text" },
   medication: { family: "material", name: "pill" },
-  night: { family: "ion", name: "moon" },
   check: { family: "ion", name: "checkmark" },
   circle: { family: "ion", name: "ellipse-outline" },
   spark: { family: "ion", name: "sparkles" },

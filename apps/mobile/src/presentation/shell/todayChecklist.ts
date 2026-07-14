@@ -3,7 +3,7 @@ import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import type { TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { t, type TranslationKey } from "../../i18n/translations";
 
-export type ChecklistKey = Exclude<DiaryCategory, "photo"> | "medication" | "night";
+export type ChecklistKey = Exclude<DiaryCategory, "photo"> | "medication";
 
 export const initialChecklist: Record<ChecklistKey, boolean> = {
   food: true,
@@ -13,7 +13,6 @@ export const initialChecklist: Record<ChecklistKey, boolean> = {
   condition: false,
   memo: false,
   medication: false,
-  night: false,
 };
 
 export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRecord[]): Record<ChecklistKey, boolean> {
@@ -25,7 +24,6 @@ export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRec
     condition: entries.some((entry) => entry.category === "condition"),
     memo: entries.some((entry) => entry.category === "memo"),
     medication: doses.some((dose) => dose.status !== "pending"),
-    night: entries.some((entry) => entry.category === "memo"),
   };
 }
 
@@ -66,15 +64,14 @@ export function checklistSummary(key: ChecklistKey) {
     condition: "checklist.summary.condition",
     memo: "checklist.summary.memo",
     medication: "checklist.summary.medication",
-    night: "checklist.summary.night",
   };
   return t("ko", summaryKeys[key]);
 }
 
 export function getTodayChecklistOrder({ walkEnabled, includeMedication = true }: { walkEnabled: boolean; includeMedication?: boolean }): ChecklistKey[] {
   const diaryKeys: ChecklistKey[] = walkEnabled
-    ? ["food", "water", "walk", "stool", "condition", "night"]
-    : ["food", "water", "stool", "condition", "night"];
+    ? ["food", "water", "walk", "stool", "condition", "memo"]
+    : ["food", "water", "stool", "condition", "memo"];
 
-  return includeMedication ? [...diaryKeys.slice(0, -1), "medication", "night"] : diaryKeys;
+  return includeMedication ? [...diaryKeys.slice(0, -1), "medication", "memo"] : diaryKeys;
 }
