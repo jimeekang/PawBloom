@@ -132,19 +132,30 @@ function CarePanel({
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.todayMedicationTitle")}</Text>
-        <Text style={styles.linkText}>{t("ko", "care.todayMedicationProgress")} {pendingCount}</Text>
+        <Text style={styles.countText}>{t("ko", "care.todayMedicationProgress")} {pendingCount}</Text>
       </View>
       <View style={styles.medList}>
         {agendaRows.length === 0 ? <Text style={styles.emptyText}>{t("ko", "care.noMedicationToday")}</Text> : null}
-        {agendaRows.map((row) => (
-          <MedicationAgendaRow key={`${row.scheduleId ?? row.doseId}-${row.doseDate}-${row.scheduledTime}`} row={row} onEdit={row.doseId ? () => setEditingDoseId(row.doseId ?? null) : undefined} onStatusChange={(status) => onAgendaStatusChange?.(row, status)} />
-        ))}
+        {agendaRows.map((row) => {
+          const rowKey = `${row.scheduleId ?? row.doseId}-${row.doseDate}-${row.scheduledTime}`;
+          const isEditingRow = Boolean(editingDose && row.doseId === editingDose.id);
+          return (
+            <View key={rowKey} style={styles.medListItem}>
+              <MedicationAgendaRow row={row} onEdit={row.doseId ? () => setEditingDoseId(row.doseId ?? null) : undefined} onStatusChange={(status) => onAgendaStatusChange?.(row, status)} />
+              {isEditingRow ? (
+                <SurfaceCard>
+                  <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} canDelete={canDeleteDose} />
+                </SurfaceCard>
+              ) : null}
+            </View>
+          );
+        })}
       </View>
 
       <SecondaryButton label={t("ko", "care.temporaryAdd")} icon="add" onPress={() => setTemporaryFormOpen((current) => !current)} />
-      {temporaryFormOpen || editingDose ? (
+      {temporaryFormOpen ? (
         <SurfaceCard>
-          <QuickMedicationForm onSave={onAddDose} editingDose={editingDose} onUpdate={onUpdateDose} onDelete={onDeleteDose} onCancelEdit={() => setEditingDoseId(null)} canDelete={canDeleteDose} />
+          <QuickMedicationForm onSave={onAddDose} />
         </SurfaceCard>
       ) : null}
 
@@ -190,8 +201,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
         </View>
       </View>
       {onEdit ? (
-        <Pressable onPress={onEdit} style={styles.editButton}>
-          <Text style={styles.linkText}>{t("ko", "care.quickDoseUpdate")}</Text>
+        <Pressable accessibilityRole="button" onPress={onEdit} style={styles.editButton}>
+          <Text style={styles.editText}>{t("ko", "care.editShort")}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -211,13 +222,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...type.sectionTitle,
   },
-  linkText: {
-    ...type.caption,
-    color: colors.orangeDeep,
-  },
+  countText: { ...type.caption, color: colors.textMuted },
   medList: {
     gap: spacing.md,
   },
+  medListItem: { gap: spacing.sm },
   agendaRow: {
     minHeight: 112,
     borderRadius: radius.md,
@@ -235,12 +244,13 @@ const styles = StyleSheet.create({
   sourceLabel: { ...type.tiny, color: colors.orangeDeep },
   medDetail: { ...type.caption },
   medMeta: { ...type.tiny, color: colors.textMuted },
-  actionButtons: { gap: spacing.sm, marginTop: spacing.sm },
-  givenButton: { minHeight: 40, borderRadius: radius.md, backgroundColor: colors.mintDeep, alignItems: "center", justifyContent: "center" },
+  actionButtons: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  givenButton: { flex: 1, minHeight: 40, borderRadius: radius.md, backgroundColor: colors.mintDeep, alignItems: "center", justifyContent: "center" },
   givenButtonText: { ...type.bodyStrong, color: colors.white },
-  skipButton: { minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  skipButton: { flex: 1, minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   skipButtonText: { ...type.bodyStrong, color: colors.textMuted },
-  editButton: { paddingRight: spacing.md },
+  editButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md },
+  editText: { ...type.caption, color: colors.orangeDeep },
   emptyText: {
     ...type.body,
     color: colors.textMuted,
