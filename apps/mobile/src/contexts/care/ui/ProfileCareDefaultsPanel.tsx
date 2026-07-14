@@ -141,7 +141,7 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
             {draft.times.length > 1 ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("ko", "pet.careDefaultsClearDate")}
+                accessibilityLabel={t("ko", "care.removeTimeA11y")}
                 style={styles.removeTimeButton}
                 onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: current.times.filter((_, itemIndex) => itemIndex !== index) }))}
               >
@@ -183,5 +183,5 @@ const styles = StyleSheet.create({
   removeTimeText: { ...type.sectionTitle, color: colors.textMuted },
   addTimeButton: { minHeight: 44, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   addTimeText: { ...type.bodyStrong, color: colors.orangeDeep },
-  errorText: { ...type.caption, color: colors.coral },
+  errorText: { ...type.caption, color: colors.danger },
 });
