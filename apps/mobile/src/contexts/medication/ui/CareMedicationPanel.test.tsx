@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import type { DoseRecord } from "../domain/medication";
 import { updateLocalDoseRecord } from "./localMedicationState";
-import { MedicationRow, QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
+import { QuickMedicationForm, type QuickMedicationSaveHandler } from "./CareMedicationPanel";
 import { careStatusActionLabel, createEmptyQuickMedicationState, createQuickMedicationEditState, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete, shouldShowTemporaryMedicationForm } from "./careMedicationPanelState";
 
 const asyncSave: QuickMedicationSaveHandler = async (input) => {
@@ -68,14 +68,7 @@ if (shouldShowTemporaryMedicationForm(false) !== false || shouldShowTemporaryMed
   throw new Error("temporary medication form visibility must be explicit");
 }
 
-const rowProps: ComponentProps<typeof MedicationRow> = {
-  dose: editingDose,
-  onEdit: () => undefined,
-  onStatusPress: () => undefined,
-};
-
 void asyncProps;
 void syncProps;
 void editProps;
 void updatedTime;
-void rowProps;

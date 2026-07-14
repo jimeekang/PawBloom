@@ -86,7 +86,7 @@ if (/\n\s*mealRow:\s*{[^}]*flexDirection:\s*"row"/s.test(diaryDetailPanel) || /\
 }
 
 const careMedicationPanel = readFileSync(join(root, "apps/mobile/src/contexts/medication/ui/CareMedicationPanel.tsx"), "utf8");
-if (/\n\s*inputGrid:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
+if (/\n\s*inputStack:\s*{\s*flexDirection:\s*"row"/s.test(careMedicationPanel)) {
   throw new Error("care quick medication dose fields must remain stacked to avoid narrow mobile clipping");
 }
 
