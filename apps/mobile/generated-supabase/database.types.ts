@@ -829,6 +829,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_photo_diary_entry: {
+        Args: {
+          p_append_mutation_id: string
+          p_entry_id: string
+          p_media: Json
+          p_occurred_at: string
+          p_pet_id: string
+        }
+        Returns: {
+          category: Database["public"]["Enums"]["diary_entry_category"]
+          client_mutation_id: string | null
+          condition_score: number | null
+          created_at: string
+          created_by: string
+          entry_date: string
+          id: string
+          occurred_at: string
+          pet_id: string
+          record_origin: string
+          summary: string
+          superseded_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "diary_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_vet_report_draft_v1: {
         Args: {
           p_created_by: string

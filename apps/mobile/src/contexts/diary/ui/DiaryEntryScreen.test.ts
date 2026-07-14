@@ -58,6 +58,10 @@ if (isStructuredDailyDiaryCategory("memo")) {
   throw new Error("memo must remain appendable");
 }
 
+if (isStructuredDailyDiaryCategory("photo")) {
+  throw new Error("photo diary entries must remain appendable instead of being merged into one daily entry");
+}
+
 if (findEditableDailyStructuredEntry([existingFood], "food", "2026-07-01")?.id !== "entry-food") {
   throw new Error("saving the same structured diary category should find the existing daily record");
 }
@@ -182,8 +186,8 @@ if (getDiaryPhotosForSave("photo", samplePhotos, false) !== samplePhotos) {
   throw new Error("photo diary category must save selected photos when creating");
 }
 
-if (getDiaryPhotosForSave("photo", samplePhotos, true) !== undefined) {
-  throw new Error("photo diary category must preserve existing photos when editing until edit support exists");
+if (getDiaryPhotosForSave("photo", samplePhotos, true) !== samplePhotos) {
+  throw new Error("photo diary edits must save only the newly selected photos for append");
 }
 
 if (getDiaryPhotosForSave("memo", samplePhotos, false) !== undefined) {

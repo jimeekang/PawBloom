@@ -39,6 +39,10 @@ if (!migration.includes("and category <> 'photo'") || !migration.includes("'aust
 if (authenticatedUpdateGrant.includes("category") || authenticatedUpdateGrant.includes("entry_date")) {
   throw new Error("authenticated clients must not move diary records across categories or dates");
 }
+const structuredIndex = migration.match(/create unique index diary_entries_one_active_structured_category_per_day[\s\S]*?;/)?.[0];
+if (!structuredIndex || structuredIndex.includes("'memo'") || structuredIndex.includes("'photo'")) {
+  throw new Error("memo and photo diary categories must allow multiple entries on the same day");
+}
 
 const diaryUpdatePayload = readFileSync(`${root}/apps/mobile/src/contexts/diary/application/diaryRecordPayload.ts`, "utf8");
 if (diaryUpdatePayload.includes("const payload = { category:") || diaryUpdatePayload.includes("entry_date: entryDate")) {

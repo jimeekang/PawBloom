@@ -21,6 +21,7 @@ import { createUuid } from "../../../shared-kernel/uuid";
 import { DiaryConditionScore } from "./DiaryConditionScore";
 import { DiaryEntryActions } from "./DiaryEntryActions";
 import { DiaryPhotoSection } from "./DiaryPhotoSection";
+import { countSavedDiaryPhotosForDate, MAX_DIARY_PHOTOS } from "./DiaryPhotoPicker.logic";
 export function DiaryEntryScreen({
   entries,
   selectedDateKey,
@@ -67,10 +68,12 @@ export function DiaryEntryScreen({
   const [isDetailPanelOpen, setDetailPanelOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
-  const pendingCreateMutation = useRef<{ fingerprint: string; id: string } | null>(null);
+  const pendingSaveMutation = useRef<{ fingerprint: string; id: string } | null>(null);
   const categories = useMemo(() => getDiaryCategoriesForSpecies(petSpecies, routine?.walk.enabled) as DiaryCategory[], [petSpecies, routine?.walk.enabled]);
   const formState = getDiaryCategoryFormState(selected);
   const existingStructuredEntry = editingEntry ? null : findEditableDailyStructuredEntry(entries, selected, selectedDateKey);
+  const photoDateKey = editingEntry?.entryDate ?? selectedDateKey;
+  const savedPhotoCount = useMemo(() => countSavedDiaryPhotosForDate(entries, photoDateKey, editingEntry), [editingEntry, entries, photoDateKey]);
   const saveBlockedByRole = editingEntry ? !canUpdate : existingStructuredEntry ? !canUpdate : !canCreate;
   useEffect(() => { if (!categories.includes(selected)) setSelected(categories[0]); }, [categories, selected]);
   useEffect(() => {
@@ -81,19 +84,16 @@ export function DiaryEntryScreen({
       setLastAppliedInitialEditingEntryId(null);
       return;
     }
-
     if (!canUpdate) {
       setNotice(t("ko", "permission.diaryUpdateCareTeamOnly"));
       onInitialEditingEntryConsumed?.();
       return;
     }
-
     if (!shouldApplyInitialEditingEntry({ nextEntryId: initialEditingEntry.id, currentEditingEntryId: editingEntry?.id, lastAppliedEntryId: lastAppliedInitialEditingEntryId })) return;
     loadEditingEntry(initialEditingEntry);
     setLastAppliedInitialEditingEntryId(initialEditingEntry.id);
     onInitialEditingEntryConsumed?.();
   }, [canUpdate, editingEntry?.id, initialEditingEntry, lastAppliedInitialEditingEntryId, onInitialEditingEntryConsumed, routine]);
-
   function selectCategory(category: DiaryCategory) {
     if (!editingEntry) { setSelected(category); setDetail(createDetailForCategory(category, routine)); setDetailPanelOpen(true); }
   }
@@ -101,13 +101,15 @@ export function DiaryEntryScreen({
     if (savingRef.current) return;
     if (editingEntry && !canUpdate) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
     if (!editingEntry && !canCreate) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
+    if (selected === "photo" && savedPhotoCount + photos.length > MAX_DIARY_PHOTOS) { setNotice(t("ko", "diary.photoLimitNotice")); return; }
+    if (!editingEntry && selected === "photo" && savedPhotoCount >= MAX_DIARY_PHOTOS) { setNotice(t("ko", "diary.photoLimitNotice")); return; }
     if (!editingEntry && selected === "photo" && photos.length === 0) { setNotice(t("ko", "diary.photoRequired")); return; }
     const activeDetail = detail.category === selected ? detail : createDetailForCategory(selected, routine);
     const saveTime = resolveDiarySaveTime(occurredTime, Boolean(editingEntry) || timeDirty);
     if (!saveTime) { setNotice(t("ko", "diary.invalidTime")); return; }
     const draftFingerprint = JSON.stringify({ selected, memo, activeDetail, selectedDateKey, saveTime, conditionScore, photos: photos.map((photo) => [photo.uri, photo.fileName, photo.mimeType]) });
-    const nextCreateMutation = editingEntry ? null : resolvePendingDiaryCreateMutation(pendingCreateMutation.current, draftFingerprint, createUuid);
-    const clientMutationId = nextCreateMutation?.id;
+    const nextSaveMutation = !editingEntry || selected === "photo" ? resolvePendingDiaryCreateMutation(pendingSaveMutation.current, draftFingerprint, createUuid) : null;
+    const clientMutationId = nextSaveMutation?.id;
     const draft = {
       category: selected,
       summary: getDiarySummaryForSave(selected, memo),
@@ -119,9 +121,7 @@ export function DiaryEntryScreen({
       photos: getDiaryPhotosForSave(selected, photos, Boolean(editingEntry)),
       clientMutationId,
     };
-
-    if (nextCreateMutation) pendingCreateMutation.current = nextCreateMutation;
-
+    if (nextSaveMutation) pendingSaveMutation.current = nextSaveMutation;
     savingRef.current = true;
     setIsSaving(true);
     try {
@@ -150,8 +150,7 @@ export function DiaryEntryScreen({
       savingRef.current = false;
       setIsSaving(false);
     }
-
-    pendingCreateMutation.current = null;
+    pendingSaveMutation.current = null;
     setMemo("");
     setDetail(createDetailForCategory(selected, routine));
     setPhotos([]);
@@ -159,7 +158,6 @@ export function DiaryEntryScreen({
     setTimeDirty(false);
     setDetailPanelOpen(isDiaryDetailPanelOpenAfterSave(isDetailPanelOpen));
   }
-
   function loadEditingEntry(entry: DiaryEntry) {
     setEditingEntry(entry);
     setSelected(entry.category);
@@ -225,7 +223,7 @@ export function DiaryEntryScreen({
       {isDetailPanelOpen && formState.showsDetail ? <DiaryDetailPanel category={selected} detail={detail} onChange={setDetail} /> : null}
 
       {formState.showsPhotos ? (
-        <DiaryPhotoSection editingEntry={editingEntry} photos={photos} onChange={setPhotos} onNotice={setNotice} />
+        <DiaryPhotoSection editingEntry={editingEntry} savedPhotoCount={savedPhotoCount} photos={photos} onChange={setPhotos} onNotice={setNotice} />
       ) : null}
 
       {formState.showsMemo ? (

@@ -9,9 +9,9 @@ import { deleteDiaryEntryAtomic } from "./diaryDeletion";
 import type { CreateDiaryEntryInput, DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
 import { inferDiaryRecordOrigin } from "./diaryRecordOrigin";
 import { buildDiaryUpdatePayload, buildOccurredAt, buildOccurredAtForTime, isStructuredDailyCategory, type DiaryUpdateInput } from "./diaryRecordPayload";
-import { diaryEntrySelect, fetchDiaryEntryByClientMutationId, fetchExistingDailyStructuredEntry, updateCanonicalStructuredEntry, type DiaryRowWithMedia } from "./diaryRecordQueries";
+import { diaryEntrySelect, fetchDiaryEntryByClientMutationId, fetchDiaryRowsWithPhotoUrls, fetchExistingDailyStructuredEntry, updateCanonicalStructuredEntry, type DiaryRowWithMedia } from "./diaryRecordQueries";
 import { decodeDiarySummary, defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
-import { createPhotoDiaryEntryAtomic } from "./diaryPhotoRecords";
+import { createPhotoDiaryEntryAtomic, updatePhotoDiaryEntryAtomic } from "./diaryPhotoRecords";
 import { resolveDiaryUniqueConflict } from "./diaryUniqueConflict";
 
 export { buildDiaryUpdatePayload } from "./diaryRecordPayload";
@@ -41,7 +41,7 @@ export function getWeekDateRange(dateKey: string) {
   return { fromDateKey: getLocalDateKey(start), toDateKey: getLocalDateKey(addDays(start, 6)) };
 }
 
-export function mapDiaryRow(row: DiaryRowWithMedia): DiaryEntry {
+export function mapDiaryRow(row: DiaryRowWithMedia, photoUrls: string[] = []): DiaryEntry {
   const decoded = decodeDiarySummary(row.summary, row.category);
 
   return {
@@ -56,6 +56,7 @@ export function mapDiaryRow(row: DiaryRowWithMedia): DiaryEntry {
     detail: decoded.detail,
     conditionScore: normalizeScore(row.condition_score),
     photoCount: row.media_assets?.length ?? 0,
+    photoUrls,
   };
 }
 
@@ -86,6 +87,17 @@ export function useUpdateDiaryEntry(petId: string | null, userId: string | null 
   return useMutation({
     mutationFn: async (input: UpdateDiaryEntryInput) => {
       if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
+      if (input.category === "photo") {
+        if (!userId || !input.clientMutationId) throw new Error("사진 수정 식별자를 만들지 못했습니다.");
+        if ((input.photos?.length ?? 0) > 5) throw new Error("하루 사진은 최대 5장까지 저장할 수 있습니다.");
+        return mapDiaryRow(await updatePhotoDiaryEntryAtomic({
+          client: supabase,
+          petId,
+          input,
+          entryId: input.id,
+          appendMutationId: input.clientMutationId,
+        }));
+      }
       const { data, error } = await supabase.from("diary_entries").update(buildDiaryUpdatePayload(input)).eq("id", input.id).eq("pet_id", petId).is("superseded_by", null).select(diaryEntrySelect).single();
       if (error) throw new Error(error.message);
       return mapDiaryRow(data as DiaryRowWithMedia);
@@ -200,20 +212,8 @@ function mapQueuedDiaryEntry(payload: DiaryInsert, clientMutationId: string) {
 }
 
 async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: string) {
-  const { data, error } = await supabase!
-    .from("diary_entries")
-    .select(diaryEntrySelect)
-    .eq("pet_id", petId)
-    .gte("entry_date", fromDateKey)
-    .lte("entry_date", toDateKey)
-    .is("superseded_by", null)
-    .order("occurred_at", { ascending: false });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return ((data ?? []) as DiaryRowWithMedia[]).map(mapDiaryRow);
+  const rowsWithPhotos = await fetchDiaryRowsWithPhotoUrls(petId, fromDateKey, toDateKey);
+  return rowsWithPhotos.map(({ row, photoUrls }) => mapDiaryRow(row, photoUrls));
 }
 
 function formatTime(value: string) {

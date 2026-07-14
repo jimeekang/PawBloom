@@ -28,6 +28,7 @@ export type DiaryEntry = {
   detail?: DiaryDetailInput;
   conditionScore?: 1 | 2 | 3 | 4 | 5;
   photoCount?: number;
+  photoUrls?: string[];
 };
 
 export type CreateDiaryEntryInput = {

@@ -31,7 +31,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "PawBloom uses your selected photo as this pet's profile image."
+          "photosPermission": "PawBloom uses your selected photos for pet profiles and diary records.",
+          "cameraPermission": "PawBloom uses the camera to add photos to diary records.",
+          "microphonePermission": false
         }
       ],
       "@react-native-community/datetimepicker"

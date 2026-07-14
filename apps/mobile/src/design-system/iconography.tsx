@@ -18,6 +18,7 @@ export const icon = {
   settings: { family: "ion", name: "settings-outline" },
   add: { family: "ion", name: "add" },
   addPhoto: { family: "ion", name: "image-outline" },
+  camera: { family: "ion", name: "camera-outline" },
   home: { family: "ion", name: "home-outline" },
   homeFilled: { family: "ion", name: "home" },
   diary: { family: "ion", name: "calendar-outline" },

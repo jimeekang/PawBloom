@@ -19,11 +19,10 @@ export async function uploadDiaryPhotoObject(
   diaryEntryId: string,
   photo: PhotoUploadInput,
   index: number,
+  uploadNamespace?: string,
 ): Promise<UploadedPhotoObject> {
   const contentType = resolveSupportedPhotoContentType(photo);
-  const extension = extensionForContentType(contentType);
-  const safeName = photo.fileName?.replace(/[^a-zA-Z0-9._-]/g, "-") || `diary.${extension}`;
-  const storagePath = `${petId}/diary/${diaryEntryId}/${index}-${safeName}`;
+  const storagePath = buildDiaryPhotoStoragePath(petId, diaryEntryId, photo, index, uploadNamespace);
   const uploadBody = await buildPhotoUploadBody(photo);
 
   const { error } = await client.storage.from("pet-media").upload(storagePath, uploadBody, {
@@ -33,6 +32,20 @@ export async function uploadDiaryPhotoObject(
 
   if (error) throw new Error(error.message ?? "사진 업로드에 실패했습니다.");
   return { storagePath, contentType };
+}
+
+export function buildDiaryPhotoStoragePath(
+  petId: string,
+  diaryEntryId: string,
+  photo: PhotoUploadInput,
+  index: number,
+  uploadNamespace?: string,
+) {
+  const contentType = resolveSupportedPhotoContentType(photo);
+  const extension = extensionForContentType(contentType);
+  const safeName = photo.fileName?.replace(/[^a-zA-Z0-9._-]/g, "-") || `diary.${extension}`;
+  const safeNamespace = uploadNamespace?.replace(/[^a-zA-Z0-9-]/g, "-");
+  return `${petId}/diary/${diaryEntryId}/${safeNamespace ? `${safeNamespace}-` : ""}${index}-${safeName}`;
 }
 
 export async function removeUploadedPhotoObjects(client: SupabaseClient<Database>, storagePaths: string[]) {

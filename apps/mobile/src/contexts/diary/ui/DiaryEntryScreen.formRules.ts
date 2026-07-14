@@ -19,5 +19,5 @@ export function getDiarySummaryForSave(category: DiaryCategory, memo: string) {
 }
 
 export function getDiaryPhotosForSave(category: DiaryCategory, photos: DiaryPhotoInput[], isEditing: boolean) {
-  return category === "photo" && !isEditing ? photos : undefined;
+  return category === "photo" && (!isEditing || photos.length > 0) ? photos : undefined;
 }

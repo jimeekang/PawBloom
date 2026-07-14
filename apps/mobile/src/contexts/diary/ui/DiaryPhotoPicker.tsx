@@ -4,48 +4,78 @@ import type { DiaryPhotoInput } from "../domain/diaryEntry";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
+import { getRemainingDiaryPhotoSlots, MAX_DIARY_PHOTOS, toDiaryPhotoInputs } from "./DiaryPhotoPicker.logic";
 
-const MAX_PHOTOS = 5;
+const IMAGE_OPTIONS = {
+  mediaTypes: ["images"],
+  quality: 0.85,
+  base64: true,
+} satisfies ImagePicker.ImagePickerOptions;
 
 export function DiaryPhotoPicker({
   photos,
+  savedPhotoCount = 0,
   onChange,
   onNotice,
 }: {
   photos: DiaryPhotoInput[];
+  savedPhotoCount?: number;
   onChange: (photos: DiaryPhotoInput[]) => void;
   onNotice: (notice: string) => void;
 }) {
-  const addPhoto = async () => {
-    if (photos.length >= MAX_PHOTOS) {
+  const totalPhotoCount = savedPhotoCount + photos.length;
+
+  const canAddPhoto = () => {
+    if (getRemainingDiaryPhotoSlots(totalPhotoCount) === 0) {
       onNotice(t("ko", "diary.photoLimitNotice"));
-      return;
+      return false;
     }
+    return true;
+  };
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t("ko", "diary.photoPermissionTitle"), t("ko", "diary.photoPermissionCopy"));
-      return;
+  const addFromLibrary = async () => {
+    if (!canAddPhoto()) return;
+
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(t("ko", "diary.photoPermissionTitle"), t("ko", "diary.photoPermissionCopy"));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        ...IMAGE_OPTIONS,
+        allowsMultipleSelection: true,
+        selectionLimit: getRemainingDiaryPhotoSlots(totalPhotoCount),
+      });
+
+      addPickedAssets(result);
+    } catch {
+      onNotice(t("ko", "diary.photoLibraryFailed"));
     }
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_PHOTOS - photos.length,
-      quality: 0.85,
-      base64: true,
-    });
+  const takePhoto = async () => {
+    if (!canAddPhoto()) return;
 
-    if (result.canceled) {
-      return;
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(t("ko", "diary.cameraPermissionTitle"), t("ko", "diary.cameraPermissionCopy"));
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync(IMAGE_OPTIONS);
+      addPickedAssets(result);
+    } catch {
+      onNotice(t("ko", "diary.photoCameraFailed"));
     }
+  };
 
-    const nextPhotos = result.assets.slice(0, MAX_PHOTOS - photos.length).map((asset) => ({
-      uri: asset.uri,
-      fileName: asset.fileName,
-      mimeType: asset.mimeType,
-      base64: asset.base64,
-    }));
+  const addPickedAssets = (result: ImagePicker.ImagePickerResult) => {
+    if (result.canceled) return;
+
+    const nextPhotos = toDiaryPhotoInputs(result.assets, getRemainingDiaryPhotoSlots(totalPhotoCount));
 
     onChange([...photos, ...nextPhotos]);
     onNotice(t("ko", "diary.photoAddedNotice"));
@@ -62,14 +92,20 @@ export function DiaryPhotoPicker({
             </View>
           </Pressable>
         ))}
-        {photos.length < MAX_PHOTOS ? (
-          <Pressable style={styles.addButton} onPress={addPhoto}>
-            <AppIcon name="addPhoto" size={iconSize.lg} color={colors.textSoft} />
-            <Text style={styles.addText}>{t("ko", "diary.photoAdd")}</Text>
-          </Pressable>
+        {totalPhotoCount < MAX_DIARY_PHOTOS ? (
+          <>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "diary.photoLibrary")} style={styles.addButton} onPress={addFromLibrary}>
+              <AppIcon name="addPhoto" size={iconSize.lg} color={colors.textSoft} />
+              <Text style={styles.addText}>{t("ko", "diary.photoLibrary")}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "diary.photoCamera")} style={styles.addButton} onPress={takePhoto}>
+              <AppIcon name="camera" size={iconSize.lg} color={colors.textSoft} />
+              <Text style={styles.addText}>{t("ko", "diary.photoCamera")}</Text>
+            </Pressable>
+          </>
         ) : null}
       </View>
-      <Text style={styles.count}>{photos.length}/{MAX_PHOTOS}</Text>
+      <Text style={styles.count}>{totalPhotoCount}/{MAX_DIARY_PHOTOS}</Text>
     </View>
   );
 }

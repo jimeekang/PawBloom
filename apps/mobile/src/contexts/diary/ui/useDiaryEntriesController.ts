@@ -68,7 +68,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
   async function updateDiaryRecord(draft: DraftDiaryEntry & { id: string; occurredTime: string }) {
     if (databaseMode) {
       try {
-        await updateDiaryEntry.mutateAsync({ id: draft.id, category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredTime, origin: draft.origin, conditionScore: draft.conditionScore });
+        await updateDiaryEntry.mutateAsync({ id: draft.id, category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredTime, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId });
         onNotice(t("ko", "today.diaryUpdatedRemote")); onSaved();
       } catch (error) {
         onNotice(error instanceof Error ? error.message : t("ko", "diary.updateFailed")); throw error;
