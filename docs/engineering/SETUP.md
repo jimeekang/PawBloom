@@ -39,6 +39,7 @@ PawBloom 신규 개발자를 위한 로컬 개발 환경 구축 문서. 0002 MVP
 | Supabase account/project | Auth, Postgres, Storage, Edge Functions | region은 `ap-southeast-2` Sydney | Dashboard project 생성 |
 | Expo account | EAS Build/Submit | expo.dev 계정 생성 | `eas login` |
 | EAS CLI | iOS/Android cloud build | `npm.cmd install --global eas-cli` | `eas --version` |
+| Expo Go | 기본 모바일 개발 런타임 | iOS Simulator 또는 실제 기기에 설치 | Expo Go 홈 화면 표시 |
 | Android 실제 기기 | Galaxy/Android QA | Developer Options, USB debugging 활성화 | APK 설치 가능 |
 | iPhone 실제 기기 | iOS QA | TestFlight 또는 development build 확인 | 앱 설치 가능 |
 
@@ -74,7 +75,30 @@ npm.cmd run verify
 `npm.cmd run verify`가 P0 완료 기준이다. 통과 후 web preview 확인까지 되면
 개발 환경 baseline이 선다.
 
-### 2. Emulator 없이 web preview 확인
+### 2. Expo Go로 iOS 개발
+
+일상적인 iOS 개발은 네이티브 PawBloom Debug 앱이 아니라 Expo Go를 기본
+런타임으로 사용한다. 아래 명령은 Metro를 시작하고 iOS Simulator의 Expo Go에서
+PawBloom 프로젝트를 연다. `apps/mobile/package.json`의 `ios` script는 `--go`를
+명시하므로 설치된 development client를 자동 선택하지 않는다.
+
+```powershell
+npm.cmd run mobile:ios
+```
+
+Metro가 실행 중이지 않은 상태에서 이전에 Xcode로 설치한 `PawBloom` Debug 앱을
+홈 화면에서 직접 열면 `No script URL provided`가 표시될 수 있다. 이는 앱 로직
+오류가 아니라 JS bundle을 제공할 Metro URL이 없는 development build 실행
+오류다. Expo Go 개발에는 해당 앱이 필요하지 않으므로 제거하고 위 명령으로
+실행한다. Xcode/development build는 Expo Go에 없는 native module 또는
+release-specific 동작을 확인할 때만 별도로 사용한다.
+
+Expo Go는 `expo-notifications`의 모든 네이티브 기능과 동일한 실행 환경을
+제공하지 않는다. 일반 화면·상태·데이터 흐름은 Expo Go에서 개발하되, 알림 권한,
+예약 수신, 백그라운드 동작의 최종 검증은 development build 또는 TestFlight에서
+수행한다.
+
+### 3. Emulator 없이 web preview 확인
 
 ```powershell
 npm.cmd run mobile:export-web
@@ -87,7 +111,7 @@ npm.cmd run mobile:preview-web
 http://127.0.0.1:8082/
 ```
 
-### 3. Supabase local setup
+### 4. Supabase local setup
 
 local stack을 띄우고, migration을 적용하고, generated DB type을 최신화한다.
 `gen types` 출력 경로는 generated 원본이며 shared-kernel boundary가 이를
@@ -110,7 +134,7 @@ npm.cmd run verify
 
 관련 config/파일: `supabase/config.toml`, `supabase/migrations/**`.
 
-### 4. EAS setup
+### 5. EAS setup
 
 ```powershell
 npm.cmd install --global eas-cli
@@ -146,6 +170,7 @@ merge gate 규칙은 [QUALITY.md](./QUALITY.md)와 중복되므로 그 문서를
 ## 참고 자료
 
 - OpenAI Harness Engineering: <https://openai.com/ko-KR/index/harness-engineering/>
+- Expo Go: <https://docs.expo.dev/get-started/start-developing/>
 - Expo EAS app store submission: <https://docs.expo.dev/deploy/submit-to-app-stores/>
 - Expo development builds: <https://docs.expo.dev/develop/development-builds/create-a-build/>
 - React Native environment setup: <https://reactnative.dev/docs/set-up-your-environment>

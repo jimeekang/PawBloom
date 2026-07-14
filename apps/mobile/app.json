@@ -24,6 +24,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withHermesBuildPhaseWarningFix",
       "expo-secure-store",
       "expo-sqlite",
       "expo-notifications",

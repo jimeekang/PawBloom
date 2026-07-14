@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./src/design-system/iconography";
 import { AuthProvider, useAuth } from "./src/contexts/identity/application/authContext";
 import { PawBloomShell } from "./src/presentation/PawBloomShell";
@@ -28,14 +29,16 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <AppBody />
-        </AuthProvider>
-      </LanguageProvider>
-      <StatusBar style="dark" />
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppBody />
+          </AuthProvider>
+        </LanguageProvider>
+        <StatusBar style="dark" />
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
 

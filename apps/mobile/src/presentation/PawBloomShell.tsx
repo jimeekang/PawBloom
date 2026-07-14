@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppState, SafeAreaView, ScrollView, View } from "react-native";
+import { AppState, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import { DiaryEntryScreen } from "../contexts/diary/ui/DiaryEntryScreen";
 import { getTodayEntriesForPet, useDiaryEntriesController } from "../contexts/diary/ui/useDiaryEntriesController";
