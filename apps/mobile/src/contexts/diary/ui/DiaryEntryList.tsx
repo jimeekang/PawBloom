@@ -36,7 +36,12 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
               return (
                 <View key={entry.id} style={styles.entry}>
                   {onEntryPress ? (
-                    <Pressable style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={() => onEntryPress(entry)}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${entry.occurredAt}, ${t("ko", visual.labelKey)}, ${entry.category === "photo" ? t("ko", "category.photo") : entry.summary}`}
+                      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                      onPress={() => onEntryPress(entry)}
+                    >
                       {row}
                     </Pressable>
                   ) : (
@@ -65,7 +70,7 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
       <Modal visible={Boolean(selectedPhotoUrl)} transparent animationType="fade" onRequestClose={() => setSelectedPhotoUrl(null)}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t("ko", "diary.photos")}
+          accessibilityLabel={t("ko", "diary.photoClose")}
           style={styles.photoViewer}
           onPress={() => setSelectedPhotoUrl(null)}
         >

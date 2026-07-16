@@ -75,13 +75,22 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         {checklistOrder.map((key) => {
           const item = categoryVisuals[key];
           const done = checklist[key];
+          const label = t("ko", item.labelKey);
           return (
-            <Pressable key={key} style={styles.checkItem} onPress={() => onChecklistToggle(key)}>
+            <Pressable
+              key={key}
+              accessibilityRole="button"
+              accessibilityLabel={`${label}, ${t("ko", done ? "today.checklistStatusComplete" : "today.checklistStatusIncomplete")}`}
+              accessibilityState={{ selected: done }}
+              aria-pressed={done}
+              style={styles.checkItem}
+              onPress={() => onChecklistToggle(key)}
+            >
               <IconBubble name={item.icon} color={item.color} background={item.background} size={50} />
               <View style={styles.checkMark}>
                 <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? colors.mintDeep : colors.textSoft} />
               </View>
-              <Text style={styles.checkLabel} numberOfLines={2}>{t("ko", item.labelKey)}</Text>
+              <Text style={styles.checkLabel} numberOfLines={2}>{label}</Text>
             </Pressable>
           );
         })}
@@ -108,7 +117,13 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                 </>
               );
               return onTimelineEntryPress ? (
-                <Pressable key={entry.id} style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]} onPress={() => onTimelineEntryPress(entry)}>
+                <Pressable
+                  key={entry.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${entry.occurredAt}, ${t("ko", item.labelKey)}, ${entry.category === "photo" ? t("ko", "category.photo") : entry.summary}`}
+                  style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]}
+                  onPress={() => onTimelineEntryPress(entry)}
+                >
                   {row}
                 </Pressable>
               ) : (
