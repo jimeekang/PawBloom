@@ -24,10 +24,12 @@ export function SettingsScreen({
         <View style={styles.cardBody}>
           <View style={styles.rowTitle}>
             <AppIcon name="pet" size={iconSize.md} color={colors.orangeDeep} />
-            <Text style={styles.title}>{t("ko", "settings.accountTitle")}</Text>
+            <Text style={styles.title}>{t("ko", configured ? "settings.accountTitle" : "settings.previewTitle")}</Text>
           </View>
           <Text style={styles.copy}>{email || t("ko", "settings.previewAccount")}</Text>
-          <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
+          {configured
+            ? <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
+            : <Text style={styles.copy}>{t("ko", "settings.previewCopy")}</Text>}
         </View>
       </SurfaceCard>
 
@@ -59,10 +61,10 @@ export function SettingsScreen({
 
       <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.title}>{t("ko", "settings.environment")}</Text>
+          <Text style={styles.title}>{t("ko", "settings.dataTitle")}</Text>
           <View style={styles.statusPill}>
-            <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.coral }]} />
-            <Text style={styles.statusText}>{configured ? t("ko", "settings.supabaseReady") : t("ko", "settings.supabaseMissing")}</Text>
+            <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.orange }]} />
+            <Text style={styles.statusText}>{t("ko", configured ? "settings.syncReady" : "settings.localOnly")}</Text>
           </View>
           <Text style={styles.copy}>{t("ko", "settings.plan")}: {t("ko", "settings.freePlan")}</Text>
         </View>
