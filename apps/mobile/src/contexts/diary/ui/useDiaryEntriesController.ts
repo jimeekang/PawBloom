@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getLocalDateKey, getWeekDateRange, useCreateDiaryEntry, useDeleteDiaryEntry, useDiaryEntriesByDate, useDiaryEntriesByDateRange, useTodayDiaryEntries, useUpdateDiaryEntry } from "../application/diaryRecords";
 import type { DiaryEntry } from "../domain/diaryEntry";
 import { t } from "../../../i18n/translations";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import type { DiaryFilter } from "./DiaryCalendar";
 import type { DraftDiaryEntry } from "./draftDiaryEntry";
-import { buildSampleDiaryEntries } from "./sampleDiaryEntries";
+import { buildSampleDiaryEntries, relocalizeSampleDiaryEntries } from "./sampleDiaryEntries";
 import { createLocalDiaryEntry, getTodayEntriesForPet, updateLocalDiaryEntry } from "./localDiaryState";
 import { resolveRemoteDiarySaveOutcome } from "./DiaryEntryScreen.logic";
+import type { Language } from "../../../shared-kernel/types";
 
 type Params = {
   activePetId: string;
@@ -15,24 +16,29 @@ type Params = {
   livePetId: string | null;
   userId: string | null;
   fallbackPetId: string;
+  language: Language;
   onNotice: (notice: string) => void;
   onSaved: () => void;
   onLocalEntrySaved: (entry: DiaryEntry) => void;
   onLocalEntriesChanged: (nextEntries: DiaryEntry[]) => void;
 };
 
-export function useDiaryEntriesController({ activePetId, databaseMode, livePetId, userId, fallbackPetId, onNotice, onSaved, onLocalEntrySaved, onLocalEntriesChanged }: Params) {
+export function useDiaryEntriesController({ activePetId, databaseMode, livePetId, userId, fallbackPetId, language, onNotice, onSaved, onLocalEntrySaved, onLocalEntriesChanged }: Params) {
   const diaryQuery = useTodayDiaryEntries(livePetId, userId);
   const createDiaryEntry = useCreateDiaryEntry(livePetId, userId);
   const updateDiaryEntry = useUpdateDiaryEntry(livePetId, userId);
   const deleteDiaryEntry = useDeleteDiaryEntry(livePetId, userId);
-  const [entries, setEntries] = useState<DiaryEntry[]>(() => buildSampleDiaryEntries(fallbackPetId));
+  const [entries, setEntries] = useState<DiaryEntry[]>(() => buildSampleDiaryEntries(fallbackPetId, language));
   const [selectedDiaryDate, setSelectedDiaryDate] = useState(getLocalDateKey());
   const [diaryFilter, setDiaryFilter] = useState<DiaryFilter>("day");
   const [timelineEditEntry, setTimelineEditEntry] = useState<DiaryEntry | null>(null);
   const selectedWeekRange = useMemo(() => getWeekDateRange(selectedDiaryDate), [selectedDiaryDate]);
   const diaryDateQuery = useDiaryEntriesByDate(livePetId, selectedDiaryDate, userId);
   const diaryWeekQuery = useDiaryEntriesByDateRange(livePetId, selectedWeekRange.fromDateKey, selectedWeekRange.toDateKey, userId);
+
+  useEffect(() => {
+    if (!databaseMode) setEntries((current) => relocalizeSampleDiaryEntries(current, language));
+  }, [databaseMode, language]);
 
   const activeEntries = useMemo(() => (databaseMode ? diaryQuery.data ?? [] : entries.filter((entry) => entry.petId === activePetId && entry.entryDate === getLocalDateKey())), [activePetId, databaseMode, diaryQuery.data, entries]);
 

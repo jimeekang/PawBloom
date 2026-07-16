@@ -17,7 +17,7 @@ import { useCareSetupState } from "../contexts/care/ui/useCareSetupState";
 import { useRoutineDefaults } from "../contexts/routine/ui/useRoutineDefaults";
 import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../contexts/routine/domain/petRoutine";
 import { type PetProfile } from "../contexts/pet/domain/pet";
-import { mockPets } from "../contexts/pet/ui/samplePets";
+import { buildSamplePets } from "../contexts/pet/ui/samplePets";
 import { useReportDraftSummary } from "../contexts/report/application/reportDraftRecords";
 import { ReportsScreen } from "../contexts/report/ui/ReportsScreen";
 import { useVetReportWorkflow } from "../contexts/report/ui/useVetReportWorkflow";
@@ -44,8 +44,9 @@ type PawBloomShellProps = { activePet?: PetProfile | null; pets?: PetProfile[]; 
 export function PawBloomShell({ activePet: externalActivePet, pets: externalPets, onPetNext }: PawBloomShellProps = {}) {
   const { configured, user, activePet: authActivePet, pets: authPets, selectNextPet, signOut } = useAuth();
   const { language } = useLanguage();
+  const previewPets = useMemo(() => buildSamplePets(language), [language]);
   const shellPets = externalPets ?? authPets;
-  const activePet = useMemo(() => externalActivePet ?? authActivePet ?? mockPets[0], [authActivePet, externalActivePet]);
+  const activePet = useMemo(() => externalActivePet ?? authActivePet ?? previewPets[0], [authActivePet, externalActivePet, previewPets]);
   const canCyclePet = shellPets.length > 1;
   const databaseMode = configured && Boolean(user) && Boolean(authActivePet ?? externalActivePet);
   const livePetId = databaseMode ? activePet.id : null;
@@ -72,7 +73,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     setNotice(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
   }, [databaseMode, language]);
 
-  const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: mockPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
+  const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
   const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
   const reminderScheduleKey = care.activeCareSetup.schedules.map((schedule) => `${schedule.id}:${schedule.localTime}:${schedule.startsOn}:${schedule.endsOn ?? ""}:${schedule.recurrenceIntervalDays}`).join("|");
   const mealReminderScheduleKey = [routine.activeRoutine.food.mealRemindersEnabled, ...(["breakfast", "lunch", "dinner", "snack"] as RoutineMealSlot[]).map((slot) => `${slot}:${routine.activeRoutine.food.meals[slot]?.localTime ?? ""}`)].join("|");
@@ -95,7 +96,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     databaseMode,
     livePetId,
     userId,
-    fallbackPetId: mockPets[0].id,
+    fallbackPetId: previewPets[0].id,
+    language,
     schedules: care.activeCareSetup.schedules,
     onNotice: setNotice,
     onSaved: showSaveFeedback,
@@ -107,7 +109,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     databaseMode,
     livePetId,
     userId,
-    fallbackPetId: mockPets[0].id,
+    fallbackPetId: previewPets[0].id,
+    language,
     onNotice: setNotice,
     onSaved: () => showSaveFeedback("diary"),
     onLocalEntrySaved: (entry) => setLocalChecklist((current) => ({ ...current, ...(entry.category in current ? { [entry.category]: true } : {}) })),
