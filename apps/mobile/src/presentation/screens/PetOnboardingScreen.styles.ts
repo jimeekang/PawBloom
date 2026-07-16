@@ -64,6 +64,14 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
   },
+  fieldGroup: {
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    ...type.caption,
+    color: colors.text,
+    fontWeight: font.weight.semibold,
+  },
   speciesPill: {
     minHeight: 40,
     borderRadius: radius.full,

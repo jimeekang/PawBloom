@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
@@ -10,10 +10,9 @@ import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePho
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
 import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
 import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain/carePlan";
-import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
+import { LabeledDateField, LabeledTextField, PetSelector, PhotoPicker, SpeciesPill } from "./PetOnboardingHelpers";
 import { RoutineSettingsPanel } from "../../contexts/routine/ui/RoutineSettingsPanel";
 import { ProfileCareDefaultsPanel } from "../../contexts/care/ui/ProfileCareDefaultsPanel";
-import { DatePickerField } from "../../design-system/DatePickerField";
 import { styles } from "./PetOnboardingScreen.styles";
 import { can } from "../../shared-kernel/permissions";
 
@@ -154,46 +153,36 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
 
       {hasPets && !showCreateForm ? <SecondaryButton label={t("ko", "pet.create")} icon="add" onPress={onAddAnother} /> : null}
 
-      {shouldShowPetSelector ? (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t("ko", "pet.selectTitle")}</Text>
-          {pets.map((pet) => (
-            <Pressable key={pet.id} style={[styles.petRow, pet.id === activePet?.id && styles.petRowActive]} onPress={() => selectPet(pet.id)}>
-              <View style={styles.petTextWrap}>
-                <Text style={styles.petName}>{pet.name}</Text>
-                <Text style={styles.petMeta}>
-                  {pet.breed || "-"} · {pet.ageLabel} · {pet.weightKg ? `${pet.weightKg}kg` : "-"}
-                </Text>
-              </View>
-              <AppIcon name="check" size={iconSize.sm} color={pet.id === activePet?.id ? colors.orangeDeep : colors.textMuted} />
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      {shouldShowPetSelector ? <PetSelector pets={pets} activePetId={activePet?.id} onSelect={selectPet} /> : null}
 
       {activePet && !showCreateForm && canManageActivePet ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.editTitle")}</Text>
-          <View style={styles.row}>
-            {speciesOptions.map((option) => (
-              <SpeciesPill key={option} label={speciesLabel[option]} selected={editSpecies === option} onPress={() => setEditSpecies(option)} />
-            ))}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{t("ko", "pet.speciesLabel")}</Text>
+            <View style={styles.row}>
+              {speciesOptions.map((option) => (
+                <SpeciesPill key={option} label={speciesLabel[option]} selected={editSpecies === option} onPress={() => setEditSpecies(option)} />
+              ))}
+            </View>
           </View>
-          <PhotoPicker
-            imageUri={editPhoto?.uri ?? activePhoto.data ?? undefined}
-            onPress={() => void pickPhoto(setEditPhoto)}
-            label={t("ko", "pet.photoUpdate")}
-          />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{t("ko", "pet.photoLabel")}</Text>
+            <PhotoPicker
+              imageUri={editPhoto?.uri ?? activePhoto.data ?? undefined}
+              onPress={() => void pickPhoto(setEditPhoto)}
+              label={t("ko", "pet.photoUpdate")}
+            />
+          </View>
 
-          <TextInput style={styles.input} value={editName} onChangeText={setEditName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
-          <TextInput style={styles.input} value={editBreed} onChangeText={setEditBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-          <DatePickerField value={editBirthdate} onChange={setEditBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
-          <TextInput
-            style={styles.input}
+          <LabeledTextField label={t("ko", "pet.nameLabel")} value={editName} onChangeText={setEditName} placeholder={t("ko", "pet.namePlaceholder")} />
+          <LabeledTextField label={t("ko", "pet.breedLabel")} value={editBreed} onChangeText={setEditBreed} placeholder={t("ko", "pet.breedPlaceholder")} />
+          <LabeledDateField label={t("ko", "pet.birthdateLabel")} value={editBirthdate} onChange={setEditBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} clearLabel={t("ko", "pet.birthdateClear")} />
+          <LabeledTextField
+            label={t("ko", "pet.weightLabel")}
             value={editWeightKg}
             onChangeText={setEditWeightKg}
             placeholder={t("ko", "pet.weightPlaceholder")}
-            placeholderTextColor={colors.textMuted}
             keyboardType="decimal-pad"
           />
 
@@ -215,22 +204,27 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.addTitle")}</Text>
           {!hasPets ? <Text style={styles.helpText}>{t("ko", "pet.empty")}</Text> : null}
-          <View style={styles.row}>
-            {speciesOptions.map((option) => (
-              <SpeciesPill key={option} label={speciesLabel[option]} selected={species === option} onPress={() => setSpecies(option)} />
-            ))}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{t("ko", "pet.speciesLabel")}</Text>
+            <View style={styles.row}>
+              {speciesOptions.map((option) => (
+                <SpeciesPill key={option} label={speciesLabel[option]} selected={species === option} onPress={() => setSpecies(option)} />
+              ))}
+            </View>
           </View>
-          <PhotoPicker imageUri={photo?.uri} onPress={() => void pickPhoto(setPhoto)} label={t("ko", "pet.photoAdd")} />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{t("ko", "pet.photoLabel")}</Text>
+            <PhotoPicker imageUri={photo?.uri} onPress={() => void pickPhoto(setPhoto)} label={t("ko", "pet.photoAdd")} />
+          </View>
 
-          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
-          <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-          <DatePickerField value={birthdate} onChange={setBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
-          <TextInput
-            style={styles.input}
+          <LabeledTextField label={t("ko", "pet.nameLabel")} value={name} onChangeText={setName} placeholder={t("ko", "pet.namePlaceholder")} />
+          <LabeledTextField label={t("ko", "pet.breedLabel")} value={breed} onChangeText={setBreed} placeholder={t("ko", "pet.breedPlaceholder")} />
+          <LabeledDateField label={t("ko", "pet.birthdateLabel")} value={birthdate} onChange={setBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} clearLabel={t("ko", "pet.birthdateClear")} />
+          <LabeledTextField
+            label={t("ko", "pet.weightLabel")}
             value={weightKg}
             onChangeText={setWeightKg}
             placeholder={t("ko", "pet.weightPlaceholder")}
-            placeholderTextColor={colors.textMuted}
             keyboardType="decimal-pad"
           />
 
