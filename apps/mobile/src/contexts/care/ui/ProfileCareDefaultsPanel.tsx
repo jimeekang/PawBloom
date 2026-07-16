@@ -98,8 +98,10 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
               return (
                 <Pressable
                   key={group.medicationId}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
+                  accessibilityRole="radio"
+                  accessibilityLabel={group.medicationName}
+                  accessibilityState={{ checked: selected, disabled: isSaving }}
+                  aria-checked={selected}
                   style={[styles.medicationOption, selected ? styles.medicationOptionSelected : null]}
                   onPress={isSaving ? undefined : () => selectMedication(group.medicationId)}
                 >
@@ -109,8 +111,10 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
               );
             })}
             <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: selectedMedicationId === null }}
+              accessibilityRole="radio"
+              accessibilityLabel={t("ko", "care.medicationPlaceholder")}
+              accessibilityState={{ checked: selectedMedicationId === null, disabled: isSaving }}
+              aria-checked={selectedMedicationId === null}
               style={[styles.medicationOption, selectedMedicationId === null ? styles.medicationOptionSelected : null]}
               onPress={isSaving ? undefined : () => selectMedication(null)}
             >
@@ -150,7 +154,12 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
             ) : null}
           </View>
         ))}
-        <Pressable style={styles.addTimeButton} onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isSaving }}
+          style={styles.addTimeButton}
+          onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}
+        >
           <Text style={styles.addTimeText}>{t("ko", "pet.careDefaultsTimeAdd")}</Text>
         </Pressable>
         <Text style={styles.copy}>{t("ko", "pet.careDefaultsSavedHint")}</Text>

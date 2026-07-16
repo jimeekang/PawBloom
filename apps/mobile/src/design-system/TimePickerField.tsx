@@ -8,12 +8,15 @@ import { displayTimeValue, formatTimeValue, parseTimeValue } from "./TimePickerF
 type Props = {
   value: string;
   placeholder?: string;
+  accessibilityLabel?: string;
   onChange: (value: string) => void;
 };
 
-export function TimePickerField({ value, placeholder = "", onChange }: Props) {
+export function TimePickerField({ value, placeholder = "", accessibilityLabel, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const selectedDate = parseTimeValue(value);
+  const displayValue = displayTimeValue(value, placeholder);
+  const controlLabel = accessibilityLabel ? `${accessibilityLabel}: ${displayValue}` : displayValue;
 
   function handleValueChange(_event: DateTimePickerChangeEvent, date?: Date) {
     setOpen(false);
@@ -23,11 +26,18 @@ export function TimePickerField({ value, placeholder = "", onChange }: Props) {
 
   return (
     <View>
-      <Pressable accessibilityRole="button" accessibilityLabel={displayTimeValue(value, placeholder)} style={styles.androidButton} onPress={() => setOpen(true)}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={controlLabel}
+        accessibilityState={{ expanded: open }}
+        aria-expanded={open}
+        style={styles.androidButton}
+        onPress={() => setOpen(true)}
+      >
         <AppIcon name="time" size={iconSize.md} color={colors.orangeDeep} />
-        <Text style={[styles.value, !value && styles.placeholder]}>{displayTimeValue(value, placeholder)}</Text>
+        <Text style={[styles.value, !value && styles.placeholder]}>{displayValue}</Text>
       </Pressable>
-      {open ? <DateTimePicker value={selectedDate} mode="time" display={Platform.OS === "ios" ? "spinner" : "default"} onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
+      {open ? <DateTimePicker accessibilityLabel={accessibilityLabel} value={selectedDate} mode="time" display={Platform.OS === "ios" ? "spinner" : "default"} onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
     </View>
   );
 }

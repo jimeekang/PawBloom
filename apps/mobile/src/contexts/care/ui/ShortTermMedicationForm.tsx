@@ -60,7 +60,7 @@ export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: C
           ) : null}
         </View>
       ))}
-      <Pressable accessibilityRole="button" style={styles.addTimeButton} onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}>
+      <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} style={styles.addTimeButton} onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}>
         <Text style={styles.addTimeText}>{t("ko", "pet.careDefaultsTimeAdd")}</Text>
       </Pressable>
       <Text style={styles.label}>{t("ko", "care.setupPeriod")}</Text>

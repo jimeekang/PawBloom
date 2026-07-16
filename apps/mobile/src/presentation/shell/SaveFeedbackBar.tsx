@@ -23,7 +23,7 @@ export function SaveFeedbackBar({ feedback, onDismiss }: { feedback: SaveFeedbac
   const accentColor = isSettings ? colors.orangeDeep : colors.mintDeep;
 
   return (
-    <Pressable style={[styles.wrap, isSettings && styles.wrapSettings]} onPress={onDismiss} accessibilityLabel={`${title}. ${message}`} accessibilityLiveRegion="polite">
+    <Pressable accessibilityRole="button" style={[styles.wrap, isSettings && styles.wrapSettings]} onPress={onDismiss} accessibilityLabel={`${title}. ${message}`} accessibilityLiveRegion="polite">
       <View style={[styles.accent, { backgroundColor: accentColor }]} />
       <View style={[styles.iconWrap, isSettings && styles.iconWrapSettings]}>
         <AppIcon name={feedback.icon} size={iconSize.md} color={colors.white} />

@@ -112,7 +112,15 @@ function CarePanel({
           {visibleSchedules.map((schedule) => {
             const badge = schedulePeriodBadge(schedule);
             return (
-              <Pressable key={schedule.id} style={styles.scheduleRow} disabled={!canManageCare} onPress={() => onUseSchedule(schedule)}>
+              <Pressable
+                key={schedule.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${schedule.localTime.slice(0, 5)}, ${schedule.medicationName}, ${schedule.dosageLabel}${badge ? `, ${badge}` : ""}`}
+                accessibilityState={{ disabled: !canManageCare }}
+                disabled={!canManageCare}
+                style={styles.scheduleRow}
+                onPress={() => onUseSchedule(schedule)}
+              >
                 <AppIcon name="medication" size={iconSize.md} color={colors.orangeDeep} />
                 <View style={styles.scheduleBody}>
                   <Text style={styles.medTitle}>{schedule.localTime.slice(0, 5)} · {schedule.medicationName}</Text>

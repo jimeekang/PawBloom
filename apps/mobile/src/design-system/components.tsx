@@ -94,8 +94,10 @@ export function SegmentedControl<T extends string>({
       {items.map((item) => (
         <Pressable
           key={item.value}
-          accessibilityRole="button"
-          accessibilityState={{ selected: value === item.value }}
+          accessibilityRole="radio"
+          accessibilityLabel={item.label}
+          accessibilityState={{ checked: value === item.value }}
+          aria-checked={value === item.value}
           style={[styles.segment, value === item.value && styles.segmentActive]}
           onPress={() => onChange(item.value)}
         >
