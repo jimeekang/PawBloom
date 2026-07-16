@@ -122,10 +122,10 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
             </Pressable>
           </View>
         ) : null}
-        <TextInput style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <TextInput style={styles.input} value={draft.planTitle} onChangeText={(value) => setDraft((current) => ({ ...current, planTitle: value.slice(0, 80) }))} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <TextInput style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <TextInput style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput accessibilityLabel={t("ko", "care.planPlaceholder")} style={styles.input} value={draft.planTitle} onChangeText={(value) => setDraft((current) => ({ ...current, planTitle: value.slice(0, 80) }))} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
         <Text style={styles.label}>{t("ko", "pet.careDefaultsPeriod")}</Text>
         <DatePickerField value={draft.startsOn} onChange={(startsOn) => setDraft((current) => ({ ...current, startsOn }))} placeholder={t("ko", "pet.careDefaultsStartDate")} />
         <DatePickerField value={draft.endsOn} onChange={(endsOn) => setDraft((current) => ({ ...current, endsOn }))} placeholder={t("ko", "pet.careDefaultsEndDate")} allowClear clearLabel={t("ko", "pet.careDefaultsClearDate")} />
@@ -133,14 +133,14 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
         <SegmentedControl value={draft.repeat} onChange={(repeat) => setDraft((current) => ({ ...current, repeat }))} items={[{ label: t("ko", "pet.careDefaultsEveryDay"), value: "daily" }, { label: t("ko", "pet.careDefaultsCustomRepeat"), value: "custom" }]} />
         {draft.repeat === "custom" ? (
           <View style={styles.repeatRow}>
-            <TextInput style={[styles.input, styles.repeatInput]} value={draft.repeatDays} onChangeText={(value) => setDraft((current) => ({ ...current, repeatDays: value.replace(/[^0-9]/g, "").slice(0, 3) }))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
+            <TextInput accessibilityLabel={t("ko", "pet.careDefaultsCustomRepeat")} style={[styles.input, styles.repeatInput]} value={draft.repeatDays} onChangeText={(value) => setDraft((current) => ({ ...current, repeatDays: value.replace(/[^0-9]/g, "").slice(0, 3) }))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
             <Text style={styles.repeatSuffix}>{t("ko", "pet.careDefaultsCustomRepeatSuffix")}</Text>
           </View>
         ) : null}
         {draft.times.map((time, index) => (
           <View key={index} style={styles.timeRow}>
             <View style={styles.timeField}>
-              <TimePickerField value={time} onChange={(nextTime) => setDraft((current) => ({ ...current, times: current.times.map((item, itemIndex) => (itemIndex === index ? nextTime : item)) }))} />
+              <TimePickerField accessibilityLabel={`${t("ko", "care.medicationTimeLabel")} ${index + 1}`} value={time} onChange={(nextTime) => setDraft((current) => ({ ...current, times: current.times.map((item, itemIndex) => (itemIndex === index ? nextTime : item)) }))} />
             </View>
             {draft.times.length > 1 ? (
               <Pressable

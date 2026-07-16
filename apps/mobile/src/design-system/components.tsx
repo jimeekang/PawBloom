@@ -34,6 +34,7 @@ export function PrimaryButton({ label, icon, onPress, disabled = false }: { labe
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       style={({ pressed }) => [styles.primaryButton, pressed && !disabled && styles.primaryButtonPressed, disabled && styles.buttonDisabled]}
@@ -49,6 +50,7 @@ export function SecondaryButton({ label, icon, onPress, disabled = false }: { la
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       style={({ pressed }) => [styles.secondaryButton, pressed && !disabled && styles.secondaryButtonPressed, disabled && styles.buttonDisabled]}

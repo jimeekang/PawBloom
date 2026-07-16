@@ -44,11 +44,11 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
         <Text style={styles.title}>{t("ko", "routine.title")}</Text>
         <Text style={styles.copy}>{t("ko", "routine.copy")}</Text>
         <View style={styles.grid}>
-          <TextInput style={styles.input} value={draft.food.meals.breakfast?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("breakfast", value)} placeholder={t("ko", "routine.breakfast")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput style={styles.input} value={draft.food.meals.lunch?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("lunch", value)} placeholder={t("ko", "routine.lunch")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput style={styles.input} value={draft.food.meals.dinner?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("dinner", value)} placeholder={t("ko", "routine.dinner")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput style={styles.input} value={draft.water.amountMl ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, water: { ...current.water, amountMl: value.slice(0, 5) } }))} placeholder={t("ko", "routine.water")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput style={styles.input} value={draft.stool.count ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, stool: { ...current.stool, count: value.slice(0, 3) } }))} placeholder={t("ko", "routine.stool")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput accessibilityLabel={t("ko", "routine.breakfast")} style={styles.input} value={draft.food.meals.breakfast?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("breakfast", value)} placeholder={t("ko", "routine.breakfast")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput accessibilityLabel={t("ko", "routine.lunch")} style={styles.input} value={draft.food.meals.lunch?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("lunch", value)} placeholder={t("ko", "routine.lunch")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput accessibilityLabel={t("ko", "routine.dinner")} style={styles.input} value={draft.food.meals.dinner?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("dinner", value)} placeholder={t("ko", "routine.dinner")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput accessibilityLabel={t("ko", "routine.water")} style={styles.input} value={draft.water.amountMl ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, water: { ...current.water, amountMl: value.slice(0, 5) } }))} placeholder={t("ko", "routine.water")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput accessibilityLabel={t("ko", "routine.stool")} style={styles.input} value={draft.stool.count ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, stool: { ...current.stool, count: value.slice(0, 3) } }))} placeholder={t("ko", "routine.stool")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
         </View>
         <Text style={styles.label}>{t("ko", "routine.mealTimesTitle")}</Text>
         <SegmentedControl
@@ -60,7 +60,7 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
           {(["breakfast", "lunch", "dinner"] as const).map((slot) => (
             <View key={slot} style={styles.timeRow}>
               <Text style={styles.timeLabel}>{t("ko", `routine.${slot}` as "routine.breakfast" | "routine.lunch" | "routine.dinner")}</Text>
-              <TimePickerField value={draft.food.meals[slot]?.localTime ?? ""} placeholder={t("ko", "routine.mealTimeUnset")} onChange={(value) => setDraft((current) => updateMealTime(current, slot, value))} />
+              <TimePickerField accessibilityLabel={t("ko", `routine.${slot}` as "routine.breakfast" | "routine.lunch" | "routine.dinner")} value={draft.food.meals[slot]?.localTime ?? ""} placeholder={t("ko", "routine.mealTimeUnset")} onChange={(value) => setDraft((current) => updateMealTime(current, slot, value))} />
               {draft.food.meals[slot]?.localTime ? <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "routine.mealTimeClear")} onPress={() => setDraft((current) => updateMealTime(current, slot, undefined))}><Text style={styles.clearTime}>{t("ko", "routine.mealTimeClear")}</Text></Pressable> : null}
             </View>
           ))}
@@ -75,7 +75,7 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
           ]}
         />
         {draft.walk.enabled === false ? null : (
-          <TextInput style={styles.inputFull} value={draft.walk.durationMinutes ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, walk: { ...current.walk, durationMinutes: value.slice(0, 4) } }))} placeholder={t("ko", "routine.walk")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <TextInput accessibilityLabel={t("ko", "routine.walk")} style={styles.inputFull} value={draft.walk.durationMinutes ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, walk: { ...current.walk, durationMinutes: value.slice(0, 4) } }))} placeholder={t("ko", "routine.walk")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
         )}
         <SegmentedControl value={draft.condition.energyLevel ?? "normal"} onChange={(energyLevel) => setDraft((current) => ({ ...current, condition: { energyLevel } }))} items={[{ label: t("ko", "diary.level.less"), value: "less" }, { label: t("ko", "diary.level.normal"), value: "normal" }, { label: t("ko", "diary.level.more"), value: "more" }]} />
         {error ? <Text style={styles.errorText}>{error}</Text> : null}

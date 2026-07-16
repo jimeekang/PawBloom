@@ -219,6 +219,7 @@ export function DiaryEntryScreen({
           <Text style={styles.sectionTitle}>{t("ko", "diary.memo")}</Text>
           <View style={styles.memoBox}>
             <TextInput
+              accessibilityLabel={t("ko", "diary.memo")}
               multiline
               placeholder={t("ko", "diary.memoPlaceholder")}
               placeholderTextColor={colors.textSoft}
@@ -232,7 +233,7 @@ export function DiaryEntryScreen({
       ) : null}
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.timeLabel")}</Text>
-      <TimePickerField value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
+      <TimePickerField accessibilityLabel={t("ko", "diary.timeLabel")} value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
 
       <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
       <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} />
