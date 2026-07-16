@@ -2,7 +2,7 @@ import { useMemo, useState, type ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../../contexts/care/domain/carePlan";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
@@ -10,10 +10,8 @@ import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../cont
 import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { CareMedicationAddCard } from "./CareMedicationAddCard";
-import { CareReportPanel } from "./CareReportPanel";
 import { partitionCareSchedules, schedulePeriodBadge } from "./careScheduleSummary";
 
-type Segment = "care" | "reports";
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
 
 type CareModeScreenProps = {
@@ -36,24 +34,9 @@ type CareModeScreenProps = {
 };
 
 export function CareModeScreen({ canManageCare = true, canDeleteDose = true, canManageReports = true, ...props }: CareModeScreenProps) {
-  const [segment, setSegment] = useState<Segment>("care");
-
   return (
     <View style={styles.screen}>
-      <SegmentedControl
-        value={segment}
-        onChange={setSegment}
-        items={[
-          { label: t("ko", "care.segment.care"), value: "care" },
-          { label: t("ko", "care.segment.reports"), value: "reports" },
-        ]}
-      />
-
-      {segment === "care" ? (
-        <CarePanel {...props} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canManageReports} />
-      ) : (
-        <CareReportPanel onOpenReports={props.onGenerateReport} canManageReports={canManageReports} />
-      )}
+      <CarePanel {...props} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canManageReports} />
     </View>
   );
 }
