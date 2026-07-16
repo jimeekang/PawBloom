@@ -231,7 +231,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.appFrame}>
-        {activeTab === "today" ? <HomeHeader petName={activePet.name} onPetPress={handlePetPress} onManagePets={() => setActiveTab("settings")} canSwitchPet={canCyclePet} /> : null}
+        {activeTab === "today" ? <HomeHeader petName={activePet.name} onPetPress={handlePetPress} canSwitchPet={canCyclePet} /> : null}
         {activeTab === "diary" ? <DiaryHeader onBack={() => setActiveTab("today")} /> : null}
         {activeTab === "care" ? <CareHeader /> : null}
         {activeTab === "reports" ? <ReportsHeader /> : null}
