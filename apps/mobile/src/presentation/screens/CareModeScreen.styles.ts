@@ -1,0 +1,65 @@
+import { StyleSheet } from "react-native";
+import { colors, radius, spacing, type } from "../../design-system/tokens";
+
+export const styles = StyleSheet.create({
+  screen: {
+    gap: spacing.lg,
+  },
+  sectionHeader: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionTitle: {
+    ...type.sectionTitle,
+  },
+  countText: { ...type.caption, color: colors.textMuted },
+  medList: {
+    gap: spacing.md,
+  },
+  medListItem: { gap: spacing.sm },
+  agendaRow: {
+    minHeight: 112,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    flexDirection: "row",
+    alignItems: "center",
+    overflow: "hidden",
+    gap: spacing.md,
+  },
+  medAccent: { width: 8, height: "100%" },
+  agendaBody: { flex: 1, gap: spacing.xs, paddingVertical: spacing.md },
+  medTitle: { ...type.bodyStrong },
+  sourceLabel: { ...type.tiny, color: colors.orangeDeep },
+  medDetail: { ...type.caption },
+  medMeta: { ...type.tiny, color: colors.textMuted },
+  actionButtons: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  givenButton: { flex: 1, minHeight: 40, borderRadius: radius.md, backgroundColor: colors.mintDeep, alignItems: "center", justifyContent: "center" },
+  givenButtonText: { ...type.caption, color: colors.white, fontWeight: "600" },
+  partialButton: { flex: 1, minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.segmentActiveBorder, backgroundColor: colors.surfacePeach, alignItems: "center", justifyContent: "center" },
+  partialButtonText: { ...type.caption, color: colors.orangeDeep, fontWeight: "600" },
+  skipButton: { flex: 1, minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  skipButtonText: { ...type.caption, color: colors.textMuted, fontWeight: "600" },
+  editButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md },
+  editText: { ...type.caption, color: colors.orangeDeep },
+  scheduleCard: { gap: spacing.sm },
+  scheduleRow: { minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
+  scheduleBody: { flex: 1 },
+  useText: { ...type.caption, color: colors.orangeDeep },
+  moreButton: { minHeight: 44, alignItems: "center", justifyContent: "center" },
+  moreText: { ...type.bodyStrong, color: colors.orangeDeep },
+  profileLinkButton: { minHeight: 44, justifyContent: "center" },
+  profileLinkText: { ...type.caption, color: colors.orangeDeep },
+  emptyText: {
+    ...type.body,
+    color: colors.textMuted,
+  },
+  reportCopy: {
+    ...type.body,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+});
