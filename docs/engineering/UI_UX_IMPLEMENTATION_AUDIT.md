@@ -29,7 +29,7 @@ edit_policy: exclusive
 - 390×844에서 핵심 화면이 깨지지 않고 렌더링되며 감사 중 콘솔 오류는 0건이었다.
 - 실제 Reports 탭은 기록 요약, 보호자 확인, 공유 단계 계약을 가진다.
 
-기준 건강 점수: **75/100**. 런타임 안정성은 양호하지만 첫 진입 언어, 핵심 작업의 화면 우선순위, 투약 정확성, 접근성에서 출시 차단 수준의 마찰이 있다.
+초기 건강 점수는 **75/100**이었다. 아래 UX-001~UX-012 구현과 추가 보안 수정 후 preview 브라우저 기준 핵심 플로우, 접근 가능한 이름/상태, 한국어·영어 전환, 콘솔 오류 0건을 확인했다. 실계정 인증 E2E와 네이티브 기기 QA는 별도 검증 한계에 기록한다.
 
 ## 발견 사항
 
@@ -98,25 +98,82 @@ edit_policy: exclusive
 
 ### 7. 별도 기능 슬라이스
 
-- family/caregiver는 migration/RLS/API/UI를 함께 다루는 보안 작업으로 분리
-- entitlement는 Free/Plus/Family 정책 승인 후 잠금 상태 연결
-- 두 항목은 현재 UI 결함 수정과 전체 검증이 끝난 뒤 착수
+- family/caregiver migration, 권한 회수, JWT Edge Function, Settings 관리 UI 구현
+- Free/Plus/Family 반려동물 수와 Family 초대 잠금, beta report/photo 정책 연결
+- entitlement 조회 중 잘못된 Free 잠금이 보이지 않도록 loading/error 상태 분리
+- client가 profile email을 위조해 초대 대상을 선점할 수 없도록 Auth 원본 동기화 적용
+
+## 구현 결과
+
+| 범위 | 결과 |
+| --- | --- |
+| UX-001 | 미저장 locale 감지, 영어 폴백, 인증 전 언어 선택, 인증 폼 라벨 구현 |
+| UX-002 | Diary 달력 기본 접힘, 날짜 disclosure 상태와 웹 `aria-expanded` 구현 |
+| UX-003 | Care에서 정량/일부/건너뜀 직접 기록 및 상태 노출 |
+| UX-004 | Care 내부 중복 Reports 화면 제거, 실제 Reports 탭 CTA 유지 |
+| UX-005 | preview 로그아웃과 개발 환경 문구 제거, 사용자용 데이터 상태 표시 |
+| UX-006 | 동작 없는 Home 알림 affordance 제거, preview의 2개 sample pet 전환 연결 |
+| UX-007/008 | 핵심 버튼·선택·입력·뒤로 가기에 이름, role, state, 지속 라벨 적용 |
+| UX-009 | 한국어/영어 sample pet, Diary, medication 데이터 팩토리 적용 |
+| UX-010 | checklist-origin 기록만 Today에서 안전하게 취소하고 상세 기록 보호 |
+| UX-011 | owner 전용 caregiver 목록/초대/제거 UI와 JWT Edge Function 배포 |
+| UX-012 | Free 1, Plus 5, Family 10 pet 제한과 Family 초대 잠금, beta 정책 표시 |
+
+추가 보안 수정:
+
+- `pet_members`와 `subscription_entitlements`의 authenticated mutation 권한을 회수했다.
+- pet 생성 제한을 UI와 DB RLS 양쪽에서 강제한다.
+- 플랜의 pet 수는 owner 역할만 계산하며 caregiver/pet sitter로 공유받은 pet은 제외한다.
+- owner별 advisory transaction lock으로 동시 pet 생성 요청도 플랜 한도를 우회하지 못하게 한다.
+- `pets.owner_id`를 단일 소유자 원본으로 고정하고 legacy 보조 owner role을 caregiver로 정규화한다.
+- `profiles.email` client insert/update를 차단하고 `auth.users` insert/email update trigger로만 동기화한다.
+- 기존 auth user의 profile/Free entitlement를 backfill했다.
+- caregiver invite는 server-side admin API에서만 실행하며 owner·Family plan을 확인한다.
+
+원격 적용:
+
+- `20260716112929_secure_family_memberships_and_entitlements.sql`
+- `20260716114749_protect_profile_identity.sql`
+- `20260716121500_serialize_pet_entitlement_limits.sql`
+- `20260716123000_enforce_canonical_pet_owner_membership.sql`
+- `manage-pet-members` Edge Function: version 3, `ACTIVE`, `verify_jwt=true`
+- 원격 table stats: `profiles=9`, `subscription_entitlements=9`
+- 원격 index stats에서 `profiles_email_lower_unique_idx` 확인
+- 원격 `db lint --level error`: schema error 0건
+
+## 최종 검증
+
+- `npm run typecheck`
+- `npm run verify:architecture`
+- `npm run verify:i18n` — 545 keys
+- `npm run verify:presentation`
+- `npm run verify:supabase`
+- targeted entitlement, member security, Diary, Pet profile 접근성 회귀 테스트
+- owner pet count와 DB plan-limit 오류 복구 회귀 테스트
+- 390×844 Chrome preview: Today, sample pet 전환, Diary, Care, Reports, Settings, Pet profile, 영어 전환
+- 모든 검사 화면의 unnamed button/tab/radio 0건
+- 브라우저 exception/log error 0건
+- 최종 캡처: `44-final-today-ko.png` ~ `51-final-today-en.png`
 
 ## 완료 기준
 
-- 한국어와 영어 모두 로그인 전 전환 가능
-- Diary 첫 화면에서 달력 전체를 펼치지 않아도 기록 카테고리가 보임
-- Care에서 정량/일부/건너뜀을 직접 기록 가능
-- report workflow 진입점이 하단 Reports 탭 하나로 정리됨
-- 미리보기 설정에 로그아웃과 `.env` 문구가 노출되지 않음
-- 핵심 상호작용이 접근 가능한 이름과 상태를 가짐
-- 수정한 각 항목의 회귀 테스트가 통과
-- 390×844 화면 재캡처에서 새 잘림/겹침이 없음
-- 브라우저 콘솔 오류 0건
-- 최종 `npm run verify` 통과
+- [x] 한국어와 영어 모두 로그인 전 전환 가능
+- [x] Diary 첫 화면에서 접힌 달력 아래 기록 카테고리가 보임
+- [x] Care에서 정량/일부/건너뜀을 직접 기록 가능
+- [x] report workflow 진입점이 하단 Reports 탭 하나로 정리됨
+- [x] 미리보기 설정에 로그아웃과 `.env` 문구가 노출되지 않음
+- [x] 핵심 상호작용이 접근 가능한 이름과 상태를 가짐
+- [x] 수정 항목 회귀 테스트와 390×844 preview 재캡처 통과
+- [x] preview 브라우저 콘솔 오류 0건
+- [ ] 실계정 owner/caregiver 교차 역할 E2E
+- [ ] 실제 iOS/Android 권한·키보드·VoiceOver/TalkBack QA
+- [x] 최종 `npm run verify` 통과
 
 ## 증거 한계
 
 - 웹 모바일 뷰포트로 시각·상호작용·콘솔을 확인했다.
 - 실제 iOS/Android 키보드, 알림 권한, 카메라/앨범 권한, VoiceOver/TalkBack은 이 감사만으로 보장하지 않는다.
-- 실제 Supabase 계정의 owner/caregiver 교차 역할과 report share는 별도 인증 E2E가 필요하다.
+- 원격 마이그레이션 기록, 함수 ACTIVE/JWT 상태, table/index stats는 확인했다.
+- 기존 Chrome의 `localhost:8083`에는 로그인 세션이 없어 실계정 UI E2E를 실행하지 못했다.
+- 저장된 테스트 자격증명이나 service-role key 사용은 별도 명시적 승인이 필요하므로 사용하지 않았다.
+- 실제 owner/caregiver 교차 역할과 report share는 로그인된 테스트 세션에서 최종 E2E가 필요하다.

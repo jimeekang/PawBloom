@@ -27,3 +27,6 @@ verify_jwt = false
 
 [functions.get-vet-report-state]
 verify_jwt = true
+
+[functions.manage-pet-members]
+verify_jwt = true

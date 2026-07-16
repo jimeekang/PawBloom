@@ -21,3 +21,7 @@ if (source.includes('name="bell"') || source.includes("onManagePets")) {
 if (!source.includes("accessibilityState={{ disabled: !canSwitchPet }}")) {
   throw new Error("the remaining pet switcher must keep its disabled state explicit");
 }
+
+if (!source.includes('accessibilityLabel={`${t("ko", "pet.selectTitle")}: ${petName}`}')) {
+  throw new Error("the pet switcher must expose the selected pet in its accessible name");
+}

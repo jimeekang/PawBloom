@@ -8,6 +8,7 @@ import { savePetProfileWithOptionalPhoto } from "./petProfileSavePolicy";
 import { petDeleteValidationKey, petProfileValidationKey } from "./petProfileValidation";
 import type { IdentityMessageKey } from "./identityMessage";
 import { isCurrentAccountWork } from "./authAccountBoundary";
+import { petMutationErrorKey } from "./petMutationError";
 
 type AuthPetMutationState = {
   user: User | null;
@@ -180,7 +181,8 @@ export function useAuthPetMutations({
   }
 }
 
-function handlePetError(_rawError: unknown, fallback: IdentityMessageKey, setError: Dispatch<SetStateAction<IdentityMessageKey | null>>) {
-  setError(fallback);
-  return fallback;
+function handlePetError(rawError: unknown, fallback: IdentityMessageKey, setError: Dispatch<SetStateAction<IdentityMessageKey | null>>) {
+  const errorKey = petMutationErrorKey(rawError, fallback);
+  setError(errorKey);
+  return errorKey;
 }

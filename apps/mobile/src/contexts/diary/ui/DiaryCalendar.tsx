@@ -40,6 +40,7 @@ export function DiaryCalendar({
         accessibilityRole="button"
         accessibilityLabel={`${t("ko", "diary.selectedDateLabel")}: ${selectedDateLabel}. ${t("ko", expanded ? "diary.calendar.close" : "diary.calendar.open")}`}
         accessibilityState={{ expanded }}
+        aria-expanded={expanded}
         style={({ pressed }) => [styles.selectedDateButton, pressed && styles.selectedDateButtonPressed]}
         onPress={() => setExpanded((current) => !current)}
       >

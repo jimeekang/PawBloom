@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppState, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import { DiaryEntryScreen } from "../contexts/diary/ui/DiaryEntryScreen";
 import { getTodayEntriesForPet, useDiaryEntriesController } from "../contexts/diary/ui/useDiaryEntriesController";
 import { useAuth } from "../contexts/identity/application/authContext";
-import { SettingsScreen } from "../contexts/identity/ui/SettingsScreen";
 import { rescheduleMedicationReminders } from "../contexts/medication/application/medicationReminderNotifications";
 import { rescheduleMealReminders } from "../contexts/routine/application/mealReminderNotifications";
 import { hasRecordedMedication } from "../contexts/medication/ui/medicationDoseActions";
@@ -17,7 +16,6 @@ import { useCareSetupState } from "../contexts/care/ui/useCareSetupState";
 import { useRoutineDefaults } from "../contexts/routine/ui/useRoutineDefaults";
 import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../contexts/routine/domain/petRoutine";
 import { type PetProfile } from "../contexts/pet/domain/pet";
-import { buildSamplePets } from "../contexts/pet/ui/samplePets";
 import { useReportDraftSummary } from "../contexts/report/application/reportDraftRecords";
 import { ReportsScreen } from "../contexts/report/ui/ReportsScreen";
 import { useVetReportWorkflow } from "../contexts/report/ui/useVetReportWorkflow";
@@ -28,6 +26,7 @@ import { getLocalDateKey } from "../shared-kernel/date";
 import { CareModeScreen } from "./screens/CareModeScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { PetOnboardingScreen } from "./screens/PetOnboardingScreen";
+import { SettingsHubScreen } from "./screens/SettingsHubScreen";
 import { BottomNav, type MainTab } from "./ui/BottomNav";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader, SettingsHeader } from "./shell/ShellHeaders";
 import { SaveFeedbackBar } from "./shell/SaveFeedbackBar";
@@ -35,6 +34,7 @@ import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./
 import { createChecklistFromRecords, initialChecklist } from "./shell/todayChecklist";
 import { useTodayChecklistController } from "./shell/useTodayChecklistController";
 import { getTimelineEntryRoute } from "./shell/timelineRouting";
+import { useShellPetSelection } from "./shell/useShellPetSelection";
 import { styles } from "./PawBloomShell.styles";
 import { NoticeBanner } from "../design-system/components";
 import { getShellPermissions } from "./shell/shellPermissions";
@@ -45,10 +45,7 @@ type PawBloomShellProps = { activePet?: PetProfile | null; pets?: PetProfile[]; 
 export function PawBloomShell({ activePet: externalActivePet, pets: externalPets, onPetNext }: PawBloomShellProps = {}) {
   const { configured, user, activePet: authActivePet, pets: authPets, selectNextPet, signOut } = useAuth();
   const { language } = useLanguage();
-  const previewPets = useMemo(() => buildSamplePets(language), [language]);
-  const shellPets = externalPets ?? authPets;
-  const activePet = useMemo(() => externalActivePet ?? authActivePet ?? previewPets[0], [authActivePet, externalActivePet, previewPets]);
-  const canCyclePet = shellPets.length > 1;
+  const { activePet, ownedPetCount, canCyclePet, cyclePet, previewPets } = useShellPetSelection({ language, externalActivePet, externalPets, authActivePet, authPets, onPetNext, selectNextPet });
   const databaseMode = configured && Boolean(user) && Boolean(authActivePet ?? externalActivePet);
   const livePetId = databaseMode ? activePet.id : null;
   const userId = databaseMode ? user?.id ?? null : null;
@@ -149,7 +146,10 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   });
 
   const hasCareRecords = medication.activeDoses.length > 0 || care.activeCareSetup.schedules.length > 0 || Boolean(care.activeCareSetup.condition || care.activeCareSetup.plan || care.activeCareSetup.conditionName || care.activeCareSetup.planTitle);
-  const handlePetPress = () => { if (canCyclePet) onPetNext ? onPetNext() : selectNextPet(); setNotice(t("ko", "today.petSwitched")); };
+  const handlePetPress = () => {
+    if (!cyclePet()) return;
+    setNotice(t("ko", "today.petSwitched"));
+  };
 
   function useCareSchedule(schedule: CareMedicationSchedule) {
     void Promise.resolve(medication.addMedicationDose(buildQuickDoseFromSchedule(schedule, "pending"))).catch((error: Error) => setNotice(error.message));
@@ -248,7 +248,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
           {activeTab === "diary" ? <DiaryEntryScreen entries={diary.selectedDiaryEntries} selectedDateKey={diary.selectedDiaryDate} filter={diary.diaryFilter} onDateChange={diary.setSelectedDiaryDate} onFilterChange={diary.setDiaryFilter} onSave={diary.saveDiaryEntry} onUpdate={diary.updateDiaryRecord} onDelete={diary.deleteDiaryRecord} routine={routine.activeRoutine} petSpecies={activePet.species} initialEditingEntry={diary.timelineEditEntry} onInitialEditingEntryConsumed={() => diary.setTimelineEditEntry(null)} canCreate={canCreateDiary} canUpdate={canUpdateDiary} canDelete={canDeleteDiary} /> : null}
           {activeTab === "care" ? <CareModeScreen petId={activePet.id} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} onAgendaStatusChange={medication.saveAgendaStatus} onAddDose={medication.addMedicationDose} onUpdateDose={medication.updateDoseRecord} onDeleteDose={medication.deleteDoseRecord} onSaveCareSetup={saveCareSetupAndRefreshReminders} onUseSchedule={useCareSchedule} onOpenProfileCare={() => setShowPetSettings(true)} onGenerateReport={() => setActiveTab("reports")} conditionScore={diary.latestConditionScore} careSetup={care.activeCareSetup} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canGenerateReport || canShareReport} /> : null}
           {activeTab === "reports" ? <ReportsScreen report={reportWorkflow.report} reportSummary={reportSummary} canGenerate={reportWorkflow.canGenerate} canConfirm={reportWorkflow.canConfirm} canShare={reportWorkflow.canShare} blockedReason={reportWorkflow.blockedReason} error={reportWorkflow.error} pendingAction={reportWorkflow.pendingAction} isBusy={reportWorkflow.isBusy} onGenerate={() => void reportWorkflow.generate()} onConfirm={() => void reportWorkflow.confirm()} onShare={() => void reportWorkflow.share()} onRevoke={() => reportWorkflow.revoke()} onReset={reportWorkflow.reset} onNewDiary={() => setActiveTab("diary")} /> : null}
-          {activeTab === "settings" ? <SettingsScreen email={user?.email} configured={configured} onOpenPetProfiles={() => setShowPetSettings(true)} onSignOut={handleSignOut} /> : null}
+          {activeTab === "settings" ? <SettingsHubScreen email={user?.email} configured={configured} userId={userId} activePet={activePet} ownedPetCount={ownedPetCount} onOpenPetProfiles={() => setShowPetSettings(true)} onSignOut={handleSignOut} /> : null}
         </ScrollView>
 
         <BottomNav activeTab={activeTab} onChange={setActiveTab} />

@@ -66,7 +66,6 @@ export function SettingsScreen({
             <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.orange }]} />
             <Text style={styles.statusText}>{t("ko", configured ? "settings.syncReady" : "settings.localOnly")}</Text>
           </View>
-          <Text style={styles.copy}>{t("ko", "settings.plan")}: {t("ko", "settings.freePlan")}</Text>
         </View>
       </SurfaceCard>
     </View>

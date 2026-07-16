@@ -37,14 +37,11 @@ export type PetProfilePhotoInput = {
   base64?: string | null;
 };
 export async function ensureProfileRow(client: QueryClient, authUser: User): Promise<void> {
-  const { error } = await (client.from("profiles") as any).upsert(
-    {
-      id: authUser.id,
-      email: authUser.email ?? null,
-    },
-    { onConflict: "id" },
-  );
-  if (error) throw new Error("profile_upsert_failed");
+  const { data, error } = await (client.from("profiles") as any)
+    .select("id")
+    .eq("id", authUser.id)
+    .maybeSingle();
+  if (error || !data) throw new Error("profile_load_failed");
 }
 
 export async function loadPetRows(client: QueryClient, userId: string): Promise<LoadedPetRecord[]> {

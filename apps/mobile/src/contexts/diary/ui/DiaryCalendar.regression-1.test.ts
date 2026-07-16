@@ -18,7 +18,7 @@ if (!source.includes("useState(false)")) {
   throw new Error("the Diary calendar must start collapsed");
 }
 
-if (!source.includes("accessibilityState={{ expanded }}")) {
+if (!source.includes("accessibilityState={{ expanded }}") || !source.includes("aria-expanded={expanded}")) {
   throw new Error("the calendar disclosure must expose its expanded state");
 }
 

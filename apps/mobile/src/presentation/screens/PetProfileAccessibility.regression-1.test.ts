@@ -16,6 +16,7 @@ function read(path: string) {
 const screen = read("presentation/screens/PetOnboardingScreen.tsx");
 const helpers = read("presentation/screens/PetOnboardingHelpers.tsx");
 const datePicker = read("design-system/DatePickerField.tsx");
+const shellHeaders = read("presentation/shell/ShellHeaders.tsx");
 
 for (const key of ["pet.nameLabel", "pet.breedLabel", "pet.birthdateLabel", "pet.weightLabel"]) {
   if (!screen.includes(key)) throw new Error(`Pet profile must render the visible field label ${key}`);
@@ -31,4 +32,8 @@ if (!helpers.includes("accessibilityLabel={label}") || !helpers.includes("aria-c
 
 if (!datePicker.includes("aria-expanded={open}") || !datePicker.includes('accessibilityRole="button"')) {
   throw new Error("Date picker and clear controls must expose button semantics and open state");
+}
+
+if (!shellHeaders.includes('accessibilityLabel={label}') || !shellHeaders.includes('"navigation.back"')) {
+  throw new Error("icon-only Diary and Pet profile back buttons must have a localized accessible name");
 }

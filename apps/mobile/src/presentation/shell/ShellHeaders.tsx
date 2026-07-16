@@ -23,6 +23,7 @@ export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProp
       <View style={styles.headerActions}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={`${t("ko", "pet.selectTitle")}: ${petName}`}
           accessibilityState={{ disabled: !canSwitchPet }}
           hitSlop={6}
           style={({ pressed }) => [styles.petSwitch, pressed && canSwitchPet && styles.petSwitchPressed, !canSwitchPet && styles.petSwitchDisabled]}
@@ -40,7 +41,7 @@ export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProp
 export function DiaryHeader({ onBack }: BackHeaderProps) {
   return (
     <View style={styles.header}>
-      <AppIconButton iconName="back" onPress={onBack} />
+      <AppIconButton iconName="back" label={t("ko", "navigation.back")} onPress={onBack} />
       <Text style={styles.screenTitle}>{t("ko", "diary.title")}</Text>
       <View style={styles.headerSpacer}>
         <AppIcon name="calendar" size={iconSize.md} color={colors.textSoft} />
@@ -52,7 +53,7 @@ export function DiaryHeader({ onBack }: BackHeaderProps) {
 export function PetSettingsHeader({ onBack }: BackHeaderProps) {
   return (
     <View style={styles.header}>
-      <AppIconButton iconName="back" onPress={onBack} />
+      <AppIconButton iconName="back" label={t("ko", "navigation.back")} onPress={onBack} />
       <Text style={styles.screenTitle}>{t("ko", "pet.manageTitle")}</Text>
       <View style={styles.headerSpacer}>
         <AppIcon name="pet" size={iconSize.md} color={colors.textSoft} />
@@ -99,9 +100,9 @@ export function SettingsHeader() {
   );
 }
 
-function AppIconButton({ iconName, onPress }: { iconName: "back"; onPress: () => void }) {
+function AppIconButton({ iconName, label, onPress }: { iconName: "back"; label: string; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.headerIconTouch, pressed && styles.headerIconTouchPressed]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.headerIconTouch, pressed && styles.headerIconTouchPressed]}>
       <AppIcon name={iconName} size={iconSize.lg} color={colors.text} />
     </Pressable>
   );

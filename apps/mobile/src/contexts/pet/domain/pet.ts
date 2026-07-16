@@ -74,3 +74,7 @@ export function humanizeAgeLabel(birthdate: string | null): string {
 export function isCareMode(pet: PetProfile) {
   return pet.careMode;
 }
+
+export function countOwnedPets(pets: ReadonlyArray<Pick<PetProfile, "role">>) {
+  return pets.filter((pet) => pet.role === "owner").length;
+}
