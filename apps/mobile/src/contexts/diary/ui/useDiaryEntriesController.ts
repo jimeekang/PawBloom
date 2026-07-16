@@ -122,6 +122,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     updateDiaryRecord,
     deleteDiaryRecord,
     createEntryRemote: createDiaryEntry.mutateAsync,
+    deleteEntryRemote: deleteDiaryEntry.mutateAsync,
   };
 }
 

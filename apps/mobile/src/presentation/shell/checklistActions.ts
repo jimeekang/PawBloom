@@ -3,6 +3,7 @@ import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import { checklistSummary, createChecklistFromRecords, type ChecklistKey } from "./todayChecklist";
 import { createLocalDoseRecord } from "../../contexts/medication/ui/localMedicationState";
 import { createLocalDiaryEntry } from "../../contexts/diary/ui/localDiaryState";
+import { createDeleteMedicationUndo, createRestoreMedicationUndo, type MedicationChecklistUndo } from "./checklistUndo";
 
 export function checklistKeyToDiaryCategory(key: ChecklistKey): DiaryCategory | null {
   if (key === "medication") return null;
@@ -51,10 +52,13 @@ export function createLocalChecklistRecord({
 }) {
   if (key === "medication") {
     const pendingDose = activeDoses.find((dose) => dose.status === "pending");
-    const nextDoses = pendingDose
-      ? doses.map((dose) => (dose.id === pendingDose.id ? { ...dose, status: "completed" as const, recordedAt: new Date().toISOString() } : dose))
-      : [createLocalDoseRecord(activePetId, { medicationName: quickMedicationName, status: "completed" }, quickMedicationName), ...doses];
-    return { nextDoses, nextChecklist: { ...checklist, medication: true }, noticeKey: "today.medicationUpdated" as const, feedbackKind: "medicationStatus" as const };
+    if (pendingDose) {
+      const completedDose = { ...pendingDose, status: "completed" as const, recordedAt: new Date().toISOString() };
+      const nextDoses = doses.map((dose) => (dose.id === pendingDose.id ? completedDose : dose));
+      return { nextDoses, nextChecklist: { ...checklist, medication: true }, noticeKey: "today.medicationUpdated" as const, feedbackKind: "medicationStatus" as const, medicationUndo: createRestoreMedicationUndo(completedDose) };
+    }
+    const completedDose = createLocalDoseRecord(activePetId, { medicationName: quickMedicationName, status: "completed" }, quickMedicationName);
+    return { nextDoses: [completedDose, ...doses], nextChecklist: { ...checklist, medication: true }, noticeKey: "today.medicationUpdated" as const, feedbackKind: "medicationStatus" as const, medicationUndo: createDeleteMedicationUndo(completedDose) };
   }
 
   const category = checklistKeyToDiaryCategory(key);
@@ -76,20 +80,27 @@ export async function recordRemoteChecklistItem({
   activeDoses: DoseRecord[];
   quickMedicationName: string;
   createDiaryEntry: (input: { category: DiaryCategory; summary: string; origin?: "diary" | "checklist"; conditionScore?: 1 | 2 | 3 | 4 | 5 }) => Promise<unknown>;
-  createMedicationDose: (input: { medicationName: string; status: "completed" }) => Promise<unknown>;
+  createMedicationDose: (input: { medicationName: string; status: "completed" }) => Promise<{ dose?: DoseRecord; queued?: boolean }>;
   updateMedicationDoseStatus: (input: { id: string; status: "completed" }) => Promise<unknown>;
 }) {
   if (key === "medication") {
     const pendingDose = activeDoses.find((dose) => dose.status === "pending");
-    if (pendingDose) await updateMedicationDoseStatus({ id: pendingDose.id, status: "completed" });
-    else await createMedicationDose({ medicationName: quickMedicationName, status: "completed" });
-    return "medicationStatus" as const;
+    if (pendingDose) {
+      await updateMedicationDoseStatus({ id: pendingDose.id, status: "completed" });
+      return {
+        feedbackKind: "medicationStatus" as const,
+        medicationUndo: createRestoreMedicationUndo({ ...pendingDose, status: "completed", recordedAt: new Date().toISOString() }),
+      };
+    }
+    const result = await createMedicationDose({ medicationName: quickMedicationName, status: "completed" });
+    const medicationUndo: MedicationChecklistUndo | undefined = !result.queued && result.dose ? createDeleteMedicationUndo(result.dose) : undefined;
+    return { feedbackKind: "medicationStatus" as const, medicationUndo };
   }
 
   const category = checklistKeyToDiaryCategory(key);
-  if (!category) return "checklist" as const;
+  if (!category) return { feedbackKind: "checklist" as const };
   await createDiaryEntry({ category, summary: checklistSummary(key), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
-  return "checklist" as const;
+  return { feedbackKind: "checklist" as const };
 }
 
 function formatChecklistTime(date = new Date()) {

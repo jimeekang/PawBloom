@@ -83,5 +83,6 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
     deleteDoseRecord,
     createDoseRemote: createMedicationDose.mutateAsync,
     updateDoseStatusRemote: updateMedicationDoseStatus.mutateAsync,
+    deleteDoseRemote: deleteMedicationDose.mutateAsync,
   };
 }

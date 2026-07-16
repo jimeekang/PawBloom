@@ -37,6 +37,7 @@ import { useTodayChecklistController } from "./shell/useTodayChecklistController
 import { getTimelineEntryRoute } from "./shell/timelineRouting";
 import { styles } from "./PawBloomShell.styles";
 import { NoticeBanner } from "../design-system/components";
+import { getShellPermissions } from "./shell/shellPermissions";
 import { can } from "../shared-kernel/permissions";
 
 type PawBloomShellProps = { activePet?: PetProfile | null; pets?: PetProfile[]; onPetNext?: () => void };
@@ -51,15 +52,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const databaseMode = configured && Boolean(user) && Boolean(authActivePet ?? externalActivePet);
   const livePetId = databaseMode ? activePet.id : null;
   const userId = databaseMode ? user?.id ?? null : null;
-  const canCreateDiary = can(activePet.role, "diary.create");
+  const { canCreateDiary, canDeleteDiary, canManageCare, canDeleteDose, canGenerateReport, canShareReport, canReadReport } = getShellPermissions(activePet.role);
   const canUpdateDiary = can(activePet.role, "diary.update");
-  const canDeleteDiary = can(activePet.role, "diary.delete");
-  const canManageCare = can(activePet.role, "care.update");
-  const canDeleteDose = can(activePet.role, "medication.delete");
-  const canGenerateReport = can(activePet.role, "report.generate");
   const canConfirmReport = can(activePet.role, "report.confirm");
-  const canShareReport = can(activePet.role, "report.share");
-  const canReadReport = can(activePet.role, "report.read");
 
   const [activeTab, setActiveTab] = useState<MainTab>("today");
   const [showPetSettings, setShowPetSettings] = useState(false);
@@ -116,6 +111,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     onLocalEntrySaved: (entry) => setLocalChecklist((current) => ({ ...current, ...(entry.category in current ? { [entry.category]: true } : {}) })),
     onLocalEntriesChanged: (nextEntries) => setLocalChecklist(createChecklistFromRecords(getTodayEntriesForPet(nextEntries, activePet.id), medication.activeDoses)),
   });
+  useEffect(() => { if (!databaseMode) setLocalChecklist(createChecklistFromRecords(diary.activeEntries, medication.activeDoses)); }, [databaseMode, diary.activeEntries, medication.activeDoses]);
   const reportSummary = useReportDraftSummary({ activePetId: activePet.id, databaseMode, livePetId, userId, entries: diary.entries, doses: medication.doses });
   const reportWorkflow = useVetReportWorkflow({
     petId: livePetId,
@@ -130,6 +126,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const { checklist, toggleChecklist } = useTodayChecklistController({
     databaseMode,
     activePetId: activePet.id,
+    canDeleteDiary,
+    canManageCare,
+    canDeleteDose,
     localChecklist,
     setLocalChecklist,
     activeEntries: diary.activeEntries,
@@ -142,6 +141,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     saveMedicationAgendaStatus: medication.saveAgendaStatus,
     createDiaryEntryRemote: diary.createEntryRemote,
     createMedicationDoseRemote: medication.createDoseRemote,
+    deleteDiaryEntryRemote: diary.deleteEntryRemote,
+    deleteMedicationDoseRemote: medication.deleteDoseRemote,
     updateMedicationDoseStatusRemote: medication.updateDoseStatusRemote,
     setNotice,
     showSaveFeedback,
