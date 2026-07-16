@@ -7,6 +7,7 @@ import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
+import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { CareMedicationAddCard } from "./CareMedicationAddCard";
 import { CareReportPanel } from "./CareReportPanel";
@@ -159,7 +160,7 @@ function CarePanel({
   );
 }
 
-function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped") => void }) {
+function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped" | "partial") => void }) {
   const visual = row.status === "completed" ? { accent: colors.mint, icon: colors.mintDeep, label: t("ko", "care.status.completed") } : row.status === "skipped" ? { accent: colors.inactive, icon: colors.textSoft, label: t("ko", "care.status.skipped") } : row.status === "partial" ? { accent: colors.memo, icon: colors.orangeDeep, label: t("ko", "care.status.partial") } : { accent: colors.salmon, icon: colors.salmon, label: t("ko", "care.status.pending") };
 
   return (
@@ -173,11 +174,35 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
         {row.conditionName ? <Text style={styles.medMeta}>{t("ko", "care.conditionLabel")}: {row.conditionName}</Text> : null}
         {row.dosageLabel ? <Text style={styles.medMeta}>{t("ko", "care.dosageLabel")}: {row.dosageLabel}</Text> : null}
         <View style={styles.actionButtons}>
-          <Pressable style={styles.givenButton} onPress={() => onStatusChange("completed")}>
-            <Text style={styles.givenButtonText}>{t("ko", "care.status.given")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.completed")}`}
+            accessibilityState={{ selected: row.status === "completed" }}
+            aria-pressed={row.status === "completed"}
+            style={styles.givenButton}
+            onPress={() => onStatusChange("completed")}
+          >
+            <Text numberOfLines={1} style={styles.givenButtonText}>{careStatusActionLabel("completed")}</Text>
           </Pressable>
-          <Pressable style={styles.skipButton} onPress={() => onStatusChange("skipped")}>
-            <Text style={styles.skipButtonText}>{t("ko", "care.status.notGiven")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.partial")}`}
+            accessibilityState={{ selected: row.status === "partial" }}
+            aria-pressed={row.status === "partial"}
+            style={styles.partialButton}
+            onPress={() => onStatusChange("partial")}
+          >
+            <Text numberOfLines={1} style={styles.partialButtonText}>{careStatusActionLabel("partial")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.skipped")}`}
+            accessibilityState={{ selected: row.status === "skipped" }}
+            aria-pressed={row.status === "skipped"}
+            style={styles.skipButton}
+            onPress={() => onStatusChange("skipped")}
+          >
+            <Text numberOfLines={1} style={styles.skipButtonText}>{careStatusActionLabel("skipped")}</Text>
           </Pressable>
         </View>
       </View>
@@ -227,9 +252,11 @@ const styles = StyleSheet.create({
   medMeta: { ...type.tiny, color: colors.textMuted },
   actionButtons: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   givenButton: { flex: 1, minHeight: 40, borderRadius: radius.md, backgroundColor: colors.mintDeep, alignItems: "center", justifyContent: "center" },
-  givenButtonText: { ...type.bodyStrong, color: colors.white },
+  givenButtonText: { ...type.caption, color: colors.white, fontWeight: "600" },
+  partialButton: { flex: 1, minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.segmentActiveBorder, backgroundColor: colors.surfacePeach, alignItems: "center", justifyContent: "center" },
+  partialButtonText: { ...type.caption, color: colors.orangeDeep, fontWeight: "600" },
   skipButton: { flex: 1, minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  skipButtonText: { ...type.bodyStrong, color: colors.textMuted },
+  skipButtonText: { ...type.caption, color: colors.textMuted, fontWeight: "600" },
   editButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md },
   editText: { ...type.caption, color: colors.orangeDeep },
   scheduleCard: { gap: spacing.sm },
