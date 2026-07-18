@@ -20,11 +20,11 @@ edit_policy: exclusive
 
 ## Phase B — Auth·세션·로그아웃
 
-- [ ] B1. Auth 폼 하드닝 — KeyboardAvoidingView+ScrollView, textContentType/autoComplete(emailAddress/password/newPassword), 비밀번호 표시 토글, 필드 라벨, 이메일 형식 사전 검증 + email_address_invalid 매핑 (AuthScreen, authFormState).
-- [ ] B2. 로그아웃 확인 다이얼로그(공용 confirmAction, i18n 키 신설) 3곳 연결 + 로그아웃 실패 배너 렌더 (PawBloomShell, SettingsScreen, PetOnboardingScreen).
-- [ ] B3. 펫 삭제 Alert.alert → confirmAction 교체(웹 no-op 해소) (PetOnboardingScreen).
-- [ ] B4. 가입 전 언어 전환 — Auth 게이트에 KO/EN 토글 노출 (AuthScreen + languagePreference).
-- [ ] B5. 세션 만료 시 안내 notice (authContextState).
+- [x] B1. Auth 폼 하드닝 — KeyboardAvoidingView+ScrollView, textContentType/autoComplete(emailAddress/password/newPassword), 비밀번호 표시 토글, 필드 라벨, 이메일 형식 사전 검증 + email_address_invalid 매핑 (AuthScreen, authFormState).
+- [x] B2. 로그아웃 확인 다이얼로그(공용 confirmAction, i18n 키 신설) 3곳 연결 + 로그아웃 실패 배너 렌더 (PawBloomShell, SettingsScreen, PetOnboardingScreen).
+- [x] B3. 펫 삭제 Alert.alert → confirmAction 교체(웹 no-op 해소) (PetOnboardingScreen).
+- [x] B4. 가입 전 언어 전환 — Auth 게이트에 KO/EN 토글 노출 (AuthScreen + languagePreference).
+- [x] B5. 세션 만료 시 안내 notice (authContextState).
 
 ## Phase C — 셸·홈
 
