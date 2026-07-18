@@ -68,6 +68,10 @@ export function OutlineIconButton({ icon, onPress }: { icon: AppIconName; onPres
   );
 }
 
+export function FieldLabel({ label }: { label: string }) {
+  return <Text style={styles.fieldLabel}>{label}</Text>;
+}
+
 export type NoticeTone = "success" | "error";
 
 export function NoticeBanner({ text, icon = "check", tone = "success" }: { text: string; icon?: AppIconName; tone?: NoticeTone }) {
@@ -215,6 +219,11 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: colors.orangeDeep,
+    fontWeight: font.weight.semibold,
+  },
+  fieldLabel: {
+    ...type.caption,
+    color: colors.textMuted,
     fontWeight: font.weight.semibold,
   },
   noticeBanner: {

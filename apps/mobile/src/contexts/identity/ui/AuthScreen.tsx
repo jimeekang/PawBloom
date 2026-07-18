@@ -1,18 +1,23 @@
-import { useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
+import { useRef, useState, type ComponentProps } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { FieldLabel, NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
-import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
+import { useLanguage } from "../../../i18n/languageContext";
 import { useAuth } from "../application/authContext";
 import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type AuthMode } from "./authFormState";
+import { styles } from "./AuthScreen.styles";
 
 export function AuthScreen() {
   const { signIn, signUp, error, authMessage, loading, resetMessage } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<TranslationKey | null>(null);
   const submissionInFlight = useRef(false);
   const isSignUp = mode === "signUp";
@@ -50,69 +55,138 @@ export function AuthScreen() {
   }
 
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
-      <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
-      <View style={styles.valuePanel}>
-        {authValueItems.map((item) => (
-          <View key={item.key} style={styles.valueRow}>
-            <View style={styles.valueIcon}>
-              <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
-            </View>
-            <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.langRow}>
+            <SegmentedControl
+              items={[
+                { label: t("ko", "language.koNative"), value: "ko" },
+                { label: t("ko", "language.enNative"), value: "en" },
+              ]}
+              value={language}
+              onChange={setLanguage}
+            />
           </View>
-        ))}
-      </View>
-      <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
+          <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
+          <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
+          <View style={styles.valuePanel}>
+            {authValueItems.map((item) => (
+              <View key={item.key} style={styles.valueRow}>
+                <View style={styles.valueIcon}>
+                  <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
+                </View>
+                <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
 
-      <SegmentedControl
-        items={[
-          { label: t("ko", "auth.signIn"), value: "signIn" },
-          { label: t("ko", "auth.signUp"), value: "signUp" },
-        ]}
-        value={mode}
-        onChange={changeMode}
-      />
-
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder={t("ko", "auth.email")}
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <TextInput
-          style={styles.input}
-          secureTextEntry
-          placeholder={t("ko", "auth.password")}
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {isSignUp ? (
-          <TextInput
-            style={styles.input}
-            secureTextEntry
-            placeholder={t("ko", "auth.passwordConfirm")}
-            placeholderTextColor={colors.textMuted}
-            value={passwordConfirm}
-            onChangeText={setPasswordConfirm}
+          <SegmentedControl
+            items={[
+              { label: t("ko", "auth.signIn"), value: "signIn" },
+              { label: t("ko", "auth.signUp"), value: "signUp" },
+            ]}
+            value={mode}
+            onChange={changeMode}
           />
-        ) : null}
 
-        <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
+          <View style={styles.form}>
+            <View style={styles.fieldGroup}>
+              <FieldLabel label={t("ko", "auth.email")} />
+              <TextInput
+                style={styles.input}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                autoComplete="email"
+                accessibilityLabel={t("ko", "auth.email")}
+                placeholder={t("ko", "auth.email")}
+                placeholderTextColor={colors.textMuted}
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
 
-        {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
-        {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
+            <PasswordField
+              label={t("ko", "auth.password")}
+              value={password}
+              onChangeText={setPassword}
+              visible={showPassword}
+              onToggleVisibility={() => setShowPassword((current) => !current)}
+              textContentType={isSignUp ? "newPassword" : "password"}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+            />
 
-        {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
-        {isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
-        {!isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+            {isSignUp ? (
+              <PasswordField
+                label={t("ko", "auth.passwordConfirm")}
+                value={passwordConfirm}
+                onChangeText={setPasswordConfirm}
+                visible={showPassword}
+                onToggleVisibility={() => setShowPassword((current) => !current)}
+                textContentType="newPassword"
+                autoComplete="new-password"
+              />
+            ) : null}
+
+            <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
+
+            {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
+            {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
+
+            {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
+            {loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function PasswordField({
+  label,
+  value,
+  onChangeText,
+  visible,
+  onToggleVisibility,
+  textContentType,
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  visible: boolean;
+  onToggleVisibility: () => void;
+  textContentType: ComponentProps<typeof TextInput>["textContentType"];
+  autoComplete: ComponentProps<typeof TextInput>["autoComplete"];
+}) {
+  return (
+    <View style={styles.fieldGroup}>
+      <FieldLabel label={label} />
+      <View style={styles.passwordRow}>
+        <TextInput
+          style={[styles.input, styles.passwordInput]}
+          secureTextEntry={!visible}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType={textContentType}
+          autoComplete={autoComplete}
+          accessibilityLabel={label}
+          placeholder={label}
+          placeholderTextColor={colors.textMuted}
+          value={value}
+          onChangeText={onChangeText}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("ko", visible ? "auth.hidePassword" : "auth.showPassword")}
+          style={styles.eyeButton}
+          onPress={onToggleVisibility}
+        >
+          <AppIcon name={visible ? "eyeOff" : "eye"} size={iconSize.md} color={colors.textMuted} />
+        </Pressable>
       </View>
     </View>
   );
@@ -123,71 +197,3 @@ const authValueItems: { key: "auth.valueReport" | "auth.valueFamily" | "auth.val
   { key: "auth.valueFamily", icon: "care" },
   { key: "auth.valueSafeSummary", icon: "shield" },
 ];
-
-const styles = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    padding: layout.screenPadding,
-    justifyContent: "center",
-    gap: spacing.lg,
-    backgroundColor: colors.appBackground,
-  },
-  title: {
-    ...type.heroTitle,
-    color: colors.text,
-  },
-  copy: {
-    ...type.body,
-    color: colors.text,
-  },
-  valuePanel: {
-    gap: spacing.sm,
-  },
-  valueRow: {
-    minHeight: 46,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-  },
-  valueIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.full,
-    backgroundColor: colors.surfacePeach,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  valueText: {
-    ...type.bodyStrong,
-    flex: 1,
-  },
-  trustCopy: {
-    ...type.caption,
-    color: colors.textMuted,
-  },
-  form: {
-    gap: spacing.md,
-  },
-  input: {
-    minHeight: layout.inputHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-  },
-  hint: {
-    ...type.caption,
-    color: colors.textMuted,
-  },
-  notice: {
-    ...type.caption,
-    color: colors.orangeDeep,
-  },
-});
