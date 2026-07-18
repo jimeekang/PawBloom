@@ -17,7 +17,7 @@ type Params = {
   userId: string | null;
   fallbackPetId: string;
   schedules: MedicationSchedule[];
-  onNotice: (notice: string) => void;
+  onNotice: (notice: string, tone?: "success" | "error") => void;
   onSaved: (kind: MedicationSaveFeedbackKind) => void;
   onLocalDoseSaved: (input: QuickMedicationDoseInput) => void;
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => void;
@@ -39,18 +39,18 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
     if (!databaseMode) {
       setDoses((current) => [createLocalDoseRecord(activePetId, input, t("ko", "care.quickMedicationName")), ...current]);
       onLocalDoseSaved(input);
-      onNotice(t("ko", "care.medicationAdded"));
+      onNotice("");
       onSaved("medication");
       return;
     }
 
     try {
       await createMedicationDose.mutateAsync(input);
-      onNotice(t("ko", "care.medicationAdded"));
+      onNotice("");
       onSaved("medication");
     } catch (error) {
       const message = t("ko", isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
-      onNotice(message);
+      onNotice(message, "error");
       throw new Error(message);
     }
   }

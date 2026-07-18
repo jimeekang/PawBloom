@@ -6,7 +6,6 @@ import { t } from "../../i18n/translations";
 type HomeHeaderProps = {
   petName: string;
   onPetPress: () => void;
-  onManagePets: () => void;
   canSwitchPet: boolean;
 };
 
@@ -14,7 +13,7 @@ type BackHeaderProps = {
   onBack: () => void;
 };
 
-export function HomeHeader({ petName, onPetPress, onManagePets, canSwitchPet }: HomeHeaderProps) {
+export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
@@ -33,20 +32,19 @@ export function HomeHeader({ petName, onPetPress, onManagePets, canSwitchPet }: 
           <AppIcon name="pet" size={iconSize.sm} color={canSwitchPet ? colors.orangeDeep : colors.textMuted} />
           <Text style={styles.petSwitchText}>{petName}</Text>
         </Pressable>
-        <AppIcon name="bell" size={iconSize.lg} color={colors.text} />
       </View>
     </View>
   );
 }
 
-export function DiaryHeader({ onBack }: BackHeaderProps) {
+export function DiaryHeader() {
   return (
     <View style={styles.header}>
-      <AppIconButton iconName="back" onPress={onBack} />
-      <Text style={styles.screenTitle}>{t("ko", "diary.title")}</Text>
-      <View style={styles.headerSpacer}>
-        <AppIcon name="calendar" size={iconSize.md} color={colors.textSoft} />
+      <View style={styles.careTitleRow}>
+        <AppIcon name="diary" size={iconSize.lg} color={colors.orangeDeep} />
+        <Text style={styles.screenTitle}>{t("ko", "tabs.diary")}</Text>
       </View>
+      <View style={styles.headerSpacer} />
     </View>
   );
 }

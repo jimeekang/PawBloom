@@ -33,7 +33,13 @@ export function CareSummaryCard({ dashboard, doses }: Props) {
 
   return (
     <SurfaceCard>
-      <Pressable style={({ pressed }) => [styles.careSummary, pressed && styles.pressed]} onPress={() => setExpanded((current) => !current)}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={t("ko", "today.dashboardCare")}
+        style={({ pressed }) => [styles.careSummary, pressed && styles.pressed]}
+        onPress={() => setExpanded((current) => !current)}
+      >
         <View style={styles.careIcon}>
           <AppIcon name="medication" size={iconSize.md} color={colors.salmon} />
         </View>

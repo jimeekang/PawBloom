@@ -130,7 +130,7 @@ export function DiaryEntryScreen({
       if (editingEntry) {
         await onUpdate({ id: editingEntry.id, ...draft, occurredTime: saveTime });
         setEditingEntry(null);
-        setNotice(t("ko", "diary.updatedForDate"));
+        setNotice(t("ko", "diary.localDraft"));
       } else {
         const existingDailyEntry = findEditableDailyStructuredEntry(entries, selected, draft.entryDate ?? selectedDateKey);
         if (existingDailyEntry) {
@@ -139,10 +139,10 @@ export function DiaryEntryScreen({
             return;
           }
           await onUpdate({ id: existingDailyEntry.id, ...draft, occurredTime: saveTime });
-          setNotice(t("ko", "diary.updatedForDate"));
+          setNotice(t("ko", "diary.localDraft"));
         } else {
           const outcome = await onSave(draft);
-          setNotice(t("ko", outcome === "queued" ? "diary.queuedForSync" : "diary.savedForDate"));
+          setNotice(t("ko", outcome === "queued" ? "diary.queuedForSync" : "diary.localDraft"));
         }
       }
     } catch {

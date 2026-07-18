@@ -26,7 +26,7 @@ type Params = {
   createDiaryEntryRemote: (input: { category: DiaryEntry["category"]; summary: string; origin?: "diary" | "checklist"; conditionScore?: 1 | 2 | 3 | 4 | 5 }) => Promise<unknown>;
   createMedicationDoseRemote: (input: { medicationName: string; status: "completed" }) => Promise<unknown>;
   updateMedicationDoseStatusRemote: (input: { id: string; status: "completed" }) => Promise<unknown>;
-  setNotice: (notice: string) => void;
+  setNotice: (notice: string, tone?: "success" | "error") => void;
   showSaveFeedback: (kind: SaveFeedbackKind) => void;
 };
 
@@ -62,7 +62,7 @@ export function useTodayChecklistController({ databaseMode, activePetId, localCh
         return;
       }
       void recordChecklistItem(key)
-        .catch((error: Error) => setNotice(error.message))
+        .catch((error: Error) => setNotice(error.message, "error"))
         .finally(clearPendingKey);
     });
   }

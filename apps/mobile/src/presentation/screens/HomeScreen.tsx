@@ -3,12 +3,13 @@ import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import type { TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
-import type { PetProfile } from "../../contexts/pet/domain/pet";
+import { formatPetMetaLine, type PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
 import { AppIcon } from "../../design-system/iconography";
-import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard } from "../../design-system/components";
+import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard, type NoticeTone } from "../../design-system/components";
 import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { useLanguage } from "../../i18n/languageContext";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
@@ -26,24 +27,27 @@ type Props = {
   includeMedication?: boolean;
   showMedicationSummary?: boolean;
   notice: string;
+  noticeTone?: NoticeTone;
   onChecklistToggle: (key: ChecklistKey) => void;
   onViewTimelineAll: () => void;
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+  const { language } = useLanguage();
   const timeline = entries.slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
   const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
   const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder, medicationAgenda);
+  const heroMeta = formatPetMetaLine(pet, language);
 
   return (
     <View>
       <ImageBackground source={heroSource} resizeMode="cover" imageStyle={styles.heroImage} style={styles.heroCard}>
         <View style={styles.heroOverlay}>
           <Text style={styles.heroName}>{pet.name}</Text>
-          <Text style={styles.heroMeta}>{pet.breed} - {pet.ageLabel}</Text>
+          {heroMeta ? <Text style={styles.heroMeta}>{heroMeta}</Text> : null}
         </View>
       </ImageBackground>
 
@@ -62,7 +66,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
 
       {notice ? (
         <View style={styles.noticeWrap}>
-          <NoticeBanner text={notice} />
+          <NoticeBanner text={notice} tone={noticeTone} icon={noticeTone === "error" ? "close" : "check"} />
         </View>
       ) : null}
 
@@ -76,7 +80,14 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
           const item = categoryVisuals[key];
           const done = checklist[key];
           return (
-            <Pressable key={key} style={styles.checkItem} onPress={() => onChecklistToggle(key)}>
+            <Pressable
+              key={key}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: done }}
+              accessibilityLabel={t("ko", item.labelKey)}
+              style={styles.checkItem}
+              onPress={() => onChecklistToggle(key)}
+            >
               <IconBubble name={item.icon} color={item.color} background={item.background} size={50} />
               <View style={styles.checkMark}>
                 <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? colors.mintDeep : colors.textSoft} />
@@ -108,7 +119,13 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                 </>
               );
               return onTimelineEntryPress ? (
-                <Pressable key={entry.id} style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]} onPress={() => onTimelineEntryPress(entry)}>
+                <Pressable
+                  key={entry.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${entry.occurredAt} ${t("ko", item.labelKey)} ${entry.summary}`.trim()}
+                  style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]}
+                  onPress={() => onTimelineEntryPress(entry)}
+                >
                   {row}
                 </Pressable>
               ) : (
@@ -153,7 +170,7 @@ const styles = StyleSheet.create({
   checkLabel: { ...type.tiny, color: colors.text, textAlign: "center", marginTop: spacing.xs },
   timelineCard: { marginTop: spacing.md },
   timeline: { gap: spacing.md },
-  timelineRow: { minHeight: 28, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  timelineRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.md },
   timelineRowPressed: { opacity: 0.72 },
   timelineStem: { width: 8, alignItems: "center" },
   timelineDot: { width: 10, height: 10, borderRadius: radius.full, backgroundColor: colors.salmon },
