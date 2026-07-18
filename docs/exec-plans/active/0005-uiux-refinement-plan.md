@@ -28,12 +28,12 @@ edit_policy: exclusive
 
 ## Phase C — 셸·홈
 
-- [ ] C1. 셸 ScrollView `keyboardShouldPersistTaps="handled"` (PawBloomShell:240).
-- [ ] C2. 저장 피드백 단일화 — SaveFeedbackBar를 유일한 성공 채널로, 중복 NoticeBanner 제거.
-- [ ] C3. 히어로 메타 정리 — 빈 품종 처리, 나이 라벨 언어별 포맷('2y 3m' → '2살 3개월'/'2y 3m') (pet.ts, HomeScreen).
-- [ ] C4. 오류 tone 일괄 — 홈 체크리스트/투약 실패·QuickMedicationForm·PetOnboarding 배너에 tone="error" 전달.
-- [ ] C5. 헤더 정리 — 벨 아이콘 제거, 다이어리 헤더 제목/뒤로가기 정합화 (ShellHeaders).
-- [ ] C6. 홈 a11y — 체크리스트 타일·타임라인 행·케어 요약 토글 role/label/state + 타임라인 행 44pt.
+- [x] C1. 셸 ScrollView `keyboardShouldPersistTaps="handled"` (PawBloomShell:240).
+- [x] C2. 저장 피드백 단일화 — SaveFeedbackBar를 유일한 성공 채널로, 중복 NoticeBanner 제거.
+- [x] C3. 히어로 메타 정리 — 빈 품종 처리, 나이 라벨 언어별 포맷('2y 3m' → '2살 3개월'/'2y 3m') (pet.ts, HomeScreen).
+- [x] C4. 오류 tone 일괄 — 홈 체크리스트/투약 실패·QuickMedicationForm·PetOnboarding 배너에 tone="error" 전달.
+- [x] C5. 헤더 정리 — 벨 아이콘 제거, 다이어리 헤더 제목/뒤로가기 정합화 (ShellHeaders).
+- [x] C6. 홈 a11y — 체크리스트 타일·타임라인 행·케어 요약 토글 role/label/state + 타임라인 행 44pt.
 
 ## Phase D — 다이어리
 
