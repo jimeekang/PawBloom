@@ -19,6 +19,7 @@ edit_policy: exclusive
 - [02. 제품 UX](02-product-ux.md) — 화면별 사용성 진단과 개선 방향.
 - [03. 엔지니어링](03-engineering.md) — 아키텍처·구현 상태·기술 부채 실측.
 - [04. 비즈니스·수익화](04-business-monetization.md) — 과금 모델·전환·수익화 준비도.
+- [06. 전 화면 UI/UX 전수 감사 (2026-07-18)](06-uiux-full-audit-2026-07-18.md) — 8영역 병렬 감사 + 적대적 검증 확정 92건, 실행 계획은 exec-plans/0005.
 
 ## 감사 이력 요약 (Product Analysis, 2026-07-04, archived)
 
