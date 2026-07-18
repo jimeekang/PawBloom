@@ -7,6 +7,7 @@ import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { getDiaryEntryDisplaySummary } from "./diaryEntryDisplay";
 
 export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = false, status = "ready", onRetry }: { entries: DiaryEntry[]; title: string; onEntryPress?: (entry: DiaryEntry) => void; showEntryDate?: boolean; status?: "ready" | "loading" | "error"; onRetry?: () => void }) {
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
@@ -34,7 +35,7 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
                   <AppIcon name={visual.icon} size={iconSize.md} color={visual.color} />
                   <View style={styles.body}>
                     <Text style={styles.title}>{t("ko", visual.labelKey)}</Text>
-                    <Text style={styles.summary} numberOfLines={2}>{entry.category === "photo" ? t("ko", "category.photo") : entry.summary}</Text>
+                    <Text style={styles.summary} numberOfLines={2}>{getDiaryEntryDisplaySummary(entry)}</Text>
                   </View>
                   <View style={styles.meta}>
                     {showEntryDate ? <Text style={styles.entryDate}>{formatEntryDate(entry.entryDate, locale)}</Text> : null}
@@ -49,7 +50,7 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
                   {onEntryPress ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${t("ko", visual.labelKey)} ${entry.occurredAt} ${entry.category === "photo" ? t("ko", "category.photo") : entry.summary}`.trim()}
+                      accessibilityLabel={`${t("ko", visual.labelKey)} ${entry.occurredAt} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
                       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                       onPress={() => onEntryPress(entry)}
                     >

@@ -10,6 +10,7 @@ import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard, type NoticeTone }
 import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { useLanguage } from "../../i18n/languageContext";
+import { getDiaryEntryDisplaySummary } from "../../contexts/diary/ui/diaryEntryDisplay";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
@@ -115,14 +116,14 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                   <Text style={styles.time}>{entry.occurredAt}</Text>
                   <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
                   <Text style={styles.timelineTitle}>{t("ko", item.labelKey)}</Text>
-                  <Text style={styles.timelineValue} numberOfLines={1}>{entry.category === "photo" ? t("ko", "category.photo") : entry.summary}</Text>
+                  <Text style={styles.timelineValue} numberOfLines={1}>{getDiaryEntryDisplaySummary(entry)}</Text>
                 </>
               );
               return onTimelineEntryPress ? (
                 <Pressable
                   key={entry.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`${entry.occurredAt} ${t("ko", item.labelKey)} ${entry.summary}`.trim()}
+                  accessibilityLabel={`${entry.occurredAt} ${t("ko", item.labelKey)} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
                   style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]}
                   onPress={() => onTimelineEntryPress(entry)}
                 >
