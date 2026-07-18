@@ -12,11 +12,11 @@ edit_policy: exclusive
 
 ## Phase A — P1 버그 (데이터 손상·차단·에러 노출)
 
-- [ ] A1. 산책 기록 편집 데이터 손상 수정 — 산책 카테고리 비활성이어도 기존 기록의 category를 보존, food로 폴백 금지 (DiaryEntryScreen).
-- [ ] A2. 프리뷰 초기 체크리스트 walk '완료' 제거 — 샘플 레코드와 일치화(P3 '프리뷰 불일치' 동시 해소) (todayChecklist.ts).
-- [ ] A3. 체크리스트 오탭 가드 — 레코드 생성 전 confirmAction 확인 + 투약 타일 잠금 모순 알림 문구 정리 (useTodayChecklistController, checklistActions).
-- [ ] A4. '오늘 기록으로 불러오기' 중복 재탭 가드 + raw Postgres 에러를 i18n 메시지로 매핑 (PawBloomShell).
-- [ ] A5. 사진 픽커 구조 교체 — 썸네일 탭 무동작(또는 확대 의도 예약), X 배지만 삭제 트리거 + confirmAction + a11y (DiaryPhotoPicker).
+- [x] A1. 산책 기록 편집 데이터 손상 수정 — 산책 카테고리 비활성이어도 기존 기록의 category를 보존, food로 폴백 금지 (DiaryEntryScreen).
+- [x] A2. 프리뷰 초기 체크리스트 walk '완료' 제거 — 샘플 레코드와 일치화(P3 '프리뷰 불일치' 동시 해소) (todayChecklist.ts).
+- [x] A3. 체크리스트 오탭 가드 — 레코드 생성 전 confirmAction 확인 + 투약 타일 잠금 모순 알림 문구 정리 (useTodayChecklistController, checklistActions).
+- [x] A4. '오늘 기록으로 불러오기' 중복 재탭 가드 + raw Postgres 에러를 i18n 메시지로 매핑 (PawBloomShell).
+- [x] A5. 사진 픽커 구조 교체 — 썸네일 탭 무동작(또는 확대 의도 예약), X 배지만 삭제 트리거 + confirmAction + a11y (DiaryPhotoPicker).
 
 ## Phase B — Auth·세션·로그아웃
 
