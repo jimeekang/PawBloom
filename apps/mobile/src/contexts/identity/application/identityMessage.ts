@@ -5,6 +5,7 @@ export type IdentityMessageKey =
   | "auth.signUpComplete"
   | "auth.checkEmail"
   | "auth.emailInvalid"
+  | "auth.sessionExpired"
   | "auth.error.invalidCredentials"
   | "auth.error.emailNotConfirmed"
   | "auth.error.emailExists"

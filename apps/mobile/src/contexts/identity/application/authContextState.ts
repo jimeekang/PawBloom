@@ -26,6 +26,7 @@ export function useAuthState() {
   const [error, setError] = useState<IdentityMessageKey | null>(null);
   const [authMessage, setAuthMessage] = useState<IdentityMessageKey | null>(null);
   const activeUserIdRef = useRef<string | null>(null);
+  const explicitSignOutRef = useRef(false);
   const petLoadRevisionRef = useRef(0);
   const petListReadyRef = useRef(false);
   const queryClient = useQueryClient();
@@ -109,7 +110,10 @@ export function useAuthState() {
     }
     return changed;
   }, [queryClient]);
-  const handleSignedOut = useCallback(() => { updateAccountBoundary(null); }, [updateAccountBoundary]);
+  const handleSignedOut = useCallback(() => {
+    explicitSignOutRef.current = true;
+    updateAccountBoundary(null);
+  }, [updateAccountBoundary]);
 
   useEffect(() => {
     if (!configuredFromEnv || !supabase) {
@@ -177,10 +181,15 @@ export function useAuthState() {
     const { data: listener } = client.auth.onAuthStateChange((event, nextSession) => {
       authRevision += 1;
       const revision = authRevision;
+      const hadUser = Boolean(activeUserIdRef.current);
       const accountChanged = updateAccountBoundary(nextSession?.user.id ?? null);
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setInitialized(true);
+      if (!nextSession?.user) {
+        if (hadUser && !explicitSignOutRef.current) setAuthMessage("auth.sessionExpired");
+        explicitSignOutRef.current = false;
+      }
       if (nextSession?.user && (accountChanged || event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "USER_UPDATED")) {
         scheduleUserSynchronization(nextSession.user, revision, accountChanged || event === "INITIAL_SESSION");
       }
