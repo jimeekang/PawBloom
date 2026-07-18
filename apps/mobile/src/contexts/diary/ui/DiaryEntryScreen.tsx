@@ -4,13 +4,12 @@ import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput } fro
 import { buildRoutineDiaryDetail, getDiaryCategoriesForSpecies } from "./diaryFormDefaults";
 import type { Species } from "../../pet/domain/pet";
 import type { PetRoutine } from "../../routine/domain/petRoutine";
-import { categoryVisuals } from "../../../design-system/categoryVisuals";
 import { NoticeBanner } from "../../../design-system/components";
-import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize } from "../../../design-system/tokens";
+import { colors } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import type { DraftDiaryEntry } from "./draftDiaryEntry";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
+import { DiaryCategoryGrid } from "./DiaryCategoryGrid";
 import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
 import { DiaryEntryList } from "./DiaryEntryList";
 import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
@@ -38,6 +37,8 @@ export function DiaryEntryScreen({
   canCreate = true,
   canUpdate = true,
   canDelete = true,
+  listStatus = "ready",
+  onRetryList,
 }: {
   entries: DiaryEntry[];
   selectedDateKey: string;
@@ -54,6 +55,8 @@ export function DiaryEntryScreen({
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
+  listStatus?: "ready" | "loading" | "error";
+  onRetryList?: () => void;
 }) {
   const [selected, setSelected] = useState<DiaryCategory>("food");
   const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -208,18 +211,7 @@ export function DiaryEntryScreen({
       <NoticeBanner text={notice} icon="shield" />
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
-      <View style={styles.categoryGrid}>
-        {categories.map((key) => {
-          const item = categoryVisuals[key];
-          const active = selected === key;
-          return (
-            <Pressable key={key} disabled={Boolean(editingEntry)} style={[styles.categoryTile, active && styles.categoryTileActive]} onPress={() => selectCategory(key)}>
-              <AppIcon name={item.icon} size={iconSize.xl} color={item.color} />
-              <Text style={styles.categoryLabel}>{t("ko", item.labelKey)}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <DiaryCategoryGrid categories={categories} selected={selected} disabled={Boolean(editingEntry)} onSelect={selectCategory} />
 
       {isDetailPanelOpen && formState.showsDetail && selected === "condition" ? <DiaryConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
       {isDetailPanelOpen && formState.showsDetail ? <DiaryDetailPanel category={selected} detail={detail} onChange={setDetail} /> : null}
@@ -249,7 +241,7 @@ export function DiaryEntryScreen({
       <TimePickerField value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
 
       <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
-      <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} />
+      <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} showEntryDate={filter === "week"} status={listStatus} onRetry={onRetryList} />
     </View>
   );
 }

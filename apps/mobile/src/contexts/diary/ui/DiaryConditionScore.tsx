@@ -8,7 +8,14 @@ export function DiaryConditionScore({ value, onChange }: { value: 1 | 2 | 3 | 4 
       <Text style={styles.sectionTitle}>{t("ko", "diary.conditionScore")}</Text>
       <View style={styles.scorePicker}>
         {[1, 2, 3, 4, 5].map((score) => (
-          <Pressable key={score} style={[styles.scoreButton, value === score && styles.scoreButtonActive]} onPress={() => onChange(score as 1 | 2 | 3 | 4 | 5)}>
+          <Pressable
+            key={score}
+            accessibilityRole="button"
+            accessibilityState={{ selected: value === score }}
+            accessibilityLabel={`${t("ko", "diary.conditionScore")} ${score}`}
+            style={[styles.scoreButton, value === score && styles.scoreButtonActive]}
+            onPress={() => onChange(score as 1 | 2 | 3 | 4 | 5)}
+          >
             <Text style={[styles.scoreText, value === score && styles.scoreTextActive]}>{score}</Text>
           </Pressable>
         ))}

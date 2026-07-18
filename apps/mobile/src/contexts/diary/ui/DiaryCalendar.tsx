@@ -32,11 +32,11 @@ export function DiaryCalendar({
   return (
     <SurfaceCard>
       <View style={styles.header}>
-        <Pressable style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "diary.prevMonth")} style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}>
           <Text style={styles.monthButtonText}>{t("ko", "diary.prevMonth")}</Text>
         </Pressable>
-        <Text style={styles.monthTitle}>{formatMonth(selectedDate, locale)}</Text>
-        <Pressable style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}>
+        <Text style={styles.monthTitle} accessibilityRole="header">{formatMonth(selectedDate, locale)}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "diary.nextMonth")} style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}>
           <Text style={styles.monthButtonText}>{t("ko", "diary.nextMonth")}</Text>
         </Pressable>
       </View>
@@ -52,7 +52,14 @@ export function DiaryCalendar({
             {week.map((day) => {
               const selected = day.dateKey === selectedDateKey;
               return (
-                <Pressable key={day.dateKey} style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]} onPress={() => onSelectDate(day.dateKey)}>
+                <Pressable
+                  key={day.dateKey}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={formatDayA11yLabel(day.dateKey, locale)}
+                  style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]}
+                  onPress={() => onSelectDate(day.dateKey)}
+                >
                   <Text style={[styles.dayText, !day.inMonth && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
                 </Pressable>
               );
@@ -104,6 +111,10 @@ function monthOffsetKey(date: Date, offset: number) {
 
 function formatMonth(date: Date, locale: string) {
   return new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(date);
+}
+
+function formatDayA11yLabel(dateKey: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", weekday: "long" }).format(parseDateKey(dateKey));
 }
 
 function weekdayLabels(locale: string) {
@@ -163,6 +174,7 @@ const styles = StyleSheet.create({
   },
   day: {
     flex: 1,
+    minHeight: 44,
     aspectRatio: 1,
     borderRadius: radius.sm,
     alignItems: "center",

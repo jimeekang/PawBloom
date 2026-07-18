@@ -45,6 +45,12 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
 
   const latestConditionScore = activeEntries.find((entry) => entry.category === "condition" && entry.conditionScore)?.conditionScore;
 
+  const selectedQuery = diaryFilter === "day" ? diaryDateQuery : diaryWeekQuery;
+  const selectedDiaryStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : selectedQuery.isError ? "error" : selectedQuery.isLoading ? "loading" : "ready";
+  function refetchSelectedDiary() {
+    void (diaryFilter === "day" ? diaryDateQuery.refetch() : diaryWeekQuery.refetch());
+  }
+
   function saveDiaryEntry(draft: DraftDiaryEntry) {
     if (databaseMode) {
       return createDiaryEntry
@@ -105,6 +111,8 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     replaceLocalEntries: setEntries,
     activeEntries,
     selectedDiaryEntries,
+    selectedDiaryStatus,
+    refetchSelectedDiary,
     latestConditionScore,
     selectedDiaryDate,
     setSelectedDiaryDate,
