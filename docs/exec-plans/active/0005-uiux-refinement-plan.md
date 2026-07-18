@@ -37,12 +37,12 @@ edit_policy: exclusive
 
 ## Phase D — 다이어리
 
-- [ ] D1. 목록 로딩·실패 상태 + 재시도 (useDiaryEntriesController, DiaryEntryList).
-- [ ] D2. 주별 필터 행에 날짜 표시.
-- [ ] D3. 달력 셀·월 이동 a11y + 44pt (DiaryCalendar).
-- [ ] D4. 컨디션 점수·카테고리 타일·기록 행 a11y (DiaryConditionScore, DiaryEntryScreen, DiaryEntryList).
-- [ ] D5. FieldLabel 컴포넌트 신설(design-system) + 다이어리 상세 적용 (DiaryDetailPanel).
-- [ ] D6. diarySummary·diaryRecords 메시지 i18n화 — EN 모드 한국어 노출 제거.
+- [x] D1. 목록 로딩·실패 상태 + 재시도 (useDiaryEntriesController, DiaryEntryList).
+- [x] D2. 주별 필터 행에 날짜 표시.
+- [x] D3. 달력 셀·월 이동 a11y + 44pt (DiaryCalendar).
+- [x] D4. 컨디션 점수·카테고리 타일·기록 행 a11y (DiaryConditionScore, DiaryEntryScreen, DiaryEntryList).
+- [x] D5. FieldLabel 컴포넌트 신설(design-system) + 다이어리 상세 적용 (DiaryDetailPanel).
+- [x] D6. diarySummary·diaryRecords 메시지 i18n화 — EN 모드 한국어 노출 제거.
 
 ## Phase E — 케어·투약
 
