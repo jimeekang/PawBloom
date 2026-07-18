@@ -32,7 +32,9 @@ import { BottomNav, type MainTab } from "./ui/BottomNav";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader, SettingsHeader } from "./shell/ShellHeaders";
 import { SaveFeedbackBar } from "./shell/SaveFeedbackBar";
 import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./shell/saveFeedback";
-import { createChecklistFromRecords, initialChecklist } from "./shell/todayChecklist";
+import { createChecklistFromRecords } from "./shell/todayChecklist";
+import { buildSampleDiaryEntries } from "../contexts/diary/ui/sampleDiaryEntries";
+import { buildSampleDoses } from "../contexts/medication/ui/sampleDoses";
 import { useTodayChecklistController } from "./shell/useTodayChecklistController";
 import { getTimelineEntryRoute } from "./shell/timelineRouting";
 import { styles } from "./PawBloomShell.styles";
@@ -64,7 +66,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const [showPetSettings, setShowPetSettings] = useState(false);
   const [notice, setNotice] = useState<string>(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
-  const [localChecklist, setLocalChecklist] = useState(initialChecklist);
+  const [localChecklist, setLocalChecklist] = useState(() => createChecklistFromRecords(buildSampleDiaryEntries(mockPets[0].id), buildSampleDoses(mockPets[0].id)));
   const showSaveFeedback = useCallback((kind: SaveFeedbackKind) => setSaveFeedback(createSaveFeedback(kind)), []);
   const hideSaveFeedback = useCallback(() => setSaveFeedback(null), []);
 

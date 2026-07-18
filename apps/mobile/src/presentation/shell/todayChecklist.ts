@@ -5,16 +5,6 @@ import { t, type TranslationKey } from "../../i18n/translations";
 
 export type ChecklistKey = Exclude<DiaryCategory, "photo"> | "medication";
 
-export const initialChecklist: Record<ChecklistKey, boolean> = {
-  food: true,
-  water: true,
-  walk: true,
-  stool: true,
-  condition: false,
-  memo: false,
-  medication: false,
-};
-
 export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRecord[]): Record<ChecklistKey, boolean> {
   return {
     food: entries.some((entry) => entry.category === "food"),
