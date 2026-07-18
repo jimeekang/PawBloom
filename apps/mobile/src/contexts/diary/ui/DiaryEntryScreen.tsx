@@ -13,7 +13,7 @@ import type { DraftDiaryEntry } from "./draftDiaryEntry";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
 import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
 import { DiaryEntryList } from "./DiaryEntryList";
-import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 import { styles } from "./DiaryEntryScreen.styles";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -75,7 +75,9 @@ export function DiaryEntryScreen({
   const photoDateKey = editingEntry?.entryDate ?? selectedDateKey;
   const savedPhotoCount = useMemo(() => countSavedDiaryPhotosForDate(entries, photoDateKey, editingEntry), [editingEntry, entries, photoDateKey]);
   const saveBlockedByRole = editingEntry ? !canUpdate : existingStructuredEntry ? !canUpdate : !canCreate;
-  useEffect(() => { if (!categories.includes(selected)) setSelected(categories[0]); }, [categories, selected]);
+  useEffect(() => {
+    if (shouldResetDiaryCategorySelection({ categories, selected, isEditing: Boolean(editingEntry) })) setSelected(categories[0]);
+  }, [categories, editingEntry, selected]);
   useEffect(() => {
     if (!editingEntry) setDetail(createDetailForCategory(selected, routine));
   }, [editingEntry, routine, selected]);
