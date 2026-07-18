@@ -53,6 +53,13 @@ export function findDoseForScheduleDate(doses: DoseRecord[], scheduleId: string,
   return doses.find((dose) => dose.scheduleId === scheduleId && dose.doseDate === doseDate);
 }
 
+export function isDuplicateMedicationDoseError(error: unknown) {
+  const code = (error as { code?: string } | null)?.code;
+  if (code === "23505") return true;
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  return /duplicate key|23505/i.test(message);
+}
+
 export function mergeSavedDoseIntoList(doses: DoseRecord[], saved: DoseRecord) {
   return [saved, ...doses.filter((dose) => {
     if (saved.scheduleId && dose.scheduleId === saved.scheduleId && dose.doseDate === saved.doseDate) return false;

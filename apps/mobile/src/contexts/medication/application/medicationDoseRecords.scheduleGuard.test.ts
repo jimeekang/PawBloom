@@ -1,4 +1,14 @@
-import { buildMedicationDoseInsertPayload, findDoseForScheduleDate, mergeSavedDoseIntoList } from "./medicationDosePayload";
+import { buildMedicationDoseInsertPayload, findDoseForScheduleDate, isDuplicateMedicationDoseError, mergeSavedDoseIntoList } from "./medicationDosePayload";
+
+if (!isDuplicateMedicationDoseError(new Error('duplicate key value violates unique constraint "medication_doses_schedule_id_dose_date_key"'))) {
+  throw new Error("postgres duplicate-key errors must be classified as duplicate dose saves");
+}
+if (!isDuplicateMedicationDoseError({ code: "23505", message: "conflict" })) {
+  throw new Error("postgres 23505 codes must be classified as duplicate dose saves");
+}
+if (isDuplicateMedicationDoseError(new Error("network request failed"))) {
+  throw new Error("non-duplicate errors must not be classified as duplicates");
+}
 
 const payload = buildMedicationDoseInsertPayload({
   scheduleId: "schedule-1",

@@ -8,6 +8,7 @@ import { createLocalDoseRecord } from "./localMedicationState";
 import { buildSampleDoses } from "./sampleDoses";
 import { confirmAndDeleteMedicationDose, saveMedicationAgendaStatus as saveMedicationAgendaStatusAction, saveMedicationDoseEdit, type MedicationSaveFeedbackKind } from "./medicationDoseActions";
 import { createTodayMedicationAgendaRows, type TodayMedicationAgendaRow } from "./todayMedicationAgenda";
+import { isDuplicateMedicationDoseError } from "../application/medicationDosePayload";
 
 type Params = {
   activePetId: string;
@@ -48,7 +49,7 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
       onNotice(t("ko", "care.medicationAdded"));
       onSaved("medication");
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("ko", "care.quickDoseNotice");
+      const message = t("ko", isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
       onNotice(message);
       throw new Error(message);
     }
