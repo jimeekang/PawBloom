@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import * as ImagePicker from "expo-image-picker";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
@@ -10,14 +9,13 @@ import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePho
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
 import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
 import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain/carePlan";
-import { SpeciesPill, PhotoPicker } from "./PetOnboardingHelpers";
+import { PetProfileFormFields, pickPetProfilePhoto, speciesOptions, type PetSpeciesOption } from "./PetOnboardingHelpers";
+import { confirmDestructiveAction } from "../../design-system/confirmAction";
+import { confirmAndSignOut } from "../../contexts/identity/ui/signOutConfirm";
 import { RoutineSettingsPanel } from "../../contexts/routine/ui/RoutineSettingsPanel";
 import { ProfileCareDefaultsPanel } from "../../contexts/care/ui/ProfileCareDefaultsPanel";
-import { DatePickerField } from "../../design-system/DatePickerField";
 import { styles } from "./PetOnboardingScreen.styles";
 import { can } from "../../shared-kernel/permissions";
-
-const speciesOptions = ["dog", "cat", "other"] as const;
 
 export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void } = {}) {
   const { user, pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
@@ -26,13 +24,13 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   const [breed, setBreed] = useState("");
   const [birthdate, setBirthdate] = useState("");
   const [weightKg, setWeightKg] = useState("");
-  const [species, setSpecies] = useState<(typeof speciesOptions)[number]>("dog");
+  const [species, setSpecies] = useState<PetSpeciesOption>("dog");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBreed, setEditBreed] = useState("");
   const [editBirthdate, setEditBirthdate] = useState("");
   const [editWeightKg, setEditWeightKg] = useState("");
-  const [editSpecies, setEditSpecies] = useState<(typeof speciesOptions)[number]>("dog");
+  const [editSpecies, setEditSpecies] = useState<PetSpeciesOption>("dog");
   const [photo, setPhoto] = useState<PetProfilePhotoInput | undefined>();
   const [editPhoto, setEditPhoto] = useState<PetProfilePhotoInput | undefined>();
   const activePhoto = usePetProfilePhotoUrl(activePet?.id, user?.id ?? null);
@@ -40,7 +38,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   const shouldShowPetSelector = pets.length > 1 && !showCreateForm;
   const canManageActivePet = activePet ? can(activePet.role, "pet.update") && can(activePet.role, "pet.photo.update") && can(activePet.role, "pet.delete") : false;
   const canManageCareDefaults = activePet ? can(activePet.role, "routine.update") && can(activePet.role, "care.update") : false;
-  const speciesLabel: Record<(typeof speciesOptions)[number], string> = {
+  const speciesLabel: Record<PetSpeciesOption, string> = {
     dog: t("ko", "pet.speciesDog"),
     cat: t("ko", "pet.speciesCat"),
     other: t("ko", "pet.speciesOther"),
@@ -118,33 +116,18 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       return;
     }
 
-    Alert.alert(t("ko", "pet.deleteTitle"), `${activePet.name} ${t("ko", "pet.deleteCopy")}`, [
-      { text: t("ko", "pet.deleteCancel"), style: "cancel" },
-      { text: t("ko", "pet.deleteConfirm"), style: "destructive", onPress: () => void deletePet(activePet.id) },
-    ]);
-  };
-
-  const pickPhoto = async (onPicked: (nextPhoto: PetProfilePhotoInput) => void) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(t("ko", "pet.photoPermissionTitle"), t("ko", "pet.photoPermissionCopy"));
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-      base64: true,
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    onPicked({ uri: asset.uri, fileName: asset.fileName, mimeType: asset.mimeType, base64: asset.base64 });
+    void confirmDestructiveAction(
+      {
+        title: t("ko", "pet.deleteTitle"),
+        message: `${activePet.name} ${t("ko", "pet.deleteCopy")}`,
+        cancelText: t("ko", "pet.deleteCancel"),
+        confirmText: t("ko", "pet.deleteConfirm"),
+      },
+      () => {
+        void deletePet(activePet.id);
+        return true;
+      },
+    );
   };
 
   return (
@@ -174,27 +157,21 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       {activePet && !showCreateForm && canManageActivePet ? (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.editTitle")}</Text>
-          <View style={styles.row}>
-            {speciesOptions.map((option) => (
-              <SpeciesPill key={option} label={speciesLabel[option]} selected={editSpecies === option} onPress={() => setEditSpecies(option)} />
-            ))}
-          </View>
-          <PhotoPicker
-            imageUri={editPhoto?.uri ?? activePhoto.data ?? undefined}
-            onPress={() => void pickPhoto(setEditPhoto)}
-            label={t("ko", "pet.photoUpdate")}
-          />
-
-          <TextInput style={styles.input} value={editName} onChangeText={setEditName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
-          <TextInput style={styles.input} value={editBreed} onChangeText={setEditBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-          <DatePickerField value={editBirthdate} onChange={setEditBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
-          <TextInput
-            style={styles.input}
-            value={editWeightKg}
-            onChangeText={setEditWeightKg}
-            placeholder={t("ko", "pet.weightPlaceholder")}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="decimal-pad"
+          <PetProfileFormFields
+            speciesLabel={speciesLabel}
+            species={editSpecies}
+            onSpeciesChange={setEditSpecies}
+            photoUri={editPhoto?.uri ?? activePhoto.data ?? undefined}
+            photoLabel={t("ko", "pet.photoUpdate")}
+            onPickPhoto={() => void pickPetProfilePhoto(setEditPhoto)}
+            name={editName}
+            onNameChange={setEditName}
+            breed={editBreed}
+            onBreedChange={setEditBreed}
+            birthdate={editBirthdate}
+            onBirthdateChange={setEditBirthdate}
+            weightKg={editWeightKg}
+            onWeightChange={setEditWeightKg}
           />
 
           <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} disabled={loading} />
@@ -215,23 +192,21 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.addTitle")}</Text>
           {!hasPets ? <Text style={styles.helpText}>{t("ko", "pet.empty")}</Text> : null}
-          <View style={styles.row}>
-            {speciesOptions.map((option) => (
-              <SpeciesPill key={option} label={speciesLabel[option]} selected={species === option} onPress={() => setSpecies(option)} />
-            ))}
-          </View>
-          <PhotoPicker imageUri={photo?.uri} onPress={() => void pickPhoto(setPhoto)} label={t("ko", "pet.photoAdd")} />
-
-          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
-          <TextInput style={styles.input} value={breed} onChangeText={setBreed} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
-          <DatePickerField value={birthdate} onChange={setBirthdate} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
-          <TextInput
-            style={styles.input}
-            value={weightKg}
-            onChangeText={setWeightKg}
-            placeholder={t("ko", "pet.weightPlaceholder")}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="decimal-pad"
+          <PetProfileFormFields
+            speciesLabel={speciesLabel}
+            species={species}
+            onSpeciesChange={setSpecies}
+            photoUri={photo?.uri}
+            photoLabel={t("ko", "pet.photoAdd")}
+            onPickPhoto={() => void pickPetProfilePhoto(setPhoto)}
+            name={name}
+            onNameChange={setName}
+            breed={breed}
+            onBreedChange={setBreed}
+            birthdate={birthdate}
+            onBirthdateChange={setBirthdate}
+            weightKg={weightKg}
+            onWeightChange={setWeightKg}
           />
 
           <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} disabled={loading} />
@@ -239,11 +214,11 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       ) : null}
 
       {(error ?? authMessage) ? (
-        <NoticeBanner text={t("ko", (error ?? authMessage)!)} icon={error ? "close" : "check"} />
+        <NoticeBanner text={t("ko", (error ?? authMessage)!)} icon={error ? "close" : "check"} tone={error ? "error" : "success"} />
       ) : null}
 
       <View style={styles.actionRow}>
-        <SecondaryButton label={t("ko", "auth.signOut")} onPress={signOut} disabled={loading} />
+        <SecondaryButton label={t("ko", "auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} disabled={loading} />
       </View>
 
       {loading ? <Text style={styles.loadingText}>{t("ko", "auth.wait")}</Text> : null}

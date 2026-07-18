@@ -6,6 +6,7 @@ import { DiaryEntryScreen } from "../contexts/diary/ui/DiaryEntryScreen";
 import { getTodayEntriesForPet, useDiaryEntriesController } from "../contexts/diary/ui/useDiaryEntriesController";
 import { useAuth } from "../contexts/identity/application/authContext";
 import { SettingsScreen } from "../contexts/identity/ui/SettingsScreen";
+import { confirmAndSignOut } from "../contexts/identity/ui/signOutConfirm";
 import { hasRecordedMedication } from "../contexts/medication/ui/medicationDoseActions";
 import { shouldMarkMedicationChecklist } from "../contexts/medication/ui/localMedicationState";
 import { useMedicationDosesController } from "../contexts/medication/ui/useMedicationDosesController";
@@ -171,7 +172,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (!canUpdateDiary) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
     diary.setTimelineEditEntry(entry); diary.setSelectedDiaryDate(entry.entryDate); diary.setDiaryFilter("day"); setActiveTab("diary");
   }
-  function handleSignOut() { void signOut(); }
+  function handleSignOut() { void confirmAndSignOut(signOut); }
   const homeNotice = notice === t("ko", "today.databaseNotice") ? "" : notice;
   const nonHomeNotice = notice === t("ko", "today.databaseNotice") || notice === t("ko", "today.previewNotice") ? "" : notice;
 
