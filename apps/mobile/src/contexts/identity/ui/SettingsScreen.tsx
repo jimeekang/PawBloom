@@ -83,16 +83,18 @@ export function SettingsScreen({
         </View>
       </SurfaceCard>
 
-      <SurfaceCard>
-        <View style={styles.cardBody}>
-          <Text style={styles.title}>{t("ko", "settings.environment")}</Text>
-          <View style={styles.statusPill}>
-            <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.coral }]} />
-            <Text style={styles.statusText}>{configured ? t("ko", "settings.supabaseReady") : t("ko", "settings.supabaseMissing")}</Text>
+      {__DEV__ ? (
+        <SurfaceCard>
+          <View style={styles.cardBody}>
+            <Text style={styles.title}>{t("ko", "settings.environment")}</Text>
+            <View style={styles.statusPill}>
+              <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.coral }]} />
+              <Text style={styles.statusText}>{configured ? t("ko", "settings.supabaseReady") : t("ko", "settings.supabaseMissing")}</Text>
+            </View>
+            <Text style={styles.copy}>{t("ko", "settings.plan")}: {t("ko", "settings.freePlan")}</Text>
           </View>
-          <Text style={styles.copy}>{t("ko", "settings.plan")}: {t("ko", "settings.freePlan")}</Text>
-        </View>
-      </SurfaceCard>
+        </SurfaceCard>
+      ) : null}
     </View>
   );
 }

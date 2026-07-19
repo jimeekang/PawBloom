@@ -1,8 +1,9 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import type { Language } from "../shared-kernel/types";
+import { readDeviceLanguageCode } from "./deviceLanguage";
+import { resolveInitialLanguage } from "./resolveInitialLanguage";
 
-export const DEFAULT_LANGUAGE: Language = "ko";
 export const LANGUAGE_STORAGE_KEY = "pawbloom.language.v1";
 
 export type LanguageStorage = {
@@ -10,11 +11,32 @@ export type LanguageStorage = {
   setItem: (key: string, value: string) => Promise<void>;
 };
 
-export async function readLanguagePreference(storage: LanguageStorage = deviceLanguageStorage): Promise<Language> {
+type DeviceLanguageReader = () => string | undefined;
+
+// Synchronous best guess for the initial render, before the stored preference has
+// loaded. Nothing is stored yet, so this is purely device-locale driven.
+export function getInitialLanguage(readDeviceLanguage: DeviceLanguageReader = readDeviceLanguageCode): Language {
+  return resolveInitialLanguage(null, safeDeviceLanguageCode(readDeviceLanguage));
+}
+
+export async function readLanguagePreference(
+  storage: LanguageStorage = deviceLanguageStorage,
+  readDeviceLanguage: DeviceLanguageReader = readDeviceLanguageCode,
+): Promise<Language> {
+  let stored: Language | null = null;
   try {
-    return parseLanguage(await storage.getItem(LANGUAGE_STORAGE_KEY)) ?? DEFAULT_LANGUAGE;
+    stored = parseLanguage(await storage.getItem(LANGUAGE_STORAGE_KEY));
   } catch {
-    return DEFAULT_LANGUAGE;
+    stored = null;
+  }
+  return resolveInitialLanguage(stored, safeDeviceLanguageCode(readDeviceLanguage));
+}
+
+function safeDeviceLanguageCode(readDeviceLanguage: DeviceLanguageReader): string | undefined {
+  try {
+    return readDeviceLanguage();
+  } catch {
+    return undefined;
   }
 }
 

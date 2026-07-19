@@ -12,7 +12,10 @@
       "bundleIdentifier": "com.pawbloom.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleLocalizations": ["en", "ko"],
+        "CFBundleLocalizations": [
+          "en",
+          "ko"
+        ],
         "CFBundleAllowMixedLocalizations": true
       }
     },
@@ -56,7 +59,8 @@
           "microphonePermission": false
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-localization"
     ]
   }
 }
