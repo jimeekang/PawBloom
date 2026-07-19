@@ -34,7 +34,7 @@ edit_policy: exclusive
 
 ## ▶ 다음 즉시 작업
 
-**투약·식사 시간 로컬 알림 슬라이스 [0004](./0004-reminder-notifications-plan.md)** (2026-07-12 사용자 우선 지시). 완료 후 Week 2 잔여 Day 13(가족 초대 skeleton) → Day 14 checkpoint 순으로 복귀.
+**앱스토어 출시 2주 실행계획 [0005](./0005-appstore-launch-2week-plan.md)** (2026-07-19 사용자 우선 지시 — 근거: [감사 05](../../analysis/05-app-store-readiness.md)). 0004 알림 슬라이스는 구현 커밋 반영 확인, 잔여 실기기 QA는 0005 Task 8에 흡수. 0005 완료 후 Week 2 잔여 Day 13(가족 초대 skeleton) → Day 14 checkpoint 순으로 복귀.
 
 ---
 

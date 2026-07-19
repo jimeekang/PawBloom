@@ -82,6 +82,8 @@ edit_policy: exclusive
 
 ## 8. 제출 로드맵 (권장 순서)
 
+> 실행계획으로 구체화됨: [0005 앱스토어 출시 2주 실행계획](../exec-plans/active/0005-appstore-launch-2week-plan.md) (2026-07-19).
+
 1. **코드(codex-high 소유)**: 계정 삭제 edge function+UI(Storage purge 포함, B1) → `scheme` 추가(M2) → `supportsTablet:false`·암호화 플래그·스플래시·언어 기본값(m1~m4) → 시드 스크립트(M1).
 2. **인프라/계정**: Apple Developer 등록·ASC 앱 레코드(M6) → `eas init`(M5) → 프로덕션 빌드 1회 실기기 검증(m12).
 3. **정책/자산**: 개인정보처리방침·지원 페이지 호스팅(B2) → 스토어 카피 EN/KO(M4) → App Privacy 답변(§7, M3) → 스크린샷(B3) → 카테고리·가용 지역·연령 등급(m9, m10, m13).
