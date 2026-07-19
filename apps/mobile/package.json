@@ -13,6 +13,7 @@
     "expo-image-picker": "~56.0.20",
     "expo-notifications": "~56.0.20",
     "expo-secure-store": "~56.0.4",
+    "expo-splash-screen": "~56.0.13",
     "expo-sqlite": "~56.0.5",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
