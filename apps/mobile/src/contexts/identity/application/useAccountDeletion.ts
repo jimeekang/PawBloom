@@ -33,7 +33,7 @@ export function useAccountDeletion() {
 
       await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
       await cancelMealRemindersForAccount(userId).catch(() => undefined);
-      await signOut();
+      await signOut().catch(() => undefined);
 
       dispatch({ type: "succeed" });
       return { ok: true };

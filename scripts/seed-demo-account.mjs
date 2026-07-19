@@ -346,7 +346,8 @@ async function seedCare(admin, userId, petId) {
       reaction_note: encodeDoseCareNote({
         conditionName: condition.name,
         dosageLabel: medication.dosage_label,
-        administeredAmount: status === "partial" ? "0.5 tablet" : "1 tablet",
+        administeredAmount:
+          status === "completed" ? "1 tablet" : status === "partial" ? "0.5 tablet" : undefined,
         reactionNote,
       }),
       client_mutation_id: randomUUID(),
