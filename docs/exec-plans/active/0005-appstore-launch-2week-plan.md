@@ -149,6 +149,18 @@ edit_policy: exclusive
 - 리스크: ① Apple 등록 지연(T2를 D1에 시작하는 이유 — 지연 시 전체 −N일) ② 이메일 확인 딥링크 미복구(T5 실패 시 확인 OFF로 전환 결정) ③ New Arch 빌드 실패(D8 발견 → 버퍼 소진 전 `newArchEnabled: false` 옵트아웃 검토) ④ 리포트 공유 링크 등 미완 노출 기능 발견 시 숨김 우선.
 - 이 계획에서 하지 않는 것(P2 후속): Google Play 트랙, 데이터 내보내기(m11), IAP/구독, AI briefing 노출, iPad 대응.
 
+## 진행 현황 (2026-07-19, D1)
+
+서브에이전트 실행(구현→태스크 리뷰→최종 전체 리뷰) 완료분. 각 태스크는 독립 리뷰어 승인 후 기록.
+
+- **T1 완료** `82ce88e` — delete-account edge fn + created_by SET NULL 마이그레이션(12테이블) + Settings UI/훅/리듀서(TDD). 실기기 라이브 검증만 T8로 이월.
+- **T4 완료** `9159f09` — app.json 스토어 설정 전체 + expo-splash-screen. expo-doctor 기존 실패 2건(expo-font peer 누락·패치 버전 불일치)은 T8 전 정리 필요.
+- **T6 완료** `9b1b1bb` — 기기 로케일 언어 기본값(resolveInitialLanguage TDD) + Environment 카드 `__DEV__` 게이트.
+- **T7 완료** `655f86e`+`0929aab` — 시드 스크립트(스키마 전수 검증, skipped 투약 데이터 모순 수정). 라이브 실행은 T8/T11에서(edge fn 배포 + env 필요).
+- **T3 초안 완료** `cee3929`+`c9019fa` — PRIVACY_POLICY.md EN/KO + 해외 이전 조항. 호스팅 전 치환 필요: `[SUPPORT_EMAIL]`, `[EFFECTIVE_DATE]`, `[SUPABASE_REGION]`. 호스팅·인앱 링크는 URL 확정 대기.
+- **최종 전체 리뷰**: 머지 가능 판정. Critical 0. 잔여 Minor는 원장(.superpowers/sdd/progress.md) 참조.
+- **대기(사용자 액션)**: T2 Apple Developer 등록(최우선·리드타임 병목), 정책 호스팅 결정, Supabase 프로덕션 edge fn 배포·시드 env. → T5, T8~T11 순차 진행.
+
 ## 완료 기준
 
 블로커 3·필수 6 전부 체크 + `npm run verify` 그린 + 심사 "Waiting for Review" 상태 도달. 완료 시 이 파일을 `docs/exec-plans/archive/`로 이동하고 [0003](./0003-weekly-execution-checklist.md) "다음 즉시 작업"을 갱신한다.
