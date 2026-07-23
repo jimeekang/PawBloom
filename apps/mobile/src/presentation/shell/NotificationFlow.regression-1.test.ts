@@ -34,3 +34,9 @@ if (planIndex === -1 || permissionIndex === -1 || planIndex > permissionIndex) {
 if (!mealReminders.includes("if (plan.length > 0)")) {
   throw new Error("an empty meal reminder plan (reminders disabled) must skip the OS permission request (B9)");
 }
+
+if (!shell.includes("petSettingsNotice")) {
+  throw new Error(
+    "the pet settings screen must render the shell notice banner — reminder toggle/save feedback (permission denied etc.) was invisible there (Phase B review finding)",
+  );
+}

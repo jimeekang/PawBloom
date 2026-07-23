@@ -16,6 +16,10 @@ export const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  petSettingsNotice: {
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.sm,
+  },
   scrollContent: {
     paddingHorizontal: layout.screenPadding,
     paddingBottom: spacing.xxxl,

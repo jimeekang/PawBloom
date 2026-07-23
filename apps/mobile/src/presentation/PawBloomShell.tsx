@@ -212,6 +212,11 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.appFrame}>
           <PetSettingsHeader onBack={() => setShowPetSettings(false)} />
+          {nonHomeNotice ? (
+            <View style={styles.petSettingsNotice}>
+              <NoticeBanner text={nonHomeNotice} icon={notice.tone === "error" ? "close" : "shield"} tone={notice.tone} />
+            </View>
+          ) : null}
           <PetOnboardingScreen routine={routine.activeRoutine} onSaveRoutine={saveRoutineAndRefreshMealReminders} careSetup={care.activeCareSetup} onSaveCareSetup={saveCareSetupAndRefreshReminders} onProfileSaved={() => showSaveFeedback("petProfile")} medicationRemindersEnabled={medicationRemindersEnabled} onToggleMedicationReminders={(enabled) => void toggleMedicationReminders(enabled)} />
           <SaveFeedbackBar feedback={saveFeedback} onDismiss={hideSaveFeedback} />
         </View>
