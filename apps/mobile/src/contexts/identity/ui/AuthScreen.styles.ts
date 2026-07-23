@@ -95,4 +95,24 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: colors.orangeDeep,
   },
+  policyLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  policyLink: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  policyLinkText: {
+    ...type.caption,
+    color: colors.textMuted,
+    textDecorationLine: "underline",
+  },
+  policyDivider: {
+    ...type.caption,
+    color: colors.textSoft,
+  },
 });

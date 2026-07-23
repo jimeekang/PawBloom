@@ -1,11 +1,16 @@
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAuth } from "../application/authContext";
 import { useAccountDeletion } from "../application/useAccountDeletion";
+
+function openExternalUrl(url: string) {
+  void Linking.openURL(url).catch(() => undefined);
+}
 
 export function SettingsScreen({
   email,
@@ -99,6 +104,26 @@ export function SettingsScreen({
           </View>
         </View>
       </SurfaceCard>
+
+      <View style={styles.policyLinks}>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("ko", "settings.privacyPolicy")}
+          style={styles.policyLink}
+          onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
+        >
+          <Text style={styles.policyLinkText}>{t("ko", "settings.privacyPolicy")}</Text>
+        </Pressable>
+        <Text style={styles.policyDivider}>·</Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("ko", "settings.support")}
+          style={styles.policyLink}
+          onPress={() => openExternalUrl(SUPPORT_URL)}
+        >
+          <Text style={styles.policyLinkText}>{t("ko", "settings.support")}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -161,5 +186,25 @@ const styles = StyleSheet.create({
     ...type.caption,
     color: colors.text,
     flex: 1,
+  },
+  policyLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  policyLink: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  policyLinkText: {
+    ...type.caption,
+    color: colors.textMuted,
+    textDecorationLine: "underline",
+  },
+  policyDivider: {
+    ...type.caption,
+    color: colors.textSoft,
   },
 });

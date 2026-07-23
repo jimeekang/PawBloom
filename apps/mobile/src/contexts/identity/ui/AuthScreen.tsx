@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState, type ComponentProps } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FieldLabel, NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAuth } from "../application/authContext";
 import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type AuthMode } from "./authFormState";
 import { styles } from "./AuthScreen.styles";
+
+function openExternalUrl(url: string) {
+  void Linking.openURL(url).catch(() => undefined);
+}
 
 export function AuthScreen() {
   const { signIn, signUp, error, authMessage, loading, resetMessage } = useAuth();
@@ -145,6 +150,26 @@ export function AuthScreen() {
 
             {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
             {loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+
+            <View style={styles.policyLinks}>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={t("ko", "settings.privacyPolicy")}
+                style={styles.policyLink}
+                onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
+              >
+                <Text style={styles.policyLinkText}>{t("ko", "settings.privacyPolicy")}</Text>
+              </Pressable>
+              <Text style={styles.policyDivider}>·</Text>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={t("ko", "settings.support")}
+                style={styles.policyLink}
+                onPress={() => openExternalUrl(SUPPORT_URL)}
+              >
+                <Text style={styles.policyLinkText}>{t("ko", "settings.support")}</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
