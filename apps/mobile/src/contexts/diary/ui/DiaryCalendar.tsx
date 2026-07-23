@@ -1,8 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import { SegmentedControl, SurfaceCard } from "../../../design-system/components";
-import { colors, font, radius, spacing, type } from "../../../design-system/tokens";
+import { AppIcon } from "../../../design-system/iconography";
+import { colors, iconSize } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { styles } from "./DiaryCalendar.styles";
 
 export type DiaryFilter = "day" | "week";
 
@@ -28,38 +31,81 @@ export function DiaryCalendar({
   const locale = language === "ko" ? "ko-KR" : "en-AU";
   const selectedDate = parseDateKey(selectedDateKey);
   const weeks = createMonthWeeks(selectedDate);
+  const [expanded, setExpanded] = useState(false);
+  const selectedDateLabel = formatSelectedDate(selectedDate, locale);
 
   return (
     <SurfaceCard>
-      <View style={styles.header}>
-        <Pressable style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}>
-          <Text style={styles.monthButtonText}>{t("ko", "diary.prevMonth")}</Text>
-        </Pressable>
-        <Text style={styles.monthTitle}>{formatMonth(selectedDate, locale)}</Text>
-        <Pressable style={styles.monthButton} onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}>
-          <Text style={styles.monthButtonText}>{t("ko", "diary.nextMonth")}</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${t("ko", "diary.selectedDateLabel")}: ${selectedDateLabel}. ${t("ko", expanded ? "diary.calendar.close" : "diary.calendar.open")}`}
+        accessibilityState={{ expanded }}
+        aria-expanded={expanded}
+        style={({ pressed }) => [styles.selectedDateButton, pressed && styles.selectedDateButtonPressed]}
+        onPress={() => setExpanded((current) => !current)}
+      >
+        <View style={styles.selectedDateBody}>
+          <AppIcon name="calendar" size={iconSize.md} color={colors.orangeDeep} />
+          <Text style={styles.selectedDateText}>{selectedDateLabel}</Text>
+        </View>
+        <View style={[styles.chevron, expanded && styles.chevronExpanded]}>
+          <AppIcon name="chevronDown" size={iconSize.sm} color={colors.textMuted} />
+        </View>
+      </Pressable>
 
-      <View style={styles.weekHeader}>
-        {weekdayLabels(locale).map((label) => (
-          <Text key={label} style={styles.weekLabel}>{label}</Text>
-        ))}
-      </View>
-      <View style={styles.grid}>
-        {weeks.map((week) => (
-          <View key={week.map((day) => day.dateKey).join("-")} style={styles.weekRow}>
-            {week.map((day) => {
-              const selected = day.dateKey === selectedDateKey;
-              return (
-                <Pressable key={day.dateKey} style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]} onPress={() => onSelectDate(day.dateKey)}>
-                  <Text style={[styles.dayText, !day.inMonth && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
-                </Pressable>
-              );
-            })}
+      {expanded ? (
+        <View style={styles.calendarBody}>
+          <View style={styles.header}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("ko", "diary.prevMonth")}
+              style={styles.monthButton}
+              onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}
+            >
+              <Text style={styles.monthButtonText}>{t("ko", "diary.prevMonth")}</Text>
+            </Pressable>
+            <Text style={styles.monthTitle}>{formatMonth(selectedDate, locale)}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("ko", "diary.nextMonth")}
+              style={styles.monthButton}
+              onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}
+            >
+              <Text style={styles.monthButtonText}>{t("ko", "diary.nextMonth")}</Text>
+            </Pressable>
           </View>
-        ))}
-      </View>
+
+          <View style={styles.weekHeader}>
+            {weekdayLabels(locale).map((label) => (
+              <Text key={label} style={styles.weekLabel}>{label}</Text>
+            ))}
+          </View>
+          <View style={styles.grid}>
+            {weeks.map((week) => (
+              <View key={week.map((day) => day.dateKey).join("-")} style={styles.weekRow}>
+                {week.map((day) => {
+                  const selected = day.dateKey === selectedDateKey;
+                  return (
+                    <Pressable
+                      key={day.dateKey}
+                      accessibilityRole="button"
+                      accessibilityLabel={formatSelectedDate(parseDateKey(day.dateKey), locale)}
+                      accessibilityState={{ selected }}
+                      style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]}
+                      onPress={() => {
+                        onSelectDate(day.dateKey);
+                        setExpanded(false);
+                      }}
+                    >
+                      <Text style={[styles.dayText, !day.inMonth && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       <SegmentedControl
         value={filter}
@@ -106,6 +152,10 @@ function formatMonth(date: Date, locale: string) {
   return new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(date);
 }
 
+export function formatSelectedDate(date: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric", weekday: "short" }).format(date);
+}
+
 function weekdayLabels(locale: string) {
   return Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2026, 0, 5 + index)));
 }
@@ -121,70 +171,3 @@ function toDateKey(date: Date) {
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-  },
-  monthTitle: {
-    ...type.sectionTitle,
-  },
-  monthButton: {
-    minHeight: 44,
-    minWidth: 54,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  monthButtonText: {
-    ...type.caption,
-    color: colors.orangeDeep,
-    fontWeight: font.weight.semibold,
-  },
-  weekHeader: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  weekLabel: {
-    ...type.tiny,
-    flex: 1,
-    textAlign: "center",
-  },
-  grid: {
-    gap: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  weekRow: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
-  day: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: radius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceWarm,
-  },
-  dayToday: {
-    borderWidth: 1,
-    borderColor: colors.segmentActiveBorder,
-  },
-  daySelected: {
-    backgroundColor: colors.orange,
-  },
-  dayText: {
-    ...type.caption,
-    color: colors.text,
-    fontWeight: font.weight.semibold,
-  },
-  dayMuted: {
-    color: colors.textSoft,
-  },
-  dayTextSelected: {
-    color: colors.white,
-  },
-});

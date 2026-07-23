@@ -34,6 +34,7 @@ export function PrimaryButton({ label, icon, onPress, disabled = false }: { labe
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       style={({ pressed }) => [styles.primaryButton, pressed && !disabled && styles.primaryButtonPressed, disabled && styles.buttonDisabled]}
@@ -49,6 +50,7 @@ export function SecondaryButton({ label, icon, onPress, disabled = false }: { la
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       style={({ pressed }) => [styles.secondaryButton, pressed && !disabled && styles.secondaryButtonPressed, disabled && styles.buttonDisabled]}
@@ -94,8 +96,10 @@ export function SegmentedControl<T extends string>({
       {items.map((item) => (
         <Pressable
           key={item.value}
-          accessibilityRole="button"
-          accessibilityState={{ selected: value === item.value }}
+          accessibilityRole="radio"
+          accessibilityLabel={item.label}
+          accessibilityState={{ checked: value === item.value }}
+          aria-checked={value === item.value}
           style={[styles.segment, value === item.value && styles.segmentActive]}
           onPress={() => onChange(item.value)}
         >

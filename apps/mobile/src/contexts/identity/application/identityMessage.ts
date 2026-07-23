@@ -20,6 +20,7 @@ export type IdentityMessageKey =
   | "pet.deleted"
   | "pet.loadFailed"
   | "pet.createFailed"
+  | "pet.planLimitReached"
   | "pet.updateFailed"
   | "pet.deleteFailed"
   | "pet.photoPartial";

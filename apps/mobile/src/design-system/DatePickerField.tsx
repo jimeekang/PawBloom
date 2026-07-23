@@ -9,11 +9,12 @@ type Props = {
   value?: string;
   onChange: (value: string) => void;
   placeholder: string;
+  accessibilityLabel?: string;
   allowClear?: boolean;
   clearLabel?: string;
 };
 
-export function DatePickerField({ value, onChange, placeholder, allowClear = false, clearLabel = "Clear" }: Props) {
+export function DatePickerField({ value, onChange, placeholder, accessibilityLabel = placeholder, allowClear = false, clearLabel = "Clear" }: Props) {
   const [open, setOpen] = useState(false);
   const selectedDate = parseDateValue(value);
   const displayValue = value || placeholder;
@@ -31,9 +32,9 @@ export function DatePickerField({ value, onChange, placeholder, allowClear = fal
           <AppIcon name="calendar" size={iconSize.md} color={colors.orangeDeep} />
           <Text style={[styles.value, !value && styles.placeholder]}>{displayValue}</Text>
         </View>
-        <DateTimePicker value={selectedDate} mode="date" display="compact" onValueChange={handleValueChange} />
+        <DateTimePicker accessibilityLabel={accessibilityLabel} value={selectedDate} mode="date" display="compact" onValueChange={handleValueChange} />
         {allowClear && value ? (
-          <Pressable onPress={() => onChange("")} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => onChange("")} hitSlop={8}>
             <Text style={styles.clearText}>{clearLabel}</Text>
           </Pressable>
         ) : null}
@@ -43,12 +44,19 @@ export function DatePickerField({ value, onChange, placeholder, allowClear = fal
 
   return (
     <View style={styles.androidStack}>
-      <Pressable style={styles.androidButton} onPress={() => setOpen(true)}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${accessibilityLabel}: ${displayValue}`}
+        accessibilityState={{ expanded: open }}
+        aria-expanded={open}
+        style={styles.androidButton}
+        onPress={() => setOpen(true)}
+      >
         <AppIcon name="calendar" size={iconSize.md} color={colors.orangeDeep} />
         <Text style={[styles.value, !value && styles.placeholder]}>{displayValue}</Text>
       </Pressable>
       {allowClear && value ? (
-        <Pressable style={styles.clearButton} onPress={() => onChange("")}>
+        <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} style={styles.clearButton} onPress={() => onChange("")}>
           <Text style={styles.clearText}>{clearLabel}</Text>
         </Pressable>
       ) : null}

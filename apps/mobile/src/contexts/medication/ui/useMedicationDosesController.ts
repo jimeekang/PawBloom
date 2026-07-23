@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type QuickMedicationDoseInput, type UpdateMedicationDoseInput, useCreateMedicationDose, useDeleteMedicationDose, useTodayMedicationDoses, useUpdateMedicationDose, useUpdateMedicationDoseStatus } from "../application/medicationDoseRecords";
 import { getLocalDateKey } from "../../../shared-kernel/date";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import type { MedicationSchedule } from "../domain/medicationSchedule";
 import { t } from "../../../i18n/translations";
 import { createLocalDoseRecord } from "./localMedicationState";
-import { buildSampleDoses } from "./sampleDoses";
+import { buildSampleDoses, relocalizeSampleDoses } from "./sampleDoses";
 import { confirmAndDeleteMedicationDose, saveMedicationAgendaStatus as saveMedicationAgendaStatusAction, saveMedicationDoseEdit, type MedicationSaveFeedbackKind } from "./medicationDoseActions";
 import { createTodayMedicationAgendaRows, type TodayMedicationAgendaRow } from "./todayMedicationAgenda";
+import type { Language } from "../../../shared-kernel/types";
 
 type Params = {
   activePetId: string;
@@ -15,6 +16,7 @@ type Params = {
   livePetId: string | null;
   userId: string | null;
   fallbackPetId: string;
+  language: Language;
   schedules: MedicationSchedule[];
   onNotice: (notice: string) => void;
   onSaved: (kind: MedicationSaveFeedbackKind) => void;
@@ -22,17 +24,21 @@ type Params = {
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => void;
 };
 
-export function useMedicationDosesController({ activePetId, databaseMode, livePetId, userId, fallbackPetId, schedules, onNotice, onSaved, onLocalDoseSaved, onLocalDosesChanged }: Params) {
+export function useMedicationDosesController({ activePetId, databaseMode, livePetId, userId, fallbackPetId, language, schedules, onNotice, onSaved, onLocalDoseSaved, onLocalDosesChanged }: Params) {
   const dosesQuery = useTodayMedicationDoses(livePetId, userId);
   const createMedicationDose = useCreateMedicationDose(livePetId, userId);
   const updateMedicationDose = useUpdateMedicationDose(livePetId, userId);
   const deleteMedicationDose = useDeleteMedicationDose(livePetId, userId);
   const updateMedicationDoseStatus = useUpdateMedicationDoseStatus(livePetId, userId);
-  const [doses, setDoses] = useState<DoseRecord[]>(() => buildSampleDoses(fallbackPetId));
+  const [doses, setDoses] = useState<DoseRecord[]>(() => buildSampleDoses(fallbackPetId, language));
 
   const activeDoses = useMemo(() => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId)), [activePetId, databaseMode, doses, dosesQuery.data]);
   const todayDoseDate = getLocalDateKey();
   const medicationAgenda = useMemo(() => createTodayMedicationAgendaRows({ schedules, doses: activeDoses, doseDate: todayDoseDate }), [activeDoses, schedules, todayDoseDate]);
+
+  useEffect(() => {
+    if (!databaseMode) setDoses((current) => relocalizeSampleDoses(current, language));
+  }, [databaseMode, language]);
 
   async function addMedicationDose(input: QuickMedicationDoseInput) {
     if (!databaseMode) {
@@ -77,5 +83,6 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
     deleteDoseRecord,
     createDoseRemote: createMedicationDose.mutateAsync,
     updateDoseStatusRemote: updateMedicationDoseStatus.mutateAsync,
+    deleteDoseRemote: deleteMedicationDose.mutateAsync,
   };
 }

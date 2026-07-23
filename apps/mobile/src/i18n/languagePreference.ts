@@ -10,12 +10,22 @@ export type LanguageStorage = {
   setItem: (key: string, value: string) => Promise<void>;
 };
 
-export async function readLanguagePreference(storage: LanguageStorage = deviceLanguageStorage): Promise<Language> {
+export type DeviceLocaleReader = () => string | null | undefined;
+
+export async function readLanguagePreference(
+  storage: LanguageStorage = deviceLanguageStorage,
+  readLocale: DeviceLocaleReader = readDeviceLocale,
+): Promise<Language> {
   try {
-    return parseLanguage(await storage.getItem(LANGUAGE_STORAGE_KEY)) ?? DEFAULT_LANGUAGE;
+    const storedLanguage = await storage.getItem(LANGUAGE_STORAGE_KEY);
+    if (storedLanguage !== null) {
+      return parseLanguage(storedLanguage) ?? DEFAULT_LANGUAGE;
+    }
   } catch {
-    return DEFAULT_LANGUAGE;
+    // Fall through to the current device locale when storage is unavailable.
   }
+
+  return languageFromLocale(readLocale());
 }
 
 export async function writeLanguagePreference(language: Language, storage: LanguageStorage = deviceLanguageStorage): Promise<void> {
@@ -28,6 +38,19 @@ export async function writeLanguagePreference(language: Language, storage: Langu
 
 export function parseLanguage(value: string | null | undefined): Language | null {
   return value === "ko" || value === "en" ? value : null;
+}
+
+export function languageFromLocale(locale: string | null | undefined): Language {
+  return locale?.trim().toLowerCase().split(/[-_]/)[0] === "ko" ? "ko" : "en";
+}
+
+function readDeviceLocale() {
+  try {
+    const browserLocale = typeof navigator === "undefined" ? null : navigator.languages?.[0] ?? navigator.language;
+    return browserLocale ?? Intl.DateTimeFormat().resolvedOptions().locale;
+  } catch {
+    return null;
+  }
 }
 
 const deviceLanguageStorage: LanguageStorage = Platform.OS === "web"

@@ -1,18 +1,18 @@
 import { useMemo, useState, type ComponentProps } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import type { ActiveCareSetup, CareMedicationSchedule, CareSetupInput } from "../../contexts/care/domain/carePlan";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
+import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
+import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { CareMedicationAddCard } from "./CareMedicationAddCard";
-import { CareReportPanel } from "./CareReportPanel";
 import { partitionCareSchedules, schedulePeriodBadge } from "./careScheduleSummary";
+import { styles } from "./CareModeScreen.styles";
 
-type Segment = "care" | "reports";
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
 
 type CareModeScreenProps = {
@@ -35,24 +35,9 @@ type CareModeScreenProps = {
 };
 
 export function CareModeScreen({ canManageCare = true, canDeleteDose = true, canManageReports = true, ...props }: CareModeScreenProps) {
-  const [segment, setSegment] = useState<Segment>("care");
-
   return (
     <View style={styles.screen}>
-      <SegmentedControl
-        value={segment}
-        onChange={setSegment}
-        items={[
-          { label: t("ko", "care.segment.care"), value: "care" },
-          { label: t("ko", "care.segment.reports"), value: "reports" },
-        ]}
-      />
-
-      {segment === "care" ? (
-        <CarePanel {...props} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canManageReports} />
-      ) : (
-        <CareReportPanel onOpenReports={props.onGenerateReport} canManageReports={canManageReports} />
-      )}
+      <CarePanel {...props} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canManageReports} />
     </View>
   );
 }
@@ -127,7 +112,15 @@ function CarePanel({
           {visibleSchedules.map((schedule) => {
             const badge = schedulePeriodBadge(schedule);
             return (
-              <Pressable key={schedule.id} style={styles.scheduleRow} disabled={!canManageCare} onPress={() => onUseSchedule(schedule)}>
+              <Pressable
+                key={schedule.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${schedule.localTime.slice(0, 5)}, ${schedule.medicationName}, ${schedule.dosageLabel}${badge ? `, ${badge}` : ""}`}
+                accessibilityState={{ disabled: !canManageCare }}
+                disabled={!canManageCare}
+                style={styles.scheduleRow}
+                onPress={() => onUseSchedule(schedule)}
+              >
                 <AppIcon name="medication" size={iconSize.md} color={colors.orangeDeep} />
                 <View style={styles.scheduleBody}>
                   <Text style={styles.medTitle}>{schedule.localTime.slice(0, 5)} · {schedule.medicationName}</Text>
@@ -159,7 +152,7 @@ function CarePanel({
   );
 }
 
-function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped") => void }) {
+function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped" | "partial") => void }) {
   const visual = row.status === "completed" ? { accent: colors.mint, icon: colors.mintDeep, label: t("ko", "care.status.completed") } : row.status === "skipped" ? { accent: colors.inactive, icon: colors.textSoft, label: t("ko", "care.status.skipped") } : row.status === "partial" ? { accent: colors.memo, icon: colors.orangeDeep, label: t("ko", "care.status.partial") } : { accent: colors.salmon, icon: colors.salmon, label: t("ko", "care.status.pending") };
 
   return (
@@ -173,11 +166,35 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
         {row.conditionName ? <Text style={styles.medMeta}>{t("ko", "care.conditionLabel")}: {row.conditionName}</Text> : null}
         {row.dosageLabel ? <Text style={styles.medMeta}>{t("ko", "care.dosageLabel")}: {row.dosageLabel}</Text> : null}
         <View style={styles.actionButtons}>
-          <Pressable style={styles.givenButton} onPress={() => onStatusChange("completed")}>
-            <Text style={styles.givenButtonText}>{t("ko", "care.status.given")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.completed")}`}
+            accessibilityState={{ selected: row.status === "completed" }}
+            aria-pressed={row.status === "completed"}
+            style={styles.givenButton}
+            onPress={() => onStatusChange("completed")}
+          >
+            <Text numberOfLines={1} style={styles.givenButtonText}>{careStatusActionLabel("completed")}</Text>
           </Pressable>
-          <Pressable style={styles.skipButton} onPress={() => onStatusChange("skipped")}>
-            <Text style={styles.skipButtonText}>{t("ko", "care.status.notGiven")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.partial")}`}
+            accessibilityState={{ selected: row.status === "partial" }}
+            aria-pressed={row.status === "partial"}
+            style={styles.partialButton}
+            onPress={() => onStatusChange("partial")}
+          >
+            <Text numberOfLines={1} style={styles.partialButtonText}>{careStatusActionLabel("partial")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.skipped")}`}
+            accessibilityState={{ selected: row.status === "skipped" }}
+            aria-pressed={row.status === "skipped"}
+            style={styles.skipButton}
+            onPress={() => onStatusChange("skipped")}
+          >
+            <Text numberOfLines={1} style={styles.skipButtonText}>{careStatusActionLabel("skipped")}</Text>
           </Pressable>
         </View>
       </View>
@@ -189,64 +206,3 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing.lg,
-  },
-  sectionHeader: {
-    marginTop: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sectionTitle: {
-    ...type.sectionTitle,
-  },
-  countText: { ...type.caption, color: colors.textMuted },
-  medList: {
-    gap: spacing.md,
-  },
-  medListItem: { gap: spacing.sm },
-  agendaRow: {
-    minHeight: 112,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    overflow: "hidden",
-    gap: spacing.md,
-  },
-  medAccent: { width: 8, height: "100%" },
-  agendaBody: { flex: 1, gap: spacing.xs, paddingVertical: spacing.md },
-  medTitle: { ...type.bodyStrong },
-  sourceLabel: { ...type.tiny, color: colors.orangeDeep },
-  medDetail: { ...type.caption },
-  medMeta: { ...type.tiny, color: colors.textMuted },
-  actionButtons: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
-  givenButton: { flex: 1, minHeight: 40, borderRadius: radius.md, backgroundColor: colors.mintDeep, alignItems: "center", justifyContent: "center" },
-  givenButtonText: { ...type.bodyStrong, color: colors.white },
-  skipButton: { flex: 1, minHeight: 40, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
-  skipButtonText: { ...type.bodyStrong, color: colors.textMuted },
-  editButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md },
-  editText: { ...type.caption, color: colors.orangeDeep },
-  scheduleCard: { gap: spacing.sm },
-  scheduleRow: { minHeight: 58, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
-  scheduleBody: { flex: 1 },
-  useText: { ...type.caption, color: colors.orangeDeep },
-  moreButton: { minHeight: 44, alignItems: "center", justifyContent: "center" },
-  moreText: { ...type.bodyStrong, color: colors.orangeDeep },
-  profileLinkButton: { minHeight: 44, justifyContent: "center" },
-  profileLinkText: { ...type.caption, color: colors.orangeDeep },
-  emptyText: {
-    ...type.body,
-    color: colors.textMuted,
-  },
-  reportCopy: {
-    ...type.body,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-  },
-});

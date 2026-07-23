@@ -40,13 +40,13 @@ export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: C
   return (
     <View style={styles.panel}>
       <Text style={styles.title}>{t("ko", "care.shortTermTitle")}</Text>
-      <TextInput style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
-      <TextInput style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-      <TextInput style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+      <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
       {draft.times.map((time, index) => (
         <View key={index} style={styles.timeRow}>
           <View style={styles.timeField}>
-            <TimePickerField value={time} onChange={(nextTime) => setDraft((current) => ({ ...current, times: current.times.map((item, itemIndex) => (itemIndex === index ? nextTime : item)) }))} />
+            <TimePickerField accessibilityLabel={`${t("ko", "care.medicationTimeLabel")} ${index + 1}`} value={time} onChange={(nextTime) => setDraft((current) => ({ ...current, times: current.times.map((item, itemIndex) => (itemIndex === index ? nextTime : item)) }))} />
           </View>
           {draft.times.length > 1 ? (
             <Pressable
@@ -60,7 +60,7 @@ export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: C
           ) : null}
         </View>
       ))}
-      <Pressable accessibilityRole="button" style={styles.addTimeButton} onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}>
+      <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} style={styles.addTimeButton} onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}>
         <Text style={styles.addTimeText}>{t("ko", "pet.careDefaultsTimeAdd")}</Text>
       </Pressable>
       <Text style={styles.label}>{t("ko", "care.setupPeriod")}</Text>

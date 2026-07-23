@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput } from "../domain/diaryEntry";
 import { buildRoutineDiaryDetail, getDiaryCategoriesForSpecies } from "./diaryFormDefaults";
 import type { Species } from "../../pet/domain/pet";
 import type { PetRoutine } from "../../routine/domain/petRoutine";
-import { categoryVisuals } from "../../../design-system/categoryVisuals";
 import { NoticeBanner } from "../../../design-system/components";
-import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize } from "../../../design-system/tokens";
+import { colors } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import type { DraftDiaryEntry } from "./draftDiaryEntry";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
@@ -18,6 +16,7 @@ import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave
 import { styles } from "./DiaryEntryScreen.styles";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { createUuid } from "../../../shared-kernel/uuid";
+import { DiaryCategoryPicker } from "./DiaryCategoryPicker";
 import { DiaryConditionScore } from "./DiaryConditionScore";
 import { DiaryEntryActions } from "./DiaryEntryActions";
 import { DiaryPhotoSection } from "./DiaryPhotoSection";
@@ -206,18 +205,7 @@ export function DiaryEntryScreen({
       <NoticeBanner text={notice} icon="shield" />
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
-      <View style={styles.categoryGrid}>
-        {categories.map((key) => {
-          const item = categoryVisuals[key];
-          const active = selected === key;
-          return (
-            <Pressable key={key} disabled={Boolean(editingEntry)} style={[styles.categoryTile, active && styles.categoryTileActive]} onPress={() => selectCategory(key)}>
-              <AppIcon name={item.icon} size={iconSize.xl} color={item.color} />
-              <Text style={styles.categoryLabel}>{t("ko", item.labelKey)}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <DiaryCategoryPicker categories={categories} selected={selected} disabled={Boolean(editingEntry)} onSelect={selectCategory} />
 
       {isDetailPanelOpen && formState.showsDetail && selected === "condition" ? <DiaryConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
       {isDetailPanelOpen && formState.showsDetail ? <DiaryDetailPanel category={selected} detail={detail} onChange={setDetail} /> : null}
@@ -231,6 +219,7 @@ export function DiaryEntryScreen({
           <Text style={styles.sectionTitle}>{t("ko", "diary.memo")}</Text>
           <View style={styles.memoBox}>
             <TextInput
+              accessibilityLabel={t("ko", "diary.memo")}
               multiline
               placeholder={t("ko", "diary.memoPlaceholder")}
               placeholderTextColor={colors.textSoft}
@@ -244,7 +233,7 @@ export function DiaryEntryScreen({
       ) : null}
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.timeLabel")}</Text>
-      <TimePickerField value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
+      <TimePickerField accessibilityLabel={t("ko", "diary.timeLabel")} value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
 
       <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
       <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} />

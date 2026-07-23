@@ -1,21 +1,30 @@
-import { useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
+import { useLanguage } from "../../../i18n/languageContext";
 import { t, type TranslationKey } from "../../../i18n/translations";
 import { useAuth } from "../application/authContext";
 import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type AuthMode } from "./authFormState";
 
 export function AuthScreen() {
   const { signIn, signUp, error, authMessage, loading, resetMessage } = useAuth();
+  const { language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [localError, setLocalError] = useState<TranslationKey | null>(null);
   const submissionInFlight = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
   const isSignUp = mode === "signUp";
+
+  useEffect(() => {
+    if (!error && !localError && !authMessage) return;
+    const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 0);
+    return () => clearTimeout(timer);
+  }, [authMessage, error, localError]);
 
   async function submit() {
     if (!canSubmitAuth(loading, submissionInFlight.current)) return;
@@ -50,7 +59,19 @@ export function AuthScreen() {
   }
 
   return (
-    <View style={styles.wrap}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
+      <View style={styles.languageChooser}>
+        <Text style={styles.fieldLabel}>{t("ko", "settings.language")}</Text>
+        <SegmentedControl
+          value={language}
+          onChange={setLanguage}
+          items={[
+            { label: t("ko", "settings.languageKo"), value: "ko" },
+            { label: t("ko", "settings.languageEn"), value: "en" },
+          ]}
+        />
+      </View>
+
       <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
       <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
       <View style={styles.valuePanel}>
@@ -75,34 +96,49 @@ export function AuthScreen() {
       />
 
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder={t("ko", "auth.email")}
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <TextInput
-          style={styles.input}
-          secureTextEntry
-          placeholder={t("ko", "auth.password")}
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {isSignUp ? (
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>{t("ko", "auth.email")}</Text>
           <TextInput
+            accessibilityLabel={t("ko", "auth.email")}
+            style={styles.input}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            placeholder={t("ko", "auth.email")}
+            placeholderTextColor={colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+          />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>{t("ko", "auth.password")}</Text>
+          <TextInput
+            accessibilityLabel={t("ko", "auth.password")}
             style={styles.input}
             secureTextEntry
-            placeholder={t("ko", "auth.passwordConfirm")}
+            autoComplete={isSignUp ? "new-password" : "current-password"}
+            placeholder={t("ko", "auth.password")}
             placeholderTextColor={colors.textMuted}
-            value={passwordConfirm}
-            onChangeText={setPasswordConfirm}
+            value={password}
+            onChangeText={setPassword}
           />
+        </View>
+
+        {isSignUp ? (
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>{t("ko", "auth.passwordConfirm")}</Text>
+            <TextInput
+              accessibilityLabel={t("ko", "auth.passwordConfirm")}
+              style={styles.input}
+              secureTextEntry
+              autoComplete="new-password"
+              placeholder={t("ko", "auth.passwordConfirm")}
+              placeholderTextColor={colors.textMuted}
+              value={passwordConfirm}
+              onChangeText={setPasswordConfirm}
+            />
+          </View>
         ) : null}
 
         <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
@@ -114,7 +150,7 @@ export function AuthScreen() {
         {isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
         {!isSignUp && loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -126,11 +162,14 @@ const authValueItems: { key: "auth.valueReport" | "auth.valueFamily" | "auth.val
 
 const styles = StyleSheet.create({
   wrap: {
-    flex: 1,
+    flexGrow: 1,
     padding: layout.screenPadding,
     justifyContent: "center",
     gap: spacing.lg,
     backgroundColor: colors.appBackground,
+  },
+  languageChooser: {
+    gap: spacing.sm,
   },
   title: {
     ...type.heroTitle,
@@ -172,6 +211,14 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: spacing.md,
+  },
+  field: {
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    ...type.caption,
+    color: colors.text,
+    fontWeight: "600",
   },
   input: {
     minHeight: layout.inputHeight,
