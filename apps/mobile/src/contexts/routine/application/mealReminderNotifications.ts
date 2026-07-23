@@ -68,12 +68,16 @@ export async function rescheduleMealReminders({ userId, petId, petName, title, s
   if (Platform.OS === "web" || !isMealReminderAccountActive(userId)) return false;
 
   const Notifications = await import("expo-notifications");
-  const permission = requestPermission ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
-  if (!permission.granted || !isMealReminderAccountActive(userId)) return false;
+  // Build the plan first: saving with reminders disabled (empty plan) must not
+  // pop the OS permission dialog — it only needs to cancel stale reminders (B9).
+  const plan = buildMealReminderPlan({ userId, petId, petName, title, slotLabels, routine });
+  if (plan.length > 0) {
+    const permission = requestPermission ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
+    if (!permission.granted || !isMealReminderAccountActive(userId)) return false;
+  }
 
   const pending = await Notifications.getAllScheduledNotificationsAsync();
   if (!isMealReminderAccountActive(userId)) return false;
-  const plan = buildMealReminderPlan({ userId, petId, petName, title, slotLabels, routine });
   await applyMealReminderPlan(plan, pending, { userId, petId }, {
     schedule: (request) => Notifications.scheduleNotificationAsync({
       identifier: request.identifier,

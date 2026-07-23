@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import { DiaryEntryScreen } from "../contexts/diary/ui/DiaryEntryScreen";
@@ -152,6 +152,10 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (!canManageCare) throw new Error(t("ko", "permission.careTeamOnly"));
     const previousScheduleIds = care.activeCareSetup.schedules.map((schedule) => schedule.id);
     const savedSetup = await care.saveCareSetup(input);
+    // Local notifications are native + real-account only; without this guard
+    // preview/web saves show a false "permission needed" error next to the
+    // save-success toast (B5, mirrors the meal reminder path).
+    if (!databaseMode || !userId || Platform.OS === "web") return savedSetup;
     try {
       const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: savedSetup.schedules, requestPermission: true, previousScheduleIds });
       setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"), scheduled ? "success" : "error");
@@ -163,7 +167,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
 
   async function saveRoutineAndRefreshMealReminders(input: PetRoutineInput) {
     await routine.saveRoutine(input);
-    if (!databaseMode || !userId) return;
+    if (!databaseMode || !userId || Platform.OS === "web") return;
     try {
       const scheduled = await refreshMealReminders({ userId, petId: activePet.id, petName: activePet.name, routine: { ...input, petId: activePet.id }, requestPermission: true });
       setNotice(scheduled ? t("ko", "routine.mealReminderScheduled") : t("ko", "routine.mealReminderPermissionDenied"), scheduled ? "success" : "error");
