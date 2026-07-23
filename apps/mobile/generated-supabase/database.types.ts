@@ -17,7 +17,7 @@ export type Database = {
       ai_briefs: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           payload: Json
           pet_id: string
@@ -25,7 +25,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           payload: Json
           pet_id: string
@@ -33,7 +33,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           payload?: Json
           pet_id?: string
@@ -88,7 +88,7 @@ export type Database = {
         Row: {
           condition_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           ends_on: string | null
           id: string
           instructions: string | null
@@ -100,7 +100,7 @@ export type Database = {
         Insert: {
           condition_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           ends_on?: string | null
           id?: string
           instructions?: string | null
@@ -112,7 +112,7 @@ export type Database = {
         Update: {
           condition_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           ends_on?: string | null
           id?: string
           instructions?: string | null
@@ -141,7 +141,7 @@ export type Database = {
       conditions: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           ends_on: string | null
           id: string
           name: string
@@ -153,7 +153,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           ends_on?: string | null
           id?: string
           name: string
@@ -165,7 +165,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           ends_on?: string | null
           id?: string
           name?: string
@@ -191,7 +191,7 @@ export type Database = {
           client_mutation_id: string | null
           condition_score: number | null
           created_at: string
-          created_by: string
+          created_by: string | null
           entry_date: string
           id: string
           occurred_at: string
@@ -206,7 +206,7 @@ export type Database = {
           client_mutation_id?: string | null
           condition_score?: number | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           entry_date?: string
           id?: string
           occurred_at?: string
@@ -221,7 +221,7 @@ export type Database = {
           client_mutation_id?: string | null
           condition_score?: number | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           entry_date?: string
           id?: string
           occurred_at?: string
@@ -251,7 +251,7 @@ export type Database = {
       measurements: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           kind: string
           measured_at: string
@@ -260,7 +260,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           kind: string
           measured_at?: string
@@ -269,7 +269,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           kind?: string
           measured_at?: string
@@ -290,7 +290,7 @@ export type Database = {
         Row: {
           content_type: string
           created_at: string
-          created_by: string
+          created_by: string | null
           diary_entry_id: string | null
           id: string
           pet_id: string
@@ -299,7 +299,7 @@ export type Database = {
         Insert: {
           content_type: string
           created_at?: string
-          created_by: string
+          created_by?: string | null
           diary_entry_id?: string | null
           id?: string
           pet_id: string
@@ -308,7 +308,7 @@ export type Database = {
         Update: {
           content_type?: string
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           diary_entry_id?: string | null
           id?: string
           pet_id?: string
@@ -335,7 +335,7 @@ export type Database = {
         Row: {
           client_mutation_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           dose_date: string
           id: string
           medication_name: string
@@ -350,7 +350,7 @@ export type Database = {
         Insert: {
           client_mutation_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           dose_date: string
           id?: string
           medication_name: string
@@ -365,7 +365,7 @@ export type Database = {
         Update: {
           client_mutation_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           dose_date?: string
           id?: string
           medication_name?: string
@@ -397,7 +397,7 @@ export type Database = {
       medication_schedules: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           ends_on: string | null
           id: string
           local_time: string
@@ -408,7 +408,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           ends_on?: string | null
           id?: string
           local_time: string
@@ -419,7 +419,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           ends_on?: string | null
           id?: string
           local_time?: string
@@ -449,7 +449,7 @@ export type Database = {
         Row: {
           condition_id: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           dosage_label: string
           id: string
           name: string
@@ -460,7 +460,7 @@ export type Database = {
         Insert: {
           condition_id?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           dosage_label: string
           id?: string
           name: string
@@ -471,7 +471,7 @@ export type Database = {
         Update: {
           condition_id?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           dosage_label?: string
           id?: string
           name?: string
@@ -537,7 +537,7 @@ export type Database = {
       pet_routines: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           pet_id: string
           routine: Json
@@ -545,7 +545,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           pet_id: string
           routine?: Json
@@ -553,7 +553,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           pet_id?: string
           routine?: Json
@@ -632,7 +632,7 @@ export type Database = {
       report_share_tokens: {
         Row: {
           created_at: string
-          created_by: string
+          created_by: string | null
           expires_at: string
           id: string
           last_accessed_at: string | null
@@ -642,7 +642,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by: string
+          created_by?: string | null
           expires_at: string
           id?: string
           last_accessed_at?: string | null
@@ -652,7 +652,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           expires_at?: string
           id?: string
           last_accessed_at?: string | null
@@ -737,7 +737,7 @@ export type Database = {
         Row: {
           confirmed_by_owner: boolean
           created_at: string
-          created_by: string
+          created_by: string | null
           english_summary: string
           id: string
           payload: Json
@@ -749,7 +749,7 @@ export type Database = {
         Insert: {
           confirmed_by_owner?: boolean
           created_at?: string
-          created_by: string
+          created_by?: string | null
           english_summary: string
           id?: string
           payload: Json
@@ -761,7 +761,7 @@ export type Database = {
         Update: {
           confirmed_by_owner?: boolean
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           english_summary?: string
           id?: string
           payload?: Json
@@ -812,7 +812,7 @@ export type Database = {
           client_mutation_id: string | null
           condition_score: number | null
           created_at: string
-          created_by: string
+          created_by: string | null
           entry_date: string
           id: string
           occurred_at: string
@@ -842,7 +842,7 @@ export type Database = {
           client_mutation_id: string | null
           condition_score: number | null
           created_at: string
-          created_by: string
+          created_by: string | null
           entry_date: string
           id: string
           occurred_at: string
@@ -885,6 +885,10 @@ export type Database = {
         Returns: Json
       }
       list_pending_media_cleanup_v1: { Args: never; Returns: string[] }
+      lookup_profile_id_by_email: {
+        Args: { target_email: string }
+        Returns: string
+      }
       replace_pet_profile_photo_v1: {
         Args: {
           p_content_type: string

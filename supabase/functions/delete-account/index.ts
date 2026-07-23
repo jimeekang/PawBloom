@@ -2,11 +2,10 @@ import { corsHeaders, errorResponse, jsonResponse } from "../_shared/http.ts";
 import { requireUser, serviceClient, type ServiceClient } from "../_shared/supabase.ts";
 
 // In-app account deletion (Apple Guideline 5.1.1(v)). Purges Storage objects for
-// every pet the caller OWNS, then deletes the auth user. Deleting the auth user
-// cascades through auth.users FKs (pets, diary_entries, medication_doses,
-// media_assets, pet_members, ...), so DB rows need no explicit cleanup here.
-// Pets the caller only belongs to as a member are left intact — only their
-// pet_members row disappears via cascade.
+// every pet the caller OWNS, then deletes the auth user. Owned pets and their
+// child records cascade away; records the caller contributed to someone else's
+// pet remain and anonymize `created_by` through ON DELETE SET NULL. Pets the
+// caller only belongs to remain intact, while their membership row cascades.
 const STORAGE_BUCKET = "pet-media";
 const STORAGE_PAGE_SIZE = 100;
 

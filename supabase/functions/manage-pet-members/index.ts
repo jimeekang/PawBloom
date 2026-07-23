@@ -101,15 +101,13 @@ async function requireFamilyPlan(supabase: ServiceClient, userId: string) {
 }
 
 async function inviteCaregiver(supabase: ServiceClient, petId: string, actorUserId: string, email: string) {
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id,email")
-    .ilike("email", email)
-    .maybeSingle();
+  const { data: profileId, error: profileError } = await supabase.rpc("lookup_profile_id_by_email", {
+    target_email: email,
+  });
   if (profileError) throw new PetMemberActionError("memberLookupFailed", 500);
-  if (profile?.id === actorUserId) throw new PetMemberActionError("cannotInviteSelf", 409);
+  if (profileId === actorUserId) throw new PetMemberActionError("cannotInviteSelf", 409);
 
-  let invitedUserId = profile?.id ?? null;
+  let invitedUserId = typeof profileId === "string" ? profileId : null;
   let createdInviteUser = false;
   if (!invitedUserId) {
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
@@ -129,11 +127,15 @@ async function inviteCaregiver(supabase: ServiceClient, petId: string, actorUser
   if (existingError) throw new PetMemberActionError("memberLookupFailed", 500);
   if (existing) throw new PetMemberActionError("alreadyMember", 409);
 
-  const { error: insertError } = await supabase.from("pet_members").insert({
-    pet_id: petId,
-    user_id: invitedUserId,
-    role: "caregiver",
-  });
+  const { data: insertedMembership, error: insertError } = await supabase
+    .from("pet_members")
+    .insert({
+      pet_id: petId,
+      user_id: invitedUserId,
+      role: "caregiver",
+    })
+    .select("id")
+    .single();
   if (insertError) {
     if (insertError.code === "23505") throw new PetMemberActionError("alreadyMember", 409);
     if (createdInviteUser) await supabase.auth.admin.deleteUser(invitedUserId).catch(() => undefined);
@@ -142,7 +144,7 @@ async function inviteCaregiver(supabase: ServiceClient, petId: string, actorUser
 
   await writeAuditEvent(supabase, actorUserId, petId, "member.invited", { invitedUserId });
   return (await listMembers(supabase, petId, actorUserId))
-    .find((member) => member.email.toLowerCase() === email) ?? null;
+    .find((member) => member.membershipId === insertedMembership.id) ?? null;
 }
 
 async function removeMember(supabase: ServiceClient, petId: string, actorUserId: string, membershipId: string) {

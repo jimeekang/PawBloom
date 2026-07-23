@@ -31,6 +31,10 @@ const canonicalOwnerMigration = readFileSync(
   `${root}/supabase/migrations/20260716123000_enforce_canonical_pet_owner_membership.sql`,
   "utf8",
 ).toLowerCase();
+const exactEmailLookupMigration = readFileSync(
+  `${root}/supabase/migrations/20260723090000_exact_profile_email_lookup.sql`,
+  "utf8",
+).toLowerCase();
 const functionSource = readFileSync(`${root}/supabase/functions/manage-pet-members/index.ts`, "utf8");
 const memberClient = readFileSync(`${root}/apps/mobile/src/contexts/pet/application/petMembers.ts`, "utf8");
 const config = readFileSync(`${root}/supabase/config.toml`, "utf8");
@@ -45,6 +49,13 @@ const invite = parsePetMemberRequest({
 });
 if (invite.action !== "invite" || invite.email !== "caregiver@example.com") {
   throw new Error("caregiver invites must normalize email before privileged lookup");
+}
+
+for (const email of ["percent%tag@example.com", "under_score@example.com", "back\\slash@example.com"]) {
+  const wildcardInvite = parsePetMemberRequest({ action: "invite", petId: "pet-1", email });
+  if (wildcardInvite.action !== "invite" || wildcardInvite.email !== email) {
+    throw new Error("valid email punctuation must survive normalization for exact lookup");
+  }
 }
 
 for (const invalid of [
@@ -74,6 +85,19 @@ for (const required of [
 ]) {
   if (!functionSource.toLowerCase().includes(required)) {
     throw new Error(`pet member function security guard is missing: ${required}`);
+  }
+}
+
+if (functionSource.includes('.ilike("email"') || !functionSource.includes('.rpc("lookup_profile_id_by_email"')) {
+  throw new Error("privileged caregiver lookup must use exact normalized equality, never a wildcard filter");
+}
+for (const required of [
+  "where lower(profile.email) = lower(pg_catalog.btrim(target_email))",
+  "revoke all on function public.lookup_profile_id_by_email(text) from public, anon, authenticated",
+  "grant execute on function public.lookup_profile_id_by_email(text) to service_role",
+]) {
+  if (!exactEmailLookupMigration.includes(required)) {
+    throw new Error(`exact caregiver identity lookup guard is missing: ${required}`);
   }
 }
 

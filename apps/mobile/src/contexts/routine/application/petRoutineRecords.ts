@@ -9,6 +9,7 @@ export { createDefaultPetRoutine };
 
 type RoutineRow = Database["public"]["Tables"]["pet_routines"]["Row"];
 type RoutineInsert = Database["public"]["Tables"]["pet_routines"]["Insert"];
+type RoutineUpdate = Database["public"]["Tables"]["pet_routines"]["Update"];
 
 export const petRoutineKeys = {
   detail: (petId: string | null, species?: Species, userId: string | null = null) => ["pet_routine", petId, species ?? "dog", userId] as const,
@@ -31,11 +32,38 @@ export function useUpsertPetRoutine(petId: string | null, userId: string | null,
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: PetRoutineInput) => {
-      if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
-      const payload: RoutineInsert = { pet_id: petId, created_by: userId, routine: input as unknown as Json, updated_at: new Date().toISOString() };
-      const { data, error } = await supabase.from("pet_routines").upsert(payload, { onConflict: "pet_id" }).select().single();
-      if (error) throw new Error(error.message);
-      return mapRoutineRow(data, species);
+      const client = supabase;
+      if (!client || !petId || !userId) throw new Error("로그인이 필요합니다.");
+      const updatedAt = new Date().toISOString();
+      const updatePayload: RoutineUpdate = { routine: input as unknown as Json, updated_at: updatedAt };
+      const updateExisting = () => client
+        .from("pet_routines")
+        .update(updatePayload)
+        .eq("pet_id", petId)
+        .select()
+        .maybeSingle();
+
+      const updated = await updateExisting();
+      if (updated.error) throw new Error(updated.error.message);
+      if (updated.data) return mapRoutineRow(updated.data, species);
+
+      const insertPayload: RoutineInsert = {
+        pet_id: petId,
+        created_by: userId,
+        routine: input as unknown as Json,
+        updated_at: updatedAt,
+      };
+      const inserted = await client.from("pet_routines").insert(insertPayload).select().single();
+      if (!inserted.error) return mapRoutineRow(inserted.data, species);
+      if (inserted.error.code !== "23505") throw new Error(inserted.error.message);
+
+      // Another device can create the one-per-pet row between our update and
+      // insert. Retry only the mutable columns; creator attribution stays fixed.
+      const racedUpdate = await updateExisting();
+      if (racedUpdate.error || !racedUpdate.data) {
+        throw new Error(racedUpdate.error?.message ?? "루틴을 저장하지 못했습니다.");
+      }
+      return mapRoutineRow(racedUpdate.data, species);
     },
     onSuccess: (routine) => {
       queryClient.setQueryData(petRoutineKeys.detail(petId, species, userId), routine);

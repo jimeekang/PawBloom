@@ -77,3 +77,35 @@ alter table public.pet_routines alter column created_by drop not null;
 alter table public.pet_routines drop constraint if exists pet_routines_created_by_fkey;
 alter table public.pet_routines add constraint pet_routines_created_by_fkey
   foreign key (created_by) references auth.users(id) on delete set null;
+
+-- PostgreSQL does not index foreign-key columns automatically. Account deletion
+-- updates every surviving creator reference, so keep those lookups indexed to
+-- avoid full-table scans and unnecessarily long locks during auth user removal.
+create index if not exists conditions_created_by_idx on public.conditions (created_by);
+create index if not exists care_plans_created_by_idx on public.care_plans (created_by);
+create index if not exists medications_created_by_idx on public.medications (created_by);
+create index if not exists medication_schedules_created_by_idx on public.medication_schedules (created_by);
+create index if not exists medication_doses_created_by_idx on public.medication_doses (created_by);
+create index if not exists diary_entries_created_by_idx on public.diary_entries (created_by);
+create index if not exists measurements_created_by_idx on public.measurements (created_by);
+create index if not exists media_assets_created_by_idx on public.media_assets (created_by);
+create index if not exists ai_briefs_created_by_idx on public.ai_briefs (created_by);
+create index if not exists vet_reports_created_by_idx on public.vet_reports (created_by);
+create index if not exists report_share_tokens_created_by_idx on public.report_share_tokens (created_by);
+create index if not exists pet_routines_created_by_idx on public.pet_routines (created_by);
+
+-- Nullable attribution is reserved for auth-user deletion. Direct clients may
+-- update care data, but must never rewrite or erase the original creator.
+revoke update on public.medication_doses from authenticated;
+grant update (
+  medication_name,
+  scheduled_at,
+  status,
+  recorded_at,
+  reaction_note,
+  client_mutation_id,
+  updated_at
+) on public.medication_doses to authenticated;
+
+revoke update on public.pet_routines from authenticated;
+grant update (routine, updated_at) on public.pet_routines to authenticated;
