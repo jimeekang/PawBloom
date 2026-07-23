@@ -3,6 +3,11 @@ import { type PetProfile } from "../../pet/domain/pet";
 import { type CreatePetInput, type UpdatePetInput } from "./authContextQueries";
 import type { IdentityMessageKey } from "./identityMessage";
 
+// Result of the in-app account deletion action (Apple Guideline 5.1.1(v)). The
+// deletion is orchestrated by useAccountDeletion.ts, which returns this shape so
+// callers can react to success/failure without inspecting Supabase internals.
+export type AccountDeletionResult = { ok: boolean };
+
 export type AppAuthState = {
   configured: boolean;
   initialized: boolean;

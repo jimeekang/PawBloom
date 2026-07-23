@@ -1,8 +1,9 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import type { Language } from "../shared-kernel/types";
+import { readDeviceLanguageCode } from "./deviceLanguage";
+import { resolveInitialLanguage } from "./resolveInitialLanguage";
 
-export const DEFAULT_LANGUAGE: Language = "ko";
 export const LANGUAGE_STORAGE_KEY = "pawbloom.language.v1";
 
 export type LanguageStorage = {
@@ -10,22 +11,33 @@ export type LanguageStorage = {
   setItem: (key: string, value: string) => Promise<void>;
 };
 
-export type DeviceLocaleReader = () => string | null | undefined;
+export type DeviceLanguageReader = () => string | null | undefined;
+
+// Synchronous best guess for the initial render, before the stored preference has
+// loaded. Nothing is stored yet, so this is purely device-locale driven.
+export function getInitialLanguage(readDeviceLanguage: DeviceLanguageReader = readDeviceLanguageCode): Language {
+  return resolveInitialLanguage(null, safeDeviceLanguageCode(readDeviceLanguage));
+}
 
 export async function readLanguagePreference(
   storage: LanguageStorage = deviceLanguageStorage,
-  readLocale: DeviceLocaleReader = readDeviceLocale,
+  readDeviceLanguage: DeviceLanguageReader = readDeviceLanguageCode,
 ): Promise<Language> {
+  let stored: Language | null = null;
   try {
-    const storedLanguage = await storage.getItem(LANGUAGE_STORAGE_KEY);
-    if (storedLanguage !== null) {
-      return parseLanguage(storedLanguage) ?? DEFAULT_LANGUAGE;
-    }
+    stored = parseLanguage(await storage.getItem(LANGUAGE_STORAGE_KEY));
   } catch {
-    // Fall through to the current device locale when storage is unavailable.
+    stored = null;
   }
+  return resolveInitialLanguage(stored, safeDeviceLanguageCode(readDeviceLanguage));
+}
 
-  return languageFromLocale(readLocale());
+function safeDeviceLanguageCode(readDeviceLanguage: DeviceLanguageReader): string | undefined {
+  try {
+    return normalizeDeviceLanguageCode(readDeviceLanguage());
+  } catch {
+    return undefined;
+  }
 }
 
 export async function writeLanguagePreference(language: Language, storage: LanguageStorage = deviceLanguageStorage): Promise<void> {
@@ -41,16 +53,12 @@ export function parseLanguage(value: string | null | undefined): Language | null
 }
 
 export function languageFromLocale(locale: string | null | undefined): Language {
-  return locale?.trim().toLowerCase().split(/[-_]/)[0] === "ko" ? "ko" : "en";
+  return resolveInitialLanguage(null, normalizeDeviceLanguageCode(locale));
 }
 
-function readDeviceLocale() {
-  try {
-    const browserLocale = typeof navigator === "undefined" ? null : navigator.languages?.[0] ?? navigator.language;
-    return browserLocale ?? Intl.DateTimeFormat().resolvedOptions().locale;
-  } catch {
-    return null;
-  }
+function normalizeDeviceLanguageCode(locale: string | null | undefined): string | undefined {
+  const normalized = locale?.trim().toLowerCase().split(/[-_]/)[0];
+  return normalized || undefined;
 }
 
 const deviceLanguageStorage: LanguageStorage = Platform.OS === "web"

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Language } from "../shared-kernel/types";
-import { DEFAULT_LANGUAGE, readLanguagePreference, writeLanguagePreference } from "./languagePreference";
+import { getInitialLanguage, readLanguagePreference, writeLanguagePreference } from "./languagePreference";
 import { setRuntimeLanguage } from "./translations";
 
 type LanguageContextValue = {
@@ -13,7 +13,7 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
-  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
 
   useEffect(() => {
     let active = true;

@@ -6,9 +6,18 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "pawbloom",
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.pawbloom.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.pawbloom.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": [
+          "en",
+          "ko"
+        ],
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "package": "com.pawbloom.app",
@@ -27,7 +36,21 @@
       "./plugins/withHermesBuildPhaseWarningFix",
       "expo-secure-store",
       "expo-sqlite",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#E06D10"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "backgroundColor": "#E6F4FE"
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -36,7 +59,8 @@
           "microphonePermission": false
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-localization"
     ]
   }
 }

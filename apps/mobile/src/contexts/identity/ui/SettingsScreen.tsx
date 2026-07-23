@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 import { useAuth } from "../application/authContext";
+import { useAccountDeletion } from "../application/useAccountDeletion";
 
 export function SettingsScreen({
   email,
@@ -19,6 +20,21 @@ export function SettingsScreen({
 }) {
   const { language, setLanguage } = useLanguage();
   const { error: identityError } = useAuth();
+  const accountDeletion = useAccountDeletion();
+  const deleting = accountDeletion.status === "deleting";
+
+  const confirmDeleteAccount = () => {
+    accountDeletion.requestConfirm();
+    Alert.alert(
+      t("ko", "settings.deleteAccountConfirmTitle"),
+      t("ko", "settings.deleteAccountConfirmBody"),
+      [
+        { text: t("ko", "settings.deleteAccountConfirmCancel"), style: "cancel", onPress: accountDeletion.cancelConfirm },
+        { text: t("ko", "settings.deleteAccountConfirmAction"), style: "destructive", onPress: () => void accountDeletion.deleteAccount() },
+      ],
+      { cancelable: true, onDismiss: accountDeletion.cancelConfirm },
+    );
+  };
 
   return (
     <View style={styles.screen}>
@@ -32,6 +48,18 @@ export function SettingsScreen({
           {configured
             ? <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
             : <Text style={styles.copy}>{t("ko", "settings.previewCopy")}</Text>}
+          {configured ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: deleting }}
+              disabled={deleting}
+              style={({ pressed }) => [styles.deleteButton, pressed && !deleting && styles.deleteButtonPressed, deleting && styles.deleteButtonDisabled]}
+              onPress={confirmDeleteAccount}
+            >
+              <Text style={styles.deleteButtonText}>{t("ko", "settings.deleteAccount")}</Text>
+            </Pressable>
+          ) : null}
+          {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("ko", "settings.deleteAccountError")} icon="close" tone="error" /> : null}
           {identityError ? <NoticeBanner text={t("ko", identityError)} icon="close" tone="error" /> : null}
         </View>
       </SurfaceCard>
@@ -93,6 +121,26 @@ const styles = StyleSheet.create({
   copy: {
     ...type.body,
     color: colors.textMuted,
+  },
+  deleteButton: {
+    minHeight: layout.buttonHeight,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.dangerBorder,
+    backgroundColor: colors.dangerBg,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  deleteButtonPressed: {
+    backgroundColor: colors.surfacePeach,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.55,
+  },
+  deleteButtonText: {
+    ...type.bodyStrong,
+    color: colors.danger,
   },
   statusPill: {
     minHeight: 44,
