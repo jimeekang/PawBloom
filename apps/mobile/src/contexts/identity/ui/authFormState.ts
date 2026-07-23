@@ -2,6 +2,12 @@ import type { TranslationKey } from "../../../i18n/translations";
 
 export type AuthMode = "signIn" | "signUp";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isValidAuthEmail(email: string) {
+  return EMAIL_PATTERN.test(email.trim());
+}
+
 export function authFormValidationKey({
   mode,
   email,
@@ -14,6 +20,7 @@ export function authFormValidationKey({
   passwordConfirm: string;
 }): TranslationKey | null {
   if (!email.trim() || !password || (mode === "signUp" && !passwordConfirm)) return "auth.requiredFields";
+  if (!isValidAuthEmail(email)) return "auth.emailInvalid";
   if (mode === "signUp" && password !== passwordConfirm) return "auth.passwordMismatch";
   return null;
 }

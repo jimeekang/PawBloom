@@ -17,7 +17,7 @@ type Params = {
   userId: string | null;
   fallbackPetId: string;
   language: Language;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: string, tone?: "success" | "error") => void;
   onSaved: () => void;
   onLocalEntrySaved: (entry: DiaryEntry) => void;
   onLocalEntriesChanged: (nextEntries: DiaryEntry[]) => void;
@@ -51,22 +51,28 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
 
   const latestConditionScore = activeEntries.find((entry) => entry.category === "condition" && entry.conditionScore)?.conditionScore;
 
+  const selectedQuery = diaryFilter === "day" ? diaryDateQuery : diaryWeekQuery;
+  const selectedDiaryStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : selectedQuery.isError ? "error" : selectedQuery.isLoading ? "loading" : "ready";
+  function refetchSelectedDiary() {
+    void (diaryFilter === "day" ? diaryDateQuery.refetch() : diaryWeekQuery.refetch());
+  }
+
   function saveDiaryEntry(draft: DraftDiaryEntry) {
     if (databaseMode) {
       return createDiaryEntry
         .mutateAsync({ category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredAt, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId })
         .then((result) => {
           const outcome = resolveRemoteDiarySaveOutcome(result.queued);
-          onNotice(t("ko", outcome === "queued" ? "today.diaryQueued" : "today.diarySavedRemote"));
+          onNotice(outcome === "queued" ? t("ko", "today.diaryQueued") : "");
           onSaved();
           return outcome;
         })
-        .catch((error: Error) => { onNotice(error.message); throw error; });
+        .catch((error: Error) => { onNotice(error.message, "error"); throw error; });
     }
     const nextEntry = createLocalDiaryEntry(activePetId, draft);
     setEntries((current) => [nextEntry, ...current]);
     onLocalEntrySaved(nextEntry);
-    onNotice(t("ko", "today.diarySaved"));
+    onNotice("");
     onSaved();
     return "saved" as const;
   }
@@ -75,16 +81,16 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     if (databaseMode) {
       try {
         await updateDiaryEntry.mutateAsync({ id: draft.id, category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredTime, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId });
-        onNotice(t("ko", "today.diaryUpdatedRemote")); onSaved();
+        onNotice(""); onSaved();
       } catch (error) {
-        onNotice(error instanceof Error ? error.message : t("ko", "diary.updateFailed")); throw error;
+        onNotice(error instanceof Error ? error.message : t("ko", "diary.updateFailed"), "error"); throw error;
       }
       return;
     }
     const nextEntries = entries.map((entry) => (entry.id === draft.id ? updateLocalDiaryEntry(entry, draft) : entry));
     setEntries(nextEntries);
     onLocalEntriesChanged(nextEntries);
-    onNotice(t("ko", "today.diaryUpdated"));
+    onNotice("");
     onSaved();
   }
 
@@ -93,16 +99,16 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
       if (databaseMode) {
         try {
           await deleteDiaryEntry.mutateAsync(entry.id);
-          onNotice(t("ko", "today.diaryDeletedRemote")); onSaved(); return true;
+          onNotice(t("ko", "today.diaryDeletedRemote")); return true;
         } catch (error) {
-          onNotice(error instanceof Error ? error.message : t("ko", "diary.deleteFailed")); return false;
+          onNotice(error instanceof Error ? error.message : t("ko", "diary.deleteFailed"), "error"); return false;
         }
       }
 
       const nextEntries = entries.filter((item) => item.id !== entry.id);
       setEntries(nextEntries);
       onLocalEntriesChanged(nextEntries);
-      onNotice(t("ko", "today.diaryDeleted")); onSaved(); return true;
+      onNotice(t("ko", "today.diaryDeleted")); return true;
     });
   }
 
@@ -111,6 +117,8 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     replaceLocalEntries: setEntries,
     activeEntries,
     selectedDiaryEntries,
+    selectedDiaryStatus,
+    refetchSelectedDiary,
     latestConditionScore,
     selectedDiaryDate,
     setSelectedDiaryDate,

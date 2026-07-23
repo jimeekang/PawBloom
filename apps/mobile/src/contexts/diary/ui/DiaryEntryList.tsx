@@ -2,13 +2,17 @@ import { useState } from "react";
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry } from "../domain/diaryEntry";
 import { categoryVisuals } from "../../../design-system/categoryVisuals";
-import { SurfaceCard } from "../../../design-system/components";
+import { SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
+import { useLanguage } from "../../../i18n/languageContext";
+import { getDiaryEntryDisplaySummary } from "./diaryEntryDisplay";
 
-export function DiaryEntryList({ entries, title, onEntryPress }: { entries: DiaryEntry[]; title: string; onEntryPress?: (entry: DiaryEntry) => void }) {
+export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = false, status = "ready", onRetry }: { entries: DiaryEntry[]; title: string; onEntryPress?: (entry: DiaryEntry) => void; showEntryDate?: boolean; status?: "ready" | "loading" | "error"; onRetry?: () => void }) {
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const locale = language === "ko" ? "ko-KR" : "en-AU";
 
   return (
     <>
@@ -16,7 +20,14 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
         <Text style={styles.sectionTitle}>{title}</Text>
         <SurfaceCard>
           <View style={styles.list}>
-            {entries.length === 0 ? <Text style={styles.emptyText}>{t("ko", "diary.noEntries")}</Text> : null}
+            {status === "loading" ? <Text style={styles.emptyText}>{t("ko", "diary.listLoading")}</Text> : null}
+            {status === "error" ? (
+              <View style={styles.errorWrap}>
+                <Text style={styles.errorText}>{t("ko", "diary.listLoadFailed")}</Text>
+                {onRetry ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetry} /> : null}
+              </View>
+            ) : null}
+            {status === "ready" && entries.length === 0 ? <Text style={styles.emptyText}>{t("ko", "diary.noEntries")}</Text> : null}
             {entries.map((entry) => {
               const visual = categoryVisuals[entry.category];
               const row = (
@@ -24,9 +35,10 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
                   <AppIcon name={visual.icon} size={iconSize.md} color={visual.color} />
                   <View style={styles.body}>
                     <Text style={styles.title}>{t("ko", visual.labelKey)}</Text>
-                    <Text style={styles.summary} numberOfLines={2}>{entry.category === "photo" ? t("ko", "category.photo") : entry.summary}</Text>
+                    <Text style={styles.summary} numberOfLines={2}>{getDiaryEntryDisplaySummary(entry)}</Text>
                   </View>
                   <View style={styles.meta}>
+                    {showEntryDate ? <Text style={styles.entryDate}>{formatEntryDate(entry.entryDate, locale)}</Text> : null}
                     <Text style={styles.time}>{entry.occurredAt}</Text>
                     {entry.photoCount ? <Text style={styles.photoCount}>{t("ko", "diary.photoCount").replace("{count}", String(entry.photoCount))}</Text> : null}
                   </View>
@@ -38,7 +50,7 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
                   {onEntryPress ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${entry.occurredAt}, ${t("ko", visual.labelKey)}, ${entry.category === "photo" ? t("ko", "category.photo") : entry.summary}`}
+                      accessibilityLabel={`${t("ko", visual.labelKey)} ${entry.occurredAt} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
                       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                       onPress={() => onEntryPress(entry)}
                     >
@@ -84,6 +96,11 @@ export function DiaryEntryList({ entries, title, onEntryPress }: { entries: Diar
   );
 }
 
+function formatEntryDate(dateKey: string, locale: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, { month: "numeric", day: "numeric", weekday: "short" }).format(new Date(year, (month ?? 1) - 1, day ?? 1));
+}
+
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.sm,
@@ -100,6 +117,13 @@ const styles = StyleSheet.create({
   emptyText: {
     ...type.body,
     color: colors.textMuted,
+  },
+  errorWrap: {
+    gap: spacing.md,
+  },
+  errorText: {
+    ...type.body,
+    color: colors.danger,
   },
   row: {
     minHeight: 58,
@@ -128,6 +152,10 @@ const styles = StyleSheet.create({
   time: {
     ...type.caption,
     color: colors.text,
+  },
+  entryDate: {
+    ...type.tiny,
+    color: colors.textMuted,
   },
   photoCount: {
     ...type.tiny,

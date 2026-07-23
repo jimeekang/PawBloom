@@ -1,4 +1,4 @@
-import type { PetMemberRole, UUID } from "../../../shared-kernel/types";
+import type { Language, PetMemberRole, UUID } from "../../../shared-kernel/types";
 
 export type Species = "dog" | "cat" | "other";
 
@@ -69,6 +69,17 @@ export function humanizeAgeLabel(birthdate: string | null): string {
   }
 
   return `${years}y`;
+}
+
+export function localizePetAgeLabel(ageLabel: string, language: Language): string {
+  const match = ageLabel.match(/^(\d+)(y|m)$/);
+  if (!match) return "";
+  if (language === "ko") return match[2] === "y" ? `${match[1]}살` : `${match[1]}개월`;
+  return match[2] === "y" ? `${match[1]} yr` : `${match[1]} mo`;
+}
+
+export function formatPetMetaLine(pet: Pick<PetProfile, "breed" | "ageLabel">, language: Language): string {
+  return [pet.breed, localizePetAgeLabel(pet.ageLabel, language)].filter(Boolean).join(" · ");
 }
 
 export function isCareMode(pet: PetProfile) {

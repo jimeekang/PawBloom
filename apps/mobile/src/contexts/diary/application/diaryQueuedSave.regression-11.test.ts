@@ -10,7 +10,7 @@ const screen = readFileSync(`${root}/apps/mobile/src/contexts/diary/ui/DiaryEntr
 if (!/await enqueueOfflineMutation\([\s\S]*?return \{ entry: mapQueuedDiaryEntry\(payload, clientMutationId\), queued: true \}/.test(records)) {
   throw new Error("a successfully queued diary mutation must resolve with queued status instead of throwing a save failure");
 }
-if (!controller.includes("resolveRemoteDiarySaveOutcome(result.queued)") || !controller.includes('outcome === "queued" ? "today.diaryQueued"')) {
+if (!controller.includes("resolveRemoteDiarySaveOutcome(result.queued)") || !controller.includes('outcome === "queued" ? t("ko", "today.diaryQueued")')) {
   throw new Error("the diary controller must expose queued saves as a distinct successful outcome and notice");
 }
 if (!screen.includes('outcome === "queued" ? "diary.queuedForSync"')) {

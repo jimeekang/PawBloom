@@ -18,7 +18,7 @@ const categories = read("contexts/diary/ui/DiaryCategoryPicker.tsx");
 const score = read("contexts/diary/ui/DiaryConditionScore.tsx");
 const entries = read("contexts/diary/ui/DiaryEntryList.tsx");
 
-if (!home.includes("aria-pressed={done}") || !home.includes("today.checklistStatusComplete")) {
+if (!home.includes('accessibilityRole="checkbox"') || !home.includes("aria-checked={done}") || !home.includes("today.checklistStatusComplete")) {
   throw new Error("Home checklist actions must expose their recorded state and an explicit label");
 }
 

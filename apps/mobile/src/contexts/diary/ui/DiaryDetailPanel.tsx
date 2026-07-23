@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { DiaryCategory, DiaryDetailInput, MealSlot } from "../domain/diaryEntry";
-import { SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { FieldLabel, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 
@@ -47,11 +47,14 @@ function FoodDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { 
         <View key={slot} style={styles.mealRow}>
           <Text style={styles.mealLabel}>{t("ko", mealLabelKeys[slot])}</Text>
           <View style={styles.mealInputStack}>
-            <TextInput accessibilityLabel={`${t("ko", mealLabelKeys[slot])}, ${t("ko", "diary.offeredGrams")}`} style={styles.compactInput} keyboardType="numeric" value={detail.meals[slot]?.offeredGrams ?? ""} onChangeText={(value) => updateMeal(slot, "offeredGrams", value)} placeholder={t("ko", "diary.offeredGrams")} placeholderTextColor={colors.textSoft} />
-            <TextInput accessibilityLabel={`${t("ko", mealLabelKeys[slot])}, ${t("ko", "diary.eatenGrams")}`} style={styles.compactInput} keyboardType="numeric" value={detail.meals[slot]?.eatenGrams ?? ""} onChangeText={(value) => updateMeal(slot, "eatenGrams", value)} placeholder={t("ko", "diary.eatenGrams")} placeholderTextColor={colors.textSoft} />
+            <FieldLabel label={t("ko", "diary.offeredGrams")} />
+            <TextInput style={styles.compactInput} accessibilityLabel={`${t("ko", mealLabelKeys[slot])}, ${t("ko", "diary.offeredGrams")}`} keyboardType="numeric" value={detail.meals[slot]?.offeredGrams ?? ""} onChangeText={(value) => updateMeal(slot, "offeredGrams", value)} placeholder={t("ko", "diary.offeredGrams")} placeholderTextColor={colors.textSoft} />
+            <FieldLabel label={t("ko", "diary.eatenGrams")} />
+            <TextInput style={styles.compactInput} accessibilityLabel={`${t("ko", mealLabelKeys[slot])}, ${t("ko", "diary.eatenGrams")}`} keyboardType="numeric" value={detail.meals[slot]?.eatenGrams ?? ""} onChangeText={(value) => updateMeal(slot, "eatenGrams", value)} placeholder={t("ko", "diary.eatenGrams")} placeholderTextColor={colors.textSoft} />
           </View>
         </View>
       ))}
+      <FieldLabel label={t("ko", "diary.appetiteLabel")} />
       <SegmentedControl
         value={detail.appetite ?? "normal"}
         onChange={(appetite) => onChange({ ...detail, appetite })}
@@ -69,7 +72,9 @@ function FoodDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { 
 function WaterDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { category: "water" }>; onChange: Props["onChange"] }) {
   return (
     <>
-      <TextInput accessibilityLabel={t("ko", "diary.waterMl")} style={styles.input} keyboardType="numeric" value={detail.amountMl ?? ""} onChangeText={(value) => onChange({ ...detail, amountMl: milliliters(value) })} placeholder={t("ko", "diary.waterMl")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.waterMl")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.waterMl")} keyboardType="numeric" value={detail.amountMl ?? ""} onChangeText={(value) => onChange({ ...detail, amountMl: milliliters(value) })} placeholder={t("ko", "diary.waterMl")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.waterLevelLabel")} />
       <LevelControl value={detail.intakeLevel ?? "normal"} onChange={(intakeLevel) => onChange({ ...detail, intakeLevel })} />
     </>
   );
@@ -78,12 +83,18 @@ function WaterDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, {
 function WalkDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { category: "walk" }>; onChange: Props["onChange"] }) {
   return (
     <>
-      <TextInput accessibilityLabel={t("ko", "diary.walkMinutes")} style={styles.input} keyboardType="numeric" value={detail.durationMinutes ?? ""} onChangeText={(value) => onChange({ ...detail, durationMinutes: minutes(value) })} placeholder={t("ko", "diary.walkMinutes")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.walkMinutes")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.walkMinutes")} keyboardType="numeric" value={detail.durationMinutes ?? ""} onChangeText={(value) => onChange({ ...detail, durationMinutes: minutes(value) })} placeholder={t("ko", "diary.walkMinutes")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.walkIntensityLabel")} />
       <SegmentedControl value={detail.intensity ?? "normal"} onChange={(intensity) => onChange({ ...detail, intensity })} items={intensityItems()} />
-      <TextInput accessibilityLabel={t("ko", "diary.walkStoolObservation")} style={styles.input} value={detail.stoolObservation ?? ""} onChangeText={(value) => onChange({ ...detail, stoolObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkStoolObservation")} placeholderTextColor={colors.textSoft} />
-      <TextInput accessibilityLabel={t("ko", "diary.walkUrineObservation")} style={styles.input} value={detail.urineObservation ?? ""} onChangeText={(value) => onChange({ ...detail, urineObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkUrineObservation")} placeholderTextColor={colors.textSoft} />
-      <TextInput accessibilityLabel={t("ko", "diary.walkSymptomNote")} style={styles.input} value={detail.symptomNote ?? ""} onChangeText={(value) => onChange({ ...detail, symptomNote: value.slice(0, 160) })} placeholder={t("ko", "diary.walkSymptomNote")} placeholderTextColor={colors.textSoft} />
-      <TextInput accessibilityLabel={t("ko", "diary.walkObservation")} style={styles.input} value={detail.observation ?? ""} onChangeText={(value) => onChange({ ...detail, observation: value.slice(0, 160) })} placeholder={t("ko", "diary.walkObservation")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.walkStoolObservation")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.walkStoolObservation")} value={detail.stoolObservation ?? ""} onChangeText={(value) => onChange({ ...detail, stoolObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkStoolObservation")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.walkUrineObservation")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.walkUrineObservation")} value={detail.urineObservation ?? ""} onChangeText={(value) => onChange({ ...detail, urineObservation: value.slice(0, 80) })} placeholder={t("ko", "diary.walkUrineObservation")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.walkSymptomNote")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.walkSymptomNote")} value={detail.symptomNote ?? ""} onChangeText={(value) => onChange({ ...detail, symptomNote: value.slice(0, 160) })} placeholder={t("ko", "diary.walkSymptomNote")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.walkObservation")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.walkObservation")} value={detail.observation ?? ""} onChangeText={(value) => onChange({ ...detail, observation: value.slice(0, 160) })} placeholder={t("ko", "diary.walkObservation")} placeholderTextColor={colors.textSoft} />
     </>
   );
 }
@@ -91,8 +102,11 @@ function WalkDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { 
 function StoolDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { category: "stool" }>; onChange: Props["onChange"] }) {
   return (
     <>
-      <TextInput accessibilityLabel={t("ko", "diary.stoolCount")} style={styles.input} keyboardType="numeric" value={detail.count ?? ""} onChangeText={(value) => onChange({ ...detail, count: value.replace(/[^0-9]/g, "").slice(0, 2) })} placeholder={t("ko", "diary.stoolCount")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.stoolCount")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.stoolCount")} keyboardType="numeric" value={detail.count ?? ""} onChangeText={(value) => onChange({ ...detail, count: value.replace(/[^0-9]/g, "").slice(0, 2) })} placeholder={t("ko", "diary.stoolCount")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.stoolConsistencyLabel")} />
       <SegmentedControl value={detail.consistency ?? "normal"} onChange={(consistency) => onChange({ ...detail, consistency })} items={stoolItems()} />
+      <FieldLabel label={t("ko", "diary.bloodLabel")} />
       <SegmentedControl value={detail.hasBloodOrMucus ? "yes" : "no"} onChange={(value) => onChange({ ...detail, hasBloodOrMucus: value === "yes" })} items={bloodItems()} />
     </>
   );
@@ -101,8 +115,10 @@ function StoolDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, {
 function ConditionDetail({ detail, onChange }: { detail: Extract<DiaryDetailInput, { category: "condition" }>; onChange: Props["onChange"] }) {
   return (
     <>
+      <FieldLabel label={t("ko", "care.energyLevel")} />
       <LevelControl value={detail.energyLevel ?? "normal"} onChange={(energyLevel) => onChange({ ...detail, energyLevel })} />
-      <TextInput accessibilityLabel={t("ko", "diary.discomfortNote")} style={styles.input} value={detail.discomfortNote ?? ""} onChangeText={(value) => onChange({ ...detail, discomfortNote: value.slice(0, 160) })} placeholder={t("ko", "diary.discomfortNote")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "diary.discomfortNote")} />
+      <TextInput style={styles.input} accessibilityLabel={t("ko", "diary.discomfortNote")} value={detail.discomfortNote ?? ""} onChangeText={(value) => onChange({ ...detail, discomfortNote: value.slice(0, 160) })} placeholder={t("ko", "diary.discomfortNote")} placeholderTextColor={colors.textSoft} />
     </>
   );
 }

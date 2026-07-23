@@ -41,6 +41,8 @@ export const icon = {
   lock: { family: "ion", name: "lock-closed-outline" },
   pet: { family: "fa5", name: "dog" },
   close: { family: "ion", name: "close" },
+  eye: { family: "ion", name: "eye-outline" },
+  eyeOff: { family: "ion", name: "eye-off-outline" },
 } as const satisfies Record<string, IconDefinition>;
 
 export type AppIconName = keyof typeof icon;

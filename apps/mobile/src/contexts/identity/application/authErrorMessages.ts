@@ -11,6 +11,9 @@ export function authErrorTranslationKey(error: unknown): IdentityMessageKey {
   const code = typeof details?.code === "string" ? details.code : undefined;
 
   switch (code) {
+    case "email_address_invalid":
+    case "validation_failed":
+      return "auth.emailInvalid";
     case "invalid_credentials":
       return "auth.error.invalidCredentials";
     case "email_not_confirmed":

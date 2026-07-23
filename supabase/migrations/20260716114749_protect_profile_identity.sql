@@ -22,6 +22,14 @@ on conflict (id) do update
 set email = excluded.email,
     updated_at = now();
 
+-- Build the case-insensitive lookup guard only after replacing every
+-- client-writable profile email with the canonical auth.users value. Creating
+-- it in the preceding migration can fail on legacy duplicate or spoofed data
+-- before this repair has a chance to run.
+create unique index if not exists profiles_email_lower_unique_idx
+on public.profiles (lower(email))
+where email is not null;
+
 insert into public.subscription_entitlements (user_id, plan, source)
 select auth_user.id, 'free'::public.subscription_plan, 'identity-backfill'
 from auth.users auth_user

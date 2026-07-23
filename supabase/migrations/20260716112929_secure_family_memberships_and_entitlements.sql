@@ -1,7 +1,3 @@
-create unique index if not exists profiles_email_lower_unique_idx
-on public.profiles (lower(email))
-where email is not null;
-
 drop policy if exists "pet_members owners insert" on public.pet_members;
 drop policy if exists "pet_members owners update" on public.pet_members;
 drop policy if exists "pet_members owners delete" on public.pet_members;

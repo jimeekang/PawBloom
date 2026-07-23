@@ -85,18 +85,21 @@ export function DiaryPhotoPicker({
     <View style={styles.wrap}>
       <View style={styles.photoRow}>
         {photos.map((photo, index) => (
-          <Pressable
-            key={`${photo.uri}-${index}`}
-            accessibilityRole="button"
-            accessibilityLabel={t("ko", "diary.photoRemoveA11y").replace("{count}", String(index + 1))}
-            style={styles.thumbButton}
-            onPress={() => onChange(photos.filter((_, photoIndex) => photoIndex !== index))}
-          >
-            <Image source={{ uri: photo.uri }} style={styles.thumb} />
-            <View style={styles.removeBadge}>
+          <View key={`${photo.uri}-${index}`} style={styles.thumbButton}>
+            <Image source={{ uri: photo.uri }} style={styles.thumb} accessibilityIgnoresInvertColors />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("ko", "diary.photoRemoveA11y").replace("{count}", String(index + 1))}
+              hitSlop={12}
+              style={styles.removeBadge}
+              onPress={() => {
+                onChange(photos.filter((_, photoIndex) => photoIndex !== index));
+                onNotice(t("ko", "diary.photoRemovedNotice"));
+              }}
+            >
               <AppIcon name="close" size={iconSize.xs} color={colors.white} />
-            </View>
-          </Pressable>
+            </Pressable>
+          </View>
         ))}
         {totalPhotoCount < MAX_DIARY_PHOTOS ? (
           <>

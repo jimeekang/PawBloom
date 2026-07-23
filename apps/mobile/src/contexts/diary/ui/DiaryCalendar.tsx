@@ -64,7 +64,7 @@ export function DiaryCalendar({
             >
               <Text style={styles.monthButtonText}>{t("ko", "diary.prevMonth")}</Text>
             </Pressable>
-            <Text style={styles.monthTitle}>{formatMonth(selectedDate, locale)}</Text>
+            <Text style={styles.monthTitle} accessibilityRole="header">{formatMonth(selectedDate, locale)}</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("ko", "diary.nextMonth")}
@@ -89,7 +89,7 @@ export function DiaryCalendar({
                     <Pressable
                       key={day.dateKey}
                       accessibilityRole="button"
-                      accessibilityLabel={formatSelectedDate(parseDateKey(day.dateKey), locale)}
+                      accessibilityLabel={formatDayA11yLabel(day.dateKey, locale)}
                       accessibilityState={{ selected }}
                       style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]}
                       onPress={() => {
@@ -154,6 +154,10 @@ function formatMonth(date: Date, locale: string) {
 
 export function formatSelectedDate(date: Date, locale: string) {
   return new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric", weekday: "short" }).format(date);
+}
+
+function formatDayA11yLabel(dateKey: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", weekday: "long" }).format(parseDateKey(dateKey));
 }
 
 function weekdayLabels(locale: string) {

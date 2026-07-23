@@ -16,14 +16,20 @@ export function isChecklistRecordBlocked({
   entries,
   entryDate,
   pendingKeys,
+  hasPendingMedicationAgenda = false,
 }: {
   key: ChecklistKey;
   checklist: Record<ChecklistKey, boolean>;
   entries: DiaryEntry[];
   entryDate: string;
   pendingKeys: ChecklistKey[];
+  hasPendingMedicationAgenda?: boolean;
 }) {
-  if (pendingKeys.includes(key) || checklist[key]) return true;
+  if (pendingKeys.includes(key)) return true;
+  // 남은 pending 투약이 있으면 이미 완료 dose가 있어도 타일로 계속 기록할 수 있어야 한다
+  // (히어로의 "확인할 투약 N"과 잠긴 타일이 모순되는 것을 방지).
+  if (key === "medication" && hasPendingMedicationAgenda) return false;
+  if (checklist[key]) return true;
 
   const diaryCategory = checklistKeyToDiaryCategory(key);
   if (!diaryCategory) return false;

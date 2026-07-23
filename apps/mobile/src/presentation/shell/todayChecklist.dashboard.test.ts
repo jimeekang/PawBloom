@@ -1,7 +1,14 @@
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { createDashboardSummary, getTodayChecklistOrder } from "./todayChecklist";
+import { buildSampleDiaryEntries } from "../../contexts/diary/ui/sampleDiaryEntries";
+import { buildSampleDoses } from "../../contexts/medication/ui/sampleDoses";
+import { createChecklistFromRecords, createDashboardSummary, getTodayChecklistOrder } from "./todayChecklist";
 import type { ChecklistKey } from "./todayChecklist";
+
+const previewChecklist = createChecklistFromRecords(buildSampleDiaryEntries("pet-1"), buildSampleDoses("pet-1"));
+if (previewChecklist.walk) throw new Error("preview checklist must keep walk incomplete when no walk record exists (a pre-completed walk blocks recording)");
+if (!previewChecklist.medication) throw new Error("preview checklist must reflect the completed sample dose");
+if (!previewChecklist.food || !previewChecklist.water || !previewChecklist.stool) throw new Error("preview checklist must match the sample diary records");
 
 const checklist: Record<ChecklistKey, boolean> = {
   food: true,

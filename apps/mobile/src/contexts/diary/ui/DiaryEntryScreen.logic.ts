@@ -38,6 +38,20 @@ export function getEditableDiaryMemo(entry: DiaryEntry) {
   return entry.memo ?? (entry.detail ? "" : entry.summary);
 }
 
+export function shouldResetDiaryCategorySelection({
+  categories,
+  selected,
+  isEditing,
+}: {
+  categories: DiaryCategory[];
+  selected: DiaryCategory;
+  isEditing: boolean;
+}) {
+  // 편집 중에는 비활성 카테고리(예: 산책 꺼짐)의 기존 기록이라도 원래 카테고리를 보존해야 한다.
+  // 여기서 리셋하면 저장 시 detail이 food로 덮어써지는 데이터 손상이 난다.
+  return !isEditing && !categories.includes(selected);
+}
+
 export function shouldApplyInitialEditingEntry({
   nextEntryId,
   currentEditingEntryId,

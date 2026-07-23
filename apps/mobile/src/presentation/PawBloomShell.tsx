@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import { AppState, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { DiaryEntry } from "../contexts/diary/domain/diaryEntry";
 import { DiaryEntryScreen } from "../contexts/diary/ui/DiaryEntryScreen";
 import { getTodayEntriesForPet, useDiaryEntriesController } from "../contexts/diary/ui/useDiaryEntriesController";
 import { useAuth } from "../contexts/identity/application/authContext";
-import { rescheduleMedicationReminders } from "../contexts/medication/application/medicationReminderNotifications";
-import { rescheduleMealReminders } from "../contexts/routine/application/mealReminderNotifications";
+import { confirmAndSignOut } from "../contexts/identity/ui/signOutConfirm";
 import { hasRecordedMedication } from "../contexts/medication/ui/medicationDoseActions";
 import { shouldMarkMedicationChecklist } from "../contexts/medication/ui/localMedicationState";
 import { useMedicationDosesController } from "../contexts/medication/ui/useMedicationDosesController";
 import { buildQuickDoseFromSchedule } from "../contexts/care/application/carePlanRecords";
+import { findDoseForScheduleDate } from "../contexts/medication/application/medicationDosePayload";
 import type { CareMedicationSchedule, CareSetupInput } from "../contexts/care/domain/carePlan";
 import { useCareSetupState } from "../contexts/care/ui/useCareSetupState";
 import { useRoutineDefaults } from "../contexts/routine/ui/useRoutineDefaults";
-import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../contexts/routine/domain/petRoutine";
+import type { PetRoutineInput } from "../contexts/routine/domain/petRoutine";
 import { type PetProfile } from "../contexts/pet/domain/pet";
 import { useReportDraftSummary } from "../contexts/report/application/reportDraftRecords";
 import { ReportsScreen } from "../contexts/report/ui/ReportsScreen";
@@ -31,13 +31,16 @@ import { BottomNav, type MainTab } from "./ui/BottomNav";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader, SettingsHeader } from "./shell/ShellHeaders";
 import { SaveFeedbackBar } from "./shell/SaveFeedbackBar";
 import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./shell/saveFeedback";
-import { createChecklistFromRecords, initialChecklist } from "./shell/todayChecklist";
+import { createChecklistFromRecords } from "./shell/todayChecklist";
+import { refreshMealReminders, refreshMedicationReminders, useReminderAutoRefresh } from "./shell/reminderScheduling";
+import { buildSampleDiaryEntries } from "../contexts/diary/ui/sampleDiaryEntries";
+import { buildSampleDoses } from "../contexts/medication/ui/sampleDoses";
 import { useTodayChecklistController } from "./shell/useTodayChecklistController";
 import { getTimelineEntryRoute } from "./shell/timelineRouting";
 import { useShellPetSelection } from "./shell/useShellPetSelection";
 import { styles } from "./PawBloomShell.styles";
-import { NoticeBanner } from "../design-system/components";
 import { getShellPermissions } from "./shell/shellPermissions";
+import { NoticeBanner, type NoticeTone } from "../design-system/components";
 import { can } from "../shared-kernel/permissions";
 
 type PawBloomShellProps = { activePet?: PetProfile | null; pets?: PetProfile[]; onPetNext?: () => void };
@@ -55,34 +58,20 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
 
   const [activeTab, setActiveTab] = useState<MainTab>("today");
   const [showPetSettings, setShowPetSettings] = useState(false);
-  const [notice, setNotice] = useState<string>(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
+  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"), tone: "success" });
+  const setNotice = useCallback((text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone }), []);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
-  const [localChecklist, setLocalChecklist] = useState(initialChecklist);
+  const [localChecklist, setLocalChecklist] = useState(() => createChecklistFromRecords(buildSampleDiaryEntries(previewPets[0].id), buildSampleDoses(previewPets[0].id)));
   const showSaveFeedback = useCallback((kind: SaveFeedbackKind) => setSaveFeedback(createSaveFeedback(kind)), []);
   const hideSaveFeedback = useCallback(() => setSaveFeedback(null), []);
 
   useEffect(() => {
     setNotice(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
-  }, [databaseMode, language]);
+  }, [databaseMode, language, setNotice]);
 
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
   const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
-  const reminderScheduleKey = care.activeCareSetup.schedules.map((schedule) => `${schedule.id}:${schedule.localTime}:${schedule.startsOn}:${schedule.endsOn ?? ""}:${schedule.recurrenceIntervalDays}`).join("|");
-  const mealReminderScheduleKey = [routine.activeRoutine.food.mealRemindersEnabled, ...(["breakfast", "lunch", "dinner", "snack"] as RoutineMealSlot[]).map((slot) => `${slot}:${routine.activeRoutine.food.meals[slot]?.localTime ?? ""}`)].join("|");
-  useEffect(() => {
-    if (!databaseMode || care.activeCareSetup.schedules.length === 0) return;
-    const refresh = () => void refreshMedicationReminders(care.activeCareSetup.schedules, false).catch(() => undefined);
-    refresh();
-    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
-    return () => subscription.remove();
-  }, [activePet.id, activePet.name, databaseMode, language, reminderScheduleKey, userId]);
-  useEffect(() => {
-    if (!databaseMode || !userId) return;
-    const refresh = () => void refreshMealReminders(routine.activeRoutine, false).catch(() => undefined);
-    refresh();
-    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
-    return () => subscription.remove();
-  }, [activePet.id, activePet.name, databaseMode, language, mealReminderScheduleKey, userId]);
+  useReminderAutoRefresh({ databaseMode, userId, petId: activePet.id, petName: activePet.name, language, schedules: care.activeCareSetup.schedules, activeRoutine: routine.activeRoutine });
   const medication = useMedicationDosesController({
     activePetId: activePet.id,
     databaseMode,
@@ -152,7 +141,11 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   };
 
   function useCareSchedule(schedule: CareMedicationSchedule) {
-    void Promise.resolve(medication.addMedicationDose(buildQuickDoseFromSchedule(schedule, "pending"))).catch((error: Error) => setNotice(error.message));
+    if (findDoseForScheduleDate(medication.activeDoses, schedule.id, getLocalDateKey())) {
+      setNotice(t("ko", "care.scheduleAlreadyLoaded"));
+      return;
+    }
+    void Promise.resolve(medication.addMedicationDose(buildQuickDoseFromSchedule(schedule, "pending"))).catch(() => undefined);
   }
 
   async function saveCareSetupAndRefreshReminders(input: CareSetupInput) {
@@ -160,10 +153,10 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     const previousScheduleIds = care.activeCareSetup.schedules.map((schedule) => schedule.id);
     const savedSetup = await care.saveCareSetup(input);
     try {
-      const scheduled = await refreshMedicationReminders(savedSetup.schedules, true, previousScheduleIds);
-      setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"));
+      const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: savedSetup.schedules, requestPermission: true, previousScheduleIds });
+      setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"), scheduled ? "success" : "error");
     } catch {
-      setNotice(t("ko", "care.reminderScheduleFailed"));
+      setNotice(t("ko", "care.reminderScheduleFailed"), "error");
     }
     return savedSetup;
   }
@@ -172,43 +165,11 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     await routine.saveRoutine(input);
     if (!databaseMode || !userId) return;
     try {
-      const scheduled = await refreshMealReminders({ ...input, petId: activePet.id }, true);
-      setNotice(scheduled ? t("ko", "routine.mealReminderScheduled") : t("ko", "routine.mealReminderPermissionDenied"));
+      const scheduled = await refreshMealReminders({ userId, petId: activePet.id, petName: activePet.name, routine: { ...input, petId: activePet.id }, requestPermission: true });
+      setNotice(scheduled ? t("ko", "routine.mealReminderScheduled") : t("ko", "routine.mealReminderPermissionDenied"), scheduled ? "success" : "error");
     } catch {
-      setNotice(t("ko", "routine.mealReminderScheduleFailed"));
+      setNotice(t("ko", "routine.mealReminderScheduleFailed"), "error");
     }
-  }
-
-  function refreshMedicationReminders(schedules: CareMedicationSchedule[], requestPermission: boolean, previousScheduleIds: string[] = schedules.map((schedule) => schedule.id)) {
-    if (!userId) return Promise.resolve(false);
-    return rescheduleMedicationReminders({
-      userId,
-      petId: activePet.id,
-      petName: activePet.name,
-      reminderTitle: t("ko", "care.reminderTitle").replace("{petName}", activePet.name),
-      schedules,
-      previousScheduleIds,
-      fromDate: getLocalDateKey(),
-      requestPermission,
-    });
-  }
-
-  function refreshMealReminders(nextRoutine: PetRoutine, requestPermission: boolean) {
-    if (!userId) return Promise.resolve(false);
-    return rescheduleMealReminders({
-      userId,
-      petId: activePet.id,
-      petName: activePet.name,
-      title: t("ko", "routine.mealReminderTitle").replace("{petName}", activePet.name),
-      slotLabels: {
-        breakfast: t("ko", "routine.breakfast"),
-        lunch: t("ko", "routine.lunch"),
-        dinner: t("ko", "routine.dinner"),
-        snack: t("ko", "diary.meal.snack"),
-      },
-      routine: nextRoutine,
-      requestPermission,
-    });
   }
 
   function openTimelineEntry(entry: DiaryEntry) {
@@ -216,9 +177,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (!canUpdateDiary) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
     diary.setTimelineEditEntry(entry); diary.setSelectedDiaryDate(entry.entryDate); diary.setDiaryFilter("day"); setActiveTab("diary");
   }
-  function handleSignOut() { void signOut(); }
-  const homeNotice = notice === t("ko", "today.databaseNotice") ? "" : notice;
-  const nonHomeNotice = notice === t("ko", "today.databaseNotice") || notice === t("ko", "today.previewNotice") ? "" : notice;
+  function handleSignOut() { void confirmAndSignOut(signOut); }
+  const homeNotice = notice.text === t("ko", "today.databaseNotice") ? "" : notice.text;
+  const nonHomeNotice = notice.text === t("ko", "today.databaseNotice") || notice.text === t("ko", "today.previewNotice") ? "" : notice.text;
 
   if (showPetSettings) {
     return (
@@ -236,16 +197,16 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.appFrame}>
         {activeTab === "today" ? <HomeHeader petName={activePet.name} onPetPress={handlePetPress} canSwitchPet={canCyclePet} /> : null}
-        {activeTab === "diary" ? <DiaryHeader onBack={() => setActiveTab("today")} /> : null}
+        {activeTab === "diary" ? <DiaryHeader /> : null}
         {activeTab === "care" ? <CareHeader /> : null}
         {activeTab === "reports" ? <ReportsHeader /> : null}
         {activeTab === "settings" ? <SettingsHeader /> : null}
 
-        <ScrollView key={activeTab} style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView key={activeTab} style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <OfflineConflictNotice key={userId ?? "signed-out"} userId={userId} />
-          {activeTab !== "today" && nonHomeNotice ? <NoticeBanner text={nonHomeNotice} icon="shield" /> : null}
-          {activeTab === "today" ? <HomeScreen pet={activePet} userId={userId} checklist={checklist} entries={diary.activeEntries} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} walkEnabled={routine.activeRoutine.walk.enabled !== false} includeMedication showMedicationSummary={hasCareRecords} notice={homeNotice} onChecklistToggle={toggleChecklist} onViewTimelineAll={() => { diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day"); setActiveTab("diary"); }} onTimelineEntryPress={openTimelineEntry} /> : null}
-          {activeTab === "diary" ? <DiaryEntryScreen entries={diary.selectedDiaryEntries} selectedDateKey={diary.selectedDiaryDate} filter={diary.diaryFilter} onDateChange={diary.setSelectedDiaryDate} onFilterChange={diary.setDiaryFilter} onSave={diary.saveDiaryEntry} onUpdate={diary.updateDiaryRecord} onDelete={diary.deleteDiaryRecord} routine={routine.activeRoutine} petSpecies={activePet.species} initialEditingEntry={diary.timelineEditEntry} onInitialEditingEntryConsumed={() => diary.setTimelineEditEntry(null)} canCreate={canCreateDiary} canUpdate={canUpdateDiary} canDelete={canDeleteDiary} /> : null}
+          {activeTab !== "today" && nonHomeNotice ? <NoticeBanner text={nonHomeNotice} icon={notice.tone === "error" ? "close" : "shield"} tone={notice.tone} /> : null}
+          {activeTab === "today" ? <HomeScreen pet={activePet} userId={userId} checklist={checklist} entries={diary.activeEntries} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} walkEnabled={routine.activeRoutine.walk.enabled !== false} includeMedication showMedicationSummary={hasCareRecords} notice={homeNotice} noticeTone={notice.tone} onChecklistToggle={toggleChecklist} onViewTimelineAll={() => { diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day"); setActiveTab("diary"); }} onTimelineEntryPress={openTimelineEntry} /> : null}
+          {activeTab === "diary" ? <DiaryEntryScreen entries={diary.selectedDiaryEntries} selectedDateKey={diary.selectedDiaryDate} filter={diary.diaryFilter} onDateChange={diary.setSelectedDiaryDate} onFilterChange={diary.setDiaryFilter} onSave={diary.saveDiaryEntry} onUpdate={diary.updateDiaryRecord} onDelete={diary.deleteDiaryRecord} routine={routine.activeRoutine} petSpecies={activePet.species} initialEditingEntry={diary.timelineEditEntry} onInitialEditingEntryConsumed={() => diary.setTimelineEditEntry(null)} canCreate={canCreateDiary} canUpdate={canUpdateDiary} canDelete={canDeleteDiary} listStatus={diary.selectedDiaryStatus} onRetryList={diary.refetchSelectedDiary} /> : null}
           {activeTab === "care" ? <CareModeScreen petId={activePet.id} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} onAgendaStatusChange={medication.saveAgendaStatus} onAddDose={medication.addMedicationDose} onUpdateDose={medication.updateDoseRecord} onDeleteDose={medication.deleteDoseRecord} onSaveCareSetup={saveCareSetupAndRefreshReminders} onUseSchedule={useCareSchedule} onOpenProfileCare={() => setShowPetSettings(true)} onGenerateReport={() => setActiveTab("reports")} conditionScore={diary.latestConditionScore} careSetup={care.activeCareSetup} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canGenerateReport || canShareReport} /> : null}
           {activeTab === "reports" ? <ReportsScreen report={reportWorkflow.report} reportSummary={reportSummary} canGenerate={reportWorkflow.canGenerate} canConfirm={reportWorkflow.canConfirm} canShare={reportWorkflow.canShare} blockedReason={reportWorkflow.blockedReason} error={reportWorkflow.error} pendingAction={reportWorkflow.pendingAction} isBusy={reportWorkflow.isBusy} onGenerate={() => void reportWorkflow.generate()} onConfirm={() => void reportWorkflow.confirm()} onShare={() => void reportWorkflow.share()} onRevoke={() => reportWorkflow.revoke()} onReset={reportWorkflow.reset} onNewDiary={() => setActiveTab("diary")} /> : null}
           {activeTab === "settings" ? <SettingsHubScreen email={user?.email} configured={configured} userId={userId} activePet={activePet} ownedPetCount={ownedPetCount} onOpenPetProfiles={() => setShowPetSettings(true)} onSignOut={handleSignOut} /> : null}

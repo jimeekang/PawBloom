@@ -11,7 +11,7 @@ import type { DraftDiaryEntry } from "./draftDiaryEntry";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
 import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
 import { DiaryEntryList } from "./DiaryEntryList";
-import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 import { styles } from "./DiaryEntryScreen.styles";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -37,6 +37,8 @@ export function DiaryEntryScreen({
   canCreate = true,
   canUpdate = true,
   canDelete = true,
+  listStatus = "ready",
+  onRetryList,
 }: {
   entries: DiaryEntry[];
   selectedDateKey: string;
@@ -53,6 +55,8 @@ export function DiaryEntryScreen({
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
+  listStatus?: "ready" | "loading" | "error";
+  onRetryList?: () => void;
 }) {
   const [selected, setSelected] = useState<DiaryCategory>("food");
   const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -74,7 +78,9 @@ export function DiaryEntryScreen({
   const photoDateKey = editingEntry?.entryDate ?? selectedDateKey;
   const savedPhotoCount = useMemo(() => countSavedDiaryPhotosForDate(entries, photoDateKey, editingEntry), [editingEntry, entries, photoDateKey]);
   const saveBlockedByRole = editingEntry ? !canUpdate : existingStructuredEntry ? !canUpdate : !canCreate;
-  useEffect(() => { if (!categories.includes(selected)) setSelected(categories[0]); }, [categories, selected]);
+  useEffect(() => {
+    if (shouldResetDiaryCategorySelection({ categories, selected, isEditing: Boolean(editingEntry) })) setSelected(categories[0]);
+  }, [categories, editingEntry, selected]);
   useEffect(() => {
     if (!editingEntry) setDetail(createDetailForCategory(selected, routine));
   }, [editingEntry, routine, selected]);
@@ -127,7 +133,7 @@ export function DiaryEntryScreen({
       if (editingEntry) {
         await onUpdate({ id: editingEntry.id, ...draft, occurredTime: saveTime });
         setEditingEntry(null);
-        setNotice(t("ko", "diary.updatedForDate"));
+        setNotice(t("ko", "diary.localDraft"));
       } else {
         const existingDailyEntry = findEditableDailyStructuredEntry(entries, selected, draft.entryDate ?? selectedDateKey);
         if (existingDailyEntry) {
@@ -136,10 +142,10 @@ export function DiaryEntryScreen({
             return;
           }
           await onUpdate({ id: existingDailyEntry.id, ...draft, occurredTime: saveTime });
-          setNotice(t("ko", "diary.updatedForDate"));
+          setNotice(t("ko", "diary.localDraft"));
         } else {
           const outcome = await onSave(draft);
-          setNotice(t("ko", outcome === "queued" ? "diary.queuedForSync" : "diary.savedForDate"));
+          setNotice(t("ko", outcome === "queued" ? "diary.queuedForSync" : "diary.localDraft"));
         }
       }
     } catch {
@@ -236,7 +242,7 @@ export function DiaryEntryScreen({
       <TimePickerField accessibilityLabel={t("ko", "diary.timeLabel")} value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
 
       <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
-      <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} />
+      <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} showEntryDate={filter === "week"} status={listStatus} onRetry={onRetryList} />
     </View>
   );
 }

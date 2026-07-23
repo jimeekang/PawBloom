@@ -52,6 +52,17 @@ if (!isChecklistRecordBlocked({ key: "food", checklist: emptyChecklist, entries:
   throw new Error("today checklist must block duplicate structured category records for the same day");
 }
 
+const medicationDoneChecklist: Record<ChecklistKey, boolean> = { ...emptyChecklist, medication: true };
+if (isChecklistRecordBlocked({ key: "medication", checklist: medicationDoneChecklist, entries: [], entryDate: "2026-06-30", pendingKeys: [], hasPendingMedicationAgenda: true })) {
+  throw new Error("medication tile must stay tappable while scheduled doses are still pending");
+}
+if (!isChecklistRecordBlocked({ key: "medication", checklist: medicationDoneChecklist, entries: [], entryDate: "2026-06-30", pendingKeys: [], hasPendingMedicationAgenda: false })) {
+  throw new Error("medication tile must block duplicate quick records when nothing is pending");
+}
+if (!isChecklistRecordBlocked({ key: "medication", checklist: medicationDoneChecklist, entries: [], entryDate: "2026-06-30", pendingKeys: ["medication"], hasPendingMedicationAgenda: true })) {
+  throw new Error("medication tile must block a second tap while a save is in flight");
+}
+
 const checklistResult = createLocalChecklistRecord({
   key: "food",
   entryDate: "2026-07-01",

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl } from "../../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, type NoticeTone } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -26,7 +26,8 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   const [reactionNote, setReactionNote] = useState("");
   const [status, setStatus] = useState<DoseStatus>("completed");
   const [scheduledTime, setScheduledTime] = useState("");
-  const [notice, setNotice] = useState<string>(t("ko", "care.quickDoseNotice"));
+  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: t("ko", "care.quickDoseNotice"), tone: "success" });
+  const setNotice = (text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone });
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const isEditing = Boolean(editingDose);
@@ -55,12 +56,12 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
     }
 
     if (!medicationName.trim()) {
-      setNotice(t("ko", "care.quickDoseMedicationRequired"));
+      setNotice(t("ko", "care.quickDoseMedicationRequired"), "error");
       return;
     }
 
     if (isEditing && !isValidDoseTime(scheduledTime)) {
-      setNotice(t("ko", "care.quickDoseInvalidTime"));
+      setNotice(t("ko", "care.quickDoseInvalidTime"), "error");
       return;
     }
 
@@ -77,7 +78,12 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
       }
       setNotice(t("ko", quickDoseSavedNoticeKey(status)));
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("ko", isEditing ? "care.quickDoseUpdateFailed" : "care.quickDoseNotice"));
+      const message = isEditing
+        ? t("ko", "care.quickDoseUpdateFailed")
+        : error instanceof Error
+          ? error.message
+          : t("ko", "care.quickDoseSaveFailed");
+      setNotice(message, "error");
     } finally {
       savingRef.current = false;
       setIsSaving(false);
@@ -97,8 +103,8 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
       if (shouldCloseMedicationEditAfterDelete(deleted)) {
         onCancelEdit?.();
       }
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : t("ko", "care.quickDoseDeleteFailed"));
+    } catch {
+      setNotice(t("ko", "care.quickDoseDeleteFailed"), "error");
     } finally {
       savingRef.current = false;
       setIsSaving(false);
@@ -119,7 +125,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   return (
     <View style={styles.quickForm}>
       <Text style={styles.sectionTitle}>{t("ko", isEditing ? "care.quickDoseEditTitle" : "care.quickDoseTitle")}</Text>
-      <NoticeBanner text={notice} icon="medication" />
+      <NoticeBanner text={notice.text} icon={notice.tone === "error" ? "close" : "medication"} tone={notice.tone} />
       <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
       <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
       {isEditing ? <TimePickerField accessibilityLabel={t("ko", "care.medicationTimeLabel")} value={scheduledTime} onChange={setScheduledTime} /> : null}

@@ -1,5 +1,5 @@
 import type { CreateDiaryEntryInput } from "../domain/diaryEntry";
-import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, resolveRemoteDiarySaveOutcome, shouldApplyInitialEditingEntry } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, resolveRemoteDiarySaveOutcome, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 
 if (isDiaryDetailPanelOpenAfterSave(true) !== false) {
@@ -72,6 +72,17 @@ if (findEditableDailyStructuredEntry([existingChecklistFood], "food", "2026-07-0
 
 if (getDiaryEntryDateForSave("2026-06-28", { entryDate: "2026-06-24" }) !== "2026-06-24") {
   throw new Error("diary edit mode must preserve the edited entry date");
+}
+
+const categoriesWithoutWalk = ["food", "water", "stool", "condition", "memo", "photo"] as const;
+if (shouldResetDiaryCategorySelection({ categories: [...categoriesWithoutWalk], selected: "walk", isEditing: true })) {
+  throw new Error("editing a walk entry while walk is disabled must keep the walk category (prevents silent food overwrite)");
+}
+if (!shouldResetDiaryCategorySelection({ categories: [...categoriesWithoutWalk], selected: "walk", isEditing: false })) {
+  throw new Error("outside editing, a disabled category selection must reset to an available category");
+}
+if (shouldResetDiaryCategorySelection({ categories: [...categoriesWithoutWalk], selected: "food", isEditing: false })) {
+  throw new Error("an available category selection must not be reset");
 }
 
 if (!shouldApplyInitialEditingEntry({ nextEntryId: "entry-water", currentEditingEntryId: null, lastAppliedEntryId: null })) {

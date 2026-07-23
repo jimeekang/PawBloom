@@ -1,9 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
-import { PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { useAuth } from "../application/authContext";
 
 export function SettingsScreen({
   email,
@@ -17,6 +18,7 @@ export function SettingsScreen({
   onSignOut: () => void;
 }) {
   const { language, setLanguage } = useLanguage();
+  const { error: identityError } = useAuth();
 
   return (
     <View style={styles.screen}>
@@ -30,6 +32,7 @@ export function SettingsScreen({
           {configured
             ? <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
             : <Text style={styles.copy}>{t("ko", "settings.previewCopy")}</Text>}
+          {identityError ? <NoticeBanner text={t("ko", identityError)} icon="close" tone="error" /> : null}
         </View>
       </SurfaceCard>
 

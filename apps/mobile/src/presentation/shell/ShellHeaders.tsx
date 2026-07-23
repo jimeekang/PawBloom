@@ -38,14 +38,14 @@ export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProp
   );
 }
 
-export function DiaryHeader({ onBack }: BackHeaderProps) {
+export function DiaryHeader() {
   return (
     <View style={styles.header}>
-      <AppIconButton iconName="back" label={t("ko", "navigation.back")} onPress={onBack} />
-      <Text style={styles.screenTitle}>{t("ko", "diary.title")}</Text>
-      <View style={styles.headerSpacer}>
-        <AppIcon name="calendar" size={iconSize.md} color={colors.textSoft} />
+      <View style={styles.careTitleRow}>
+        <AppIcon name="diary" size={iconSize.lg} color={colors.orangeDeep} />
+        <Text style={styles.screenTitle}>{t("ko", "tabs.diary")}</Text>
       </View>
+      <View style={styles.headerSpacer} />
     </View>
   );
 }

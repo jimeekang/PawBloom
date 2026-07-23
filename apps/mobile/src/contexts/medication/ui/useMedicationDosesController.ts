@@ -9,6 +9,7 @@ import { buildSampleDoses, relocalizeSampleDoses } from "./sampleDoses";
 import { confirmAndDeleteMedicationDose, saveMedicationAgendaStatus as saveMedicationAgendaStatusAction, saveMedicationDoseEdit, type MedicationSaveFeedbackKind } from "./medicationDoseActions";
 import { createTodayMedicationAgendaRows, type TodayMedicationAgendaRow } from "./todayMedicationAgenda";
 import type { Language } from "../../../shared-kernel/types";
+import { isDuplicateMedicationDoseError } from "../application/medicationDosePayload";
 
 type Params = {
   activePetId: string;
@@ -18,7 +19,7 @@ type Params = {
   fallbackPetId: string;
   language: Language;
   schedules: MedicationSchedule[];
-  onNotice: (notice: string) => void;
+  onNotice: (notice: string, tone?: "success" | "error") => void;
   onSaved: (kind: MedicationSaveFeedbackKind) => void;
   onLocalDoseSaved: (input: QuickMedicationDoseInput) => void;
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => void;
@@ -54,8 +55,8 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
       onNotice(t("ko", "care.medicationAdded"));
       onSaved("medication");
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("ko", "care.quickDoseNotice");
-      onNotice(message);
+      const message = t("ko", isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
+      onNotice(message, "error");
       throw new Error(message);
     }
   }

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from "
 import type { DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord, DoseStatus } from "../../contexts/medication/domain/medication";
 import { findPendingMedicationAgendaRow, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
-import { t } from "../../i18n/translations";
+import { confirmPrimaryAction } from "../../design-system/confirmAction";
+import { t, type TranslationKey } from "../../i18n/translations";
 import { getLocalDateKey } from "../../shared-kernel/date";
 import { createLocalChecklistRecord, isChecklistRecordBlocked, recordRemoteChecklistItem } from "./checklistActions";
 import { applyLocalMedicationUndo, createRestoreMedicationUndoFromAgenda, resolveDiaryChecklistUndo, resolveMedicationUndoDose, type MedicationChecklistUndo } from "./checklistUndo";
@@ -31,7 +32,7 @@ type Params = {
   deleteDiaryEntryRemote: (id: string) => Promise<unknown>;
   deleteMedicationDoseRemote: (id: string) => Promise<unknown>;
   updateMedicationDoseStatusRemote: (input: { id: string; status: DoseStatus }) => Promise<unknown>;
-  setNotice: (notice: string) => void;
+  setNotice: (notice: string, tone?: "success" | "error") => void;
   showSaveFeedback: (kind: SaveFeedbackKind) => void;
 };
 
@@ -47,41 +48,65 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
   function toggleChecklist(key: ChecklistKey) {
     const today = getLocalDateKey();
     if (pendingChecklistKeys.current.includes(key)) return;
+    const pendingMedicationAgendaRow = key === "medication" ? findPendingMedicationAgendaRow(medicationAgenda) : undefined;
     if (checklist[key]) {
-      pendingChecklistKeys.current = [...pendingChecklistKeys.current, key];
-      void undoChecklistItem(key, today)
-        .catch((error: Error) => setNotice(error.message))
-        .finally(() => clearPendingKey(key));
-      return;
+      if (!pendingMedicationAgendaRow) {
+        pendingChecklistKeys.current = [...pendingChecklistKeys.current, key];
+        void undoChecklistItem(key, today)
+          .catch((error: Error) => setNotice(error.message, "error"))
+          .finally(() => clearPendingKey(key));
+        return;
+      }
     }
-    if (isChecklistRecordBlocked({ key, checklist, entries: activeEntries, entryDate: today, pendingKeys: pendingChecklistKeys.current })) {
+    if (isChecklistRecordBlocked({ key, checklist, entries: activeEntries, entryDate: today, pendingKeys: pendingChecklistKeys.current, hasPendingMedicationAgenda: Boolean(pendingMedicationAgendaRow) })) {
       setNotice(t("ko", "today.checklistAlreadyRecorded"));
       return;
     }
     pendingChecklistKeys.current = [...pendingChecklistKeys.current, key];
-    const pendingMedicationAgendaRow = key === "medication" ? findPendingMedicationAgendaRow(medicationAgenda) : undefined;
-    if (pendingMedicationAgendaRow) {
-      if (!databaseMode) {
-        const currentDose = pendingMedicationAgendaRow.doseId ? activeDoses.find((dose) => dose.id === pendingMedicationAgendaRow.doseId) : undefined;
-        medicationUndoRef.current = createRestoreMedicationUndoFromAgenda(pendingMedicationAgendaRow, activePetId, currentDose);
-        const saveResult = saveMedicationAgendaStatus(pendingMedicationAgendaRow, "completed");
-        if (saveResult) saveResult.finally(() => clearPendingKey(key));
-        else setTimeout(() => clearPendingKey(key), 0);
+    void confirmChecklistRecord(key).then((confirmed) => {
+      if (!confirmed) {
+        clearPendingKey(key);
         return;
       }
-      void recordRemoteMedicationAgendaItem(pendingMedicationAgendaRow)
-        .catch((error: Error) => setNotice(error.message))
+      if (pendingMedicationAgendaRow) {
+        if (!databaseMode) {
+          const currentDose = pendingMedicationAgendaRow.doseId ? activeDoses.find((dose) => dose.id === pendingMedicationAgendaRow.doseId) : undefined;
+          medicationUndoRef.current = createRestoreMedicationUndoFromAgenda(pendingMedicationAgendaRow, activePetId, currentDose);
+          void Promise.resolve(saveMedicationAgendaStatus(pendingMedicationAgendaRow, "completed"))
+            .catch((error: Error) => {
+              medicationUndoRef.current = null;
+              setNotice(error.message, "error");
+            })
+            .finally(() => clearPendingKey(key));
+          return;
+        }
+        void recordRemoteMedicationAgendaItem(pendingMedicationAgendaRow)
+          .catch((error: Error) => setNotice(error.message, "error"))
+          .finally(() => clearPendingKey(key));
+        return;
+      }
+      if (!databaseMode) {
+        recordLocalChecklistItem(key, today);
+        setTimeout(() => clearPendingKey(key), 0);
+        return;
+      }
+      void recordChecklistItem(key)
+        .catch((error: Error) => setNotice(error.message, "error"))
         .finally(() => clearPendingKey(key));
-      return;
-    }
-    if (!databaseMode) {
-      recordLocalChecklistItem(key, today);
-      setTimeout(() => clearPendingKey(key), 0);
-      return;
-    }
-    void recordChecklistItem(key)
-      .catch((error: Error) => setNotice(error.message))
-      .finally(() => clearPendingKey(key));
+    });
+  }
+
+  function confirmChecklistRecord(key: ChecklistKey) {
+    const itemLabel = t("ko", `category.${key === "medication" ? "medication" : key}` as TranslationKey);
+    return confirmPrimaryAction(
+      {
+        title: t("ko", "today.checklistConfirmTitle"),
+        message: t("ko", "today.checklistConfirmCopy").replace("{item}", itemLabel),
+        cancelText: t("ko", "today.checklistConfirmCancel"),
+        confirmText: t("ko", "today.checklistConfirmConfirm"),
+      },
+      () => true,
+    );
   }
 
   function recordLocalChecklistItem(key: ChecklistKey, entryDate: string) {

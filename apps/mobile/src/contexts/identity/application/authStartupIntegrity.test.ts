@@ -2,7 +2,10 @@ declare const require: (moduleName: string) => unknown;
 declare const process: { cwd(): string };
 
 const { readFileSync } = require("node:fs") as { readFileSync(path: string, encoding: "utf8"): string };
-const source = readFileSync(`${process.cwd()}/apps/mobile/src/contexts/identity/application/authContextState.ts`, "utf8");
+// 세션 부트스트랩/리스너는 useAuthSessionSync로 분리되어 두 파일이 함께 불변식을 이룬다.
+const source =
+  readFileSync(`${process.cwd()}/apps/mobile/src/contexts/identity/application/authContextState.ts`, "utf8") +
+  readFileSync(`${process.cwd()}/apps/mobile/src/contexts/identity/application/useAuthSessionSync.ts`, "utf8");
 
 if (source.includes("onAuthStateChange(async")) {
   throw new Error("auth state callbacks must return synchronously before starting Supabase-backed synchronization");
