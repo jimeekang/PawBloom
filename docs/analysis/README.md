@@ -12,7 +12,7 @@ edit_policy: exclusive
 
 이 디렉터리는 PawBloom 제품 전면 분석 7종과, 2026-07-04에 수행된 제품 감사(archived)의 진입 설명을 담는다.
 
-## 분석 문서 7종
+## 분석 문서 8종
 
 - [00. 종합 요약](00-executive-summary.md) — 전체 분석의 핵심 결론·우선순위·의사결정 요약.
 - [01. 시장 조사 (호주·한국)](01-market-research.md) — 대상 시장 규모·경쟁·수요 근거.
@@ -21,6 +21,7 @@ edit_policy: exclusive
 - [04. 비즈니스·수익화](04-business-monetization.md) — 과금 모델·전환·수익화 준비도.
 - [05. 앱스토어 제출 준비도](05-app-store-readiness.md) — 2026-07-19 제출 가능 여부 판정(불가)·블로커 3건·필수 6건·로드맵.
 - [06. 전 화면 UI/UX 전수 감사 (2026-07-18)](06-uiux-full-audit-2026-07-18.md) — 8영역 병렬 감사 + 적대적 검증 확정 92건, 실행 계획은 exec-plans/0005.
+- [07. 전 화면 UI/UX 전수 재감사 (2026-07-23)](07-uiux-full-audit-2026-07-23.md) — 0005 백로그 전 항목 코드 실검증 재판정 + 신규 발굴, 확정 72건(고유 60건: P1 2·P2 24·P3 34), 실행 계획은 exec-plans/0006.
 
 ## 감사 이력 요약 (Product Analysis, 2026-07-04, archived)
 
