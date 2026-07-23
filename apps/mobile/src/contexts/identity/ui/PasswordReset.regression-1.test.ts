@@ -18,6 +18,7 @@ function occurrences(source: string, needle: string) {
 }
 
 const authScreen = read("src/contexts/identity/ui/AuthScreen.tsx");
+const recoveryScreen = read("src/contexts/identity/ui/PasswordRecoveryScreen.tsx");
 const authActions = read("src/contexts/identity/application/useAuthActions.ts");
 const appEntry = read("App.tsx");
 const appGate = read("src/presentation/appGate.ts");
@@ -33,6 +34,10 @@ if (!authActions.includes("resetPasswordForEmail") || !authActions.includes("upd
 
 if (!appEntry.includes("PasswordRecoveryScreen")) {
   throw new Error("App gate must mount PasswordRecoveryScreen for recovery deep links");
+}
+
+if (!recoveryScreen.includes("auth.resetDone") || !recoveryScreen.includes("auth.resetContinue")) {
+  throw new Error("PasswordRecoveryScreen must confirm success on-screen before leaving the recovery gate (review finding)");
 }
 
 if (!appGate.includes('"password-recovery"')) {

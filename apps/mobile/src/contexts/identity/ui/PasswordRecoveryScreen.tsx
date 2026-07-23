@@ -16,6 +16,7 @@ export function PasswordRecoveryScreen() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<TranslationKey | null>(null);
+  const [done, setDone] = useState(false);
   const submissionInFlight = useRef(false);
 
   async function submit() {
@@ -34,10 +35,23 @@ export function PasswordRecoveryScreen() {
 
     submissionInFlight.current = true;
     try {
-      await updatePassword(password);
+      const failureKey = await updatePassword(password);
+      if (failureKey === null) setDone(true);
     } finally {
       submissionInFlight.current = false;
     }
+  }
+
+  if (done) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.title}>{t("ko", "auth.newPasswordTitle")}</Text>
+          <NoticeBanner text={t("ko", "auth.resetDone")} icon="check" />
+          <PrimaryButton label={t("ko", "auth.resetContinue")} onPress={cancelPasswordRecovery} />
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
 
   return (

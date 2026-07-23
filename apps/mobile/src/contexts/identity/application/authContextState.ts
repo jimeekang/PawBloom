@@ -149,7 +149,6 @@ export function useAuthState() {
   const { signIn, signUp, signOut, requestPasswordReset, updatePassword } = useAuthActions({
     clearMessages,
     onSignedOut: handleSignedOut,
-    onPasswordUpdated: endPasswordRecovery,
     setLoading: setAuthLoading,
     setSession,
     setUser,

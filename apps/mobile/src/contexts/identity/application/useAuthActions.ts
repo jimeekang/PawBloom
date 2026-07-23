@@ -11,7 +11,6 @@ import type { IdentityMessageKey } from "./identityMessage";
 type AuthActionState = {
   clearMessages: () => void;
   onSignedOut: () => void;
-  onPasswordUpdated: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setSession: Dispatch<SetStateAction<Session | null>>;
   setUser: Dispatch<SetStateAction<User | null>>;
@@ -24,7 +23,6 @@ type AuthActionState = {
 export function useAuthActions({
   clearMessages,
   onSignedOut,
-  onPasswordUpdated,
   setLoading,
   setSession,
   setUser,
@@ -147,7 +145,9 @@ export function useAuthActions({
         return messageKey;
       }
 
-      onPasswordUpdated();
+      // The recovery gate stays open — PasswordRecoveryScreen shows the
+      // success state and the user leaves it explicitly (review: the banner
+      // would otherwise vanish into the shell, which never renders authMessage).
       setAuthMessage("auth.resetDone");
       return null;
     } catch (rawError) {
@@ -158,7 +158,7 @@ export function useAuthActions({
       actionInFlight.current = false;
       setLoading(false);
     }
-  }, [clearMessages, onPasswordUpdated, setAuthMessage, setError, setLoading]);
+  }, [clearMessages, setAuthMessage, setError, setLoading]);
 
   const signOut = useCallback(async () => {
     if (!supabase || actionInFlight.current) return;
