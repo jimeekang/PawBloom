@@ -93,8 +93,8 @@ export function SettingsScreen({
             value={language}
             onChange={setLanguage}
             items={[
-              { label: t("ko", "settings.languageKo"), value: "ko" },
-              { label: t("ko", "settings.languageEn"), value: "en" },
+              { label: t("ko", "language.koNative"), value: "ko" },
+              { label: t("ko", "language.enNative"), value: "en" },
             ]}
           />
           <Text style={styles.copy}>{t("ko", "settings.languageCopy")}</Text>
