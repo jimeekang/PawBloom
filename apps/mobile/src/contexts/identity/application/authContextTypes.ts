@@ -29,4 +29,5 @@ export type AppAuthState = {
   selectNextPet: () => void;
   retryPetLoad: () => void;
   resetMessage: () => void;
+  announceAccountDeleted: () => void;
 };

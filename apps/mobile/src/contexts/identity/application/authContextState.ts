@@ -38,6 +38,13 @@ export function useAuthState() {
     setAuthMessage(null);
   }, []);
 
+  // Set after sign-out completes so it wins over any message the SIGNED_OUT
+  // auth callback wrote while the session was being torn down.
+  const announceAccountDeleted = useCallback(() => {
+    setError(null);
+    setAuthMessage("auth.accountDeleted");
+  }, []);
+
   const loadPets = useCallback(async (userId: string, blocking = true) => {
     const requestRevision = ++petLoadRevisionRef.current;
     const isCurrentRequest = () => isCurrentAccountWork(activeUserIdRef.current, userId, petLoadRevisionRef.current, requestRevision);
@@ -191,5 +198,6 @@ export function useAuthState() {
     selectNextPet,
     retryPetLoad,
     resetMessage: clearMessages,
+    announceAccountDeleted,
   } satisfies AppAuthState;
 }

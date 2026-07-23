@@ -1,5 +1,6 @@
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
@@ -30,15 +31,19 @@ export function SettingsScreen({
 
   const confirmDeleteAccount = () => {
     accountDeletion.requestConfirm();
-    Alert.alert(
-      t("ko", "settings.deleteAccountConfirmTitle"),
-      t("ko", "settings.deleteAccountConfirmBody"),
-      [
-        { text: t("ko", "settings.deleteAccountConfirmCancel"), style: "cancel", onPress: accountDeletion.cancelConfirm },
-        { text: t("ko", "settings.deleteAccountConfirmAction"), style: "destructive", onPress: () => void accountDeletion.deleteAccount() },
-      ],
-      { cancelable: true, onDismiss: accountDeletion.cancelConfirm },
-    );
+    void confirmDestructiveAction(
+      {
+        title: t("ko", "settings.deleteAccountConfirmTitle"),
+        message: t("ko", "settings.deleteAccountConfirmBody"),
+        cancelText: t("ko", "settings.deleteAccountConfirmCancel"),
+        confirmText: t("ko", "settings.deleteAccountConfirmAction"),
+      },
+      async () => (await accountDeletion.deleteAccount()).ok,
+    ).then((confirmed) => {
+      // cancel is a no-op unless the dialog was dismissed while still confirming,
+      // so a failed deletion keeps its error state for the retry banner.
+      if (!confirmed) accountDeletion.cancelConfirm();
+    });
   };
 
   return (
@@ -56,12 +61,13 @@ export function SettingsScreen({
           {configured ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ disabled: deleting }}
+              accessibilityState={{ disabled: deleting, busy: deleting }}
               disabled={deleting}
               style={({ pressed }) => [styles.deleteButton, pressed && !deleting && styles.deleteButtonPressed, deleting && styles.deleteButtonDisabled]}
               onPress={confirmDeleteAccount}
             >
-              <Text style={styles.deleteButtonText}>{t("ko", "settings.deleteAccount")}</Text>
+              {deleting ? <ActivityIndicator size="small" color={colors.danger} /> : null}
+              <Text style={styles.deleteButtonText}>{t("ko", deleting ? "settings.deleteAccountInProgress" : "settings.deleteAccount")}</Text>
             </Pressable>
           ) : null}
           {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("ko", "settings.deleteAccountError")} icon="close" tone="error" /> : null}
@@ -156,6 +162,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
+    gap: spacing.sm,
   },
   deleteButtonPressed: {
     backgroundColor: colors.surfacePeach,

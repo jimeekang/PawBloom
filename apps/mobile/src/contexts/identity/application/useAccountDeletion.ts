@@ -12,7 +12,7 @@ import type { AccountDeletionResult } from "./authContextTypes";
 // auth.admin.deleteUser), then mirrors sign-out cleanup by cancelling this
 // account's locally scheduled reminders before tearing down the session.
 export function useAccountDeletion() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, announceAccountDeleted } = useAuth();
   const [state, dispatch] = useReducer(accountDeletionReducer, initialAccountDeletionState);
 
   const requestConfirm = useCallback(() => dispatch({ type: "request" }), []);
@@ -34,6 +34,7 @@ export function useAccountDeletion() {
       await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
       await cancelMealRemindersForAccount(userId).catch(() => undefined);
       await signOut().catch(() => undefined);
+      announceAccountDeleted();
 
       dispatch({ type: "succeed" });
       return { ok: true };
@@ -41,7 +42,7 @@ export function useAccountDeletion() {
       dispatch({ type: "fail" });
       return { ok: false };
     }
-  }, [signOut, user?.id]);
+  }, [announceAccountDeleted, signOut, user?.id]);
 
   return {
     status: state.status,
