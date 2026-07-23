@@ -20,15 +20,15 @@ edit_policy: exclusive
 
 ## Phase B — P2: 동작·데이터 결함
 
-- [ ] B1. **세션 만료 오발화 수정** — useAuthActions.ts signOut 진입부(supabase.auth.signOut() 호출 전)에서 explicitSignOutRef를 true로 선설정(실패 시 원복). useAccountDeletion 경로 포함. 수용 기준: 로그아웃·계정삭제 후 '세션 만료' 미표시, 실제 토큰 만료 시에만 표시(기존 테스트 + 신규 회귀 테스트).
-- [ ] B2. **홈 로딩/에러 상태 전달** — diaryQuery·dosesQuery의 isLoading/isError를 HomeScreen props로 전달, 로딩 스켈레톤(또는 로딩 배너)+실패 시 오류 배너·재시도(다이어리 D1 패턴 재사용). 로딩 중 체크리스트 타일 탭 가드(disabled). 수용 기준: 네트워크 차단 시 '기록 없음' 대신 오류+재시도 노출, 로딩 중 중복 기록 생성 불가.
-- [ ] B3. **케어 탭 로딩/에러 상태 전달** — dosesQuery·careSetupQuery의 상태를 CareModeScreen까지 전달, B2와 동일 패턴. 수용 기준: 조회 실패가 `care.noMedicationToday`로 위장되지 않음.
-- [ ] B4. **리포트 미리보기 실패 구분** — useReportDraftSummary가 isError/isLoading 반환, ReportsScreen이 실패 시 emptyState 대신 오류+재시도 분기. 수용 기준: 쿼리 실패≠'최근 7일 기록 없음'.
-- [ ] B5. **케어 저장 거짓 권한 오류 제거** — saveCareSetupAndRefreshReminders(PawBloomShell.tsx:151-162)에 식사 경로와 동일한 `!databaseMode || !userId` 가드(웹 포함) 적용, 리마인더 통지 스킵. 수용 기준: 프리뷰/웹 케어 저장 시 성공 피드백만 노출.
-- [ ] B6. **ProfileCareDefaultsPanel 날짜 역전 검증(E3)** — save()에 `endsOn && endsOn < startsOn` 검증, `care.shortTermPeriodInvalid` 재사용 인라인 오류. shortTermMedicationDraft.ts:34와 규칙 통일. 수용 기준: 역전 저장 차단 + 테스트.
-- [ ] B7. **투약 알림 On/Off 토글(G2)** — carePlan에 `medicationRemindersEnabled` 플래그 추가, ProfileCareDefaultsPanel에 식사 알림과 동일 패턴 토글(전용 키 신설), false면 buildMedicationReminderPlan이 빈 계획 반환→기존 알림 취소. reminderScheduling.ts:65 autoRefresh도 플래그 존중. 수용 기준: 토글 off 후 예약 알림 0건, 식사 알림과 UI 대칭. ※알림 스케줄링 로직 변경이므로 회귀 테스트 필수.
-- [ ] B8. **홈 케어 요약 카운트 agenda 통일** — HomeDashboardPanel 카운트·확장 목록을 medicationAgenda 기반으로 교체, 예약 pending 행 표시. 수용 기준: 히어로 '확인할 투약 N'과 카드 카운트 항상 일치.
-- [ ] B9. **식사 알림 off 저장 시 권한 팝업 스킵** — rescheduleMealReminders에서 계획이 비면 requestPermission 생략·기존 취소만 수행, 비활성 저장 성공 문구 중립화. 수용 기준: off 상태 저장 시 OS 팝업 미노출.
+- [x] B1. **세션 만료 오발화 수정** — useAuthActions.ts signOut 진입부(supabase.auth.signOut() 호출 전)에서 explicitSignOutRef를 true로 선설정(실패 시 원복). useAccountDeletion 경로 포함. 수용 기준: 로그아웃·계정삭제 후 '세션 만료' 미표시, 실제 토큰 만료 시에만 표시(기존 테스트 + 신규 회귀 테스트).
+- [x] B2. **홈 로딩/에러 상태 전달** — diaryQuery·dosesQuery의 isLoading/isError를 HomeScreen props로 전달, 로딩 스켈레톤(또는 로딩 배너)+실패 시 오류 배너·재시도(다이어리 D1 패턴 재사용). 로딩 중 체크리스트 타일 탭 가드(disabled). 수용 기준: 네트워크 차단 시 '기록 없음' 대신 오류+재시도 노출, 로딩 중 중복 기록 생성 불가.
+- [x] B3. **케어 탭 로딩/에러 상태 전달** — dosesQuery·careSetupQuery의 상태를 CareModeScreen까지 전달, B2와 동일 패턴. 수용 기준: 조회 실패가 `care.noMedicationToday`로 위장되지 않음.
+- [x] B4. **리포트 미리보기 실패 구분** — useReportDraftSummary가 isError/isLoading 반환, ReportsScreen이 실패 시 emptyState 대신 오류+재시도 분기. 수용 기준: 쿼리 실패≠'최근 7일 기록 없음'.
+- [x] B5. **케어 저장 거짓 권한 오류 제거** — saveCareSetupAndRefreshReminders(PawBloomShell.tsx:151-162)에 식사 경로와 동일한 `!databaseMode || !userId` 가드(웹 포함) 적용, 리마인더 통지 스킵. 수용 기준: 프리뷰/웹 케어 저장 시 성공 피드백만 노출.
+- [x] B6. **ProfileCareDefaultsPanel 날짜 역전 검증(E3)** — save()에 `endsOn && endsOn < startsOn` 검증, `care.shortTermPeriodInvalid` 재사용 인라인 오류. shortTermMedicationDraft.ts:34와 규칙 통일. 수용 기준: 역전 저장 차단 + 테스트.
+- [x] B7. **투약 알림 On/Off 토글(G2)** — 기기 로컬 환경설정(medicationReminderPreference, SecureStore)으로 구현(DB 스키마 변경 회피 — 로컬 알림은 기기 단위), ProfileCareDefaultsPanel에 식사 알림과 동일 패턴 토글(전용 키 신설), false면 buildMedicationReminderPlan이 빈 계획 반환→기존 알림 취소. reminderScheduling.ts:65 autoRefresh도 플래그 존중. 수용 기준: 토글 off 후 예약 알림 0건, 식사 알림과 UI 대칭. ※알림 스케줄링 로직 변경이므로 회귀 테스트 필수.
+- [x] B8. **홈 케어 요약 카운트 agenda 통일** — HomeDashboardPanel 카운트·확장 목록을 medicationAgenda 기반으로 교체, 예약 pending 행 표시. 수용 기준: 히어로 '확인할 투약 N'과 카드 카운트 항상 일치.
+- [x] B9. **식사 알림 off 저장 시 권한 팝업 스킵** — rescheduleMealReminders에서 계획이 비면 requestPermission 생략·기존 취소만 수행, 비활성 저장 성공 문구 중립화. 수용 기준: off 상태 저장 시 OS 팝업 미노출.
 
 ## Phase C — P2/P3: i18n·현지화 (EN 모드 한국어 제거)
 
