@@ -20,7 +20,7 @@ import { useSubscriptionEntitlement } from "../../contexts/subscription/applicat
 import { canCreatePet, entitlements } from "../../contexts/subscription/domain/entitlement";
 import { countOwnedPets } from "../../contexts/pet/domain/pet";
 
-export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void } = {}) {
+export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved, medicationRemindersEnabled, onToggleMedicationReminders }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void; medicationRemindersEnabled?: boolean; onToggleMedicationReminders?: (enabled: boolean) => void } = {}) {
   const { configured, user, pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
   const entitlementQuery = useSubscriptionEntitlement(user?.id ?? null, configured && Boolean(user));
   const entitlement = entitlementQuery.data ?? (configured ? null : entitlements.plus);
@@ -191,7 +191,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("ko", "permission.petOwnerOnly")} icon="shield" /> : null}
 
       {activePet && !showCreateForm && canManageCareDefaults && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
-      {activePet && !showCreateForm && canManageCareDefaults && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} /> : null}
+      {activePet && !showCreateForm && canManageCareDefaults && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} medicationRemindersEnabled={medicationRemindersEnabled} onToggleMedicationReminders={onToggleMedicationReminders} /> : null}
       {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" /> : null}
 
       {showCreateForm && petCreationAllowed ? (

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
-import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { FieldLabel, PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { DatePickerField } from "../../../design-system/DatePickerField";
@@ -13,13 +13,14 @@ import {
   getCareMedicationGroups,
   getInitialCareMedicationSelection,
   isCareSetupDraftEmpty,
+  isCareSetupPeriodInvalid,
   resolveCareMedicationSelection,
   type CareMedicationSelection,
 } from "./careSetupForm";
 import { isCurrentCareSetupSave, nextCareSetupSaveScope, resolvePendingCareSetupMutation, type CareSetupSaveScope } from "./careSetupSaveGuard";
 import { createUuid } from "../../../shared-kernel/uuid";
 
-export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: string; setup: ActiveCareSetup; onSave: (input: CareSetupInput) => Promise<ActiveCareSetup> }) {
+export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemindersEnabled, onToggleMedicationReminders }: { petId?: string; setup: ActiveCareSetup; onSave: (input: CareSetupInput) => Promise<ActiveCareSetup>; medicationRemindersEnabled?: boolean; onToggleMedicationReminders?: (enabled: boolean) => void }) {
   const [selectedMedicationId, setSelectedMedicationId] = useState<CareMedicationSelection>(() => getInitialCareMedicationSelection(setup));
   const [draft, setDraft] = useState(() => createCareSetupFormDraft(setup, true, getInitialCareMedicationSelection(setup)));
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +56,10 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
       setError(t("ko", "care.setupRequired"));
       return;
     }
+    if (isCareSetupPeriodInvalid(draft)) {
+      setError(t("ko", "care.shortTermPeriodInvalid"));
+      return;
+    }
 
     savingRef.current = true;
     setIsSaving(true);
@@ -85,6 +90,19 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave }: { petId?: str
       <View style={styles.panel}>
         <Text style={styles.title}>{t("ko", "pet.careDefaultsTitle")}</Text>
         <Text style={styles.copy}>{t("ko", "pet.careDefaultsCopy")}</Text>
+        {onToggleMedicationReminders ? (
+          <View>
+            <FieldLabel label={t("ko", "care.medicationRemindersLabel")} />
+            <SegmentedControl
+              value={medicationRemindersEnabled === false ? "off" : "on"}
+              onChange={(value) => onToggleMedicationReminders(value === "on")}
+              items={[
+                { label: t("ko", "routine.mealRemindersOn"), value: "on" },
+                { label: t("ko", "routine.mealRemindersOff"), value: "off" },
+              ]}
+            />
+          </View>
+        ) : null}
         {setup.conditions.map((condition) => (
           <Text key={condition.id} style={styles.savedText}>{condition.name}</Text>
         ))}

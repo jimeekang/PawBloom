@@ -53,22 +53,23 @@ export function refreshMealReminders({ userId, petId, petName, routine, requestP
   });
 }
 
-export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, language, schedules, activeRoutine }: ReminderPetContext & {
+export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, language, schedules, activeRoutine, medicationRemindersEnabled = true }: ReminderPetContext & {
   databaseMode: boolean;
   language: Language;
   schedules: CareMedicationSchedule[];
   activeRoutine: PetRoutine;
+  medicationRemindersEnabled?: boolean;
 }) {
   const reminderScheduleKey = schedules.map((schedule) => `${schedule.id}:${schedule.localTime}:${schedule.startsOn}:${schedule.endsOn ?? ""}:${schedule.recurrenceIntervalDays}`).join("|");
   const mealReminderScheduleKey = [activeRoutine.food.mealRemindersEnabled, ...(["breakfast", "lunch", "dinner", "snack"] as RoutineMealSlot[]).map((slot) => `${slot}:${activeRoutine.food.meals[slot]?.localTime ?? ""}`)].join("|");
 
   useEffect(() => {
-    if (!databaseMode || schedules.length === 0) return;
+    if (!databaseMode || schedules.length === 0 || !medicationRemindersEnabled) return;
     const refresh = () => void refreshMedicationReminders({ userId, petId, petName, schedules, requestPermission: false }).catch(() => undefined);
     refresh();
     const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
     return () => subscription.remove();
-  }, [petId, petName, databaseMode, language, reminderScheduleKey, userId]);
+  }, [petId, petName, databaseMode, language, medicationRemindersEnabled, reminderScheduleKey, userId]);
 
   useEffect(() => {
     if (!databaseMode || !userId) return;

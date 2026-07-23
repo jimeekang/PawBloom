@@ -117,7 +117,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         })}
       </View>
 
-      {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} /> : null}
+      {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} medicationAgenda={medicationAgenda} /> : null}
 
       <View style={styles.briefCard}>
         <AiBriefCard petId={pet.id} databaseMode={userId != null} hasRecords={entries.length > 0 || doses.length > 0} />

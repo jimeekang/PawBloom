@@ -33,6 +33,8 @@ import { SaveFeedbackBar } from "./shell/SaveFeedbackBar";
 import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./shell/saveFeedback";
 import { createChecklistFromRecords } from "./shell/todayChecklist";
 import { refreshMealReminders, refreshMedicationReminders, useReminderAutoRefresh } from "./shell/reminderScheduling";
+import { readMedicationRemindersEnabled, writeMedicationRemindersEnabled } from "../contexts/medication/application/medicationReminderPreference";
+import { cancelMedicationRemindersForAccount } from "../contexts/medication/application/medicationReminderNotifications";
 import { buildSampleDiaryEntries } from "../contexts/diary/ui/sampleDiaryEntries";
 import { buildSampleDoses } from "../contexts/medication/ui/sampleDoses";
 import { useTodayChecklistController } from "./shell/useTodayChecklistController";
@@ -71,7 +73,27 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
 
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
   const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
-  useReminderAutoRefresh({ databaseMode, userId, petId: activePet.id, petName: activePet.name, language, schedules: care.activeCareSetup.schedules, activeRoutine: routine.activeRoutine });
+  const [medicationRemindersEnabled, setMedicationRemindersEnabled] = useState(true);
+  useEffect(() => {
+    void readMedicationRemindersEnabled().then(setMedicationRemindersEnabled);
+  }, []);
+  useReminderAutoRefresh({ databaseMode, userId, petId: activePet.id, petName: activePet.name, language, schedules: care.activeCareSetup.schedules, activeRoutine: routine.activeRoutine, medicationRemindersEnabled });
+
+  async function toggleMedicationReminders(enabled: boolean) {
+    setMedicationRemindersEnabled(enabled);
+    await writeMedicationRemindersEnabled(enabled);
+    if (!databaseMode || !userId || Platform.OS === "web") return;
+    if (!enabled) {
+      await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
+      return;
+    }
+    try {
+      const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: care.activeCareSetup.schedules, requestPermission: true });
+      setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"), scheduled ? "success" : "error");
+    } catch {
+      setNotice(t("ko", "care.reminderScheduleFailed"), "error");
+    }
+  }
   const medication = useMedicationDosesController({
     activePetId: activePet.id,
     databaseMode,
@@ -155,7 +177,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     // Local notifications are native + real-account only; without this guard
     // preview/web saves show a false "permission needed" error next to the
     // save-success toast (B5, mirrors the meal reminder path).
-    if (!databaseMode || !userId || Platform.OS === "web") return savedSetup;
+    if (!databaseMode || !userId || Platform.OS === "web" || !medicationRemindersEnabled) return savedSetup;
     try {
       const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: savedSetup.schedules, requestPermission: true, previousScheduleIds });
       setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"), scheduled ? "success" : "error");
@@ -190,7 +212,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.appFrame}>
           <PetSettingsHeader onBack={() => setShowPetSettings(false)} />
-          <PetOnboardingScreen routine={routine.activeRoutine} onSaveRoutine={saveRoutineAndRefreshMealReminders} careSetup={care.activeCareSetup} onSaveCareSetup={saveCareSetupAndRefreshReminders} onProfileSaved={() => showSaveFeedback("petProfile")} />
+          <PetOnboardingScreen routine={routine.activeRoutine} onSaveRoutine={saveRoutineAndRefreshMealReminders} careSetup={care.activeCareSetup} onSaveCareSetup={saveCareSetupAndRefreshReminders} onProfileSaved={() => showSaveFeedback("petProfile")} medicationRemindersEnabled={medicationRemindersEnabled} onToggleMedicationReminders={(enabled) => void toggleMedicationReminders(enabled)} />
           <SaveFeedbackBar feedback={saveFeedback} onDismiss={hideSaveFeedback} />
         </View>
       </SafeAreaView>

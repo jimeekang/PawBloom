@@ -6,11 +6,13 @@ import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import type { DashboardSummary } from "../shell/todayChecklist";
-import { createCareSummaryDoseRows } from "./HomeDashboardPanel.logic";
+import type { TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
+import { createCareSummaryAgendaCounts, createCareSummaryRows } from "./HomeDashboardPanel.logic";
 
 type Props = {
   dashboard: DashboardSummary;
   doses: DoseRecord[];
+  medicationAgenda?: TodayMedicationAgendaRow[];
 };
 
 export function AttentionStrip({ signals }: { signals: string[] }) {
@@ -25,11 +27,11 @@ export function AttentionStrip({ signals }: { signals: string[] }) {
   );
 }
 
-export function CareSummaryCard({ dashboard, doses }: Props) {
+export function CareSummaryCard({ dashboard, doses, medicationAgenda = [] }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const completedDoses = doses.filter((dose) => dose.status !== "pending").length;
+  const { completedCount, totalCount } = createCareSummaryAgendaCounts(doses, medicationAgenda);
   const pendingCopy = dashboard.pendingMedicationCount > 0 ? `${t("ko", "today.dashboardMedicationPending")} ${dashboard.pendingMedicationCount}` : t("ko", "today.dashboardMedicationClear");
-  const rows = createCareSummaryDoseRows(doses);
+  const rows = createCareSummaryRows(doses, medicationAgenda);
 
   return (
     <SurfaceCard>
@@ -48,7 +50,7 @@ export function CareSummaryCard({ dashboard, doses }: Props) {
           <Text style={styles.careTitle}>{t("ko", "today.dashboardCare")}</Text>
           <Text style={styles.careCopy}>{pendingCopy}</Text>
         </View>
-        <Text style={styles.careCount}>{completedDoses}/{doses.length}</Text>
+        <Text style={styles.careCount}>{completedCount}/{totalCount}</Text>
         <View style={[styles.chevron, expanded && styles.chevronOpen]}>
           <AppIcon name="chevronDown" size={iconSize.sm} color={colors.textSoft} />
         </View>
