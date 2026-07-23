@@ -34,6 +34,10 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
   const [doses, setDoses] = useState<DoseRecord[]>(() => buildSampleDoses(fallbackPetId, language));
 
   const activeDoses = useMemo(() => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId)), [activePetId, databaseMode, doses, dosesQuery.data]);
+  const todayDosesStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : dosesQuery.isError ? "error" : dosesQuery.isLoading ? "loading" : "ready";
+  function refetchTodayDoses() {
+    void dosesQuery.refetch();
+  }
   const todayDoseDate = getLocalDateKey();
   const medicationAgenda = useMemo(() => createTodayMedicationAgendaRows({ schedules, doses: activeDoses, doseDate: todayDoseDate }), [activeDoses, schedules, todayDoseDate]);
 
@@ -78,6 +82,8 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
     replaceLocalDoses: setDoses,
     activeDoses,
     medicationAgenda,
+    todayDosesStatus,
+    refetchTodayDoses,
     addMedicationDose,
     saveAgendaStatus,
     updateDoseRecord,

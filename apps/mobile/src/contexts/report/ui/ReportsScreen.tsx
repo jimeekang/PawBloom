@@ -13,7 +13,7 @@ import { getReportPrimaryAction, type ReportWorkflowAction, type ReportWorkflowE
 
 type Props = {
   report: GeneratedVetReport | null;
-  reportSummary: ReportDraftSummary;
+  reportSummary: ReportDraftSummary & { sourceStatus?: "ready" | "loading" | "error"; refetchSources?: () => void };
   canGenerate: boolean;
   canConfirm: boolean;
   canShare: boolean;
@@ -86,10 +86,16 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
           </SurfaceCard>
           {report && report.confirmedByOwner && report.status !== "draft" && report.shareUrl && report.expiresAt ? <ReportShareCard shareUrl={report.shareUrl} expiresAt={report.expiresAt} /> : null}
         </>
+      ) : reportSummary.sourceStatus === "error" ? (
+        <SurfaceCard>
+          <Text style={styles.title}>{t("ko", "reports.emptyTitle")}</Text>
+          <NoticeBanner text={t("ko", "reports.loadFailed")} tone="error" icon="close" />
+          {reportSummary.refetchSources ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={reportSummary.refetchSources} /> : null}
+        </SurfaceCard>
       ) : (
         <SurfaceCard>
           <Text style={styles.title}>{t("ko", "reports.emptyTitle")}</Text>
-          <Text style={styles.emptyText}>{t("ko", "reports.emptyState")}</Text>
+          <Text style={styles.emptyText}>{t("ko", reportSummary.sourceStatus === "loading" ? "diary.listLoading" : "reports.emptyState")}</Text>
         </SurfaceCard>
       )}
 

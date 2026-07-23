@@ -19,6 +19,10 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
   const createCareSetup = useCreateCareSetup(livePetId, userId);
   const [localCareSetup, setLocalCareSetup] = useState<ActiveCareSetup>(() => emptyActiveCareSetup());
   const activeCareSetup = databaseMode ? careSetupQuery.data ?? emptyActiveCareSetup() : localCareSetup;
+  const careSetupStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : careSetupQuery.isError ? "error" : careSetupQuery.isLoading ? "loading" : "ready";
+  function refetchCareSetup() {
+    void careSetupQuery.refetch();
+  }
 
   async function saveCareSetup(input: CareSetupInput): Promise<ActiveCareSetup> {
     if (!databaseMode) {
@@ -43,7 +47,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
     }
   }
 
-  return { activeCareSetup, saveCareSetup };
+  return { activeCareSetup, saveCareSetup, careSetupStatus, refetchCareSetup };
 }
 
 function emptyActiveCareSetup(): ActiveCareSetup {

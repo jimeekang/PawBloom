@@ -47,13 +47,29 @@ export function useReportDraftSummary({
   const range = useMemo(() => getLast7DayReportRange(), []);
   const diaryQuery = useDiaryEntriesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
   const dosesQuery = useMedicationDosesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
-  return useMemo(() => {
+  const summary = useMemo(() => {
     const reportEntries = databaseMode
       ? diaryQuery.data ?? []
       : entries.filter((entry) => entry.petId === activePetId && entry.entryDate >= range.fromDateKey && entry.entryDate <= range.toDateKey);
     const reportDoses = databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId);
     return createReportDraftSummary(reportEntries, reportDoses);
   }, [activePetId, databaseMode, diaryQuery.data, doses, dosesQuery.data, entries, range.fromDateKey, range.toDateKey]);
+
+  // Source-query status: a failed 7-day fetch must render as an error with a
+  // retry, not as the "no records in the last 7 days" empty state.
+  const sourceStatus: "ready" | "loading" | "error" = !databaseMode
+    ? "ready"
+    : diaryQuery.isError || dosesQuery.isError
+      ? "error"
+      : diaryQuery.isLoading || dosesQuery.isLoading
+        ? "loading"
+        : "ready";
+  const refetchSources = () => {
+    void diaryQuery.refetch();
+    void dosesQuery.refetch();
+  };
+
+  return { ...summary, sourceStatus, refetchSources };
 }
 
 export function getLast7DayReportRange(anchorDate = new Date()): ReportDateRange {

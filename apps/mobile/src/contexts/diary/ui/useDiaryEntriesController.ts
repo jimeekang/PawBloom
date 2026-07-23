@@ -57,6 +57,13 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     void (diaryFilter === "day" ? diaryDateQuery.refetch() : diaryWeekQuery.refetch());
   }
 
+  // Today-tab status: without it a network failure renders as "no records yet"
+  // and taps during the initial load can duplicate existing server records.
+  const todayDiaryStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : diaryQuery.isError ? "error" : diaryQuery.isLoading ? "loading" : "ready";
+  function refetchTodayDiary() {
+    void diaryQuery.refetch();
+  }
+
   function saveDiaryEntry(draft: DraftDiaryEntry) {
     if (databaseMode) {
       return createDiaryEntry
@@ -119,6 +126,8 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
     selectedDiaryEntries,
     selectedDiaryStatus,
     refetchSelectedDiary,
+    todayDiaryStatus,
+    refetchTodayDiary,
     latestConditionScore,
     selectedDiaryDate,
     setSelectedDiaryDate,

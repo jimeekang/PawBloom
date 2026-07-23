@@ -29,6 +29,8 @@ type CareModeScreenProps = {
   onGenerateReport: () => void;
   conditionScore?: number;
   careSetup: ActiveCareSetup;
+  careStatus?: "ready" | "loading" | "error";
+  onRetryCare?: () => void;
   canManageCare?: boolean;
   canDeleteDose?: boolean;
   canManageReports?: boolean;
@@ -56,6 +58,8 @@ function CarePanel({
   onGenerateReport,
   conditionScore,
   careSetup,
+  careStatus = "ready",
+  onRetryCare,
   canManageCare,
   canDeleteDose,
   canManageReports,
@@ -76,12 +80,19 @@ function CarePanel({
     <>
       {!canManageCare ? <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" /> : null}
 
+      {careStatus === "error" ? (
+        <>
+          <NoticeBanner text={t("ko", "care.loadFailed")} tone="error" icon="close" />
+          {onRetryCare ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetryCare} /> : null}
+        </>
+      ) : null}
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.todayMedicationTitle")}</Text>
         <Text style={styles.countText}>{t("ko", "care.todayMedicationProgress")} {pendingCount}</Text>
       </View>
       <View style={styles.medList}>
-        {agendaRows.length === 0 ? <Text style={styles.emptyText}>{t("ko", "care.noMedicationToday")}</Text> : null}
+        {agendaRows.length === 0 && careStatus !== "error" ? <Text style={styles.emptyText}>{t("ko", careStatus === "loading" ? "diary.listLoading" : "care.noMedicationToday")}</Text> : null}
         {agendaRows.map((row) => {
           const rowKey = `${row.scheduleId ?? row.doseId}-${row.doseDate}-${row.scheduledTime}`;
           const isEditingRow = Boolean(editingDose && row.doseId === editingDose.id);

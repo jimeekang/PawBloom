@@ -6,7 +6,7 @@ import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePho
 import { formatPetMetaLine, type PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
 import { AppIcon } from "../../design-system/iconography";
-import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard, type NoticeTone } from "../../design-system/components";
+import { IconBubble, NoticeBanner, SecondaryButton, SectionHeader, SurfaceCard, type NoticeTone } from "../../design-system/components";
 import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { useLanguage } from "../../i18n/languageContext";
@@ -30,12 +30,14 @@ type Props = {
   showMedicationSummary?: boolean;
   notice: string;
   noticeTone?: NoticeTone;
+  todayStatus?: "ready" | "loading" | "error";
+  onRetryToday?: () => void;
   onChecklistToggle: (key: ChecklistKey) => void;
   onViewTimelineAll: () => void;
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const { language } = useLanguage();
   const timeline = entries.slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
@@ -66,6 +68,18 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         </View>
       </View>
 
+      {todayStatus === "error" ? (
+        <View style={styles.noticeWrap}>
+          <NoticeBanner text={t("ko", "today.loadFailed")} tone="error" icon="close" />
+          {onRetryToday ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetryToday} /> : null}
+        </View>
+      ) : null}
+      {todayStatus === "loading" ? (
+        <View style={styles.noticeWrap}>
+          <Text style={styles.statusText}>{t("ko", "today.loading")}</Text>
+        </View>
+      ) : null}
+
       {notice ? (
         <View style={styles.noticeWrap}>
           <NoticeBanner text={notice} tone={noticeTone} icon={noticeTone === "error" ? "close" : "check"} />
@@ -87,9 +101,10 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
               key={key}
               accessibilityRole="checkbox"
               accessibilityLabel={`${label}, ${t("ko", done ? "today.checklistStatusComplete" : "today.checklistStatusIncomplete")}`}
-              accessibilityState={{ checked: done }}
+              accessibilityState={{ checked: done, disabled: todayStatus !== "ready" }}
               aria-checked={done}
-              style={styles.checkItem}
+              disabled={todayStatus !== "ready"}
+              style={[styles.checkItem, todayStatus !== "ready" && styles.checkItemDisabled]}
               onPress={() => onChecklistToggle(key)}
             >
               <IconBubble name={item.icon} color={item.color} background={item.background} size={50} />
@@ -112,7 +127,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         <SurfaceCard>
           <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} onActionPress={onViewTimelineAll} />
           <View style={styles.timeline}>
-            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", "today.noTimeline")}</Text> : null}
+            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", todayStatus === "loading" ? "diary.listLoading" : "today.noTimeline")}</Text> : null}
             {timeline.map((entry) => {
               const item = categoryVisuals[entry.category];
               const row = (
@@ -174,6 +189,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   checkItem: { width: 56, alignItems: "center", position: "relative" },
+  checkItemDisabled: { opacity: 0.5 },
+  statusText: { ...type.caption, color: colors.textMuted, textAlign: "center" },
   checkMark: { position: "absolute", top: 38, right: 5, width: 18, height: 18, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   checkLabel: { ...type.tiny, color: colors.text, textAlign: "center", marginTop: spacing.xs },
   briefCard: { marginTop: spacing.md },
