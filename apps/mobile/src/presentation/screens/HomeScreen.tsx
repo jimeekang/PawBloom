@@ -11,6 +11,7 @@ import { colors, font, iconSize, layout, radius, spacing, type } from "../../des
 import { t } from "../../i18n/translations";
 import { useLanguage } from "../../i18n/languageContext";
 import { getDiaryEntryDisplaySummary } from "../../contexts/diary/ui/diaryEntryDisplay";
+import { AiBriefCard } from "../../contexts/briefing/ui/AiBriefCard";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
@@ -103,6 +104,10 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
 
       {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} /> : null}
 
+      <View style={styles.briefCard}>
+        <AiBriefCard petId={pet.id} databaseMode={userId != null} hasRecords={entries.length > 0 || doses.length > 0} />
+      </View>
+
       <View style={styles.timelineCard}>
         <SurfaceCard>
           <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} onActionPress={onViewTimelineAll} />
@@ -171,6 +176,7 @@ const styles = StyleSheet.create({
   checkItem: { width: 56, alignItems: "center", position: "relative" },
   checkMark: { position: "absolute", top: 38, right: 5, width: 18, height: 18, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   checkLabel: { ...type.tiny, color: colors.text, textAlign: "center", marginTop: spacing.xs },
+  briefCard: { marginTop: spacing.md },
   timelineCard: { marginTop: spacing.md },
   timeline: { gap: spacing.md },
   timelineRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.md },
