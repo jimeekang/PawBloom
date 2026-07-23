@@ -5,6 +5,7 @@ const authenticated = {
   languageInitialized: true,
   configured: true,
   userPresent: true,
+  passwordRecoveryActive: false,
   activePetPresent: false,
 } as const;
 
@@ -19,4 +20,10 @@ if (resolveAppGate({ ...authenticated, petLoadStatus: "ready" }) !== "pet-onboar
 }
 if (resolveAppGate({ ...authenticated, petLoadStatus: "ready", activePetPresent: true }) !== "shell") {
   throw new Error("a loaded active pet must enter the application shell");
+}
+if (resolveAppGate({ ...authenticated, passwordRecoveryActive: true, petLoadStatus: "ready", activePetPresent: true }) !== "password-recovery") {
+  throw new Error("an active password recovery session must show the new-password screen before the shell");
+}
+if (resolveAppGate({ ...authenticated, userPresent: false, passwordRecoveryActive: true, petLoadStatus: "idle" }) !== "auth") {
+  throw new Error("password recovery without a session must fall back to the auth screen");
 }

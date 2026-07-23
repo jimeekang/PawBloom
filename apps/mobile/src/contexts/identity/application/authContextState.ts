@@ -10,6 +10,7 @@ import { loadPetRows } from "./authContextQueries";
 import type { IdentityMessageKey } from "./identityMessage";
 import { useAuthActions } from "./useAuthActions";
 import { useAuthSessionSync } from "./useAuthSessionSync";
+import { usePasswordRecoveryLink } from "./passwordRecoveryLink";
 import { clearAccountScopedQueryCache, isCurrentAccountWork } from "./authAccountBoundary";
 import { cancelMedicationRemindersForAccount, setActiveMedicationReminderAccount } from "../../medication/application/medicationReminderNotifications";
 import { cancelMealRemindersForAccount, setActiveMealReminderAccount } from "../../routine/application/mealReminderNotifications";
@@ -25,6 +26,7 @@ export function useAuthState() {
   const [petLoadStatus, setPetLoadStatus] = useState<AppAuthState["petLoadStatus"]>("idle");
   const [error, setError] = useState<IdentityMessageKey | null>(null);
   const [authMessage, setAuthMessage] = useState<IdentityMessageKey | null>(null);
+  const [passwordRecoveryActive, setPasswordRecoveryActive] = useState(false);
   const activeUserIdRef = useRef<string | null>(null);
   const explicitSignOutRef = useRef(false);
   const petLoadRevisionRef = useRef(0);
@@ -105,6 +107,9 @@ export function useAuthState() {
     if (changed) {
       petLoadRevisionRef.current += 1;
       petListReadyRef.current = false;
+      // Any account change (sign-out or switch) invalidates a pending recovery
+      // gate; a fresh recovery link re-activates it after its own setSession.
+      setPasswordRecoveryActive(false);
       setActiveMedicationReminderAccount(nextUserId);
       setActiveMealReminderAccount(nextUserId);
       if (previousUserId) {
@@ -137,9 +142,14 @@ export function useAuthState() {
 
   usePendingMediaCleanupRetry(user?.id ?? null);
 
-  const { signIn, signUp, signOut } = useAuthActions({
+  const beginPasswordRecovery = useCallback(() => setPasswordRecoveryActive(true), []);
+  const endPasswordRecovery = useCallback(() => setPasswordRecoveryActive(false), []);
+  usePasswordRecoveryLink({ activate: beginPasswordRecovery, setError });
+
+  const { signIn, signUp, signOut, requestPasswordReset, updatePassword } = useAuthActions({
     clearMessages,
     onSignedOut: handleSignedOut,
+    onPasswordUpdated: endPasswordRecovery,
     setLoading: setAuthLoading,
     setSession,
     setUser,
@@ -188,9 +198,13 @@ export function useAuthState() {
     petLoadStatus,
     error,
     authMessage,
+    passwordRecoveryActive,
     signIn,
     signUp,
     signOut,
+    requestPasswordReset,
+    updatePassword,
+    cancelPasswordRecovery: endPasswordRecovery,
     createPet,
     updatePet,
     deletePet,

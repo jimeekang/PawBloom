@@ -5,11 +5,13 @@ import { supabase } from "../infrastructure/supabaseClient";
 import { ensureProfileRow } from "./authContextQueries";
 import { authErrorTranslationKey } from "./authErrorMessages";
 import { authSignUpOutcome } from "./authSignUpPolicy";
+import { getPasswordResetRedirectUrl } from "./passwordRecoveryLink";
 import type { IdentityMessageKey } from "./identityMessage";
 
 type AuthActionState = {
   clearMessages: () => void;
   onSignedOut: () => void;
+  onPasswordUpdated: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setSession: Dispatch<SetStateAction<Session | null>>;
   setUser: Dispatch<SetStateAction<User | null>>;
@@ -22,6 +24,7 @@ type AuthActionState = {
 export function useAuthActions({
   clearMessages,
   onSignedOut,
+  onPasswordUpdated,
   setLoading,
   setSession,
   setUser,
@@ -94,6 +97,69 @@ export function useAuthActions({
     }
   }, [clearMessages, setAuthMessage, setError, setLoading]);
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    if (!supabase) {
+      setError("auth.clientMissing");
+      return "auth.clientMissing" as const;
+    }
+    if (actionInFlight.current) return "auth.wait" as const;
+
+    actionInFlight.current = true;
+    setLoading(true);
+    clearMessages();
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: getPasswordResetRedirectUrl(),
+      });
+      if (error) {
+        const messageKey = authErrorTranslationKey(error);
+        setError(messageKey);
+        return messageKey;
+      }
+
+      setAuthMessage("auth.resetEmailSent");
+      return null;
+    } catch (rawError) {
+      const messageKey = authErrorTranslationKey(rawError);
+      setError(messageKey);
+      return messageKey;
+    } finally {
+      actionInFlight.current = false;
+      setLoading(false);
+    }
+  }, [clearMessages, setAuthMessage, setError, setLoading]);
+
+  const updatePassword = useCallback(async (password: string) => {
+    if (!supabase) {
+      setError("auth.clientMissing");
+      return "auth.clientMissing" as const;
+    }
+    if (actionInFlight.current) return "auth.wait" as const;
+
+    actionInFlight.current = true;
+    setLoading(true);
+    clearMessages();
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        const messageKey = authErrorTranslationKey(error);
+        setError(messageKey);
+        return messageKey;
+      }
+
+      onPasswordUpdated();
+      setAuthMessage("auth.resetDone");
+      return null;
+    } catch (rawError) {
+      const messageKey = authErrorTranslationKey(rawError);
+      setError(messageKey);
+      return messageKey;
+    } finally {
+      actionInFlight.current = false;
+      setLoading(false);
+    }
+  }, [clearMessages, onPasswordUpdated, setAuthMessage, setError, setLoading]);
+
   const signOut = useCallback(async () => {
     if (!supabase || actionInFlight.current) return;
 
@@ -120,5 +186,5 @@ export function useAuthActions({
     }
   }, [clearMessages, onSignedOut, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
 
-  return { signIn, signUp, signOut };
+  return { signIn, signUp, signOut, requestPasswordReset, updatePassword };
 }

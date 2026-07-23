@@ -13,3 +13,12 @@ if (authFormValidationKey({ mode: "signUp", email: "a@b.com", password: "one", p
 if (canSubmitAuth(true, false) || canSubmitAuth(false, true) || !canSubmitAuth(false, false)) {
   throw new Error("auth submission must reject loading and same-tick duplicate presses");
 }
+if (authFormValidationKey({ mode: "resetRequest", email: "", password: "", passwordConfirm: "" }) !== "auth.requiredFields") {
+  throw new Error("reset request must require an email");
+}
+if (authFormValidationKey({ mode: "resetRequest", email: "not-an-email", password: "", passwordConfirm: "" }) !== "auth.emailInvalid") {
+  throw new Error("reset request must validate email format before sending");
+}
+if (authFormValidationKey({ mode: "resetRequest", email: "a@b.com", password: "", passwordConfirm: "" }) !== null) {
+  throw new Error("reset request must not require password fields");
+}

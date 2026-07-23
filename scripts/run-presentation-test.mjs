@@ -25,6 +25,7 @@ Module._load = function loadWithMobileMocks(request, parent, isMain) {
   if (request === "react-native-url-polyfill/auto") return {};
   if (request === "expo-secure-store") return createSecureStoreMock();
   if (request === "expo-sqlite") return createSQLiteMock();
+  if (request === "expo-linking") return createLinkingMock();
   if (request === "@react-native-community/datetimepicker") return passthroughComponent;
   if (request.startsWith("@expo/vector-icons")) return createIconMock();
   return originalLoad.call(this, request, parent, isMain);
@@ -132,6 +133,13 @@ function createSecureStoreMock() {
     getItemAsync: async () => null,
     setItemAsync: async () => undefined,
     deleteItemAsync: async () => undefined,
+  };
+}
+
+function createLinkingMock() {
+  return {
+    createURL: (path) => `pawbloom://${String(path).replace(/^\//, "")}`,
+    useURL: () => null,
   };
 }
 

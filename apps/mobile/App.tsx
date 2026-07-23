@@ -6,6 +6,7 @@ import { AppIcon } from "./src/design-system/iconography";
 import { AuthProvider, useAuth } from "./src/contexts/identity/application/authContext";
 import { PawBloomShell } from "./src/presentation/PawBloomShell";
 import { AuthScreen } from "./src/contexts/identity/ui/AuthScreen";
+import { PasswordRecoveryScreen } from "./src/contexts/identity/ui/PasswordRecoveryScreen";
 import { PetOnboardingScreen } from "./src/presentation/screens/PetOnboardingScreen";
 import { configureNetworkSync } from "./src/contexts/sync/application/syncStatus";
 import { colors, type as typeStyle } from "./src/design-system/tokens";
@@ -43,13 +44,14 @@ export default function App() {
 }
 
 function AppBody() {
-  const { initialized, configured, user, activePet, petLoadStatus, retryPetLoad, signOut } = useAuth();
+  const { initialized, configured, user, activePet, petLoadStatus, passwordRecoveryActive, retryPetLoad, signOut } = useAuth();
   const { initialized: languageInitialized } = useLanguage();
   const gate = resolveAppGate({
     authInitialized: initialized,
     languageInitialized,
     configured,
     userPresent: Boolean(user),
+    passwordRecoveryActive,
     petLoadStatus,
     activePetPresent: Boolean(activePet),
   });
@@ -67,6 +69,7 @@ function AppBody() {
 
   if (gate === "preview") return <PawBloomShell />;
   if (gate === "auth") return <AuthScreen />;
+  if (gate === "password-recovery") return <PasswordRecoveryScreen />;
   if (gate === "pet-load-error") {
     return (
       <SafeAreaView style={styles.loadingArea}>

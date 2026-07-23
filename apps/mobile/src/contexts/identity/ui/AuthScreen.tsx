@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentProps } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FieldLabel, NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
@@ -9,6 +9,7 @@ import { useLanguage } from "../../../i18n/languageContext";
 import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAuth } from "../application/authContext";
 import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type AuthMode } from "./authFormState";
+import { PasswordField } from "./PasswordField";
 import { styles } from "./AuthScreen.styles";
 
 function openExternalUrl(url: string) {
@@ -16,7 +17,7 @@ function openExternalUrl(url: string) {
 }
 
 export function AuthScreen() {
-  const { signIn, signUp, error, authMessage, loading, resetMessage } = useAuth();
+  const { signIn, signUp, requestPasswordReset, error, authMessage, loading, resetMessage } = useAuth();
   const { language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export function AuthScreen() {
   const submissionInFlight = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const isSignUp = mode === "signUp";
+  const isReset = mode === "resetRequest";
 
   useEffect(() => {
     if (!error && !localError && !authMessage) return;
@@ -47,6 +49,11 @@ export function AuthScreen() {
 
     submissionInFlight.current = true;
     try {
+      if (isReset) {
+        await requestPasswordReset(email);
+        return;
+      }
+
       if (isSignUp) {
         await signUp(email, password);
         return;
@@ -80,28 +87,32 @@ export function AuthScreen() {
               onChange={setLanguage}
             />
           </View>
-          <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
-          <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
-          <View style={styles.valuePanel}>
-            {authValueItems.map((item) => (
-              <View key={item.key} style={styles.valueRow}>
-                <View style={styles.valueIcon}>
-                  <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
-                </View>
-                <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+          <Text style={styles.title}>{t("ko", isReset ? "auth.resetRequestTitle" : isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
+          <Text style={styles.copy}>{t("ko", isReset ? "auth.resetRequestCopy" : "auth.copy")}</Text>
+          {!isReset ? (
+            <>
+              <View style={styles.valuePanel}>
+                {authValueItems.map((item) => (
+                  <View key={item.key} style={styles.valueRow}>
+                    <View style={styles.valueIcon}>
+                      <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
+                    </View>
+                    <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-          <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
+              <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
 
-          <SegmentedControl
-            items={[
-              { label: t("ko", "auth.signIn"), value: "signIn" },
-              { label: t("ko", "auth.signUp"), value: "signUp" },
-            ]}
-            value={mode}
-            onChange={changeMode}
-          />
+              <SegmentedControl
+                items={[
+                  { label: t("ko", "auth.signIn"), value: "signIn" },
+                  { label: t("ko", "auth.signUp"), value: "signUp" },
+                ]}
+                value={mode}
+                onChange={changeMode}
+              />
+            </>
+          ) : null}
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
@@ -121,15 +132,17 @@ export function AuthScreen() {
               />
             </View>
 
-            <PasswordField
-              label={t("ko", "auth.password")}
-              value={password}
-              onChangeText={setPassword}
-              visible={showPassword}
-              onToggleVisibility={() => setShowPassword((current) => !current)}
-              textContentType={isSignUp ? "newPassword" : "password"}
-              autoComplete={isSignUp ? "new-password" : "current-password"}
-            />
+            {!isReset ? (
+              <PasswordField
+                label={t("ko", "auth.password")}
+                value={password}
+                onChangeText={setPassword}
+                visible={showPassword}
+                onToggleVisibility={() => setShowPassword((current) => !current)}
+                textContentType={isSignUp ? "newPassword" : "password"}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
+              />
+            ) : null}
 
             {isSignUp ? (
               <PasswordField
@@ -143,7 +156,28 @@ export function AuthScreen() {
               />
             ) : null}
 
-            <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
+            <PrimaryButton label={t("ko", isReset ? "auth.sendResetLink" : isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
+
+            {mode === "signIn" ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("ko", "auth.forgotPassword")}
+                style={styles.textLink}
+                onPress={() => changeMode("resetRequest")}
+              >
+                <Text style={styles.textLinkText}>{t("ko", "auth.forgotPassword")}</Text>
+              </Pressable>
+            ) : null}
+            {isReset ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("ko", "auth.backToSignIn")}
+                style={styles.textLink}
+                onPress={() => changeMode("signIn")}
+              >
+                <Text style={styles.textLinkText}>{t("ko", "auth.backToSignIn")}</Text>
+              </Pressable>
+            ) : null}
 
             {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
             {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
@@ -174,53 +208,6 @@ export function AuthScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-function PasswordField({
-  label,
-  value,
-  onChangeText,
-  visible,
-  onToggleVisibility,
-  textContentType,
-  autoComplete,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  visible: boolean;
-  onToggleVisibility: () => void;
-  textContentType: ComponentProps<typeof TextInput>["textContentType"];
-  autoComplete: ComponentProps<typeof TextInput>["autoComplete"];
-}) {
-  return (
-    <View style={styles.fieldGroup}>
-      <FieldLabel label={label} />
-      <View style={styles.passwordRow}>
-        <TextInput
-          style={[styles.input, styles.passwordInput]}
-          secureTextEntry={!visible}
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType={textContentType}
-          autoComplete={autoComplete}
-          accessibilityLabel={label}
-          placeholder={label}
-          placeholderTextColor={colors.textMuted}
-          value={value}
-          onChangeText={onChangeText}
-        />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("ko", visible ? "auth.hidePassword" : "auth.showPassword")}
-          style={styles.eyeButton}
-          onPress={onToggleVisibility}
-        >
-          <AppIcon name={visible ? "eyeOff" : "eye"} size={iconSize.md} color={colors.textMuted} />
-        </Pressable>
-      </View>
-    </View>
   );
 }
 

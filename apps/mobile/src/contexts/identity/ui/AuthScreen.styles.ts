@@ -95,6 +95,17 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: colors.orangeDeep,
   },
+  textLink: {
+    minHeight: 44,
+    alignSelf: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+  },
+  textLinkText: {
+    ...type.bodyStrong,
+    color: colors.orangeDeep,
+    textDecorationLine: "underline",
+  },
   policyLinks: {
     flexDirection: "row",
     alignItems: "center",
