@@ -13,10 +13,10 @@ edit_policy: exclusive
 
 ## Phase A — P1: 출시 블로커·필수 기능
 
-- [ ] A1. **개인정보처리방침·지원 링크 인앱 노출** — `shared-kernel/config.ts`에 `PRIVACY_POLICY_URL`·`SUPPORT_URL` 상수 추가(호스팅 URL은 docs/product/PRIVACY_POLICY.md 게시본). SettingsScreen 하단·AuthScreen 하단에 `Linking.openURL` 텍스트 링크 2개(신규 키 `settings.privacyPolicy`·`settings.support`, en/ko 대칭, 44pt·accessibilityRole="link"). 수용 기준: 두 화면에서 탭 시 외부 브라우저 열림, 웹 프리뷰에서도 동작.
-- [ ] A2. **계정 삭제 확인·피드백 정합화** — SettingsScreen.tsx:28의 raw `Alert.alert`를 `confirmDestructiveAction`으로 교체(취소 시 `cancelConfirm`, 확인 시 `deleteAccount`), `Alert` import 제거. deleting 상태에서 버튼 텍스트를 진행 문구(신규 키 `settings.deleteAccountInProgress`)+ActivityIndicator로 교체. 성공 시 Auth 게이트에 '계정이 삭제되었습니다' 안내(A4의 authMessage tone 분기 재사용). 수용 기준: 웹 프리뷰에서 확인/취소 모두 동작, 'confirming' 고착 재현 불가.
-- [ ] A3. **비밀번호 재설정 흐름** — AuthScreen 로그인 모드에 '비밀번호를 잊으셨나요?' 진입점 → 이메일 입력 후 `supabase.auth.resetPasswordForEmail(email, { redirectTo })` 호출, 발송 안내 배너. 앱 딥링크(expo-linking) 수신 시 새 비밀번호 입력 폼 → `updateUser({ password })`. 신규 키 `auth.forgotPassword`·`auth.resetEmailSent`·`auth.newPassword`·`auth.resetDone` (en/ko). 수용 기준: 재설정 메일 발송→링크 진입→변경→재로그인 루프 완주. ※Auth 영역이므로 AGENTS.md 에스컬레이션 규칙상 강한 리뷰 경로.
-- [ ] A4. **AI 브리핑 UI 연결(H1 승계) — 제품 결정 선행**: (a) 연결 시 — `contexts/briefing/application`에 generate-ai-brief 호출 훅(react-query mutation) 신설, 홈(체크리스트 아래) 또는 리포트 상단에 브리핑 카드(로딩·실패·재시도·`briefing.disclaimer` 필수 노출, AI_SAFETY.md 준수, 실데이터 없으면 빈 상태). (b) 미출시 결정 시 — sampleBrief·briefing.* 죽은 키 정리(F2와 병합)하고 PRODUCT_SPEC §AI 범위 하향. 수용 기준: 어느 쪽이든 '스펙-구현-i18n' 3자 일치.
+- [x] A1. **개인정보처리방침·지원 링크 인앱 노출** — `shared-kernel/config.ts`에 `PRIVACY_POLICY_URL`·`SUPPORT_URL` 상수 추가(호스팅 URL은 docs/product/PRIVACY_POLICY.md 게시본). SettingsScreen 하단·AuthScreen 하단에 `Linking.openURL` 텍스트 링크 2개(신규 키 `settings.privacyPolicy`·`settings.support`, en/ko 대칭, 44pt·accessibilityRole="link"). 수용 기준: 두 화면에서 탭 시 외부 브라우저 열림, 웹 프리뷰에서도 동작.
+- [x] A2. **계정 삭제 확인·피드백 정합화** — SettingsScreen.tsx:28의 raw `Alert.alert`를 `confirmDestructiveAction`으로 교체(취소 시 `cancelConfirm`, 확인 시 `deleteAccount`), `Alert` import 제거. deleting 상태에서 버튼 텍스트를 진행 문구(신규 키 `settings.deleteAccountInProgress`)+ActivityIndicator로 교체. 성공 시 Auth 게이트에 '계정이 삭제되었습니다' 안내(A4의 authMessage tone 분기 재사용). 수용 기준: 웹 프리뷰에서 확인/취소 모두 동작, 'confirming' 고착 재현 불가.
+- [x] A3. **비밀번호 재설정 흐름** ※잔여: Supabase 대시보드 Auth 리다이렉트 허용 URL 등록(exp://…/--/reset-password, pawbloom://reset-password) 후 실메일 루프 확인 — AuthScreen 로그인 모드에 '비밀번호를 잊으셨나요?' 진입점 → 이메일 입력 후 `supabase.auth.resetPasswordForEmail(email, { redirectTo })` 호출, 발송 안내 배너. 앱 딥링크(expo-linking) 수신 시 새 비밀번호 입력 폼 → `updateUser({ password })`. 신규 키 `auth.forgotPassword`·`auth.resetEmailSent`·`auth.newPassword`·`auth.resetDone` (en/ko). 수용 기준: 재설정 메일 발송→링크 진입→변경→재로그인 루프 완주. ※Auth 영역이므로 AGENTS.md 에스컬레이션 규칙상 강한 리뷰 경로.
+- [x] A4. **AI 브리핑 UI 연결(H1 승계)** — 2026-07-23 (a)안 확정·구현: useAiBrief 훅(generate-ai-brief 호출+응답 검증) + 홈 AiBriefCard(3/7/14 범위, 로딩·실패·빈 상태, disclaimer 상시 노출, 프리뷰=샘플). ※잔여: 엣지 함수 하이라이트가 영문 고정 — C7에서 로컬라이즈.
 
 ## Phase B — P2: 동작·데이터 결함
 
@@ -38,6 +38,7 @@ edit_policy: exclusive
 - [ ] C4. **리포트 생성 후 포맷 정합(F2)** — formatPetDetails를 라벨 로컬라이즈+빈 값 '미기록' 사람용 포맷으로 교체('null' 노출 제거). 타임라인 항목 빌더를 생성 전/후 공유 단일 함수로 통합. disclaimer는 보호자 화면에서 항상 로컬라이즈 문구(영문 원문은 병원용 사본에만).
 - [ ] C5. **DatePickerField 로케일 표시(E5 잔여)** — displayValue를 언어별 포맷(ko '2026년 7월 23일' / en 'Jul 23, 2026')으로 변환(저장값 ISO 유지), clear 버튼 minHeight 44. ※가드의 DatePickerField 사용 불변식 유지.
 - [ ] C6. **언어 선택지 자기 표기(G4 잔여)** — 설정·Auth의 언어 SegmentedControl 라벨을 정적 '한국어'/'English'로 고정(번역 대상 제외).
+- [ ] C7. **AI 브리핑 하이라이트 로컬라이즈** — generate-ai-brief 요청에 language 인자 추가, 엣지 함수 템플릿 KO/EN 분기(고지문 검증 규칙 유지) 후 재배포. A4의 영문 고정 잔여 해소. ※supabase/functions 수정은 배포 동반 — 강한 리뷰 경로.
 
 ## Phase D — 디자인시스템·a11y 일괄
 
