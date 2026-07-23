@@ -122,8 +122,17 @@ export function useAuthState() {
     }
     return changed;
   }, [queryClient]);
-  const handleSignedOut = useCallback(() => {
+  // The explicit-sign-out flag is raised before supabase.auth.signOut() runs
+  // (its SIGNED_OUT callback fires inside the await) and lowered again when
+  // the call fails, so a later real expiry still notifies. The session sync
+  // consumes and lowers the flag after each signed-out event.
+  const beginExplicitSignOut = useCallback(() => {
     explicitSignOutRef.current = true;
+  }, []);
+  const abortExplicitSignOut = useCallback(() => {
+    explicitSignOutRef.current = false;
+  }, []);
+  const handleSignedOut = useCallback(() => {
     updateAccountBoundary(null);
   }, [updateAccountBoundary]);
 
@@ -149,6 +158,8 @@ export function useAuthState() {
   const { signIn, signUp, signOut, requestPasswordReset, updatePassword } = useAuthActions({
     clearMessages,
     onSignedOut: handleSignedOut,
+    onSignOutStarted: beginExplicitSignOut,
+    onSignOutAborted: abortExplicitSignOut,
     setLoading: setAuthLoading,
     setSession,
     setUser,

@@ -11,6 +11,8 @@ import type { IdentityMessageKey } from "./identityMessage";
 type AuthActionState = {
   clearMessages: () => void;
   onSignedOut: () => void;
+  onSignOutStarted: () => void;
+  onSignOutAborted: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setSession: Dispatch<SetStateAction<Session | null>>;
   setUser: Dispatch<SetStateAction<User | null>>;
@@ -23,6 +25,8 @@ type AuthActionState = {
 export function useAuthActions({
   clearMessages,
   onSignedOut,
+  onSignOutStarted,
+  onSignOutAborted,
   setLoading,
   setSession,
   setUser,
@@ -166,9 +170,14 @@ export function useAuthActions({
     clearMessages();
     actionInFlight.current = true;
     setLoading(true);
+    // Raise the explicit-sign-out flag before the call: auth-js runs the
+    // SIGNED_OUT callback synchronously inside this await, and the session
+    // sync would otherwise misread the event as an expiry (B1).
+    onSignOutStarted();
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
+        onSignOutAborted();
         setError(authErrorTranslationKey(error));
         return;
       }
@@ -179,12 +188,13 @@ export function useAuthActions({
       setPets([]);
       setActivePetId(null);
     } catch (rawError) {
+      onSignOutAborted();
       setError(authErrorTranslationKey(rawError));
     } finally {
       actionInFlight.current = false;
       setLoading(false);
     }
-  }, [clearMessages, onSignedOut, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
+  }, [clearMessages, onSignedOut, onSignOutAborted, onSignOutStarted, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
 
   return { signIn, signUp, signOut, requestPasswordReset, updatePassword };
 }
