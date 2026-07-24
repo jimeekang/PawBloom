@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
-import { PrimaryButton } from "../../../design-system/components";
+import { FieldLabel, PrimaryButton } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { DatePickerField } from "../../../design-system/DatePickerField";
@@ -41,8 +41,11 @@ export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: C
   return (
     <View style={styles.panel}>
       <Text style={styles.title}>{t("ko", "care.shortTermTitle")}</Text>
+      <FieldLabel label={t("ko", "care.conditionPlaceholder")} />
       <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "care.medicationPlaceholder")} />
       <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "care.dosagePlaceholder")} />
       <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
       {draft.times.map((time, index) => (
         <View key={index} style={styles.timeRow}>

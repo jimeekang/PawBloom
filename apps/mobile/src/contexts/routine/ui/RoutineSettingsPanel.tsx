@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { PetRoutine, PetRoutineInput, RoutineMealSlot } from "../domain/petRoutine";
-import { PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { FieldLabel, PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, font, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -44,18 +44,19 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
         <Text style={styles.title}>{t("ko", "routine.title")}</Text>
         <Text style={styles.copy}>{t("ko", "routine.copy")}</Text>
         <View style={styles.grid}>
-          <TextInput accessibilityLabel={t("ko", "routine.breakfast")} style={styles.input} value={draft.food.meals.breakfast?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("breakfast", value)} placeholder={t("ko", "routine.breakfast")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput accessibilityLabel={t("ko", "routine.lunch")} style={styles.input} value={draft.food.meals.lunch?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("lunch", value)} placeholder={t("ko", "routine.lunch")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput accessibilityLabel={t("ko", "routine.dinner")} style={styles.input} value={draft.food.meals.dinner?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("dinner", value)} placeholder={t("ko", "routine.dinner")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput accessibilityLabel={t("ko", "routine.water")} style={styles.input} value={draft.water.amountMl ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, water: { ...current.water, amountMl: value.slice(0, 5) } }))} placeholder={t("ko", "routine.water")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
-          <TextInput accessibilityLabel={t("ko", "routine.stool")} style={styles.input} value={draft.stool.count ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, stool: { ...current.stool, count: value.slice(0, 3) } }))} placeholder={t("ko", "routine.stool")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <View style={styles.gridCell}><FieldLabel label={t("ko", "routine.breakfast")} /><TextInput accessibilityLabel={t("ko", "routine.breakfast")} style={[styles.input, styles.cellInput]} value={draft.food.meals.breakfast?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("breakfast", value)} placeholder={t("ko", "routine.breakfast")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" /></View>
+          <View style={styles.gridCell}><FieldLabel label={t("ko", "routine.lunch")} /><TextInput accessibilityLabel={t("ko", "routine.lunch")} style={[styles.input, styles.cellInput]} value={draft.food.meals.lunch?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("lunch", value)} placeholder={t("ko", "routine.lunch")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" /></View>
+          <View style={styles.gridCell}><FieldLabel label={t("ko", "routine.dinner")} /><TextInput accessibilityLabel={t("ko", "routine.dinner")} style={[styles.input, styles.cellInput]} value={draft.food.meals.dinner?.offeredGrams ?? ""} onChangeText={(value) => updateMeal("dinner", value)} placeholder={t("ko", "routine.dinner")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" /></View>
+          <View style={styles.gridCell}><FieldLabel label={t("ko", "routine.water")} /><TextInput accessibilityLabel={t("ko", "routine.water")} style={[styles.input, styles.cellInput]} value={draft.water.amountMl ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, water: { ...current.water, amountMl: value.slice(0, 5) } }))} placeholder={t("ko", "routine.water")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" /></View>
+          <View style={styles.gridCell}><FieldLabel label={t("ko", "routine.stool")} /><TextInput accessibilityLabel={t("ko", "routine.stool")} style={[styles.input, styles.cellInput]} value={draft.stool.count ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, stool: { ...current.stool, count: value.slice(0, 3) } }))} placeholder={t("ko", "routine.stool")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" /></View>
         </View>
-        <Text style={styles.label}>{t("ko", "routine.mealTimesTitle")}</Text>
+        <Text style={styles.label}>{t("ko", "routine.mealRemindersLabel")}</Text>
         <SegmentedControl
           value={draft.food.mealRemindersEnabled === false ? "off" : "on"}
           onChange={(value) => setDraft((current) => setMealRemindersEnabled(current, value === "on"))}
           items={[{ label: t("ko", "routine.mealRemindersOn"), value: "on" }, { label: t("ko", "routine.mealRemindersOff"), value: "off" }]}
         />
+        <Text style={styles.label}>{t("ko", "routine.mealTimesTitle")}</Text>
         <View style={styles.timeGrid}>
           {(["breakfast", "lunch", "dinner"] as const).map((slot) => (
             <View key={slot} style={styles.timeRow}>
@@ -75,8 +76,12 @@ export function RoutineSettingsPanel({ routine, onSave }: { routine: PetRoutine;
           ]}
         />
         {draft.walk.enabled === false ? null : (
-          <TextInput accessibilityLabel={t("ko", "routine.walk")} style={styles.inputFull} value={draft.walk.durationMinutes ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, walk: { ...current.walk, durationMinutes: value.slice(0, 4) } }))} placeholder={t("ko", "routine.walk")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          <>
+            <FieldLabel label={t("ko", "routine.walk")} />
+            <TextInput accessibilityLabel={t("ko", "routine.walk")} style={styles.inputFull} value={draft.walk.durationMinutes ?? ""} onChangeText={(value) => setDraft((current) => ({ ...current, walk: { ...current.walk, durationMinutes: value.slice(0, 4) } }))} placeholder={t("ko", "routine.walk")} placeholderTextColor={colors.textSoft} keyboardType="number-pad" />
+          </>
         )}
+        <Text style={styles.label}>{t("ko", "care.energyLevel")}</Text>
         <SegmentedControl value={draft.condition.energyLevel ?? "normal"} onChange={(energyLevel) => setDraft((current) => ({ ...current, condition: { energyLevel } }))} items={[{ label: t("ko", "diary.level.less"), value: "less" }, { label: t("ko", "diary.level.normal"), value: "normal" }, { label: t("ko", "diary.level.more"), value: "more" }]} />
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <PrimaryButton label={t("ko", "routine.save")} icon="check" onPress={save} disabled={isSaving} />
@@ -127,6 +132,13 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.semibold,
   },
   clearTimeButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.xs },
+  gridCell: {
+    width: "48%",
+    gap: spacing.xs,
+  },
+  cellInput: {
+    width: "100%",
+  },
   input: {
     ...type.body,
     width: "48%",

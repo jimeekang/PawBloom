@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
-import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, type NoticeTone } from "../../../design-system/components";
+import { DangerButton, FieldLabel, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, type NoticeTone } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -126,11 +126,15 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
     <View style={styles.quickForm}>
       <Text style={styles.sectionTitle}>{t("ko", isEditing ? "care.quickDoseEditTitle" : "care.quickDoseTitle")}</Text>
       <NoticeBanner text={notice.text} icon={notice.tone === "error" ? "close" : "medication"} tone={notice.tone} />
+      <FieldLabel label={t("ko", "care.conditionPlaceholder")} />
       <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("ko", "care.medicationPlaceholder")} />
       <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
       {isEditing ? <TimePickerField accessibilityLabel={t("ko", "care.medicationTimeLabel")} value={scheduledTime} onChange={setScheduledTime} /> : null}
       <View style={styles.inputStack}>
+        <FieldLabel label={t("ko", "care.dosagePlaceholder")} />
         <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("ko", "care.administeredPlaceholder")} />
         <TextInput accessibilityLabel={t("ko", "care.administeredPlaceholder")} style={styles.input} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
       </View>
       <SegmentedControl
@@ -143,6 +147,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
           { label: t("ko", "care.status.pendingShort"), value: "pending" },
         ]}
       />
+      <FieldLabel label={t("ko", "care.reactionPlaceholder")} />
       <TextInput
         accessibilityLabel={t("ko", "care.reactionPlaceholder")}
         multiline

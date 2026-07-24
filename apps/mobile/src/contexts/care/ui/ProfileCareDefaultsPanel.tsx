@@ -141,9 +141,13 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
             </Pressable>
           </View>
         ) : null}
+        <FieldLabel label={t("ko", "care.conditionPlaceholder")} />
         <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("ko", "care.planPlaceholder")} />
         <TextInput accessibilityLabel={t("ko", "care.planPlaceholder")} style={styles.input} value={draft.planTitle} onChangeText={(value) => setDraft((current) => ({ ...current, planTitle: value.slice(0, 80) }))} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("ko", "care.medicationPlaceholder")} />
         <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("ko", "care.dosagePlaceholder")} />
         <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
         <Text style={styles.label}>{t("ko", "pet.careDefaultsPeriod")}</Text>
         <DatePickerField value={draft.startsOn} onChange={(startsOn) => setDraft((current) => ({ ...current, startsOn }))} placeholder={t("ko", "pet.careDefaultsStartDate")} />
