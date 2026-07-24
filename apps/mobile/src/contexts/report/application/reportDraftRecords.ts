@@ -21,9 +21,12 @@ export type ReportTimelineItem = {
   time: string;
   category?: DiaryEntry["category"];
   summary?: string;
+  conditionScore?: number;
   medicationName?: string;
   status?: DoseStatus;
+  dosageLabel?: string;
   administeredAmount?: string;
+  reactionNote?: string;
 };
 
 export type ReportDraftSummary = {

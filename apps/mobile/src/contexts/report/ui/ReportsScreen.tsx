@@ -66,7 +66,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
         <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t("ko", "reports.emptyCopy")}</Text>
         <View style={styles.notice}>
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
-          <Text style={styles.noticeText}>{report?.payload.disclaimer ?? t("ko", "briefing.disclaimer")}</Text>
+          <Text style={styles.noticeText}>{t("ko", "briefing.disclaimer")}</Text>
         </View>
         {hasDisplayedRecords ? (
           <View style={styles.previewBlock}>
@@ -78,7 +78,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
       {hasDisplayedRecords ? (
         <>
-          <ReportListSection icon="time" title={t("ko", "reports.timelineHighlights")} items={artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights.map((item) => formatReportTimelineItem(item, language))} />
+          <ReportListSection icon="time" title={t("ko", "reports.timelineHighlights")} items={(artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights).map((item) => formatReportTimelineItem(item, language))} />
           {!artifactSnapshot ? <ReportListSection icon="shield" title={t("ko", "reports.missingRecords")} items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords.map(formatReportMissingRecord) : [t("ko", "reports.noMissingRecords")]} /> : null}
           {!artifactSnapshot ? <ReportListSection icon="condition" title={t("ko", "reports.vetQuestions")} items={reportSummary.vetQuestions.map(formatReportVetQuestion)} /> : null}
           <ReportMetricsCard summary={displayedSummary} conditionTrend={conditionTrend} petDetails={artifactSnapshot?.petDetails} />

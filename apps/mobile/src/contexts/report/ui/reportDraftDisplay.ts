@@ -25,8 +25,11 @@ const doseStatusKeys: Record<DoseStatus, TranslationKey> = {
 export function formatReportTimelineItem(item: ReportTimelineItem, language: Language): string {
   const datePart = item.dateKey ? `${formatDateKeyDisplay(item.dateKey, language)} ` : "";
   if (item.kind === "diary") {
-    return `${datePart}${item.time} · ${t("ko", `category.${item.category ?? "memo"}` as TranslationKey)}: ${item.summary ?? ""}`;
+    const score = item.conditionScore ? ` · ${t("ko", "reports.timelineScore")} ${item.conditionScore}/5` : "";
+    return `${datePart}${item.time} · ${t("ko", `category.${item.category ?? "memo"}` as TranslationKey)}: ${item.summary ?? ""}${score}`;
   }
+  const dosage = item.dosageLabel ? ` · ${t("ko", "care.dosageLabel")}: ${item.dosageLabel}` : "";
   const given = item.administeredAmount ? t("ko", "reports.timelineGiven").replace("{amount}", item.administeredAmount) : "";
-  return `${datePart}${item.time} · ${t("ko", "reports.timelineMedication")} ${item.medicationName ?? ""}: ${t("ko", doseStatusKeys[item.status ?? "pending"])}${given}`;
+  const reaction = item.reactionNote ? ` · ${t("ko", "care.reactionLabel")}: ${item.reactionNote}` : "";
+  return `${datePart}${item.time} · ${t("ko", "reports.timelineMedication")} ${item.medicationName ?? ""}: ${t("ko", doseStatusKeys[item.status ?? "pending"])}${dosage}${given}${reaction}`;
 }
