@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   photoViewer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.92)",
+    backgroundColor: colors.scrimStrong,
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.lg,
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    backgroundColor: colors.scrimSoft,
     alignItems: "center",
     justifyContent: "center",
   },

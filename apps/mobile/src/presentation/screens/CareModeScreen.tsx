@@ -182,7 +182,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.completed")}`}
             accessibilityState={{ selected: row.status === "completed" }}
             aria-pressed={row.status === "completed"}
-            style={styles.givenButton}
+            style={[styles.givenButton, row.status === "completed" && styles.agendaActionSelected]}
             onPress={() => onStatusChange("completed")}
           >
             <Text numberOfLines={1} style={styles.givenButtonText}>{careStatusActionLabel("completed")}</Text>
@@ -192,7 +192,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.partial")}`}
             accessibilityState={{ selected: row.status === "partial" }}
             aria-pressed={row.status === "partial"}
-            style={styles.partialButton}
+            style={[styles.partialButton, row.status === "partial" && styles.agendaActionSelected]}
             onPress={() => onStatusChange("partial")}
           >
             <Text numberOfLines={1} style={styles.partialButtonText}>{careStatusActionLabel("partial")}</Text>
@@ -202,7 +202,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityLabel={`${row.medicationName}: ${t("ko", "care.status.skipped")}`}
             accessibilityState={{ selected: row.status === "skipped" }}
             aria-pressed={row.status === "skipped"}
-            style={styles.skipButton}
+            style={[styles.skipButton, row.status === "skipped" && styles.agendaActionSelected]}
             onPress={() => onStatusChange("skipped")}
           >
             <Text numberOfLines={1} style={styles.skipButtonText}>{careStatusActionLabel("skipped")}</Text>

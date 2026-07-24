@@ -73,7 +73,7 @@ export const styles = StyleSheet.create({
     fontWeight: font.weight.semibold,
   },
   speciesPill: {
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
