@@ -32,12 +32,12 @@ edit_policy: exclusive
 
 ## Phase C — P2/P3: i18n·현지화 (EN 모드 한국어 제거)
 
-- [ ] C1. **application 계층 에러 키화(1/3: 다이어리·미디어)** — diaryRecords.ts:89~189·diarySummary.ts:18,40-44·mediaUpload.ts:33~77·authContextQueries.ts:141~225의 하드코딩 한국어/raw Postgres message를 에러코드로 교체, UI 경계(useDiaryEntriesController 등)에서 t() 매핑(A4 패턴 재사용). raw message는 로깅 전용. 완료 시 0005 D6 표기를 partial로 정정(→F4).
-- [ ] C2. **application 계층 에러 키화(2/3: 케어·투약, E6)** — medicationDoseRecords.ts 9곳·carePlanRecords.ts:38·carePlanPersistence.ts:19·useCareSetupState.ts:40-42 동일 처리. fallback 의약명 '투약'도 키화.
-- [ ] C3. **리포트 미리보기 로컬라이즈+정렬(F1)** — reportDraftRecords의 누락기록·타임라인·수의사질문을 언어 인자 기반 t()로 재구성, 날짜 로케일 포맷, sortKey를 실제 타임스탬프(occurredAt/scheduledAt) 단일 정렬로 교체. 영문 사본은 englishPreview 블록 한정. reportDraftRecords.test.ts의 영문 단언 갱신.
-- [ ] C4. **리포트 생성 후 포맷 정합(F2)** — formatPetDetails를 라벨 로컬라이즈+빈 값 '미기록' 사람용 포맷으로 교체('null' 노출 제거). 타임라인 항목 빌더를 생성 전/후 공유 단일 함수로 통합. disclaimer는 보호자 화면에서 항상 로컬라이즈 문구(영문 원문은 병원용 사본에만).
-- [ ] C5. **DatePickerField 로케일 표시(E5 잔여)** — displayValue를 언어별 포맷(ko '2026년 7월 23일' / en 'Jul 23, 2026')으로 변환(저장값 ISO 유지), clear 버튼 minHeight 44. ※가드의 DatePickerField 사용 불변식 유지.
-- [ ] C6. **언어 선택지 자기 표기(G4 잔여)** — 설정·Auth의 언어 SegmentedControl 라벨을 정적 '한국어'/'English'로 고정(번역 대상 제외).
+- [x] C1. **application 계층 에러 키화(1/3: 다이어리·미디어)** ※CodedError+errorNoticeText 패턴 신설. authContextQueries는 petMutationError가 이미 키 매핑하므로 제외, diarySummary 저장 기본값은 DB 데이터라 빈 메모 가드(E3 인접)에서 해소 예정. — diaryRecords.ts:89~189·diarySummary.ts:18,40-44·mediaUpload.ts:33~77·authContextQueries.ts:141~225의 하드코딩 한국어/raw Postgres message를 에러코드로 교체, UI 경계(useDiaryEntriesController 등)에서 t() 매핑(A4 패턴 재사용). raw message는 로깅 전용. 완료 시 0005 D6 표기를 partial로 정정(→F4).
+- [x] C2. **application 계층 에러 키화(2/3: 케어·투약, E6)** ※routine 레코드 포함. 저장 fallback 의약명 '투약'은 DB 저장값이라 유지(표시는 저장값 그대로 양언어 동일). — medicationDoseRecords.ts 9곳·carePlanRecords.ts:38·carePlanPersistence.ts:19·useCareSetupState.ts:40-42 동일 처리. fallback 의약명 '투약'도 키화.
+- [x] C3. **리포트 미리보기 로컬라이즈+정렬(F1)** — reportDraftRecords의 누락기록·타임라인·수의사질문을 언어 인자 기반 t()로 재구성, 날짜 로케일 포맷, sortKey를 실제 타임스탬프(occurredAt/scheduledAt) 단일 정렬로 교체. 영문 사본은 englishPreview 블록 한정. reportDraftRecords.test.ts의 영문 단언 갱신.
+- [x] C4. **리포트 생성 후 포맷 정합(F2)** — formatPetDetails를 라벨 로컬라이즈+빈 값 '미기록' 사람용 포맷으로 교체('null' 노출 제거). 타임라인 항목 빌더를 생성 전/후 공유 단일 함수로 통합. disclaimer는 보호자 화면에서 항상 로컬라이즈 문구(영문 원문은 병원용 사본에만).
+- [x] C5. **DatePickerField 로케일 표시(E5 잔여)** — displayValue를 언어별 포맷(ko '2026년 7월 23일' / en 'Jul 23, 2026')으로 변환(저장값 ISO 유지), clear 버튼 minHeight 44. ※가드의 DatePickerField 사용 불변식 유지.
+- [x] C6. **언어 선택지 자기 표기(G4 잔여)** — 설정·Auth의 언어 SegmentedControl 라벨을 정적 '한국어'/'English'로 고정(번역 대상 제외).
 - [ ] C7. **AI 브리핑 하이라이트 로컬라이즈** — generate-ai-brief 요청에 language 인자 추가, 엣지 함수 템플릿 KO/EN 분기(고지문 검증 규칙 유지) 후 재배포. A4의 영문 고정 잔여 해소. ※supabase/functions 수정은 배포 동반 — 강한 리뷰 경로.
 
 ## Phase D — 디자인시스템·a11y 일괄
