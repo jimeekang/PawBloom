@@ -26,6 +26,7 @@ Module._load = function loadWithMobileMocks(request, parent, isMain) {
   if (request === "expo-secure-store") return createSecureStoreMock();
   if (request === "expo-sqlite") return createSQLiteMock();
   if (request === "expo-linking") return createLinkingMock();
+  if (request === "expo-clipboard") return { setStringAsync: async () => undefined };
   if (request === "@react-native-community/datetimepicker") return passthroughComponent;
   if (request.startsWith("@expo/vector-icons")) return createIconMock();
   return originalLoad.call(this, request, parent, isMain);

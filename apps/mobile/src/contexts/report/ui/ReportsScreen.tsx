@@ -29,9 +29,10 @@ type Props = {
   onRevoke: () => void | Promise<void>;
   onReset: () => void;
   onNewDiary: () => void;
+  onRetryLoad?: () => void;
 };
 
-export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, canShare, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onRevoke, onReset, onNewDiary }: Props) {
+export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, canShare, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onRevoke, onReset, onNewDiary, onRetryLoad }: Props) {
   const { language } = useLanguage();
   const stage = report?.status ?? "empty";
   const stageContent = stageCopy[stage];
@@ -54,6 +55,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
       <NoticeBanner text={t("ko", stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
       {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("ko", "permission.reportOwnerConfirmation")} icon="shield" /> : null}
       {visibleError ? <NoticeBanner text={t("ko", workflowErrorKey[visibleError])} icon="close" tone="error" /> : null}
+      {visibleError === "load" && onRetryLoad ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetryLoad} /> : null}
 
       <SurfaceCard>
         <View style={styles.reportHeader}>
@@ -104,6 +106,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
       <View style={styles.actions}>
         {pendingAction ? <NoticeBanner text={t("ko", pendingLabelKey[pendingAction])} icon={actionIcon[pendingAction]} tone="progress" /> : null}
+        {!pendingAction && !primaryAction && isBusy ? <NoticeBanner text={t("ko", "reports.loading")} icon="time" tone="progress" /> : null}
         {!pendingAction && primaryAction ? <PrimaryButton label={t("ko", primaryLabelKey(primaryAction, report?.status))} icon={actionIcon[primaryAction]} onPress={runPrimaryAction} /> : null}
         {report?.status === "shared" && canShare && !isBusy ? (
           <SecondaryButton

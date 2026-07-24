@@ -209,6 +209,7 @@ export function useVetReportWorkflow({ petId, userId, enabled, hasRecords, canGe
     share,
     revoke,
     reset,
+    retryLoad: () => void reportStateQuery.refetch(),
   };
 }
 

@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { ReportDraftSummary } from "../application/reportDraftRecords";
-import { SurfaceCard } from "../../../design-system/components";
+import { SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { formatReportExpiry } from "./reportWorkflow";
 import { useLanguage } from "../../../i18n/languageContext";
+import * as Clipboard from "expo-clipboard";
 
 type ReportMetricSummary = Pick<
   ReportDraftSummary,
@@ -52,6 +54,15 @@ export function ReportMetricsCard({ summary, conditionTrend, petDetails }: { sum
 
 export function ReportShareCard({ shareUrl, expiresAt }: { shareUrl: string; expiresAt: string }) {
   const { language } = useLanguage();
+  const [copied, setCopied] = useState(false);
+  const copyLink = async () => {
+    try {
+      await Clipboard.setStringAsync(shareUrl);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
   return (
     <SurfaceCard>
       <View style={styles.sectionTitleRow}>
@@ -61,6 +72,7 @@ export function ReportShareCard({ shareUrl, expiresAt }: { shareUrl: string; exp
       <Text style={styles.body}>{t("ko", "reports.actualShareCopy")}</Text>
       <Text style={styles.shareLabel}>{t("ko", "reports.shareUrlLabel")}</Text>
       <Text selectable style={styles.shareUrl}>{shareUrl}</Text>
+      <SecondaryButton label={t("ko", copied ? "reports.linkCopied" : "reports.copyLink")} icon="share" onPress={() => void copyLink()} />
       <Text style={styles.shareCaption}>{t("ko", "reports.actualShareExpiry").replace("{expiry}", formatReportExpiry(expiresAt, language === "ko" ? "ko-KR" : "en-AU"))}</Text>
       <Text style={styles.shareCaption}>{t("ko", "reports.selectableLink")}</Text>
     </SurfaceCard>
