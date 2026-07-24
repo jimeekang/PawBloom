@@ -6,7 +6,9 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../..
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, font, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
+import { useLanguage } from "../../../i18n/languageContext";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
+import { formatReportMissingRecord, formatReportTimelineItem, formatReportVetQuestion } from "./reportDraftDisplay";
 import { ReportListSection, ReportMetricsCard, ReportShareCard } from "./ReportArtifactSections";
 import { createReportArtifactSnapshot, type ReportArtifactSnapshot } from "./reportArtifactSnapshot";
 import { getReportPrimaryAction, type ReportWorkflowAction, type ReportWorkflowError } from "./reportWorkflow";
@@ -30,6 +32,7 @@ type Props = {
 };
 
 export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, canShare, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onRevoke, onReset, onNewDiary }: Props) {
+  const { language } = useLanguage();
   const stage = report?.status ?? "empty";
   const stageContent = stageCopy[stage];
   const artifactSnapshot = report ? createReportArtifactSnapshot(report.payload) : null;
@@ -75,9 +78,9 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
       {hasDisplayedRecords ? (
         <>
-          <ReportListSection icon="time" title={t("ko", "reports.timelineHighlights")} items={artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights} />
-          {!artifactSnapshot ? <ReportListSection icon="shield" title={t("ko", "reports.missingRecords")} items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords : [t("ko", "reports.noMissingRecords")]} /> : null}
-          {!artifactSnapshot ? <ReportListSection icon="condition" title={t("ko", "reports.vetQuestions")} items={reportSummary.vetQuestions} /> : null}
+          <ReportListSection icon="time" title={t("ko", "reports.timelineHighlights")} items={artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights.map((item) => formatReportTimelineItem(item, language))} />
+          {!artifactSnapshot ? <ReportListSection icon="shield" title={t("ko", "reports.missingRecords")} items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords.map(formatReportMissingRecord) : [t("ko", "reports.noMissingRecords")]} /> : null}
+          {!artifactSnapshot ? <ReportListSection icon="condition" title={t("ko", "reports.vetQuestions")} items={reportSummary.vetQuestions.map(formatReportVetQuestion)} /> : null}
           <ReportMetricsCard summary={displayedSummary} conditionTrend={conditionTrend} petDetails={artifactSnapshot?.petDetails} />
           <SurfaceCard>
             <Text style={styles.title}>{t("ko", "reports.beforeSharing")}</Text>

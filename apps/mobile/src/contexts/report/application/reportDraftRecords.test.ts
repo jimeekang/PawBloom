@@ -79,20 +79,24 @@ if (summary.medicationCompletedCount !== 1 || summary.medicationPendingCount !==
   throw new Error("Medication adherence counts should separate completed and pending records.");
 }
 
-if (!summary.timelineHighlights.some((highlight) => highlight.includes("Condition: More alert"))) {
+if (!summary.timelineHighlights.some((item) => item.kind === "diary" && item.summary === "More alert")) {
   throw new Error("Timeline highlights should include recent diary records.");
 }
 
-if (!summary.timelineHighlights.some((highlight) => highlight.includes("partial dose recorded"))) {
+if (!summary.timelineHighlights.some((item) => item.kind === "medication" && item.status === "partial")) {
   throw new Error("Timeline highlights should include medication status records.");
 }
 
-if (!summary.missingRecords.includes("No food or appetite diary record was logged.")) {
-  throw new Error("Missing record prompts should call out absent report inputs.");
+if (summary.timelineHighlights[0]?.kind !== "diary" || summary.timelineHighlights[0]?.summary !== "More alert") {
+  throw new Error("Timeline must sort by actual date/time — dated diary entries outrank undated doses instead of medication always pinning to the top.");
 }
 
-if (!summary.vetQuestions.some((question) => question.includes("partial or skipped medication records"))) {
-  throw new Error("Vet questions should include medication attention prompts.");
+if (!summary.missingRecords.includes("noFood")) {
+  throw new Error("Missing record kinds should call out absent report inputs.");
+}
+
+if (!summary.vetQuestions.includes("medication")) {
+  throw new Error("Vet question kinds should include medication attention prompts.");
 }
 
 if (!summary.englishPreview.includes("not a diagnosis")) {
@@ -104,7 +108,7 @@ if (!summary.englishPreview.includes("score increased from 2 to 4")) {
 }
 
 const emptySummary = createReportDraftSummary([], []);
-if (!emptySummary.missingRecords.includes("No diary records were logged in this range.")) {
+if (!emptySummary.missingRecords.includes("noDiary")) {
   throw new Error("Empty reports should explain missing diary records.");
 }
 

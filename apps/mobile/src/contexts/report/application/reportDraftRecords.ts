@@ -11,6 +11,21 @@ export type ReportDateRange = {
 
 export type ConditionTrendDirection = "none" | "stable" | "improving" | "declining";
 
+// The summary stays language-neutral (application must not import i18n);
+// report/ui/reportDraftDisplay.ts turns these kinds/items into copy.
+export type ReportMissingKind = "noDiary" | "noFood" | "noWater" | "noStool" | "noScore" | "noMedication";
+export type ReportVetQuestionKind = "medication" | "declining" | "intake" | "noScore" | "fallback";
+export type ReportTimelineItem = {
+  kind: "diary" | "medication";
+  dateKey?: string;
+  time: string;
+  category?: DiaryEntry["category"];
+  summary?: string;
+  medicationName?: string;
+  status?: DoseStatus;
+  administeredAmount?: string;
+};
+
 export type ReportDraftSummary = {
   hasRecords: boolean;
   diaryCount: number;
@@ -18,9 +33,9 @@ export type ReportDraftSummary = {
   medicationAttentionCount: number;
   medicationCompletedCount: number;
   medicationPendingCount: number;
-  missingRecords: string[];
-  timelineHighlights: string[];
-  vetQuestions: string[];
+  missingRecords: ReportMissingKind[];
+  timelineHighlights: ReportTimelineItem[];
+  vetQuestions: ReportVetQuestionKind[];
   englishPreview: string;
   conditionTrend: {
     direction: ConditionTrendDirection;
@@ -119,32 +134,34 @@ function shouldCountDoseInMedicationAttention(status: DoseStatus) {
 
 function createMissingRecords(entries: DiaryEntry[], doses: DoseRecord[], latestScore?: 1 | 2 | 3 | 4 | 5) {
   const categories = new Set(entries.map((entry) => entry.category));
-  const missing: string[] = [];
+  const missing: ReportMissingKind[] = [];
 
-  if (entries.length === 0) missing.push("No diary records were logged in this range.");
-  if (!categories.has("food")) missing.push("No food or appetite diary record was logged.");
-  if (!categories.has("water")) missing.push("No water intake diary record was logged.");
-  if (!categories.has("stool")) missing.push("No stool diary record was logged.");
-  if (!latestScore) missing.push("No condition score was recorded.");
-  if (doses.length === 0) missing.push("No medication records were logged.");
+  if (entries.length === 0) missing.push("noDiary");
+  if (!categories.has("food")) missing.push("noFood");
+  if (!categories.has("water")) missing.push("noWater");
+  if (!categories.has("stool")) missing.push("noStool");
+  if (!latestScore) missing.push("noScore");
+  if (doses.length === 0) missing.push("noMedication");
 
   return missing.slice(0, 5);
 }
 
+// Both record kinds sort on the same "date time" key so the newest item wins
+// regardless of type (the old "medication ..." prefix pinned doses on top).
 function createTimelineHighlights(entries: DiaryEntry[], doses: DoseRecord[]) {
   const entryHighlights = entries.map((entry) => ({
     sortKey: `${entry.entryDate} ${entry.occurredAt}`,
-    text: `${entry.entryDate} ${entry.occurredAt} - ${diaryCategoryLabel(entry.category)}: ${entry.summary}`,
+    item: { kind: "diary" as const, dateKey: entry.entryDate, time: entry.occurredAt, category: entry.category, summary: entry.summary },
   }));
   const doseHighlights = doses.map((dose) => ({
-    sortKey: `medication ${dose.scheduledAt} ${dose.id}`,
-    text: `${dose.scheduledAt} - Medication ${dose.medicationName}: ${doseStatusLabel(dose.status)}${dose.administeredAmount ? `, given ${dose.administeredAmount}` : ""}`,
+    sortKey: `${dose.doseDate ?? ""} ${dose.scheduledAt}`,
+    item: { kind: "medication" as const, dateKey: dose.doseDate, time: dose.scheduledAt, medicationName: dose.medicationName, status: dose.status, administeredAmount: dose.administeredAmount },
   }));
 
   return [...entryHighlights, ...doseHighlights]
     .sort((left, right) => right.sortKey.localeCompare(left.sortKey))
     .slice(0, 5)
-    .map((highlight) => highlight.text);
+    .map((highlight) => highlight.item);
 }
 
 function createVetQuestions(
@@ -152,23 +169,23 @@ function createVetQuestions(
   medicationAttentionCount: number,
   conditionTrend: ReportDraftSummary["conditionTrend"],
 ) {
-  const questions: string[] = [];
+  const questions: ReportVetQuestionKind[] = [];
   const categories = new Set(entries.map((entry) => entry.category));
 
   if (medicationAttentionCount > 0) {
-    questions.push("Were any partial or skipped medication records intentional, and should the clinic review the schedule?");
+    questions.push("medication");
   }
   if (conditionTrend.direction === "declining") {
-    questions.push("The latest condition score is lower than the previous score; what context should the clinic know?");
+    questions.push("declining");
   }
   if (categories.has("food") || categories.has("water") || categories.has("stool")) {
-    questions.push("Are appetite, water, or stool changes important to discuss at this visit?");
+    questions.push("intake");
   }
   if (!conditionTrend.latestScore) {
-    questions.push("Should a daily condition score be added before the next clinic visit?");
+    questions.push("noScore");
   }
 
-  return (questions.length > 0 ? questions : ["Are there recent changes outside these records that the clinic should know about?"]).slice(0, 4);
+  return (questions.length > 0 ? questions : ["fallback" as const]).slice(0, 4);
 }
 
 function createEnglishPreview(
@@ -211,28 +228,6 @@ function conditionScoreMovementCopy(conditionTrend: ReportDraftSummary["conditio
   return `score stayed at ${latestScore}`;
 }
 
-function diaryCategoryLabel(category: DiaryEntry["category"]) {
-  const labels: Record<DiaryEntry["category"], string> = {
-    food: "Food",
-    water: "Water",
-    walk: "Walk",
-    stool: "Stool",
-    condition: "Condition",
-    memo: "Memo",
-    photo: "Photo",
-  };
-  return labels[category];
-}
-
-function doseStatusLabel(status: DoseStatus) {
-  const labels: Record<DoseStatus, string> = {
-    pending: "not given yet",
-    completed: "full dose recorded",
-    partial: "partial dose recorded",
-    skipped: "skipped",
-  };
-  return labels[status];
-}
 
 function compareDiaryEntryTime(left: DiaryEntry, right: DiaryEntry) {
   const leftKey = `${left.entryDate} ${left.occurredAt}`;
