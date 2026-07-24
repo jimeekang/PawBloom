@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { SurfaceCard } from "../../../design-system/components";
+import { SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
@@ -10,11 +10,13 @@ export function SubscriptionPlanCard({
   ownedPetCount,
   loading,
   failed,
+  onRetry,
 }: {
   entitlement: Entitlement | null;
   ownedPetCount: number;
   loading: boolean;
   failed: boolean;
+  onRetry?: () => void;
 }) {
   const planLabel = entitlement ? t("ko", `settings.plan.${entitlement.plan}` as const) : null;
   const statusLabel = loading
@@ -32,6 +34,7 @@ export function SubscriptionPlanCard({
             <Text style={[styles.plan, failed && styles.planError]}>{statusLabel}</Text>
           </View>
         </View>
+        {failed && onRetry ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetry} /> : null}
         {entitlement ? (
           <>
             <PlanLine text={t("ko", "settings.planPets").replace("{count}", `${ownedPetCount}`).replace("{limit}", `${entitlement.maxPets}`)} enabled={ownedPetCount <= entitlement.maxPets} />

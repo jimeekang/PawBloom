@@ -23,6 +23,7 @@ export function PetMembersCard({
   entitlement,
   entitlementLoading,
   entitlementFailed,
+  onRetryEntitlement,
 }: {
   pet: PetProfile;
   configured: boolean;
@@ -30,6 +31,7 @@ export function PetMembersCard({
   entitlement: Entitlement | null;
   entitlementLoading: boolean;
   entitlementFailed: boolean;
+  onRetryEntitlement?: () => void;
 }) {
   const owner = pet.role === "owner";
   const membersQuery = usePetMembers(pet.id, userId, configured && owner);
@@ -101,6 +103,7 @@ export function PetMembersCard({
 
         {owner && entitlementLoading ? <NoticeBanner text={t("ko", "settings.planLoading")} icon="lock" /> : null}
         {owner && entitlementFailed ? <NoticeBanner text={t("ko", "settings.planLoadFailed")} icon="close" tone="error" /> : null}
+        {owner && entitlementFailed && onRetryEntitlement ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetryEntitlement} /> : null}
         {owner && entitlement && !entitlement.familySharingEnabled ? <NoticeBanner text={t("ko", "settings.membersFamilyLocked")} icon="lock" /> : null}
         {owner && entitlement?.familySharingEnabled && !configured ? <NoticeBanner text={t("ko", "settings.membersAccountRequired")} icon="shield" /> : null}
         {owner && entitlement?.familySharingEnabled ? (

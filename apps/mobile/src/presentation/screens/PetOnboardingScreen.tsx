@@ -149,6 +149,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       {!user ? <NoticeBanner text={t("ko", "pet.loginRequired")} icon="shield" /> : null}
       {entitlementLoading ? <NoticeBanner text={t("ko", "pet.planLoading")} icon="lock" /> : null}
       {entitlementFailed ? <NoticeBanner text={t("ko", "pet.planLoadFailed")} icon="close" tone="error" /> : null}
+      {entitlementFailed ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={() => void entitlementQuery.refetch()} /> : null}
       {hasPets && !showCreateForm && petCreationAllowed ? <SecondaryButton label={t("ko", "pet.create")} icon="add" onPress={onAddAnother} /> : null}
       {hasPets && !showCreateForm && entitlement && !petCreationAllowed ? <NoticeBanner text={t("ko", "pet.planLimitReached").replace("{limit}", `${entitlement.maxPets}`)} icon="lock" /> : null}
 
