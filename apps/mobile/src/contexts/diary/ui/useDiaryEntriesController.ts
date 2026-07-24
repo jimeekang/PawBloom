@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getLocalDateKey, getWeekDateRange, useCreateDiaryEntry, useDeleteDiaryEntry, useDiaryEntriesByDate, useDiaryEntriesByDateRange, useTodayDiaryEntries, useUpdateDiaryEntry } from "../application/diaryRecords";
 import type { DiaryEntry } from "../domain/diaryEntry";
 import { t } from "../../../i18n/translations";
+import { errorNoticeText } from "../../../i18n/errorNotice";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import type { DiaryFilter } from "./DiaryCalendar";
 import type { DraftDiaryEntry } from "./draftDiaryEntry";
@@ -74,7 +75,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
           onSaved();
           return outcome;
         })
-        .catch((error: Error) => { onNotice(error.message, "error"); throw error; });
+        .catch((error: Error) => { onNotice(errorNoticeText(error, "diary.saveFailed"), "error"); throw error; });
     }
     const nextEntry = createLocalDiaryEntry(activePetId, draft);
     setEntries((current) => [nextEntry, ...current]);
@@ -90,7 +91,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
         await updateDiaryEntry.mutateAsync({ id: draft.id, category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredTime, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId });
         onNotice(""); onSaved();
       } catch (error) {
-        onNotice(error instanceof Error ? error.message : t("ko", "diary.updateFailed"), "error"); throw error;
+        onNotice(errorNoticeText(error, "diary.updateFailed"), "error"); throw error;
       }
       return;
     }
@@ -108,7 +109,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
           await deleteDiaryEntry.mutateAsync(entry.id);
           onNotice(t("ko", "today.diaryDeletedRemote")); return true;
         } catch (error) {
-          onNotice(error instanceof Error ? error.message : t("ko", "diary.deleteFailed"), "error"); return false;
+          onNotice(errorNoticeText(error, "diary.deleteFailed"), "error"); return false;
         }
       }
 
