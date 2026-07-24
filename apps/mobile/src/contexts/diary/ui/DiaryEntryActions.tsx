@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SecondaryButton } from "../../../design-system/components";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
@@ -22,10 +22,7 @@ export function DiaryEntryActions({ editing, isSaving, saveBlockedByRole, canDel
       <PrimaryButton label={editing ? t("ko", "diary.update") : t("ko", "diary.save")} onPress={onSave} disabled={isSaving || saveBlockedByRole} />
       {editing ? <SecondaryButton label={t("ko", "diary.cancelEdit")} onPress={onCancel} disabled={isSaving} /> : null}
       {editing && canDelete ? (
-        <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={onDelete}>
-          <AppIcon name="close" size={iconSize.sm} color={colors.danger} />
-          <Text style={styles.dangerButtonText}>{t("ko", "diary.delete")}</Text>
-        </Pressable>
+        <DangerButton label={t("ko", "diary.delete")} icon="close" onPress={onDelete} disabled={isSaving} />
       ) : null}
       {editing && !canDelete ? <NoticeBanner text={t("ko", "permission.diaryDeleteOwnerOnly")} icon="shield" /> : null}
     </View>

@@ -208,7 +208,7 @@ export function DiaryEntryScreen({
   return (
     <View style={styles.screen}>
       <DiaryCalendar selectedDateKey={selectedDateKey} filter={filter} onSelectDate={onDateChange} onFilterChange={onFilterChange} />
-      <NoticeBanner text={notice} icon="shield" />
+      <NoticeBanner text={notice} icon="close" tone="error" />
 
       <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
       <DiaryCategoryPicker categories={categories} selected={selected} disabled={Boolean(editingEntry)} onSelect={selectCategory} />

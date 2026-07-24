@@ -132,22 +132,6 @@ export const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
   },
-  dangerButton: {
-    minHeight: layout.buttonHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.dangerBorder,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  dangerButtonText: {
-    ...type.bodyStrong,
-    color: colors.danger,
-  },
   actionRow: {
     marginTop: spacing.xs,
   },

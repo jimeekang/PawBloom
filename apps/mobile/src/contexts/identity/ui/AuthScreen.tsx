@@ -180,7 +180,13 @@ export function AuthScreen() {
             ) : null}
 
             {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
-            {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
+            {authMessage ? (
+              <NoticeBanner
+                text={t("ko", authMessage)}
+                icon={authMessage === "auth.sessionExpired" ? "close" : authMessage === "auth.checkEmail" || authMessage === "auth.resetEmailSent" ? "shield" : "check"}
+                tone={authMessage === "auth.sessionExpired" ? "error" : authMessage === "auth.checkEmail" || authMessage === "auth.resetEmailSent" ? "progress" : "success"}
+              />
+            ) : null}
 
             {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
             {loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}

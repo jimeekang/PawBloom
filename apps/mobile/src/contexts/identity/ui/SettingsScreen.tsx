@@ -1,8 +1,8 @@
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
@@ -59,16 +59,12 @@ export function SettingsScreen({
             ? <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
             : <Text style={styles.copy}>{t("ko", "settings.previewCopy")}</Text>}
           {configured ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: deleting, busy: deleting }}
-              disabled={deleting}
-              style={({ pressed }) => [styles.deleteButton, pressed && !deleting && styles.deleteButtonPressed, deleting && styles.deleteButtonDisabled]}
+            <DangerButton
+              label={t("ko", deleting ? "settings.deleteAccountInProgress" : "settings.deleteAccount")}
               onPress={confirmDeleteAccount}
-            >
-              {deleting ? <ActivityIndicator size="small" color={colors.danger} /> : null}
-              <Text style={styles.deleteButtonText}>{t("ko", deleting ? "settings.deleteAccountInProgress" : "settings.deleteAccount")}</Text>
-            </Pressable>
+              disabled={deleting}
+              busy={deleting}
+            />
           ) : null}
           {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("ko", "settings.deleteAccountError")} icon="close" tone="error" /> : null}
           {identityError ? <NoticeBanner text={t("ko", identityError)} icon="close" tone="error" /> : null}
@@ -152,27 +148,6 @@ const styles = StyleSheet.create({
   copy: {
     ...type.body,
     color: colors.textMuted,
-  },
-  deleteButton: {
-    minHeight: layout.buttonHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.dangerBorder,
-    backgroundColor: colors.dangerBg,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  deleteButtonPressed: {
-    backgroundColor: colors.surfacePeach,
-  },
-  deleteButtonDisabled: {
-    opacity: 0.55,
-  },
-  deleteButtonText: {
-    ...type.bodyStrong,
-    color: colors.danger,
   },
   statusPill: {
     minHeight: 44,

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../domain/medication";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, type NoticeTone } from "../../../design-system/components";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, type NoticeTone } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -26,7 +26,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   const [reactionNote, setReactionNote] = useState("");
   const [status, setStatus] = useState<DoseStatus>("completed");
   const [scheduledTime, setScheduledTime] = useState("");
-  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: t("ko", "care.quickDoseNotice"), tone: "success" });
+  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: t("ko", "care.quickDoseNotice"), tone: "progress" });
   const setNotice = (text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone });
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
@@ -35,7 +35,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   useEffect(() => {
     if (!editingDose) {
       resetForm();
-      setNotice(t("ko", "care.quickDoseNotice"));
+      setNotice(t("ko", "care.quickDoseNotice"), "progress");
       return;
     }
 
@@ -47,7 +47,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
     setReactionNote(nextState.reactionNote);
     setStatus(nextState.status);
     setScheduledTime(nextState.scheduledTime);
-    setNotice(t("ko", "care.quickDoseEditingNotice"));
+    setNotice(t("ko", "care.quickDoseEditingNotice"), "progress");
   }, [editingDose]);
 
   async function saveDose() {
@@ -157,9 +157,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         <View style={styles.editActions}>
           <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
           {canDelete ? (
-            <Pressable accessibilityRole="button" accessibilityState={{ disabled: isSaving }} disabled={isSaving} style={styles.dangerButton} onPress={deleteDose}>
-              <Text style={styles.dangerButtonText}>{t("ko", "care.quickDoseDelete")}</Text>
-            </Pressable>
+            <DangerButton label={t("ko", "care.quickDoseDelete")} onPress={deleteDose} disabled={isSaving} />
           ) : <NoticeBanner text={t("ko", "permission.medicationDeleteOwnerOnly")} icon="shield" />}
         </View>
       ) : null}
@@ -182,7 +180,5 @@ const styles = StyleSheet.create({
   },
   inputStack: { gap: spacing.sm },
   editActions: { gap: spacing.sm },
-  dangerButton: { minHeight: layout.inputHeight, borderRadius: radius.md, borderWidth: 1, borderColor: colors.dangerBorder, alignItems: "center", justifyContent: "center" },
-  dangerButtonText: { ...type.bodyStrong, color: colors.danger },
   noteInput: { minHeight: 78, textAlignVertical: "top" },
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
@@ -181,10 +181,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
           />
 
           <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} disabled={loading} />
-          <Pressable accessibilityRole="button" accessibilityState={{ disabled: loading }} disabled={loading} style={styles.dangerButton} onPress={onDelete}>
-            <AppIcon name="close" size={iconSize.sm} color={colors.danger} />
-            <Text style={styles.dangerButtonText}>{t("ko", "pet.delete")}</Text>
-          </Pressable>
+          <DangerButton label={t("ko", "pet.delete")} icon="close" onPress={onDelete} disabled={loading} />
         </View>
       ) : null}
 
@@ -226,7 +223,11 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       ) : null}
 
       {(error ?? authMessage) ? (
-        <NoticeBanner text={t("ko", (error ?? authMessage)!)} icon={error ? "close" : "check"} tone={error ? "error" : "success"} />
+        <NoticeBanner
+          text={t("ko", (error ?? authMessage)!)}
+          icon={error ? "close" : authMessage === "pet.photoPartial" ? "shield" : "check"}
+          tone={error ? "error" : authMessage === "pet.photoPartial" ? "progress" : "success"}
+        />
       ) : null}
 
       {user ? (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../../design-system/components";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
@@ -139,7 +139,7 @@ function MemberRow({ member, busy, onRemove }: { member: PetMember; busy: boolea
         </Text>
       </View>
       {!member.isCurrentUser && member.role !== "owner"
-        ? <SecondaryButton label={t("ko", "settings.membersRemove")} icon="close" onPress={() => void onRemove(member)} disabled={busy} />
+        ? <DangerButton label={t("ko", "settings.membersRemove")} icon="close" onPress={() => void onRemove(member)} disabled={busy} />
         : null}
     </View>
   );

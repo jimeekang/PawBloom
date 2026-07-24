@@ -31,8 +31,9 @@ if (!settingsScreen.includes("confirmDestructiveAction")) {
   throw new Error("SettingsScreen must confirm account deletion via confirmDestructiveAction");
 }
 
-if (!settingsScreen.includes("ActivityIndicator") || !settingsScreen.includes("settings.deleteAccountInProgress")) {
-  throw new Error("SettingsScreen must show a deleting progress state (ActivityIndicator + settings.deleteAccountInProgress)");
+const dangerButton = read("design-system/feedback.tsx");
+if (!settingsScreen.includes("settings.deleteAccountInProgress") || !settingsScreen.includes("busy={deleting}") || !dangerButton.includes("ActivityIndicator")) {
+  throw new Error("SettingsScreen must show a deleting progress state (DangerButton busy spinner + settings.deleteAccountInProgress)");
 }
 
 for (const key of ['"settings.deleteAccountInProgress"', '"auth.accountDeleted"']) {

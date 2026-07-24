@@ -103,7 +103,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
       )}
 
       <View style={styles.actions}>
-        {pendingAction ? <NoticeBanner text={t("ko", pendingLabelKey[pendingAction])} icon={actionIcon[pendingAction]} /> : null}
+        {pendingAction ? <NoticeBanner text={t("ko", pendingLabelKey[pendingAction])} icon={actionIcon[pendingAction]} tone="progress" /> : null}
         {!pendingAction && primaryAction ? <PrimaryButton label={t("ko", primaryLabelKey(primaryAction, report?.status))} icon={actionIcon[primaryAction]} onPress={runPrimaryAction} /> : null}
         {report?.status === "shared" && canShare && !isBusy ? (
           <SecondaryButton
