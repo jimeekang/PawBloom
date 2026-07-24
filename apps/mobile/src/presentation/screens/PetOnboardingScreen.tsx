@@ -9,7 +9,8 @@ import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePho
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
 import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
 import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain/carePlan";
-import { PetProfileFormFields, PetSelector, pickPetProfilePhoto, type PetSpeciesOption } from "./PetOnboardingHelpers";
+import { getSpeciesLabels, PetProfileFormFields, PetSelector, pickPetProfilePhoto, type PetSpeciesOption } from "./PetOnboardingHelpers";
+import { parsePetWeightInput } from "./petWeightInput";
 import { confirmDestructiveAction } from "../../design-system/confirmAction";
 import { confirmAndSignOut } from "../../contexts/identity/ui/signOutConfirm";
 import { RoutineSettingsPanel } from "../../contexts/routine/ui/RoutineSettingsPanel";
@@ -48,11 +49,7 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
   const shouldShowPetSelector = pets.length > 1 && !showCreateForm;
   const canManageActivePet = activePet ? can(activePet.role, "pet.update") && can(activePet.role, "pet.photo.update") && can(activePet.role, "pet.delete") : false;
   const canManageCareDefaults = activePet ? can(activePet.role, "routine.update") && can(activePet.role, "care.update") : false;
-  const speciesLabel: Record<PetSpeciesOption, string> = {
-    dog: t("ko", "pet.speciesDog"),
-    cat: t("ko", "pet.speciesCat"),
-    other: t("ko", "pet.speciesOther"),
-  };
+  const speciesLabel = getSpeciesLabels();
 
   useEffect(() => {
     setShowCreateForm(Boolean(user) && pets.length === 0);
@@ -71,20 +68,10 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
     setEditPhoto(undefined);
   }, [activePet]);
 
-  // Number("8.5kg") is NaN (unlike parseFloat), so unit suffixes are rejected
-  // instead of silently truncated (0006 E1).
-  const parseWeightInput = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return { ok: true, value: Number.NaN };
-    const parsed = Number(trimmed);
-    if (!Number.isFinite(parsed) || parsed <= 0) return { ok: false, value: Number.NaN };
-    return { ok: true, value: parsed };
-  };
-
   const onCreate = async () => {
     if (!petCreationAllowed) return;
     setFormErrorKey(null);
-    const weight = parseWeightInput(weightKg);
+    const weight = parsePetWeightInput(weightKg);
     if (!weight.ok) {
       setFormErrorKey("pet.weightInvalid");
       return;
@@ -107,14 +94,7 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
     onProfileSaved?.();
   };
 
-  const resetCreateForm = () => {
-    setName("");
-    setBreed("");
-    setBirthdate("");
-    setWeightKg("");
-    setSpecies("dog");
-    setPhoto(undefined);
-  };
+  const resetCreateForm = () => { setName(""); setBreed(""); setBirthdate(""); setWeightKg(""); setSpecies("dog"); setPhoto(undefined); };
 
   const onAddAnother = () => {
     if (!petCreationAllowed) return;
@@ -128,7 +108,7 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
     }
 
     setFormErrorKey(null);
-    const weight = parseWeightInput(editWeightKg);
+    const weight = parsePetWeightInput(editWeightKg);
     if (!weight.ok) {
       setFormErrorKey("pet.weightInvalid");
       return;

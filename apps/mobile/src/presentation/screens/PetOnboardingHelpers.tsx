@@ -55,6 +55,10 @@ export function PhotoPicker({ imageUri, label, onPress }: PhotoPickerProps) {
   );
 }
 
+export function getSpeciesLabels(): Record<PetSpeciesOption, string> {
+  return { dog: t("ko", "pet.speciesDog"), cat: t("ko", "pet.speciesCat"), other: t("ko", "pet.speciesOther") };
+}
+
 export function PetSelector({
   pets,
   activePetId,
