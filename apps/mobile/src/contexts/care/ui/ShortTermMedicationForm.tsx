@@ -8,6 +8,7 @@ import { DatePickerField } from "../../../design-system/DatePickerField";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { getLocalDateKey } from "../../../shared-kernel/date";
 import { buildShortTermCareSetupInput, createShortTermMedicationDraft, shortTermDraftErrorKey } from "./shortTermMedicationDraft";
+import { errorNoticeText } from "../../../i18n/errorNotice";
 
 export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: CareSetupInput) => Promise<ActiveCareSetup>; onSaved?: () => void }) {
   const [draft, setDraft] = useState(() => createShortTermMedicationDraft(getLocalDateKey()));
@@ -30,7 +31,7 @@ export function ShortTermMedicationForm({ onSave, onSaved }: { onSave: (input: C
       setDraft(createShortTermMedicationDraft(getLocalDateKey()));
       onSaved?.();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t("ko", "care.setupSaveFailed"));
+      setError(errorNoticeText(saveError, "care.setupSaveFailed"));
     } finally {
       savingRef.current = false;
       setIsSaving(false);

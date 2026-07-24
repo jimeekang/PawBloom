@@ -4,6 +4,7 @@ import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
 import { FieldLabel, PrimaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { colors, layout, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
+import { errorNoticeText } from "../../../i18n/errorNotice";
 import { DatePickerField } from "../../../design-system/DatePickerField";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import {
@@ -76,7 +77,7 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
       pendingMutationRef.current = null;
     } catch (saveError) {
       if (!isCurrentCareSetupSave(saveScopeRef.current, requestScope)) return;
-      setError(saveError instanceof Error ? saveError.message : t("ko", "care.setupSaveFailed"));
+      setError(errorNoticeText(saveError, "care.setupSaveFailed"));
     } finally {
       if (isCurrentCareSetupSave(saveScopeRef.current, requestScope)) {
         savingRef.current = false;

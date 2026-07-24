@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useActiveCareSetup, useCreateCareSetup } from "../application/carePlanRecords";
 import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
 import { t } from "../../../i18n/translations";
+import { errorNoticeText } from "../../../i18n/errorNotice";
 import { buildNextLocalCareSetup } from "./careSetupLocalState";
 
 type Params = {
@@ -41,7 +42,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
       onSaved();
       return savedSetup;
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("ko", "care.setupSaveFailed");
+      const message = errorNoticeText(error, "care.setupSaveFailed");
       onNotice(message);
       throw error instanceof Error ? error : new Error(message);
     }
