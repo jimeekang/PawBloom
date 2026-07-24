@@ -118,17 +118,17 @@ if (shellHeaders.includes('name="menu"') || shellHeaders.includes('name="setting
   throw new Error("settings entry must not remain as a right-side header icon");
 }
 
+// care.copy was removed as a dead key (0006 F2); the wording invariant now
+// covers the remaining care eyebrow copy only.
 const { t } = require(join(root, "apps/mobile/src/i18n/translations.ts"));
 const careEyebrowKo = t("ko", "care.eyebrow");
 const careEyebrowEn = t("en", "care.eyebrow");
-const careCopyKo = t("ko", "care.copy");
-const careCopyEn = t("en", "care.copy");
 
-if (careEyebrowKo.includes("모드") || careCopyKo.includes("모드")) {
+if (careEyebrowKo.includes("모드")) {
   throw new Error("Korean care screen wording must describe care records, not a mode");
 }
 
-if (/mode/i.test(careEyebrowEn) || /mode/i.test(careCopyEn)) {
+if (/mode/i.test(careEyebrowEn)) {
   throw new Error("English care screen wording must describe care records, not a mode");
 }
 

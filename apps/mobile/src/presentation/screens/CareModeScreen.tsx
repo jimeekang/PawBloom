@@ -10,6 +10,7 @@ import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../cont
 import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { CareMedicationAddCard } from "./CareMedicationAddCard";
+import { VetReportReadinessCard } from "../../contexts/care/ui/CareReportReadinessCard";
 import { partitionCareSchedules, schedulePeriodBadge } from "./careScheduleSummary";
 import { styles } from "./CareModeScreen.styles";
 
@@ -156,6 +157,7 @@ function CarePanel({
         <Text style={styles.sectionTitle}>{t("ko", "care.conditionFromDiaryTitle")}</Text>
         <Text style={styles.reportCopy}>{conditionScore ? `${t("ko", "care.latestCondition")} ${conditionScore}/5` : t("ko", "care.conditionFromDiaryCopy")}</Text>
       </SurfaceCard>
+      <VetReportReadinessCard doses={doses} conditionScore={conditionScore} careSetup={careSetup} />
       {canManageReports
         ? <PrimaryButton label={t("ko", "care.generateVetReport")} icon="report" onPress={onGenerateReport} />
         : <NoticeBanner text={t("ko", "permission.reportCareTeamOnly")} icon="shield" />}

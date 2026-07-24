@@ -10,8 +10,6 @@ type IconDefinition = {
 
 export const icon = {
   logo: { family: "fa5", name: "paw" },
-  bell: { family: "ion", name: "notifications-outline" },
-  menu: { family: "ion", name: "menu" },
   back: { family: "ion", name: "chevron-back" },
   calendar: { family: "ion", name: "calendar-clear-outline" },
   time: { family: "ion", name: "time-outline" },

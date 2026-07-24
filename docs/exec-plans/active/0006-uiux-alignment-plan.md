@@ -52,11 +52,11 @@ edit_policy: exclusive
 
 ## Phase E — 흐름·카피 폴리시
 
-- [ ] E1. **온보딩 정리(G3 잔여)** — App.tsx:84 pet-onboarding 게이트 SafeAreaView 적용, 히어로 카피 온보딩/관리 모드 분기(pet.manageTitle 활용), ScrollView를 KeyboardAvoidingView로 래핑, styles.card→SurfaceCard 교체, 몸무게 비숫자 인라인 오류(전용 키), 추가 폼 '취소' SecondaryButton, 사진 isLoading/isError 표시, 필수(이름)/선택 표기 규칙 통일.
-- [ ] E2. **홈 폴리시** — 타임라인 렌더 직전 occurredAt 단일 정렬, today.petSwitched 중립 문구 교체(프리뷰/실계정 분기), 주의 신호 개별 행 렌더, 성공 배너 아이콘 check로 통일(홈/셸), checklistTimelineReadOnly '메인'→'오늘'.
-- [ ] E3. **케어 폴리시** — care.todayMedicationProgress를 카운트 포함 플레이스홀더형('{count}건 남음'/'{count} left')으로 교체, '새 약 추가' 전용 키 신설(E3 잔여), skipped 기록 시 체크리스트 타일에 주의 보조 라벨(완료와 시각 구분).
-- [ ] E4. **리포트 마감(F3·F5 잔여)** — 초기 로딩 스피너/문구, 로드 실패 배너에 재시도 버튼(refetch), EN loadFailed에서 'Pull to retry' 제거(EN/KO 의미 대칭), expo-clipboard로 '링크 복사' 버튼(44pt·성공 토스트).
-- [ ] E5. **설정 마감** — SubscriptionPlanCard·PetMembersCard 플랜 실패 시 재시도 버튼(entitlementQuery.refetch), App.tsx:78 pet-load-error 로그아웃 confirmAndSignOut 통일+실패 배너, 가입 폼 비밀번호 최소 요건 사전 힌트.
+- [x] E1. **온보딩 정리(G3 잔여)** — App.tsx:84 pet-onboarding 게이트 SafeAreaView 적용, 히어로 카피 온보딩/관리 모드 분기(pet.manageTitle 활용), ScrollView를 KeyboardAvoidingView로 래핑, styles.card→SurfaceCard 교체, 몸무게 비숫자 인라인 오류(전용 키), 추가 폼 '취소' SecondaryButton, 사진 isLoading/isError 표시, 필수(이름)/선택 표기 규칙 통일.
+- [x] E2. **홈 폴리시** — 타임라인 렌더 직전 occurredAt 단일 정렬, today.petSwitched 중립 문구 교체(프리뷰/실계정 분기), 주의 신호 개별 행 렌더, 성공 배너 아이콘 check로 통일(홈/셸), checklistTimelineReadOnly '메인'→'오늘'.
+- [x] E3. **케어 폴리시** — care.todayMedicationProgress를 카운트 포함 플레이스홀더형('{count}건 남음'/'{count} left')으로 교체, '새 약 추가' 전용 키 신설(E3 잔여), skipped 기록 시 체크리스트 타일에 주의 보조 라벨(완료와 시각 구분).
+- [x] E4. **리포트 마감(F3·F5 잔여)** — 초기 로딩 스피너/문구, 로드 실패 배너에 재시도 버튼(refetch), EN loadFailed에서 'Pull to retry' 제거(EN/KO 의미 대칭), expo-clipboard로 '링크 복사' 버튼(44pt·성공 토스트).
+- [x] E5. **설정 마감** — SubscriptionPlanCard·PetMembersCard 플랜 실패 시 재시도 버튼(entitlementQuery.refetch), App.tsx:78 pet-load-error 로그아웃 confirmAndSignOut 통일+실패 배너, 가입 폼 비밀번호 최소 요건 사전 힌트.
 
 ## Phase F — 죽은 코드·문서 정합화
 

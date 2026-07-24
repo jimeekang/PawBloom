@@ -62,14 +62,6 @@ export function SecondaryButton({ label, icon, onPress, disabled = false }: { la
   );
 }
 
-export function OutlineIconButton({ icon, onPress }: { icon: AppIconName; onPress?: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" style={({ pressed }) => [styles.outlineIconButton, pressed && styles.outlineIconButtonPressed]} onPress={onPress}>
-      <AppIcon name={icon} size={iconSize.md} color={colors.text} />
-    </Pressable>
-  );
-}
-
 export function FieldLabel({ label }: { label: string }) {
   return <Text style={styles.fieldLabel}>{label}</Text>;
 }
@@ -172,19 +164,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     ...type.bodyStrong,
     color: colors.orangeDeep,
-  },
-  outlineIconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  outlineIconButtonPressed: {
-    backgroundColor: colors.surfaceWarm,
   },
   segmented: {
     flexDirection: "row",
