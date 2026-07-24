@@ -19,12 +19,18 @@ export const styles = StyleSheet.create({
     ...type.body,
     color: colors.text,
   },
+  flex: {
+    flex: 1,
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
+    gap: spacing.sm,
+  },
+  cardBody: {
     gap: spacing.sm,
   },
   sectionTitle: {

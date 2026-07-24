@@ -86,7 +86,13 @@ function AppBody() {
       </SafeAreaView>
     );
   }
-  if (gate === "pet-onboarding") return <PetOnboardingScreen />;
+  if (gate === "pet-onboarding") {
+    return (
+      <SafeAreaView style={styles.loadingArea}>
+        <PetOnboardingScreen />
+      </SafeAreaView>
+    );
+  }
   return <PawBloomShell />;
 }
 

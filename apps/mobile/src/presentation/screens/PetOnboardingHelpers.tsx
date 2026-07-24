@@ -2,7 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Alert, Image, Pressable, Text, TextInput, View } from "react-native";
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
 import { formatPetMetaLine, type PetProfile } from "../../contexts/pet/domain/pet";
-import { FieldLabel } from "../../design-system/components";
+import { FieldLabel, SurfaceCard } from "../../design-system/components";
 import { DatePickerField } from "../../design-system/DatePickerField";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
@@ -67,7 +67,8 @@ export function PetSelector({
   const { language } = useLanguage();
 
   return (
-    <View style={styles.card}>
+    <SurfaceCard>
+    <View style={styles.cardBody}>
       <Text style={styles.sectionTitle}>{t("ko", "pet.selectTitle")}</Text>
       {pets.map((pet) => {
         const meta = [formatPetMetaLine(pet, language), pet.weightKg ? `${pet.weightKg}kg` : "-"].filter(Boolean).join(" · ");
@@ -90,6 +91,7 @@ export function PetSelector({
         );
       })}
     </View>
+    </SurfaceCard>
   );
 }
 

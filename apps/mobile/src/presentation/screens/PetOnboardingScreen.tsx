@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
-import { t } from "../../i18n/translations";
+import { t, type TranslationKey } from "../../i18n/translations";
 import { useAuth } from "../../contexts/identity/application/authContext";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
@@ -20,7 +20,7 @@ import { useSubscriptionEntitlement } from "../../contexts/subscription/applicat
 import { canCreatePet, entitlements } from "../../contexts/subscription/domain/entitlement";
 import { countOwnedPets } from "../../contexts/pet/domain/pet";
 
-export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved, medicationRemindersEnabled, onToggleMedicationReminders }: { routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void; medicationRemindersEnabled?: boolean; onToggleMedicationReminders?: (enabled: boolean) => void } = {}) {
+export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved, medicationRemindersEnabled, onToggleMedicationReminders }: { mode?: "onboarding" | "manage"; routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void; medicationRemindersEnabled?: boolean; onToggleMedicationReminders?: (enabled: boolean) => void } = {}) {
   const { configured, user, pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
   const entitlementQuery = useSubscriptionEntitlement(user?.id ?? null, configured && Boolean(user));
   const entitlement = entitlementQuery.data ?? (configured ? null : entitlements.plus);
@@ -40,6 +40,7 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   const [editBirthdate, setEditBirthdate] = useState("");
   const [editWeightKg, setEditWeightKg] = useState("");
   const [editSpecies, setEditSpecies] = useState<PetSpeciesOption>("dog");
+  const [formErrorKey, setFormErrorKey] = useState<TranslationKey | null>(null);
   const [photo, setPhoto] = useState<PetProfilePhotoInput | undefined>();
   const [editPhoto, setEditPhoto] = useState<PetProfilePhotoInput | undefined>();
   const activePhoto = usePetProfilePhotoUrl(activePet?.id, user?.id ?? null);
@@ -70,14 +71,30 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
     setEditPhoto(undefined);
   }, [activePet]);
 
+  // Number("8.5kg") is NaN (unlike parseFloat), so unit suffixes are rejected
+  // instead of silently truncated (0006 E1).
+  const parseWeightInput = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return { ok: true, value: Number.NaN };
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed) || parsed <= 0) return { ok: false, value: Number.NaN };
+    return { ok: true, value: parsed };
+  };
+
   const onCreate = async () => {
     if (!petCreationAllowed) return;
+    setFormErrorKey(null);
+    const weight = parseWeightInput(weightKg);
+    if (!weight.ok) {
+      setFormErrorKey("pet.weightInvalid");
+      return;
+    }
     const createError = await createPet({
       name,
       species,
       breed,
       birthdate,
-      weightKg: Number.parseFloat(weightKg),
+      weightKg: weight.value,
       profilePhoto: photo,
     });
 
@@ -110,13 +127,19 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       return;
     }
 
+    setFormErrorKey(null);
+    const weight = parseWeightInput(editWeightKg);
+    if (!weight.ok) {
+      setFormErrorKey("pet.weightInvalid");
+      return;
+    }
     const updateError = await updatePet({
       id: activePet.id,
       name: editName,
       species: editSpecies,
       breed: editBreed,
       birthdate: editBirthdate,
-      weightKg: Number.parseFloat(editWeightKg),
+      weightKg: weight.value,
       profilePhoto: editPhoto,
     });
     if (!updateError) onProfileSaved?.();
@@ -142,9 +165,10 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
   };
 
   return (
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>{t("ko", "pet.onboardingTitle")}</Text>
-      <Text style={styles.copy}>{t("ko", "pet.onboardingCopy")}</Text>
+      <Text style={styles.title}>{t("ko", mode === "manage" ? "pet.manageTitle" : "pet.onboardingTitle")}</Text>
+      <Text style={styles.copy}>{t("ko", mode === "manage" ? "pet.manageCopy" : "pet.onboardingCopy")}</Text>
 
       {!user ? <NoticeBanner text={t("ko", "pet.loginRequired")} icon="shield" /> : null}
       {entitlementLoading ? <NoticeBanner text={t("ko", "pet.planLoading")} icon="lock" /> : null}
@@ -156,7 +180,8 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       {shouldShowPetSelector ? <PetSelector pets={pets} activePetId={activePet?.id} onSelect={selectPet} /> : null}
 
       {activePet && !showCreateForm && canManageActivePet ? (
-        <View style={styles.card}>
+        <SurfaceCard>
+        <View style={styles.cardBody}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.editTitle")}</Text>
           <PetProfileFormFields
             speciesFieldLabel={t("ko", "pet.speciesLabel")}
@@ -182,8 +207,11 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
           />
 
           <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} disabled={loading} />
+          {activePhoto.isLoading && !editPhoto ? <Text style={styles.helpText}>{t("ko", "pet.photoLoading")}</Text> : null}
+          {activePhoto.isError ? <Text style={styles.helpText}>{t("ko", "pet.photoLoadFailed")}</Text> : null}
           <DangerButton label={t("ko", "pet.delete")} icon="close" onPress={onDelete} disabled={loading} />
         </View>
+        </SurfaceCard>
       ) : null}
 
       {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("ko", "permission.petOwnerOnly")} icon="shield" /> : null}
@@ -193,7 +221,8 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
       {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" /> : null}
 
       {showCreateForm && petCreationAllowed ? (
-        <View style={styles.card}>
+        <SurfaceCard>
+        <View style={styles.cardBody}>
           <Text style={styles.sectionTitle}>{t("ko", "pet.addTitle")}</Text>
           {!hasPets ? <Text style={styles.helpText}>{t("ko", "pet.empty")}</Text> : null}
           <PetProfileFormFields
@@ -220,9 +249,12 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
           />
 
           <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} disabled={loading} />
+          {hasPets ? <SecondaryButton label={t("ko", "pet.createCancel")} onPress={() => { resetCreateForm(); setFormErrorKey(null); setShowCreateForm(false); }} disabled={loading} /> : null}
         </View>
+        </SurfaceCard>
       ) : null}
 
+      {formErrorKey ? <NoticeBanner text={t("ko", formErrorKey)} icon="close" tone="error" /> : null}
       {(error ?? authMessage) ? (
         <NoticeBanner
           text={t("ko", (error ?? authMessage)!)}
@@ -239,5 +271,6 @@ export function PetOnboardingScreen({ routine, onSaveRoutine, careSetup, onSaveC
 
       {loading ? <Text style={styles.loadingText}>{t("ko", "auth.wait")}</Text> : null}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
