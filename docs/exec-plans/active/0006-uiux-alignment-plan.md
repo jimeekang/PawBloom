@@ -42,13 +42,13 @@ edit_policy: exclusive
 
 ## Phase D — 디자인시스템·a11y 일괄
 
-- [ ] D1. **NoticeBanner 개선(F4)** — NoticeTone에 'progress'(중립) 추가, tone별 accessibilityLiveRegion(오류 assertive/그 외 polite)·accessibilityRole('alert' for error) 부여. 진행성 메시지(reports.generateInProgress 등) 중립 톤 전환. 오류 tone 미전달 화면 일괄 정리: DiaryEntryScreen.tsx:211(검증 오류 error 톤), AuthScreen authMessage(종류별 tone 매핑 — sessionExpired/checkEmail은 비성공 톤), PetOnboarding photoPartial(경고 톤).
-- [ ] D2. **DangerButton 신설+교체(H5)** — components.tsx에 DangerButton(label/onPress/disabled, dangerBg·danger 텍스트·minHeight 44·role/label) 신설, 4곳 교체(SettingsScreen 계정삭제, DiaryEntryActions, CareMedicationPanel, PetOnboardingScreen 펫 삭제). PetMembersCard '접근 제거'도 위험 시각으로 전환.
-- [ ] D3. **터치 타깃 44pt 일괄** — SegmentedControl segment 42→44(components.tsx:209), 케어 아젠다 given/partial/skip 40→44(CareModeScreen.styles.ts:40-44)+선택 버튼 시각 강조, SpeciesPill 40→44(PetOnboardingScreen.styles.ts:76), 루틴 '지우기' minHeight 44+role/label(G1), DatePicker clear(C5와 병합).
-- [ ] D4. **SegmentedControl 라벨 반응형** — segmentText에 numberOfLines={1}+adjustsFontSizeToFit. EN 'Diarrhea'/'Refused'·접근성 글꼴 확대 조합을 390px 프리뷰에서 실측.
-- [ ] D5. **FieldLabel 적용 확대(E4·G1)** — CareMedicationPanel(병명/약/용량/투여량/반응 5필드), ShortTermMedicationForm, ProfileCareDefaultsPanel, RoutineSettingsPanel(숫자 5필드+에너지 세그먼트 라벨, 식사 알림 헤더를 routine.mealRemindersLabel로 교체 — 죽은 키 부활).
-- [ ] D6. **BottomNav 아이콘 통일(H3)** — care를 Ionicons outline 계열(예: medkit-outline)로 교체, 5개 탭 전부 activeIcon(filled) 제공.
-- [ ] D7. **토큰 정리** — tokens.ts에 scrim 계열 토큰(scrimStrong 0.92/scrimSoft 0.55) 추가, DiaryEntryList.tsx:178·:194 하드코딩 rgba 교체.
+- [x] D1. **NoticeBanner 개선(F4)** — NoticeTone에 'progress'(중립) 추가, tone별 accessibilityLiveRegion(오류 assertive/그 외 polite)·accessibilityRole('alert' for error) 부여. 진행성 메시지(reports.generateInProgress 등) 중립 톤 전환. 오류 tone 미전달 화면 일괄 정리: DiaryEntryScreen.tsx:211(검증 오류 error 톤), AuthScreen authMessage(종류별 tone 매핑 — sessionExpired/checkEmail은 비성공 톤), PetOnboarding photoPartial(경고 톤).
+- [x] D2. **DangerButton 신설+교체(H5)** ※260줄 가드로 design-system/feedback.tsx로 분리(components.tsx 재export). — components.tsx에 DangerButton(label/onPress/disabled, dangerBg·danger 텍스트·minHeight 44·role/label) 신설, 4곳 교체(SettingsScreen 계정삭제, DiaryEntryActions, CareMedicationPanel, PetOnboardingScreen 펫 삭제). PetMembersCard '접근 제거'도 위험 시각으로 전환.
+- [x] D3. **터치 타깃 44pt 일괄** — SegmentedControl segment 42→44(components.tsx:209), 케어 아젠다 given/partial/skip 40→44(CareModeScreen.styles.ts:40-44)+선택 버튼 시각 강조, SpeciesPill 40→44(PetOnboardingScreen.styles.ts:76), 루틴 '지우기' minHeight 44+role/label(G1), DatePicker clear(C5와 병합).
+- [x] D4. **SegmentedControl 라벨 반응형** — segmentText에 numberOfLines={1}+adjustsFontSizeToFit. EN 'Diarrhea'/'Refused'·접근성 글꼴 확대 조합을 390px 프리뷰에서 실측.
+- [x] D5. **FieldLabel 적용 확대(E4·G1)** — CareMedicationPanel(병명/약/용량/투여량/반응 5필드), ShortTermMedicationForm, ProfileCareDefaultsPanel, RoutineSettingsPanel(숫자 5필드+에너지 세그먼트 라벨, 식사 알림 헤더를 routine.mealRemindersLabel로 교체 — 죽은 키 부활).
+- [x] D6. **BottomNav 아이콘 통일(H3)** — care를 Ionicons outline 계열(예: medkit-outline)로 교체, 5개 탭 전부 activeIcon(filled) 제공.
+- [x] D7. **토큰 정리** — tokens.ts에 scrim 계열 토큰(scrimStrong 0.92/scrimSoft 0.55) 추가, DiaryEntryList.tsx:178·:194 하드코딩 rgba 교체.
 
 ## Phase E — 흐름·카피 폴리시
 
