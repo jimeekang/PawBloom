@@ -4,7 +4,9 @@ domain: planning
 edit_policy: exclusive
 ---
 
-# 0005. UI/UX 정합화 실행 계획 (2026-07-18)
+# 0005. UI/UX 정합화 실행 계획 (2026-07-18) — **아카이브(2026-07-24)**
+
+> Phase A~D는 완료, E~H 잔여는 [0006](../active/0006-uiux-alignment-plan.md)이 통합 승계했다.
 
 - 근거: [docs/analysis/06-uiux-full-audit-2026-07-18.md](../../analysis/06-uiux-full-audit-2026-07-18.md) (확정 92 + P3 35)
 - 원칙: 태스크 단위로 구현 → `npm run verify` 전체 통과 확인 후 다음 태스크 진행. 오류 발생 시 해결 우선.
@@ -42,7 +44,7 @@ edit_policy: exclusive
 - [x] D3. 달력 셀·월 이동 a11y + 44pt (DiaryCalendar).
 - [x] D4. 컨디션 점수·카테고리 타일·기록 행 a11y (DiaryConditionScore, DiaryEntryScreen, DiaryEntryList).
 - [x] D5. FieldLabel 컴포넌트 신설(design-system) + 다이어리 상세 적용 (DiaryDetailPanel).
-- [x] D6. diarySummary·diaryRecords 메시지 i18n화 — EN 모드 한국어 노출 제거.
+- [ ] D6. diarySummary·diaryRecords 메시지 i18n화 — **완료 표기 오류로 정정(2026-07-23 감사)**: 실제 partial이었고, 잔여분은 0006 C1/C2(CodedError)로 완결.
 
 ## Phase E — 케어·투약
 

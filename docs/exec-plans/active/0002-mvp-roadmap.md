@@ -63,8 +63,8 @@ DDD bounded context 구조를 유지하고, 각 기능은 자기 context 안에�
 - Edge Function skeleton은 있으나 실제 prompt, contract test, secret 설정 필요.
 - Offline sync contract는 있으나 SQLite persistence와 Supabase replay 구현 필요.
 - EAS 흐름 문서는 있으나 production-ready `eas.json`, credentials 정책, store metadata checklist 필요.
-- Free/Plus/Family 잠금은 제품 결정만 있고 실제 UI gate 구현 필요.
-- 투약 알림은 스케줄링·계정 스코프까지 구현되었으나 표시 계층(포그라운드 핸들러, Android 채널, expo-notifications 플러그인)이 없고, 식사 시간 설정·식사 알림은 미구현 — [0004](./0004-reminder-notifications-plan.md)로 진행.
+- Free/Plus/Family 잠금 UI gate 구현 완료(SubscriptionPlanCard + entitlement 조회, 베타 수동 플랜 지정). 인앱 결제 연동은 미구현.
+- 투약·식사 알림은 표시 계층(포그라운드 핸들러, expo-notifications 플러그인)·식사 시간 설정·On/Off 토글까지 구현 완료 — [0004](../archive/0004-reminder-notifications-plan.md) 완료·아카이브(2026-07-24).
 
 ### 미구현
 
@@ -72,7 +72,7 @@ DDD bounded context 구조를 유지하고, 각 기능은 자기 context 안에�
 - Supabase 연결 pet CRUD, 가족/caregiver 초대와 role 관리, Supabase 연결 diary CRUD.
 - 건강 관찰형 산책 record 저장, 사진/영상 private Storage upload.
 - 질병/상태 등록과 care plan workflow, medication schedule과 dose status 저장.
-- 실제 기록 기반 AI briefing/vet report 생성, PDF/출력 가능한 report export, sanitized report share link 접근 경로.
+- vet report 생성·sanitized share link는 구현 완료(0006 기준). AI briefing은 UI 연결 완료(홈 카드), 하이라이트 서버 로컬라이즈(0006 C7)와 PDF/출력 export는 잔여.
 - React Native e2e smoke test, Android/iOS device preview build, TestFlight·Google Play internal testing 준비.
 
 ## 우선순위

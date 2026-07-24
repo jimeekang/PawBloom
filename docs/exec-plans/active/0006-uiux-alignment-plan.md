@@ -60,10 +60,10 @@ edit_policy: exclusive
 
 ## Phase F — 죽은 코드·문서 정합화
 
-- [ ] F1. **CareReportReadinessCard 양자택일(E1 잔여)** — 케어 탭 리포트 CTA 위 마운트(원안) 또는 컴포넌트+care.readiness* 키 삭제. ※가드의 CareMedicationAddCard 포함 불변식 유지.
-- [ ] F2. **죽은 i18n 키 정리(H2)** — 실측 57개 중 부활 예정분(A4 채택 시 briefing.*, D5의 routine.mealRemindersLabel) 제외 후 en/ko 대칭 삭제. 죽은 DS 자산(OutlineIconButton, icon.menu/spark/bell) 제거.
+- [x] F1. **CareReportReadinessCard 양자택일(E1 잔여)** ※마운트 채택. — 케어 탭 리포트 CTA 위 마운트(원안) 또는 컴포넌트+care.readiness* 키 삭제. ※가드의 CareMedicationAddCard 포함 불변식 유지.
+- [x] F2. **죽은 i18n 키 정리(H2)** ※실측 48쌍 삭제(briefing/routine 부활분 제외), care.copy 가드 검사 동반 정리. — 실측 57개 중 부활 예정분(A4 채택 시 briefing.*, D5의 routine.mealRemindersLabel) 제외 후 en/ko 대칭 삭제. 죽은 DS 자산(OutlineIconButton, icon.menu/spark/bell) 제거.
 - [ ] F3. **t() 죽은 첫 인자 정리 방침 결정** — 비테스트 566곳의 `t("ko", …)` 리터럴. 권고: t 시그니처에서 language 인자 제거(runtimeLanguage 단일 소스) 코드모드 1회. 규모가 커 별도 태스크로 격리, verify 전체 통과 필수.
-- [ ] F4. **exec-plans 정합화(H4)** — 0004를 archive로 이동+완료 표기, 0005 D6 체크를 partial로 정정 후 0005 archive 이동(본 계획이 승계), 0002-mvp-roadmap:67·:75, 0003 Day8~13 서술 현행화.
+- [x] F4. **exec-plans 정합화(H4)** — 0004를 archive로 이동+완료 표기, 0005 D6 체크를 partial로 정정 후 0005 archive 이동(본 계획이 승계), 0002-mvp-roadmap:67·:75, 0003 Day8~13 서술 현행화.
 
 ## 보류 (별도 계획 필요)
 
