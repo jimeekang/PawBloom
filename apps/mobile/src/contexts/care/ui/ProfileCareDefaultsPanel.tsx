@@ -131,13 +131,13 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
             })}
             <Pressable
               accessibilityRole="radio"
-              accessibilityLabel={t("ko", "care.medicationPlaceholder")}
+              accessibilityLabel={t("ko", "care.addNewMedicationOption")}
               accessibilityState={{ checked: selectedMedicationId === null, disabled: isSaving }}
               aria-checked={selectedMedicationId === null}
               style={[styles.medicationOption, selectedMedicationId === null ? styles.medicationOptionSelected : null]}
               onPress={isSaving ? undefined : () => selectMedication(null)}
             >
-              <Text style={[styles.medicationOptionTitle, selectedMedicationId === null ? styles.medicationOptionTitleSelected : null]}>+ {t("ko", "care.medicationPlaceholder")}</Text>
+              <Text style={[styles.medicationOptionTitle, selectedMedicationId === null ? styles.medicationOptionTitleSelected : null]}>+ {t("ko", "care.addNewMedicationOption")}</Text>
             </Pressable>
           </View>
         ) : null}

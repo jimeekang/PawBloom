@@ -39,12 +39,15 @@ type Props = {
 
 export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const { language } = useLanguage();
-  const timeline = entries.slice(0, 4);
+  const timeline = [...entries].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)).slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
   const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
   const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder, medicationAgenda);
   const heroMeta = formatPetMetaLine(pet, language);
+  // Skipped/partial doses count as "recorded" for the tile, but the check mark
+  // shows coral so a skip is not mistaken for a completed dose (0006 E3).
+  const medicationAttention = (medicationAgenda.length > 0 ? medicationAgenda : doses).some((row) => row.status === "partial" || row.status === "skipped");
 
   return (
     <View>
@@ -109,7 +112,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
             >
               <IconBubble name={item.icon} color={item.color} background={item.background} size={50} />
               <View style={styles.checkMark}>
-                <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? colors.mintDeep : colors.textSoft} />
+                <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? (key === "medication" && medicationAttention ? colors.coral : colors.mintDeep) : colors.textSoft} />
               </View>
               <Text style={styles.checkLabel} numberOfLines={2}>{label}</Text>
             </Pressable>

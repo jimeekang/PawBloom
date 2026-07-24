@@ -21,7 +21,9 @@ export function AttentionStrip({ signals }: { signals: string[] }) {
       <AppIcon name={signals.length > 0 ? "shield" : "check"} size={iconSize.sm} color={signals.length > 0 ? colors.coral : colors.mintDeep} />
       <View style={styles.attentionBody}>
         <Text style={styles.attentionTitle}>{t("ko", "today.dashboardAttention")}</Text>
-        <Text style={styles.attentionCopy}>{signals.length > 0 ? signals.join(" ") : t("ko", "today.dashboardNoAttention")}</Text>
+        {signals.length > 0
+          ? signals.map((signal) => <Text key={signal} style={styles.attentionCopy}>{signal}</Text>)
+          : <Text style={styles.attentionCopy}>{t("ko", "today.dashboardNoAttention")}</Text>}
       </View>
     </View>
   );

@@ -89,7 +89,7 @@ function CarePanel({
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{t("ko", "care.todayMedicationTitle")}</Text>
-        <Text style={styles.countText}>{t("ko", "care.todayMedicationProgress")} {pendingCount}</Text>
+        <Text style={styles.countText}>{t("ko", "care.todayMedicationProgress").replace("{count}", String(pendingCount))}</Text>
       </View>
       <View style={styles.medList}>
         {agendaRows.length === 0 && careStatus !== "error" ? <Text style={styles.emptyText}>{t("ko", careStatus === "loading" ? "diary.listLoading" : "care.noMedicationToday")}</Text> : null}
