@@ -25,7 +25,7 @@ export function AiBriefCard({
 }) {
   const { language } = useLanguage();
   const [range, setRange] = useState<RangeValue>("7");
-  const { brief, generating, failed, generate } = useAiBrief(databaseMode ? petId : null);
+  const { brief, generating, failed, generate } = useAiBrief(databaseMode ? petId : null, language);
   const shownBrief = databaseMode ? brief : buildSampleBrief(petId, language);
   const emptyState = databaseMode && !hasRecords && !shownBrief;
 

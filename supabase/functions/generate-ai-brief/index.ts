@@ -2,7 +2,37 @@ import { corsHeaders, errorResponse, jsonResponse, readJson } from "../_shared/h
 import { requirePetMember, requireUser, serviceClient } from "../_shared/supabase.ts";
 import { AiBriefRequestError, parseAiBriefRequest } from "./contract.ts";
 
-const disclaimer = "This is a record-based summary, not a diagnosis. Contact a veterinarian for medical decisions.";
+// Brief copy per requested language. The disclaimer wording must keep
+// satisfying the client-side hasRequiredDisclaimer check (AI_SAFETY.md).
+const briefCopy = {
+  en: {
+    disclaimer: "This is a record-based summary, not a diagnosis. Contact a veterinarian for medical decisions.",
+    diaryReviewed: (count: number) => `${count} diary records were reviewed.`,
+    dosesReviewed: (count: number) => `${count} medication records were reviewed.`,
+    skippedDoses: (count: number) => `${count} medication records were marked skipped.`,
+    noSkippedDoses: "No skipped medication records were found.",
+    lowCondition: (count: number) => `${count} low-condition records may be worth discussing with a veterinarian.`,
+    noLowCondition: "No repeated low-condition pattern was found in the reviewed records.",
+    questionsForVet: [
+      "When did the appetite, water, stool, or energy change first appear?",
+      "Should the current medication schedule continue unchanged?",
+    ],
+  },
+  ko: {
+    disclaimer: "이 내용은 진단이 아니라 기록 기반 요약입니다. 의학적 판단은 수의사에게 문의하세요.",
+    diaryReviewed: (count: number) => `다이어리 기록 ${count}건을 검토했습니다.`,
+    dosesReviewed: (count: number) => `투약 기록 ${count}건을 검토했습니다.`,
+    skippedDoses: (count: number) => `건너뜀으로 표시된 투약 기록이 ${count}건 있습니다.`,
+    noSkippedDoses: "건너뜀으로 표시된 투약 기록은 없습니다.",
+    lowCondition: (count: number) => `컨디션이 낮게 기록된 날이 ${count}건 있어 수의사와 상의해 볼 만합니다.`,
+    noLowCondition: "검토한 기록에서 반복되는 저컨디션 패턴은 발견되지 않았습니다.",
+    questionsForVet: [
+      "식욕, 물 섭취, 배변, 기력 변화는 언제 처음 나타났나요?",
+      "현재 투약 스케줄을 그대로 유지해도 될까요?",
+    ],
+  },
+} as const;
+
 const sourceFailureMessage = "Unable to load records for brief generation";
 
 class AiBriefSourceError extends Error {
@@ -57,19 +87,17 @@ Deno.serve(async (request) => {
     const missedDoses = doses.filter((dose) => dose.status === "skipped").length;
     const lowCondition = entries.filter((entry) => Number(entry.condition_score ?? 5) <= 2).length;
 
+    const copy = briefCopy[body.language];
     const payload = {
       rangeDays: body.rangeDays,
       highlights: [
-        `${entries.length} diary records were reviewed.`,
-        `${doses.length} medication records were reviewed.`,
-        missedDoses > 0 ? `${missedDoses} medication records were marked skipped.` : "No skipped medication records were found.",
-        lowCondition > 0 ? `${lowCondition} low-condition records may be worth discussing with a veterinarian.` : "No repeated low-condition pattern was found in the reviewed records.",
+        copy.diaryReviewed(entries.length),
+        copy.dosesReviewed(doses.length),
+        missedDoses > 0 ? copy.skippedDoses(missedDoses) : copy.noSkippedDoses,
+        lowCondition > 0 ? copy.lowCondition(lowCondition) : copy.noLowCondition,
       ],
-      questionsForVet: [
-        "When did the appetite, water, stool, or energy change first appear?",
-        "Should the current medication schedule continue unchanged?",
-      ],
-      disclaimer,
+      questionsForVet: [...copy.questionsForVet],
+      disclaimer: copy.disclaimer,
     };
 
     const { data: brief, error } = await supabase
