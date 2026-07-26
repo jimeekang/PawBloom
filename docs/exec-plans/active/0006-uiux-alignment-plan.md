@@ -38,7 +38,7 @@ edit_policy: exclusive
 - [x] C4. **리포트 생성 후 포맷 정합(F2)** — formatPetDetails를 라벨 로컬라이즈+빈 값 '미기록' 사람용 포맷으로 교체('null' 노출 제거). 타임라인 항목 빌더를 생성 전/후 공유 단일 함수로 통합. disclaimer는 보호자 화면에서 항상 로컬라이즈 문구(영문 원문은 병원용 사본에만).
 - [x] C5. **DatePickerField 로케일 표시(E5 잔여)** — displayValue를 언어별 포맷(ko '2026년 7월 23일' / en 'Jul 23, 2026')으로 변환(저장값 ISO 유지), clear 버튼 minHeight 44. ※가드의 DatePickerField 사용 불변식 유지.
 - [x] C6. **언어 선택지 자기 표기(G4 잔여)** — 설정·Auth의 언어 SegmentedControl 라벨을 정적 '한국어'/'English'로 고정(번역 대상 제외).
-- [ ] C7. **AI 브리핑 하이라이트 로컬라이즈** — generate-ai-brief 요청에 language 인자 추가, 엣지 함수 템플릿 KO/EN 분기(고지문 검증 규칙 유지) 후 재배포. A4의 영문 고정 잔여 해소. ※supabase/functions 수정은 배포 동반 — 강한 리뷰 경로.
+- [x] C7. **AI 브리핑 하이라이트 로컬라이즈** — 2026-07-26 코드 완료(c83b926): 요청 language 인자(구버전 무전달=en 호환), 엣지 함수 KO/EN 템플릿 분기, 서버 고지문이 클라이언트 hasRequiredDisclaimer를 통과함을 무결성 테스트로 고정. **※재배포 잔여**: `supabase functions deploy generate-ai-brief --project-ref xgvbtabedbocrebqilsh` 실행 필요(로컬 권한 정책상 자동 실행 불가).
 
 ## Phase D — 디자인시스템·a11y 일괄
 
@@ -62,7 +62,7 @@ edit_policy: exclusive
 
 - [x] F1. **CareReportReadinessCard 양자택일(E1 잔여)** ※마운트 채택. — 케어 탭 리포트 CTA 위 마운트(원안) 또는 컴포넌트+care.readiness* 키 삭제. ※가드의 CareMedicationAddCard 포함 불변식 유지.
 - [x] F2. **죽은 i18n 키 정리(H2)** ※실측 48쌍 삭제(briefing/routine 부활분 제외), care.copy 가드 검사 동반 정리. — 실측 57개 중 부활 예정분(A4 채택 시 briefing.*, D5의 routine.mealRemindersLabel) 제외 후 en/ko 대칭 삭제. 죽은 DS 자산(OutlineIconButton, icon.menu/spark/bell) 제거.
-- [ ] F3. **t() 죽은 첫 인자 정리 방침 결정** — 비테스트 566곳의 `t("ko", …)` 리터럴. 권고: t 시그니처에서 language 인자 제거(runtimeLanguage 단일 소스) 코드모드 1회. 규모가 커 별도 태스크로 격리, verify 전체 통과 필수.
+- [x] F3. **t() 죽은 첫 인자 정리** — 2026-07-26 권고안대로 실행(dc4e8b8): `t(key)` 단일 시그니처(runtimeLanguage 단일 소스, 프로바이더 밖 기본 ko), 57개 파일 674곳 코드모드. HEAD 대비 바이트 단위 순수성 검사로 기계적 치환만 있음을 확인, verify 전체 통과.
 - [x] F4. **exec-plans 정합화(H4)** — 0004를 archive로 이동+완료 표기, 0005 D6 체크를 partial로 정정 후 0005 archive 이동(본 계획이 승계), 0002-mvp-roadmap:67·:75, 0003 Day8~13 서술 현행화.
 
 ## 보류 (별도 계획 필요)
