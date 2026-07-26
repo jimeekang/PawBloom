@@ -82,20 +82,20 @@ function splitIsoDateTime(value: string): { dateKey?: string; time: string } {
 }
 
 function formatPetDetails(payload: VetReportPayload) {
-  if (!payload.pet) return t("ko", "reports.notRecorded");
-  const notRecorded = t("ko", "reports.notRecorded");
+  if (!payload.pet) return t("reports.notRecorded");
+  const notRecorded = t("reports.notRecorded");
   return [
-    `${t("ko", "pet.nameLabel")}: ${payload.pet.name}`,
-    `${t("ko", "pet.speciesLabel")}: ${speciesLabel(payload.pet.species)}`,
-    `${t("ko", "pet.breedLabel")}: ${payload.pet.breed ?? notRecorded}`,
-    `${t("ko", "reports.petWeight")}: ${payload.pet.weightKg != null ? `${payload.pet.weightKg}kg` : notRecorded}`,
+    `${t("pet.nameLabel")}: ${payload.pet.name}`,
+    `${t("pet.speciesLabel")}: ${speciesLabel(payload.pet.species)}`,
+    `${t("pet.breedLabel")}: ${payload.pet.breed ?? notRecorded}`,
+    `${t("reports.petWeight")}: ${payload.pet.weightKg != null ? `${payload.pet.weightKg}kg` : notRecorded}`,
   ].join(" · ");
 }
 
 function speciesLabel(species: string) {
-  if (species === "dog") return t("ko", "pet.speciesDog");
-  if (species === "cat") return t("ko", "pet.speciesCat");
-  return species || t("ko", "pet.speciesOther");
+  if (species === "dog") return t("pet.speciesDog");
+  if (species === "cat") return t("pet.speciesCat");
+  return species || t("pet.speciesOther");
 }
 
 function isConditionScore(value: number | null): value is 1 | 2 | 3 | 4 | 5 {

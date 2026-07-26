@@ -61,11 +61,11 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
       <View style={styles.heroInfo}>
         <View style={styles.heroSummary}>
           <View style={styles.heroSummaryItem}>
-            <Text style={styles.heroSummaryLabel}>{t("ko", "today.dashboardCompletion")}</Text>
+            <Text style={styles.heroSummaryLabel}>{t("today.dashboardCompletion")}</Text>
             <Text style={styles.heroSummaryValue}>{dashboard.completedCount}/{dashboard.totalCount}</Text>
           </View>
           {showMedicationSummary ? <View style={styles.heroSummaryItem}>
-            <Text style={styles.heroSummaryLabel}>{t("ko", "today.dashboardMedicationPending")}</Text>
+            <Text style={styles.heroSummaryLabel}>{t("today.dashboardMedicationPending")}</Text>
             <Text style={styles.heroSummaryValue}>{dashboard.pendingMedicationCount}</Text>
           </View> : null}
         </View>
@@ -73,13 +73,13 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
 
       {todayStatus === "error" ? (
         <View style={styles.noticeWrap}>
-          <NoticeBanner text={t("ko", "today.loadFailed")} tone="error" icon="close" />
-          {onRetryToday ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetryToday} /> : null}
+          <NoticeBanner text={t("today.loadFailed")} tone="error" icon="close" />
+          {onRetryToday ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryToday} /> : null}
         </View>
       ) : null}
       {todayStatus === "loading" ? (
         <View style={styles.noticeWrap}>
-          <Text style={styles.statusText}>{t("ko", "today.loading")}</Text>
+          <Text style={styles.statusText}>{t("today.loading")}</Text>
         </View>
       ) : null}
 
@@ -92,18 +92,18 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
       <AttentionStrip signals={dashboard.attentionSignals} />
 
       <SectionHeader
-        title={t("ko", "today.checklist.full")}
+        title={t("today.checklist.full")}
       />
       <View style={styles.checklist}>
         {checklistOrder.map((key) => {
           const item = categoryVisuals[key];
           const done = checklist[key];
-          const label = t("ko", item.labelKey);
+          const label = t(item.labelKey);
           return (
             <Pressable
               key={key}
               accessibilityRole="checkbox"
-              accessibilityLabel={`${label}, ${t("ko", done ? "today.checklistStatusComplete" : "today.checklistStatusIncomplete")}`}
+              accessibilityLabel={`${label}, ${t(done ? "today.checklistStatusComplete" : "today.checklistStatusIncomplete")}`}
               accessibilityState={{ checked: done, disabled: todayStatus !== "ready" }}
               aria-checked={done}
               disabled={todayStatus !== "ready"}
@@ -128,9 +128,9 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
 
       <View style={styles.timelineCard}>
         <SurfaceCard>
-          <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} onActionPress={onViewTimelineAll} />
+          <SectionHeader title={t("today.timeline.full")} action={t("today.seeAll")} onActionPress={onViewTimelineAll} />
           <View style={styles.timeline}>
-            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", todayStatus === "loading" ? "diary.listLoading" : "today.noTimeline")}</Text> : null}
+            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t(todayStatus === "loading" ? "diary.listLoading" : "today.noTimeline")}</Text> : null}
             {timeline.map((entry) => {
               const item = categoryVisuals[entry.category];
               const row = (
@@ -140,7 +140,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                   </View>
                   <Text style={styles.time}>{entry.occurredAt}</Text>
                   <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
-                  <Text style={styles.timelineTitle}>{t("ko", item.labelKey)}</Text>
+                  <Text style={styles.timelineTitle}>{t(item.labelKey)}</Text>
                   <Text style={styles.timelineValue} numberOfLines={1}>{getDiaryEntryDisplaySummary(entry)}</Text>
                 </>
               );
@@ -148,7 +148,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                 <Pressable
                   key={entry.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`${entry.occurredAt} ${t("ko", item.labelKey)} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
+                  accessibilityLabel={`${entry.occurredAt} ${t(item.labelKey)} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
                   style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]}
                   onPress={() => onTimelineEntryPress(entry)}
                 >

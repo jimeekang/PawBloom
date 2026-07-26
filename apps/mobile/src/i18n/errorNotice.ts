@@ -6,6 +6,6 @@ import { hasTranslation, t, type TranslationKey } from "./translations";
 // Raw error messages never reach the user through this path.
 export function errorNoticeText(error: unknown, fallbackKey: TranslationKey): string {
   const code = getErrorCode(error);
-  if (code && hasTranslation(code)) return t("ko", code);
-  return t("ko", fallbackKey);
+  if (code && hasTranslation(code)) return t(code);
+  return t(fallbackKey);
 }

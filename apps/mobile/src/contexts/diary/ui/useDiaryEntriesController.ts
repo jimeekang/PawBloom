@@ -71,7 +71,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
         .mutateAsync({ category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredAt, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId })
         .then((result) => {
           const outcome = resolveRemoteDiarySaveOutcome(result.queued);
-          onNotice(outcome === "queued" ? t("ko", "today.diaryQueued") : "");
+          onNotice(outcome === "queued" ? t("today.diaryQueued") : "");
           onSaved();
           return outcome;
         })
@@ -103,11 +103,11 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
   }
 
   function deleteDiaryRecord(entry: DiaryEntry) {
-    return confirmDestructiveAction({ title: t("ko", "diary.deleteTitle"), message: t("ko", "diary.deleteCopy"), cancelText: t("ko", "diary.deleteCancel"), confirmText: t("ko", "diary.deleteConfirm") }, async () => {
+    return confirmDestructiveAction({ title: t("diary.deleteTitle"), message: t("diary.deleteCopy"), cancelText: t("diary.deleteCancel"), confirmText: t("diary.deleteConfirm") }, async () => {
       if (databaseMode) {
         try {
           await deleteDiaryEntry.mutateAsync(entry.id);
-          onNotice(t("ko", "today.diaryDeletedRemote")); return true;
+          onNotice(t("today.diaryDeletedRemote")); return true;
         } catch (error) {
           onNotice(errorNoticeText(error, "diary.deleteFailed"), "error"); return false;
         }
@@ -116,7 +116,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
       const nextEntries = entries.filter((item) => item.id !== entry.id);
       setEntries(nextEntries);
       onLocalEntriesChanged(nextEntries);
-      onNotice(t("ko", "today.diaryDeleted")); return true;
+      onNotice(t("today.diaryDeleted")); return true;
     });
   }
 

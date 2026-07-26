@@ -34,6 +34,6 @@ if (!score.includes('accessibilityRole="radio"') || !score.includes("aria-checke
   throw new Error("Diary condition scores must expose radio semantics and checked state");
 }
 
-if (!entries.includes('accessibilityLabel={t("ko", "diary.photoClose")}')) {
+if (!entries.includes('accessibilityLabel={t("diary.photoClose")}')) {
   throw new Error("the Diary photo viewer must provide a close action name");
 }

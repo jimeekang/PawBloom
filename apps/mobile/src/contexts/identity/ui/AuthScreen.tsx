@@ -80,15 +80,15 @@ export function AuthScreen() {
           <View style={styles.langRow}>
             <SegmentedControl
               items={[
-                { label: t("ko", "language.koNative"), value: "ko" },
-                { label: t("ko", "language.enNative"), value: "en" },
+                { label: t("language.koNative"), value: "ko" },
+                { label: t("language.enNative"), value: "en" },
               ]}
               value={language}
               onChange={setLanguage}
             />
           </View>
-          <Text style={styles.title}>{t("ko", isReset ? "auth.resetRequestTitle" : isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
-          <Text style={styles.copy}>{t("ko", isReset ? "auth.resetRequestCopy" : "auth.copy")}</Text>
+          <Text style={styles.title}>{t(isReset ? "auth.resetRequestTitle" : isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
+          <Text style={styles.copy}>{t(isReset ? "auth.resetRequestCopy" : "auth.copy")}</Text>
           {!isReset ? (
             <>
               <View style={styles.valuePanel}>
@@ -97,16 +97,16 @@ export function AuthScreen() {
                     <View style={styles.valueIcon}>
                       <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
                     </View>
-                    <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+                    <Text style={styles.valueText}>{t(item.key)}</Text>
                   </View>
                 ))}
               </View>
-              <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
+              <Text style={styles.trustCopy}>{t("auth.trustCopy")}</Text>
 
               <SegmentedControl
                 items={[
-                  { label: t("ko", "auth.signIn"), value: "signIn" },
-                  { label: t("ko", "auth.signUp"), value: "signUp" },
+                  { label: t("auth.signIn"), value: "signIn" },
+                  { label: t("auth.signUp"), value: "signUp" },
                 ]}
                 value={mode}
                 onChange={changeMode}
@@ -116,7 +116,7 @@ export function AuthScreen() {
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <FieldLabel label={t("ko", "auth.email")} />
+              <FieldLabel label={t("auth.email")} />
               <TextInput
                 style={styles.input}
                 autoCapitalize="none"
@@ -124,8 +124,8 @@ export function AuthScreen() {
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 autoComplete="email"
-                accessibilityLabel={t("ko", "auth.email")}
-                placeholder={t("ko", "auth.email")}
+                accessibilityLabel={t("auth.email")}
+                placeholder={t("auth.email")}
                 placeholderTextColor={colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
@@ -134,7 +134,7 @@ export function AuthScreen() {
 
             {!isReset ? (
               <PasswordField
-                label={t("ko", "auth.password")}
+                label={t("auth.password")}
                 value={password}
                 onChangeText={setPassword}
                 visible={showPassword}
@@ -146,7 +146,7 @@ export function AuthScreen() {
 
             {isSignUp ? (
               <PasswordField
-                label={t("ko", "auth.passwordConfirm")}
+                label={t("auth.passwordConfirm")}
                 value={passwordConfirm}
                 onChangeText={setPasswordConfirm}
                 visible={showPassword}
@@ -156,58 +156,58 @@ export function AuthScreen() {
               />
             ) : null}
 
-            <PrimaryButton label={t("ko", isReset ? "auth.sendResetLink" : isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
+            <PrimaryButton label={t(isReset ? "auth.sendResetLink" : isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
 
             {mode === "signIn" ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("ko", "auth.forgotPassword")}
+                accessibilityLabel={t("auth.forgotPassword")}
                 style={styles.textLink}
                 onPress={() => changeMode("resetRequest")}
               >
-                <Text style={styles.textLinkText}>{t("ko", "auth.forgotPassword")}</Text>
+                <Text style={styles.textLinkText}>{t("auth.forgotPassword")}</Text>
               </Pressable>
             ) : null}
             {isReset ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("ko", "auth.backToSignIn")}
+                accessibilityLabel={t("auth.backToSignIn")}
                 style={styles.textLink}
                 onPress={() => changeMode("signIn")}
               >
-                <Text style={styles.textLinkText}>{t("ko", "auth.backToSignIn")}</Text>
+                <Text style={styles.textLinkText}>{t("auth.backToSignIn")}</Text>
               </Pressable>
             ) : null}
 
-            {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
+            {error || localError ? <NoticeBanner text={t(error ?? localError!)} icon="close" tone="error" /> : null}
             {authMessage ? (
               <NoticeBanner
-                text={t("ko", authMessage)}
+                text={t(authMessage)}
                 icon={authMessage === "auth.sessionExpired" ? "close" : authMessage === "auth.checkEmail" || authMessage === "auth.resetEmailSent" ? "shield" : "check"}
                 tone={authMessage === "auth.sessionExpired" ? "error" : authMessage === "auth.checkEmail" || authMessage === "auth.resetEmailSent" ? "progress" : "success"}
               />
             ) : null}
 
-            {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
-            {loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+            {isSignUp && <Text style={styles.hint}>{t("auth.signUpHint")}</Text>}
+            {loading ? <Text style={styles.notice}>{t("auth.wait")}</Text> : null}
 
             <View style={styles.policyLinks}>
               <Pressable
                 accessibilityRole="link"
-                accessibilityLabel={t("ko", "settings.privacyPolicy")}
+                accessibilityLabel={t("settings.privacyPolicy")}
                 style={styles.policyLink}
                 onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
               >
-                <Text style={styles.policyLinkText}>{t("ko", "settings.privacyPolicy")}</Text>
+                <Text style={styles.policyLinkText}>{t("settings.privacyPolicy")}</Text>
               </Pressable>
               <Text style={styles.policyDivider}>·</Text>
               <Pressable
                 accessibilityRole="link"
-                accessibilityLabel={t("ko", "settings.support")}
+                accessibilityLabel={t("settings.support")}
                 style={styles.policyLink}
                 onPress={() => openExternalUrl(SUPPORT_URL)}
               >
-                <Text style={styles.policyLinkText}>{t("ko", "settings.support")}</Text>
+                <Text style={styles.policyLinkText}>{t("settings.support")}</Text>
               </Pressable>
             </View>
           </View>

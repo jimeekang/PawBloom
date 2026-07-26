@@ -38,7 +38,7 @@ export function DiaryCalendar({
     <SurfaceCard>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${t("ko", "diary.selectedDateLabel")}: ${selectedDateLabel}. ${t("ko", expanded ? "diary.calendar.close" : "diary.calendar.open")}`}
+        accessibilityLabel={`${t("diary.selectedDateLabel")}: ${selectedDateLabel}. ${t(expanded ? "diary.calendar.close" : "diary.calendar.open")}`}
         accessibilityState={{ expanded }}
         aria-expanded={expanded}
         style={({ pressed }) => [styles.selectedDateButton, pressed && styles.selectedDateButtonPressed]}
@@ -58,20 +58,20 @@ export function DiaryCalendar({
           <View style={styles.header}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t("ko", "diary.prevMonth")}
+              accessibilityLabel={t("diary.prevMonth")}
               style={styles.monthButton}
               onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}
             >
-              <Text style={styles.monthButtonText}>{t("ko", "diary.prevMonth")}</Text>
+              <Text style={styles.monthButtonText}>{t("diary.prevMonth")}</Text>
             </Pressable>
             <Text style={styles.monthTitle} accessibilityRole="header">{formatMonth(selectedDate, locale)}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t("ko", "diary.nextMonth")}
+              accessibilityLabel={t("diary.nextMonth")}
               style={styles.monthButton}
               onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}
             >
-              <Text style={styles.monthButtonText}>{t("ko", "diary.nextMonth")}</Text>
+              <Text style={styles.monthButtonText}>{t("diary.nextMonth")}</Text>
             </Pressable>
           </View>
 
@@ -111,8 +111,8 @@ export function DiaryCalendar({
         value={filter}
         onChange={onFilterChange}
         items={[
-          { label: t("ko", "diary.filter.day"), value: "day" },
-          { label: t("ko", "diary.filter.week"), value: "week" },
+          { label: t("diary.filter.day"), value: "day" },
+          { label: t("diary.filter.week"), value: "week" },
         ]}
       />
     </SurfaceCard>

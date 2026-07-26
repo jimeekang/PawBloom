@@ -132,10 +132,10 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
 
     void confirmDestructiveAction(
       {
-        title: t("ko", "pet.deleteTitle"),
-        message: `${activePet.name} ${t("ko", "pet.deleteCopy")}`,
-        cancelText: t("ko", "pet.deleteCancel"),
-        confirmText: t("ko", "pet.deleteConfirm"),
+        title: t("pet.deleteTitle"),
+        message: `${activePet.name} ${t("pet.deleteCopy")}`,
+        cancelText: t("pet.deleteCancel"),
+        confirmText: t("pet.deleteConfirm"),
       },
       () => {
         void deletePet(activePet.id);
@@ -147,97 +147,97 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>{t("ko", mode === "manage" ? "pet.manageTitle" : "pet.onboardingTitle")}</Text>
-      <Text style={styles.copy}>{t("ko", mode === "manage" ? "pet.manageCopy" : "pet.onboardingCopy")}</Text>
+      <Text style={styles.title}>{t(mode === "manage" ? "pet.manageTitle" : "pet.onboardingTitle")}</Text>
+      <Text style={styles.copy}>{t(mode === "manage" ? "pet.manageCopy" : "pet.onboardingCopy")}</Text>
 
-      {!user ? <NoticeBanner text={t("ko", "pet.loginRequired")} icon="shield" /> : null}
-      {entitlementLoading ? <NoticeBanner text={t("ko", "pet.planLoading")} icon="lock" /> : null}
-      {entitlementFailed ? <NoticeBanner text={t("ko", "pet.planLoadFailed")} icon="close" tone="error" /> : null}
-      {entitlementFailed ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={() => void entitlementQuery.refetch()} /> : null}
-      {hasPets && !showCreateForm && petCreationAllowed ? <SecondaryButton label={t("ko", "pet.create")} icon="add" onPress={onAddAnother} /> : null}
-      {hasPets && !showCreateForm && entitlement && !petCreationAllowed ? <NoticeBanner text={t("ko", "pet.planLimitReached").replace("{limit}", `${entitlement.maxPets}`)} icon="lock" /> : null}
+      {!user ? <NoticeBanner text={t("pet.loginRequired")} icon="shield" /> : null}
+      {entitlementLoading ? <NoticeBanner text={t("pet.planLoading")} icon="lock" /> : null}
+      {entitlementFailed ? <NoticeBanner text={t("pet.planLoadFailed")} icon="close" tone="error" /> : null}
+      {entitlementFailed ? <SecondaryButton label={t("diary.listRetry")} onPress={() => void entitlementQuery.refetch()} /> : null}
+      {hasPets && !showCreateForm && petCreationAllowed ? <SecondaryButton label={t("pet.create")} icon="add" onPress={onAddAnother} /> : null}
+      {hasPets && !showCreateForm && entitlement && !petCreationAllowed ? <NoticeBanner text={t("pet.planLimitReached").replace("{limit}", `${entitlement.maxPets}`)} icon="lock" /> : null}
 
       {shouldShowPetSelector ? <PetSelector pets={pets} activePetId={activePet?.id} onSelect={selectPet} /> : null}
 
       {activePet && !showCreateForm && canManageActivePet ? (
         <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.sectionTitle}>{t("ko", "pet.editTitle")}</Text>
+          <Text style={styles.sectionTitle}>{t("pet.editTitle")}</Text>
           <PetProfileFormFields
-            speciesFieldLabel={t("ko", "pet.speciesLabel")}
+            speciesFieldLabel={t("pet.speciesLabel")}
             speciesLabel={speciesLabel}
             species={editSpecies}
             onSpeciesChange={setEditSpecies}
-            photoFieldLabel={t("ko", "pet.photoLabel")}
+            photoFieldLabel={t("pet.photoLabel")}
             photoUri={editPhoto?.uri ?? activePhoto.data ?? undefined}
-            photoLabel={t("ko", "pet.photoUpdate")}
+            photoLabel={t("pet.photoUpdate")}
             onPickPhoto={() => void pickPetProfilePhoto(setEditPhoto)}
-            nameLabel={t("ko", "pet.nameLabel")}
+            nameLabel={t("pet.nameLabel")}
             name={editName}
             onNameChange={setEditName}
-            breedLabel={t("ko", "pet.breedLabel")}
+            breedLabel={t("pet.breedLabel")}
             breed={editBreed}
             onBreedChange={setEditBreed}
-            birthdateLabel={t("ko", "pet.birthdateLabel")}
+            birthdateLabel={t("pet.birthdateLabel")}
             birthdate={editBirthdate}
             onBirthdateChange={setEditBirthdate}
-            weightLabel={t("ko", "pet.weightLabel")}
+            weightLabel={t("pet.weightLabel")}
             weightKg={editWeightKg}
             onWeightChange={setEditWeightKg}
           />
 
-          <PrimaryButton label={t("ko", "pet.update")} onPress={onUpdate} disabled={loading} />
-          {activePhoto.isLoading && !editPhoto ? <Text style={styles.helpText}>{t("ko", "pet.photoLoading")}</Text> : null}
-          {activePhoto.isError ? <Text style={styles.helpText}>{t("ko", "pet.photoLoadFailed")}</Text> : null}
-          <DangerButton label={t("ko", "pet.delete")} icon="close" onPress={onDelete} disabled={loading} />
+          <PrimaryButton label={t("pet.update")} onPress={onUpdate} disabled={loading} />
+          {activePhoto.isLoading && !editPhoto ? <Text style={styles.helpText}>{t("pet.photoLoading")}</Text> : null}
+          {activePhoto.isError ? <Text style={styles.helpText}>{t("pet.photoLoadFailed")}</Text> : null}
+          <DangerButton label={t("pet.delete")} icon="close" onPress={onDelete} disabled={loading} />
         </View>
         </SurfaceCard>
       ) : null}
 
-      {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("ko", "permission.petOwnerOnly")} icon="shield" /> : null}
+      {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("permission.petOwnerOnly")} icon="shield" /> : null}
 
       {activePet && !showCreateForm && canManageCareDefaults && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
       {activePet && !showCreateForm && canManageCareDefaults && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} medicationRemindersEnabled={medicationRemindersEnabled} onToggleMedicationReminders={onToggleMedicationReminders} /> : null}
-      {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("ko", "permission.careTeamOnly")} icon="shield" /> : null}
+      {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" /> : null}
 
       {showCreateForm && petCreationAllowed ? (
         <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.sectionTitle}>{t("ko", "pet.addTitle")}</Text>
-          {!hasPets ? <Text style={styles.helpText}>{t("ko", "pet.empty")}</Text> : null}
+          <Text style={styles.sectionTitle}>{t("pet.addTitle")}</Text>
+          {!hasPets ? <Text style={styles.helpText}>{t("pet.empty")}</Text> : null}
           <PetProfileFormFields
-            speciesFieldLabel={t("ko", "pet.speciesLabel")}
+            speciesFieldLabel={t("pet.speciesLabel")}
             speciesLabel={speciesLabel}
             species={species}
             onSpeciesChange={setSpecies}
-            photoFieldLabel={t("ko", "pet.photoLabel")}
+            photoFieldLabel={t("pet.photoLabel")}
             photoUri={photo?.uri}
-            photoLabel={t("ko", "pet.photoAdd")}
+            photoLabel={t("pet.photoAdd")}
             onPickPhoto={() => void pickPetProfilePhoto(setPhoto)}
-            nameLabel={t("ko", "pet.nameLabel")}
+            nameLabel={t("pet.nameLabel")}
             name={name}
             onNameChange={setName}
-            breedLabel={t("ko", "pet.breedLabel")}
+            breedLabel={t("pet.breedLabel")}
             breed={breed}
             onBreedChange={setBreed}
-            birthdateLabel={t("ko", "pet.birthdateLabel")}
+            birthdateLabel={t("pet.birthdateLabel")}
             birthdate={birthdate}
             onBirthdateChange={setBirthdate}
-            weightLabel={t("ko", "pet.weightLabel")}
+            weightLabel={t("pet.weightLabel")}
             weightKg={weightKg}
             onWeightChange={setWeightKg}
           />
 
-          <PrimaryButton label={t("ko", "pet.create")} onPress={onCreate} disabled={loading} />
-          {hasPets ? <SecondaryButton label={t("ko", "pet.createCancel")} onPress={() => { resetCreateForm(); setFormErrorKey(null); setShowCreateForm(false); }} disabled={loading} /> : null}
+          <PrimaryButton label={t("pet.create")} onPress={onCreate} disabled={loading} />
+          {hasPets ? <SecondaryButton label={t("pet.createCancel")} onPress={() => { resetCreateForm(); setFormErrorKey(null); setShowCreateForm(false); }} disabled={loading} /> : null}
         </View>
         </SurfaceCard>
       ) : null}
 
-      {formErrorKey ? <NoticeBanner text={t("ko", formErrorKey)} icon="close" tone="error" /> : null}
+      {formErrorKey ? <NoticeBanner text={t(formErrorKey)} icon="close" tone="error" /> : null}
       {(error ?? authMessage) ? (
         <NoticeBanner
-          text={t("ko", (error ?? authMessage)!)}
+          text={t((error ?? authMessage)!)}
           icon={error ? "close" : authMessage === "pet.photoPartial" ? "shield" : "check"}
           tone={error ? "error" : authMessage === "pet.photoPartial" ? "progress" : "success"}
         />
@@ -245,11 +245,11 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
 
       {user ? (
         <View style={styles.actionRow}>
-          <SecondaryButton label={t("ko", "auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} disabled={loading} />
+          <SecondaryButton label={t("auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} disabled={loading} />
         </View>
       ) : null}
 
-      {loading ? <Text style={styles.loadingText}>{t("ko", "auth.wait")}</Text> : null}
+      {loading ? <Text style={styles.loadingText}>{t("auth.wait")}</Text> : null}
     </ScrollView>
     </KeyboardAvoidingView>
   );

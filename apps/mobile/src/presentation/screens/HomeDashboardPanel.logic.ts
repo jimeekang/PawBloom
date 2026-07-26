@@ -21,13 +21,13 @@ export function createCareSummaryDoseRows(doses: DoseRecord[]): CareSummaryDoseR
   return doses.map((dose) => ({
     id: dose.id,
     title: dose.medicationName,
-    statusLabel: t("ko", statusLabelKeys[dose.status]),
+    statusLabel: t(statusLabelKeys[dose.status]),
     timeLabel: dose.scheduledAt,
     details: [
-      formatDetail(t("ko", "care.conditionLabel"), dose.conditionName),
-      formatDetail(t("ko", "care.dosageLabel"), dose.dosageLabel),
-      formatDetail(t("ko", "care.administeredLabel"), dose.administeredAmount),
-      formatDetail(t("ko", "care.reactionLabel"), dose.reactionNote),
+      formatDetail(t("care.conditionLabel"), dose.conditionName),
+      formatDetail(t("care.dosageLabel"), dose.dosageLabel),
+      formatDetail(t("care.administeredLabel"), dose.administeredAmount),
+      formatDetail(t("care.reactionLabel"), dose.reactionNote),
     ].filter((detail): detail is string => Boolean(detail)),
   }));
 }
@@ -56,11 +56,11 @@ export function createCareSummaryRows(doses: DoseRecord[], agenda: AgendaSummary
     .map((row) => ({
       id: `schedule-${row.scheduleId ?? "none"}-${row.doseDate}-${row.scheduledTime}`,
       title: row.medicationName,
-      statusLabel: t("ko", statusLabelKeys[row.status]),
+      statusLabel: t(statusLabelKeys[row.status]),
       timeLabel: row.scheduledTime,
       details: [
-        formatDetail(t("ko", "care.conditionLabel"), row.conditionName),
-        formatDetail(t("ko", "care.dosageLabel"), row.dosageLabel),
+        formatDetail(t("care.conditionLabel"), row.conditionName),
+        formatDetail(t("care.dosageLabel"), row.dosageLabel),
       ].filter((detail): detail is string => Boolean(detail)),
     }));
   return [...scheduledRows, ...createCareSummaryDoseRows(doses)];

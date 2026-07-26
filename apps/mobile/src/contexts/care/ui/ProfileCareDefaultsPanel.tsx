@@ -54,11 +54,11 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
   async function save() {
     if (savingRef.current) return;
     if (isCareSetupDraftEmpty(draft)) {
-      setError(t("ko", "care.setupRequired"));
+      setError(t("care.setupRequired"));
       return;
     }
     if (isCareSetupPeriodInvalid(draft)) {
-      setError(t("ko", "care.shortTermPeriodInvalid"));
+      setError(t("care.shortTermPeriodInvalid"));
       return;
     }
 
@@ -89,17 +89,17 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
   return (
     <SurfaceCard>
       <View style={styles.panel}>
-        <Text style={styles.title}>{t("ko", "pet.careDefaultsTitle")}</Text>
-        <Text style={styles.copy}>{t("ko", "pet.careDefaultsCopy")}</Text>
+        <Text style={styles.title}>{t("pet.careDefaultsTitle")}</Text>
+        <Text style={styles.copy}>{t("pet.careDefaultsCopy")}</Text>
         {onToggleMedicationReminders ? (
           <View>
-            <FieldLabel label={t("ko", "care.medicationRemindersLabel")} />
+            <FieldLabel label={t("care.medicationRemindersLabel")} />
             <SegmentedControl
               value={medicationRemindersEnabled === false ? "off" : "on"}
               onChange={(value) => onToggleMedicationReminders(value === "on")}
               items={[
-                { label: t("ko", "routine.mealRemindersOn"), value: "on" },
-                { label: t("ko", "routine.mealRemindersOff"), value: "off" },
+                { label: t("routine.mealRemindersOn"), value: "on" },
+                { label: t("routine.mealRemindersOff"), value: "off" },
               ]}
             />
           </View>
@@ -131,44 +131,44 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
             })}
             <Pressable
               accessibilityRole="radio"
-              accessibilityLabel={t("ko", "care.addNewMedicationOption")}
+              accessibilityLabel={t("care.addNewMedicationOption")}
               accessibilityState={{ checked: selectedMedicationId === null, disabled: isSaving }}
               aria-checked={selectedMedicationId === null}
               style={[styles.medicationOption, selectedMedicationId === null ? styles.medicationOptionSelected : null]}
               onPress={isSaving ? undefined : () => selectMedication(null)}
             >
-              <Text style={[styles.medicationOptionTitle, selectedMedicationId === null ? styles.medicationOptionTitleSelected : null]}>+ {t("ko", "care.addNewMedicationOption")}</Text>
+              <Text style={[styles.medicationOptionTitle, selectedMedicationId === null ? styles.medicationOptionTitleSelected : null]}>+ {t("care.addNewMedicationOption")}</Text>
             </Pressable>
           </View>
         ) : null}
-        <FieldLabel label={t("ko", "care.conditionPlaceholder")} />
-        <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <FieldLabel label={t("ko", "care.planPlaceholder")} />
-        <TextInput accessibilityLabel={t("ko", "care.planPlaceholder")} style={styles.input} value={draft.planTitle} onChangeText={(value) => setDraft((current) => ({ ...current, planTitle: value.slice(0, 80) }))} placeholder={t("ko", "care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <FieldLabel label={t("ko", "care.medicationPlaceholder")} />
-        <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-        <FieldLabel label={t("ko", "care.dosagePlaceholder")} />
-        <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
-        <Text style={styles.label}>{t("ko", "pet.careDefaultsPeriod")}</Text>
-        <DatePickerField value={draft.startsOn} onChange={(startsOn) => setDraft((current) => ({ ...current, startsOn }))} placeholder={t("ko", "pet.careDefaultsStartDate")} />
-        <DatePickerField value={draft.endsOn} onChange={(endsOn) => setDraft((current) => ({ ...current, endsOn }))} placeholder={t("ko", "pet.careDefaultsEndDate")} allowClear clearLabel={t("ko", "pet.careDefaultsClearDate")} />
-        <Text style={styles.label}>{t("ko", "pet.careDefaultsRepeat")}</Text>
-        <SegmentedControl value={draft.repeat} onChange={(repeat) => setDraft((current) => ({ ...current, repeat }))} items={[{ label: t("ko", "pet.careDefaultsEveryDay"), value: "daily" }, { label: t("ko", "pet.careDefaultsCustomRepeat"), value: "custom" }]} />
+        <FieldLabel label={t("care.conditionPlaceholder")} />
+        <TextInput accessibilityLabel={t("care.conditionPlaceholder")} style={styles.input} value={draft.conditionName} onChangeText={(value) => setDraft((current) => ({ ...current, conditionName: value.slice(0, 80) }))} placeholder={t("care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("care.planPlaceholder")} />
+        <TextInput accessibilityLabel={t("care.planPlaceholder")} style={styles.input} value={draft.planTitle} onChangeText={(value) => setDraft((current) => ({ ...current, planTitle: value.slice(0, 80) }))} placeholder={t("care.planPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("care.medicationPlaceholder")} />
+        <TextInput accessibilityLabel={t("care.medicationPlaceholder")} style={styles.input} value={draft.medicationName} onChangeText={(value) => setDraft((current) => ({ ...current, medicationName: value.slice(0, 80) }))} placeholder={t("care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("care.dosagePlaceholder")} />
+        <TextInput accessibilityLabel={t("care.dosagePlaceholder")} style={styles.input} value={draft.dosageLabel} onChangeText={(value) => setDraft((current) => ({ ...current, dosageLabel: value.slice(0, 80) }))} placeholder={t("care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <Text style={styles.label}>{t("pet.careDefaultsPeriod")}</Text>
+        <DatePickerField value={draft.startsOn} onChange={(startsOn) => setDraft((current) => ({ ...current, startsOn }))} placeholder={t("pet.careDefaultsStartDate")} />
+        <DatePickerField value={draft.endsOn} onChange={(endsOn) => setDraft((current) => ({ ...current, endsOn }))} placeholder={t("pet.careDefaultsEndDate")} allowClear clearLabel={t("pet.careDefaultsClearDate")} />
+        <Text style={styles.label}>{t("pet.careDefaultsRepeat")}</Text>
+        <SegmentedControl value={draft.repeat} onChange={(repeat) => setDraft((current) => ({ ...current, repeat }))} items={[{ label: t("pet.careDefaultsEveryDay"), value: "daily" }, { label: t("pet.careDefaultsCustomRepeat"), value: "custom" }]} />
         {draft.repeat === "custom" ? (
           <View style={styles.repeatRow}>
-            <TextInput accessibilityLabel={t("ko", "pet.careDefaultsCustomRepeat")} style={[styles.input, styles.repeatInput]} value={draft.repeatDays} onChangeText={(value) => setDraft((current) => ({ ...current, repeatDays: value.replace(/[^0-9]/g, "").slice(0, 3) }))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
-            <Text style={styles.repeatSuffix}>{t("ko", "pet.careDefaultsCustomRepeatSuffix")}</Text>
+            <TextInput accessibilityLabel={t("pet.careDefaultsCustomRepeat")} style={[styles.input, styles.repeatInput]} value={draft.repeatDays} onChangeText={(value) => setDraft((current) => ({ ...current, repeatDays: value.replace(/[^0-9]/g, "").slice(0, 3) }))} keyboardType="number-pad" placeholder="2" placeholderTextColor={colors.textSoft} />
+            <Text style={styles.repeatSuffix}>{t("pet.careDefaultsCustomRepeatSuffix")}</Text>
           </View>
         ) : null}
         {draft.times.map((time, index) => (
           <View key={index} style={styles.timeRow}>
             <View style={styles.timeField}>
-              <TimePickerField accessibilityLabel={`${t("ko", "care.medicationTimeLabel")} ${index + 1}`} value={time} onChange={(nextTime) => setDraft((current) => ({ ...current, times: current.times.map((item, itemIndex) => (itemIndex === index ? nextTime : item)) }))} />
+              <TimePickerField accessibilityLabel={`${t("care.medicationTimeLabel")} ${index + 1}`} value={time} onChange={(nextTime) => setDraft((current) => ({ ...current, times: current.times.map((item, itemIndex) => (itemIndex === index ? nextTime : item)) }))} />
             </View>
             {draft.times.length > 1 ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("ko", "care.removeTimeA11y")}
+                accessibilityLabel={t("care.removeTimeA11y")}
                 style={styles.removeTimeButton}
                 onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: current.times.filter((_, itemIndex) => itemIndex !== index) }))}
               >
@@ -183,11 +183,11 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
           style={styles.addTimeButton}
           onPress={isSaving ? undefined : () => setDraft((current) => ({ ...current, times: [...current.times, "20:00"] }))}
         >
-          <Text style={styles.addTimeText}>{t("ko", "pet.careDefaultsTimeAdd")}</Text>
+          <Text style={styles.addTimeText}>{t("pet.careDefaultsTimeAdd")}</Text>
         </Pressable>
-        <Text style={styles.copy}>{t("ko", "pet.careDefaultsSavedHint")}</Text>
+        <Text style={styles.copy}>{t("pet.careDefaultsSavedHint")}</Text>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <PrimaryButton label={t("ko", "care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} disabled={isSaving} />
+        <PrimaryButton label={t("care.setupSave")} icon="medication" onPress={isSaving ? undefined : save} disabled={isSaving} />
       </View>
     </SurfaceCard>
   );

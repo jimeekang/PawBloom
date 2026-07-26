@@ -56,7 +56,7 @@ export function PhotoPicker({ imageUri, label, onPress }: PhotoPickerProps) {
 }
 
 export function getSpeciesLabels(): Record<PetSpeciesOption, string> {
-  return { dog: t("ko", "pet.speciesDog"), cat: t("ko", "pet.speciesCat"), other: t("ko", "pet.speciesOther") };
+  return { dog: t("pet.speciesDog"), cat: t("pet.speciesCat"), other: t("pet.speciesOther") };
 }
 
 export function PetSelector({
@@ -73,7 +73,7 @@ export function PetSelector({
   return (
     <SurfaceCard>
     <View style={styles.cardBody}>
-      <Text style={styles.sectionTitle}>{t("ko", "pet.selectTitle")}</Text>
+      <Text style={styles.sectionTitle}>{t("pet.selectTitle")}</Text>
       {pets.map((pet) => {
         const meta = [formatPetMetaLine(pet, language), pet.weightKg ? `${pet.weightKg}kg` : "-"].filter(Boolean).join(" · ");
         return (
@@ -102,7 +102,7 @@ export function PetSelector({
 export async function pickPetProfilePhoto(onPicked: (nextPhoto: PetProfilePhotoInput) => void) {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) {
-    Alert.alert(t("ko", "pet.photoPermissionTitle"), t("ko", "pet.photoPermissionCopy"));
+    Alert.alert(t("pet.photoPermissionTitle"), t("pet.photoPermissionCopy"));
     return;
   }
 
@@ -183,15 +183,15 @@ export function PetProfileFormFields({
 
       <View style={styles.fieldGroup}>
         <FieldLabel label={nameLabel} />
-        <TextInput accessibilityLabel={nameLabel} style={styles.input} value={name} onChangeText={onNameChange} placeholder={t("ko", "pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
+        <TextInput accessibilityLabel={nameLabel} style={styles.input} value={name} onChangeText={onNameChange} placeholder={t("pet.namePlaceholder")} placeholderTextColor={colors.textMuted} />
       </View>
       <View style={styles.fieldGroup}>
         <FieldLabel label={breedLabel} />
-        <TextInput accessibilityLabel={breedLabel} style={styles.input} value={breed} onChangeText={onBreedChange} placeholder={t("ko", "pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
+        <TextInput accessibilityLabel={breedLabel} style={styles.input} value={breed} onChangeText={onBreedChange} placeholder={t("pet.breedPlaceholder")} placeholderTextColor={colors.textMuted} />
       </View>
       <View style={styles.fieldGroup}>
         <FieldLabel label={birthdateLabel} />
-        <DatePickerField accessibilityLabel={birthdateLabel} value={birthdate} onChange={onBirthdateChange} placeholder={t("ko", "pet.birthdatePlaceholder")} allowClear clearLabel={t("ko", "pet.birthdateClear")} />
+        <DatePickerField accessibilityLabel={birthdateLabel} value={birthdate} onChange={onBirthdateChange} placeholder={t("pet.birthdatePlaceholder")} allowClear clearLabel={t("pet.birthdateClear")} />
       </View>
       <View style={styles.fieldGroup}>
         <FieldLabel label={weightLabel} />
@@ -200,7 +200,7 @@ export function PetProfileFormFields({
           style={styles.input}
           value={weightKg}
           onChangeText={onWeightChange}
-          placeholder={t("ko", "pet.weightPlaceholder")}
+          placeholder={t("pet.weightPlaceholder")}
           placeholderTextColor={colors.textMuted}
           keyboardType="decimal-pad"
         />

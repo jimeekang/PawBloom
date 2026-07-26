@@ -31,10 +31,10 @@ export function createDashboardSummary(checklist: Record<ChecklistKey, boolean>,
   const completedCount = summaryKeys.filter((key) => checklist[key]).length;
   const pendingMedicationCount = shouldIncludeMedication ? medicationRows.filter((dose) => dose.status === "pending").length : 0;
   const attentionSignals = [
-    entries.some((entry) => entry.category === "condition" && (entry.conditionScore ?? 5) <= 2) ? t("ko", "today.attentionLowCondition") : null,
-    !entries.some((entry) => entry.category === "water") ? t("ko", "today.attentionWaterMissing") : null,
-    shouldIncludeMedication && medicationRows.some((dose) => dose.status === "partial" || dose.status === "skipped") ? t("ko", "today.attentionMedication") : null,
-    entries.some((entry) => entry.category === "stool" && entry.detail?.category === "stool" && (entry.detail.consistency === "diarrhea" || entry.detail.hasBloodOrMucus)) ? t("ko", "today.attentionStool") : null,
+    entries.some((entry) => entry.category === "condition" && (entry.conditionScore ?? 5) <= 2) ? t("today.attentionLowCondition") : null,
+    !entries.some((entry) => entry.category === "water") ? t("today.attentionWaterMissing") : null,
+    shouldIncludeMedication && medicationRows.some((dose) => dose.status === "partial" || dose.status === "skipped") ? t("today.attentionMedication") : null,
+    entries.some((entry) => entry.category === "stool" && entry.detail?.category === "stool" && (entry.detail.consistency === "diarrhea" || entry.detail.hasBloodOrMucus)) ? t("today.attentionStool") : null,
   ].filter((signal) => signal !== null) as string[];
 
   return {
@@ -55,7 +55,7 @@ export function checklistSummary(key: ChecklistKey) {
     memo: "checklist.summary.memo",
     medication: "checklist.summary.medication",
   };
-  return t("ko", summaryKeys[key]);
+  return t(summaryKeys[key]);
 }
 
 export function getTodayChecklistOrder({ walkEnabled, includeMedication = true }: { walkEnabled: boolean; includeMedication?: boolean }): ChecklistKey[] {

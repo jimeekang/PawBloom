@@ -62,7 +62,7 @@ function AppBody() {
       <SafeAreaView style={styles.loadingArea}>
         <View style={styles.loadingWrap}>
           <AppIcon name="shield" size={40} color={colors.orangeDeep} />
-          <Text style={styles.loadingText}>{t("ko", "app.loading")}</Text>
+          <Text style={styles.loadingText}>{t("app.loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -76,11 +76,11 @@ function AppBody() {
       <SafeAreaView style={styles.loadingArea}>
         <View style={styles.loadingWrap}>
           <AppIcon name="close" size={40} color={colors.coral} />
-          <Text style={styles.loadingText}>{t("ko", "pet.loadFailed")}</Text>
-          {error ? <NoticeBanner text={t("ko", error)} icon="close" tone="error" /> : null}
+          <Text style={styles.loadingText}>{t("pet.loadFailed")}</Text>
+          {error ? <NoticeBanner text={t(error)} icon="close" tone="error" /> : null}
           <View style={styles.retryActions}>
-            <PrimaryButton label={t("ko", "pet.retryLoad")} onPress={retryPetLoad} />
-            <SecondaryButton label={t("ko", "auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} />
+            <PrimaryButton label={t("pet.retryLoad")} onPress={retryPetLoad} />
+            <SecondaryButton label={t("auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} />
           </View>
         </View>
       </SafeAreaView>

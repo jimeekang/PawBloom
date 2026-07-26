@@ -29,7 +29,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
     if (!databaseMode) {
       const nextSetup = buildNextLocalCareSetup(localCareSetup, input);
       setLocalCareSetup(nextSetup);
-      onNotice(t("ko", "care.setupSaved"));
+      onNotice(t("care.setupSaved"));
       onSaved();
       return nextSetup;
     }
@@ -38,7 +38,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
       const requestPetId = livePetId;
       const savedSetup = await createCareSetup.mutateAsync(input);
       if (livePetIdRef.current !== requestPetId) return savedSetup;
-      onNotice(t("ko", "care.setupSaved"));
+      onNotice(t("care.setupSaved"));
       onSaved();
       return savedSetup;
     } catch (error) {

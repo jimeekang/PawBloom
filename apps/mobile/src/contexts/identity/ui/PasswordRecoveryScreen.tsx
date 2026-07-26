@@ -46,9 +46,9 @@ export function PasswordRecoveryScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>{t("ko", "auth.newPasswordTitle")}</Text>
-          <NoticeBanner text={t("ko", "auth.resetDone")} icon="check" />
-          <PrimaryButton label={t("ko", "auth.resetContinue")} onPress={cancelPasswordRecovery} />
+          <Text style={styles.title}>{t("auth.newPasswordTitle")}</Text>
+          <NoticeBanner text={t("auth.resetDone")} icon="check" />
+          <PrimaryButton label={t("auth.resetContinue")} onPress={cancelPasswordRecovery} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -58,11 +58,11 @@ export function PasswordRecoveryScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>{t("ko", "auth.newPasswordTitle")}</Text>
-          <Text style={styles.copy}>{t("ko", "auth.newPasswordCopy")}</Text>
+          <Text style={styles.title}>{t("auth.newPasswordTitle")}</Text>
+          <Text style={styles.copy}>{t("auth.newPasswordCopy")}</Text>
 
           <PasswordField
-            label={t("ko", "auth.newPassword")}
+            label={t("auth.newPassword")}
             value={password}
             onChangeText={setPassword}
             visible={showPassword}
@@ -71,7 +71,7 @@ export function PasswordRecoveryScreen() {
             autoComplete="new-password"
           />
           <PasswordField
-            label={t("ko", "auth.passwordConfirm")}
+            label={t("auth.passwordConfirm")}
             value={passwordConfirm}
             onChangeText={setPasswordConfirm}
             visible={showPassword}
@@ -80,19 +80,19 @@ export function PasswordRecoveryScreen() {
             autoComplete="new-password"
           />
 
-          <PrimaryButton label={t("ko", "auth.newPasswordTitle")} onPress={submit} disabled={loading} />
+          <PrimaryButton label={t("auth.newPasswordTitle")} onPress={submit} disabled={loading} />
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("ko", "auth.resetLater")}
+            accessibilityLabel={t("auth.resetLater")}
             style={styles.textLink}
             onPress={cancelPasswordRecovery}
           >
-            <Text style={styles.textLinkText}>{t("ko", "auth.resetLater")}</Text>
+            <Text style={styles.textLinkText}>{t("auth.resetLater")}</Text>
           </Pressable>
 
-          {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
-          {loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+          {error || localError ? <NoticeBanner text={t(error ?? localError!)} icon="close" tone="error" /> : null}
+          {loading ? <Text style={styles.notice}>{t("auth.wait")}</Text> : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

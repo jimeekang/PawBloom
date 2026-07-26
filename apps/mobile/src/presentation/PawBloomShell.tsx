@@ -60,7 +60,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
 
   const [activeTab, setActiveTab] = useState<MainTab>("today");
   const [showPetSettings, setShowPetSettings] = useState(false);
-  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"), tone: "success" });
+  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: databaseMode ? t("today.databaseNotice") : t("today.previewNotice"), tone: "success" });
   const setNotice = useCallback((text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone }), []);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
   const [localChecklist, setLocalChecklist] = useState(() => createChecklistFromRecords(buildSampleDiaryEntries(previewPets[0].id), buildSampleDoses(previewPets[0].id)));
@@ -68,7 +68,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const hideSaveFeedback = useCallback(() => setSaveFeedback(null), []);
 
   useEffect(() => {
-    setNotice(databaseMode ? t("ko", "today.databaseNotice") : t("ko", "today.previewNotice"));
+    setNotice(databaseMode ? t("today.databaseNotice") : t("today.previewNotice"));
   }, [databaseMode, language, setNotice]);
 
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
@@ -89,9 +89,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     }
     try {
       const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: care.activeCareSetup.schedules, requestPermission: true });
-      setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"), scheduled ? "success" : "error");
+      setNotice(scheduled ? t("care.reminderScheduled") : t("care.reminderPermissionDenied"), scheduled ? "success" : "error");
     } catch {
-      setNotice(t("ko", "care.reminderScheduleFailed"), "error");
+      setNotice(t("care.reminderScheduleFailed"), "error");
     }
   }
   const medication = useMedicationDosesController({
@@ -159,19 +159,19 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const hasCareRecords = medication.activeDoses.length > 0 || care.activeCareSetup.schedules.length > 0 || Boolean(care.activeCareSetup.condition || care.activeCareSetup.plan || care.activeCareSetup.conditionName || care.activeCareSetup.planTitle);
   const handlePetPress = () => {
     if (!cyclePet()) return;
-    setNotice(t("ko", "today.petSwitched"));
+    setNotice(t("today.petSwitched"));
   };
 
   function useCareSchedule(schedule: CareMedicationSchedule) {
     if (findDoseForScheduleDate(medication.activeDoses, schedule.id, getLocalDateKey())) {
-      setNotice(t("ko", "care.scheduleAlreadyLoaded"));
+      setNotice(t("care.scheduleAlreadyLoaded"));
       return;
     }
     void Promise.resolve(medication.addMedicationDose(buildQuickDoseFromSchedule(schedule, "pending"))).catch(() => undefined);
   }
 
   async function saveCareSetupAndRefreshReminders(input: CareSetupInput) {
-    if (!canManageCare) throw new Error(t("ko", "permission.careTeamOnly"));
+    if (!canManageCare) throw new Error(t("permission.careTeamOnly"));
     const previousScheduleIds = care.activeCareSetup.schedules.map((schedule) => schedule.id);
     const savedSetup = await care.saveCareSetup(input);
     // Local notifications are native + real-account only; without this guard
@@ -180,9 +180,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (!databaseMode || !userId || Platform.OS === "web" || !medicationRemindersEnabled) return savedSetup;
     try {
       const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: savedSetup.schedules, requestPermission: true, previousScheduleIds });
-      setNotice(scheduled ? t("ko", "care.reminderScheduled") : t("ko", "care.reminderPermissionDenied"), scheduled ? "success" : "error");
+      setNotice(scheduled ? t("care.reminderScheduled") : t("care.reminderPermissionDenied"), scheduled ? "success" : "error");
     } catch {
-      setNotice(t("ko", "care.reminderScheduleFailed"), "error");
+      setNotice(t("care.reminderScheduleFailed"), "error");
     }
     return savedSetup;
   }
@@ -192,20 +192,20 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     if (!databaseMode || !userId || Platform.OS === "web") return;
     try {
       const scheduled = await refreshMealReminders({ userId, petId: activePet.id, petName: activePet.name, routine: { ...input, petId: activePet.id }, requestPermission: true });
-      setNotice(scheduled ? t("ko", "routine.mealReminderScheduled") : t("ko", "routine.mealReminderPermissionDenied"), scheduled ? "success" : "error");
+      setNotice(scheduled ? t("routine.mealReminderScheduled") : t("routine.mealReminderPermissionDenied"), scheduled ? "success" : "error");
     } catch {
-      setNotice(t("ko", "routine.mealReminderScheduleFailed"), "error");
+      setNotice(t("routine.mealReminderScheduleFailed"), "error");
     }
   }
 
   function openTimelineEntry(entry: DiaryEntry) {
-    if (getTimelineEntryRoute(entry) === "checklistNotice") { setNotice(t("ko", "today.checklistTimelineReadOnly")); return; }
-    if (!canUpdateDiary) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
+    if (getTimelineEntryRoute(entry) === "checklistNotice") { setNotice(t("today.checklistTimelineReadOnly")); return; }
+    if (!canUpdateDiary) { setNotice(t("permission.diaryUpdateCareTeamOnly")); return; }
     diary.setTimelineEditEntry(entry); diary.setSelectedDiaryDate(entry.entryDate); diary.setDiaryFilter("day"); setActiveTab("diary");
   }
   function handleSignOut() { void confirmAndSignOut(signOut); }
-  const homeNotice = notice.text === t("ko", "today.databaseNotice") ? "" : notice.text;
-  const nonHomeNotice = notice.text === t("ko", "today.databaseNotice") || notice.text === t("ko", "today.previewNotice") ? "" : notice.text;
+  const homeNotice = notice.text === t("today.databaseNotice") ? "" : notice.text;
+  const nonHomeNotice = notice.text === t("today.databaseNotice") || notice.text === t("today.previewNotice") ? "" : notice.text;
 
   if (showPetSettings) {
     return (

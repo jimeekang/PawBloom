@@ -13,7 +13,7 @@ export function OfflineConflictNotice({ userId }: { userId: string | null }) {
   const [clearFailed, setClearFailed] = useState(false);
 
   if (!userId || count === 0) return null;
-  const notice = t("ko", "sync.conflictsNeedAttention").replace("{count}", String(count));
+  const notice = t("sync.conflictsNeedAttention").replace("{count}", String(count));
 
   async function clearReviewedConflicts() {
     setClearing(true);
@@ -31,19 +31,19 @@ export function OfflineConflictNotice({ userId }: { userId: string | null }) {
 
   function confirmClear() {
     void confirmDestructiveAction({
-      title: t("ko", "sync.clearConflictsTitle"),
-      message: t("ko", "sync.clearConflictsCopy"),
-      cancelText: t("ko", "sync.clearConflictsCancel"),
-      confirmText: t("ko", "sync.clearConflictsConfirm"),
+      title: t("sync.clearConflictsTitle"),
+      message: t("sync.clearConflictsCopy"),
+      cancelText: t("sync.clearConflictsCancel"),
+      confirmText: t("sync.clearConflictsConfirm"),
     }, clearReviewedConflicts);
   }
 
   return (
     <View style={styles.container}>
       <NoticeBanner text={notice} icon="shield" />
-      {clearFailed ? <NoticeBanner text={t("ko", "sync.clearConflictsFailed")} icon="shield" tone="error" /> : null}
+      {clearFailed ? <NoticeBanner text={t("sync.clearConflictsFailed")} icon="shield" tone="error" /> : null}
       <SecondaryButton
-        label={t("ko", clearing ? "sync.clearingConflicts" : "sync.clearReviewedConflicts")}
+        label={t(clearing ? "sync.clearingConflicts" : "sync.clearReviewedConflicts")}
         icon="close"
         onPress={confirmClear}
         disabled={clearing}

@@ -119,10 +119,11 @@ if (shellHeaders.includes('name="menu"') || shellHeaders.includes('name="setting
 }
 
 // care.copy was removed as a dead key (0006 F2); the wording invariant now
-// covers the remaining care eyebrow copy only.
-const { t } = require(join(root, "apps/mobile/src/i18n/translations.ts"));
-const careEyebrowKo = t("ko", "care.eyebrow");
-const careEyebrowEn = t("en", "care.eyebrow");
+// covers the remaining care eyebrow copy only. Read the translations map
+// directly — t() follows the runtime language, not an explicit argument.
+const { translations } = require(join(root, "apps/mobile/src/i18n/translations.ts"));
+const careEyebrowKo = translations.ko["care.eyebrow"];
+const careEyebrowEn = translations.en["care.eyebrow"];
 
 if (careEyebrowKo.includes("모드")) {
   throw new Error("Korean care screen wording must describe care records, not a mode");

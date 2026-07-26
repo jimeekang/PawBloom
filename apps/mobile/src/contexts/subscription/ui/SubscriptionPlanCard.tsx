@@ -18,11 +18,11 @@ export function SubscriptionPlanCard({
   failed: boolean;
   onRetry?: () => void;
 }) {
-  const planLabel = entitlement ? t("ko", `settings.plan.${entitlement.plan}` as const) : null;
+  const planLabel = entitlement ? t(`settings.plan.${entitlement.plan}` as const) : null;
   const statusLabel = loading
-    ? t("ko", "settings.planLoading")
+    ? t("settings.planLoading")
     : failed || !planLabel
-      ? t("ko", "settings.planLoadFailed")
+      ? t("settings.planLoadFailed")
       : planLabel;
   return (
     <SurfaceCard>
@@ -30,20 +30,20 @@ export function SubscriptionPlanCard({
         <View style={styles.titleRow}>
           <AppIcon name="lock" size={iconSize.md} color={colors.orangeDeep} />
           <View style={styles.titleCopy}>
-            <Text style={styles.title}>{t("ko", "settings.planTitle")}</Text>
+            <Text style={styles.title}>{t("settings.planTitle")}</Text>
             <Text style={[styles.plan, failed && styles.planError]}>{statusLabel}</Text>
           </View>
         </View>
-        {failed && onRetry ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetry} /> : null}
+        {failed && onRetry ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetry} /> : null}
         {entitlement ? (
           <>
-            <PlanLine text={t("ko", "settings.planPets").replace("{count}", `${ownedPetCount}`).replace("{limit}", `${entitlement.maxPets}`)} enabled={ownedPetCount <= entitlement.maxPets} />
-            <PlanLine text={t("ko", entitlement.familySharingEnabled ? "settings.planFamilyEnabled" : "settings.planFamilyLocked")} enabled={entitlement.familySharingEnabled} />
-            <PlanLine text={t("ko", "settings.planReports")} enabled={entitlement.reportSharingEnabled} />
-            <PlanLine text={t("ko", "settings.planPhotos").replace("{count}", `${entitlement.dailyPhotoLimit}`)} enabled />
+            <PlanLine text={t("settings.planPets").replace("{count}", `${ownedPetCount}`).replace("{limit}", `${entitlement.maxPets}`)} enabled={ownedPetCount <= entitlement.maxPets} />
+            <PlanLine text={t(entitlement.familySharingEnabled ? "settings.planFamilyEnabled" : "settings.planFamilyLocked")} enabled={entitlement.familySharingEnabled} />
+            <PlanLine text={t("settings.planReports")} enabled={entitlement.reportSharingEnabled} />
+            <PlanLine text={t("settings.planPhotos").replace("{count}", `${entitlement.dailyPhotoLimit}`)} enabled />
           </>
         ) : null}
-        <Text style={styles.note}>{t("ko", "settings.planBetaNote")}</Text>
+        <Text style={styles.note}>{t("settings.planBetaNote")}</Text>
       </View>
     </SurfaceCard>
   );

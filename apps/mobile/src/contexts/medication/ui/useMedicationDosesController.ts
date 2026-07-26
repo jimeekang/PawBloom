@@ -47,19 +47,19 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
 
   async function addMedicationDose(input: QuickMedicationDoseInput) {
     if (!databaseMode) {
-      setDoses((current) => [createLocalDoseRecord(activePetId, input, t("ko", "care.quickMedicationName")), ...current]);
+      setDoses((current) => [createLocalDoseRecord(activePetId, input, t("care.quickMedicationName")), ...current]);
       onLocalDoseSaved(input);
-      onNotice(t("ko", "care.medicationAdded"));
+      onNotice(t("care.medicationAdded"));
       onSaved("medication");
       return;
     }
 
     try {
       await createMedicationDose.mutateAsync(input);
-      onNotice(t("ko", "care.medicationAdded"));
+      onNotice(t("care.medicationAdded"));
       onSaved("medication");
     } catch (error) {
-      const message = t("ko", isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
+      const message = t(isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
       onNotice(message, "error");
       throw new Error(message);
     }

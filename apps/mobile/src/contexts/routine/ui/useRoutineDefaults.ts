@@ -29,16 +29,16 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
   async function saveRoutine(input: PetRoutineInput) {
     if (!databaseMode) {
       setLocalRoutine({ ...input, petId: activePetId });
-      onNotice(t("ko", "routine.saved"));
+      onNotice(t("routine.saved"));
       onSaved();
       return;
     }
     try {
       await upsertRoutine.mutateAsync(input);
-      onNotice(t("ko", "routine.saved"));
+      onNotice(t("routine.saved"));
       onSaved();
     } catch (error) {
-      onNotice(t("ko", "routine.saveFailed"));
+      onNotice(t("routine.saveFailed"));
       throw error;
     }
   }

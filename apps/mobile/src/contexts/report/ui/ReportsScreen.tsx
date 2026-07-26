@@ -52,27 +52,27 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
   return (
     <View style={styles.screen}>
-      <NoticeBanner text={t("ko", stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
-      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("ko", "permission.reportOwnerConfirmation")} icon="shield" /> : null}
-      {visibleError ? <NoticeBanner text={t("ko", workflowErrorKey[visibleError])} icon="close" tone="error" /> : null}
-      {visibleError === "load" && onRetryLoad ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetryLoad} /> : null}
+      <NoticeBanner text={t(stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
+      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("permission.reportOwnerConfirmation")} icon="shield" /> : null}
+      {visibleError ? <NoticeBanner text={t(workflowErrorKey[visibleError])} icon="close" tone="error" /> : null}
+      {visibleError === "load" && onRetryLoad ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryLoad} /> : null}
 
       <SurfaceCard>
         <View style={styles.reportHeader}>
           <View style={styles.reportIcon}><AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} /></View>
           <View style={styles.reportHeading}>
-            <Text style={styles.title}>{t("ko", stageContent.titleKey)}</Text>
-            <Text style={styles.caption}>{t("ko", "reports.rangeLabel")}</Text>
+            <Text style={styles.title}>{t(stageContent.titleKey)}</Text>
+            <Text style={styles.caption}>{t("reports.rangeLabel")}</Text>
           </View>
         </View>
-        <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t("ko", "reports.emptyCopy")}</Text>
+        <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t("reports.emptyCopy")}</Text>
         <View style={styles.notice}>
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
-          <Text style={styles.noticeText}>{t("ko", "briefing.disclaimer")}</Text>
+          <Text style={styles.noticeText}>{t("briefing.disclaimer")}</Text>
         </View>
         {hasDisplayedRecords ? (
           <View style={styles.previewBlock}>
-            <Text style={styles.blockLabel}>{t("ko", "reports.englishPreview")}</Text>
+            <Text style={styles.blockLabel}>{t("reports.englishPreview")}</Text>
             <Text style={styles.previewText}>{preview}</Text>
           </View>
         ) : null}
@@ -80,12 +80,12 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
       {hasDisplayedRecords ? (
         <>
-          <ReportListSection icon="time" title={t("ko", "reports.timelineHighlights")} items={(artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights).map((item) => formatReportTimelineItem(item, language))} />
-          {!artifactSnapshot ? <ReportListSection icon="shield" title={t("ko", "reports.missingRecords")} items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords.map(formatReportMissingRecord) : [t("ko", "reports.noMissingRecords")]} /> : null}
-          {!artifactSnapshot ? <ReportListSection icon="condition" title={t("ko", "reports.vetQuestions")} items={reportSummary.vetQuestions.map(formatReportVetQuestion)} /> : null}
+          <ReportListSection icon="time" title={t("reports.timelineHighlights")} items={(artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights).map((item) => formatReportTimelineItem(item, language))} />
+          {!artifactSnapshot ? <ReportListSection icon="shield" title={t("reports.missingRecords")} items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords.map(formatReportMissingRecord) : [t("reports.noMissingRecords")]} /> : null}
+          {!artifactSnapshot ? <ReportListSection icon="condition" title={t("reports.vetQuestions")} items={reportSummary.vetQuestions.map(formatReportVetQuestion)} /> : null}
           <ReportMetricsCard summary={displayedSummary} conditionTrend={conditionTrend} petDetails={artifactSnapshot?.petDetails} />
           <SurfaceCard>
-            <Text style={styles.title}>{t("ko", "reports.beforeSharing")}</Text>
+            <Text style={styles.title}>{t("reports.beforeSharing")}</Text>
             <CheckRow copyKey="reports.confirmMedication" />
             <CheckRow copyKey="reports.reviewNotes" />
           </SurfaceCard>
@@ -93,35 +93,35 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
         </>
       ) : reportSummary.sourceStatus === "error" ? (
         <SurfaceCard>
-          <Text style={styles.title}>{t("ko", "reports.emptyTitle")}</Text>
-          <NoticeBanner text={t("ko", "reports.loadFailed")} tone="error" icon="close" />
-          {reportSummary.refetchSources ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={reportSummary.refetchSources} /> : null}
+          <Text style={styles.title}>{t("reports.emptyTitle")}</Text>
+          <NoticeBanner text={t("reports.loadFailed")} tone="error" icon="close" />
+          {reportSummary.refetchSources ? <SecondaryButton label={t("diary.listRetry")} onPress={reportSummary.refetchSources} /> : null}
         </SurfaceCard>
       ) : (
         <SurfaceCard>
-          <Text style={styles.title}>{t("ko", "reports.emptyTitle")}</Text>
-          <Text style={styles.emptyText}>{t("ko", reportSummary.sourceStatus === "loading" ? "diary.listLoading" : "reports.emptyState")}</Text>
+          <Text style={styles.title}>{t("reports.emptyTitle")}</Text>
+          <Text style={styles.emptyText}>{t(reportSummary.sourceStatus === "loading" ? "diary.listLoading" : "reports.emptyState")}</Text>
         </SurfaceCard>
       )}
 
       <View style={styles.actions}>
-        {pendingAction ? <NoticeBanner text={t("ko", pendingLabelKey[pendingAction])} icon={actionIcon[pendingAction]} tone="progress" /> : null}
-        {!pendingAction && !primaryAction && isBusy ? <NoticeBanner text={t("ko", "reports.loading")} icon="time" tone="progress" /> : null}
-        {!pendingAction && primaryAction ? <PrimaryButton label={t("ko", primaryLabelKey(primaryAction, report?.status))} icon={actionIcon[primaryAction]} onPress={runPrimaryAction} /> : null}
+        {pendingAction ? <NoticeBanner text={t(pendingLabelKey[pendingAction])} icon={actionIcon[pendingAction]} tone="progress" /> : null}
+        {!pendingAction && !primaryAction && isBusy ? <NoticeBanner text={t("reports.loading")} icon="time" tone="progress" /> : null}
+        {!pendingAction && primaryAction ? <PrimaryButton label={t(primaryLabelKey(primaryAction, report?.status))} icon={actionIcon[primaryAction]} onPress={runPrimaryAction} /> : null}
         {report?.status === "shared" && canShare && !isBusy ? (
           <SecondaryButton
-            label={t("ko", "reports.revokeLink")}
+            label={t("reports.revokeLink")}
             icon="close"
             onPress={() => void confirmDestructiveAction({
-              title: t("ko", "reports.revokeTitle"),
-              message: t("ko", "reports.revokeCopy"),
-              cancelText: t("ko", "reports.revokeCancel"),
-              confirmText: t("ko", "reports.revokeConfirm"),
+              title: t("reports.revokeTitle"),
+              message: t("reports.revokeCopy"),
+              cancelText: t("reports.revokeCancel"),
+              confirmText: t("reports.revokeConfirm"),
             }, async () => { await onRevoke(); return true; })}
           />
         ) : null}
-        {report && !isBusy ? <SecondaryButton label={t("ko", "reports.newReport")} icon="report" onPress={onReset} /> : null}
-        <SecondaryButton label={t("ko", "reports.addMoreRecords")} icon="diary" onPress={onNewDiary} />
+        {report && !isBusy ? <SecondaryButton label={t("reports.newReport")} icon="report" onPress={onReset} /> : null}
+        <SecondaryButton label={t("reports.addMoreRecords")} icon="diary" onPress={onNewDiary} />
       </View>
     </View>
   );
@@ -131,20 +131,20 @@ function CheckRow({ copyKey }: { copyKey: "reports.confirmMedication" | "reports
   return (
     <View style={styles.checkRow}>
       <AppIcon name="check" size={iconSize.sm} color={colors.mintDeep} />
-      <Text style={styles.body}>{t("ko", copyKey)}</Text>
+      <Text style={styles.body}>{t(copyKey)}</Text>
     </View>
   );
 }
 
 function buildReportSummaryCopy(summary: Pick<ReportDraftSummary, "diaryCount" | "medicationCount" | "medicationAttentionCount">) {
-  return t("ko", "reports.realSummary").replace("{diaryCount}", `${summary.diaryCount}`).replace("{medicationCount}", `${summary.medicationCount}`).replace("{attentionCount}", `${summary.medicationAttentionCount}`);
+  return t("reports.realSummary").replace("{diaryCount}", `${summary.diaryCount}`).replace("{medicationCount}", `${summary.medicationCount}`).replace("{attentionCount}", `${summary.medicationAttentionCount}`);
 }
 
 function conditionTrendCopy(summary: Pick<ReportDraftSummary, "conditionTrend"> | Pick<ReportArtifactSnapshot, "conditionTrend">) {
   const { latestScore, previousScore, direction } = summary.conditionTrend;
-  if (!latestScore) return t("ko", "reports.conditionTrend.none");
+  if (!latestScore) return t("reports.conditionTrend.none");
   const scoreCopy = previousScore ? `${previousScore} -> ${latestScore}` : `${latestScore}/5`;
-  return `${scoreCopy} ${t("ko", conditionTrendKey[direction])}`;
+  return `${scoreCopy} ${t(conditionTrendKey[direction])}`;
 }
 
 function primaryLabelKey(action: ReportWorkflowAction, status?: VetReportStatus): TranslationKey {

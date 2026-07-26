@@ -27,7 +27,7 @@ export function DiaryPhotoPicker({
 
   const canAddPhoto = () => {
     if (getRemainingDiaryPhotoSlots(totalPhotoCount) === 0) {
-      onNotice(t("ko", "diary.photoLimitNotice"));
+      onNotice(t("diary.photoLimitNotice"));
       return false;
     }
     return true;
@@ -39,7 +39,7 @@ export function DiaryPhotoPicker({
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(t("ko", "diary.photoPermissionTitle"), t("ko", "diary.photoPermissionCopy"));
+        Alert.alert(t("diary.photoPermissionTitle"), t("diary.photoPermissionCopy"));
         return;
       }
 
@@ -51,7 +51,7 @@ export function DiaryPhotoPicker({
 
       addPickedAssets(result);
     } catch {
-      onNotice(t("ko", "diary.photoLibraryFailed"));
+      onNotice(t("diary.photoLibraryFailed"));
     }
   };
 
@@ -61,14 +61,14 @@ export function DiaryPhotoPicker({
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(t("ko", "diary.cameraPermissionTitle"), t("ko", "diary.cameraPermissionCopy"));
+        Alert.alert(t("diary.cameraPermissionTitle"), t("diary.cameraPermissionCopy"));
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync(IMAGE_OPTIONS);
       addPickedAssets(result);
     } catch {
-      onNotice(t("ko", "diary.photoCameraFailed"));
+      onNotice(t("diary.photoCameraFailed"));
     }
   };
 
@@ -78,7 +78,7 @@ export function DiaryPhotoPicker({
     const nextPhotos = toDiaryPhotoInputs(result.assets, getRemainingDiaryPhotoSlots(totalPhotoCount));
 
     onChange([...photos, ...nextPhotos]);
-    onNotice(t("ko", "diary.photoAddedNotice"));
+    onNotice(t("diary.photoAddedNotice"));
   };
 
   return (
@@ -89,12 +89,12 @@ export function DiaryPhotoPicker({
             <Image source={{ uri: photo.uri }} style={styles.thumb} accessibilityIgnoresInvertColors />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t("ko", "diary.photoRemoveA11y").replace("{count}", String(index + 1))}
+              accessibilityLabel={t("diary.photoRemoveA11y").replace("{count}", String(index + 1))}
               hitSlop={12}
               style={styles.removeBadge}
               onPress={() => {
                 onChange(photos.filter((_, photoIndex) => photoIndex !== index));
-                onNotice(t("ko", "diary.photoRemovedNotice"));
+                onNotice(t("diary.photoRemovedNotice"));
               }}
             >
               <AppIcon name="close" size={iconSize.xs} color={colors.white} />
@@ -103,13 +103,13 @@ export function DiaryPhotoPicker({
         ))}
         {totalPhotoCount < MAX_DIARY_PHOTOS ? (
           <>
-            <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "diary.photoLibrary")} style={styles.addButton} onPress={addFromLibrary}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("diary.photoLibrary")} style={styles.addButton} onPress={addFromLibrary}>
               <AppIcon name="addPhoto" size={iconSize.lg} color={colors.textSoft} />
-              <Text style={styles.addText}>{t("ko", "diary.photoLibrary")}</Text>
+              <Text style={styles.addText}>{t("diary.photoLibrary")}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={t("ko", "diary.photoCamera")} style={styles.addButton} onPress={takePhoto}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("diary.photoCamera")} style={styles.addButton} onPress={takePhoto}>
               <AppIcon name="camera" size={iconSize.lg} color={colors.textSoft} />
-              <Text style={styles.addText}>{t("ko", "diary.photoCamera")}</Text>
+              <Text style={styles.addText}>{t("diary.photoCamera")}</Text>
             </Pressable>
           </>
         ) : null}

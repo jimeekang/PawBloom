@@ -34,32 +34,32 @@ export function AiBriefCard({
       <View style={styles.body}>
         <View style={styles.headerRow}>
           <AppIcon name="spark" size={iconSize.md} color={colors.orangeDeep} />
-          <Text style={styles.title}>{t("ko", "briefing.title")}</Text>
+          <Text style={styles.title}>{t("briefing.title")}</Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{t("ko", "briefing.notDiagnosis")}</Text>
+            <Text style={styles.badgeText}>{t("briefing.notDiagnosis")}</Text>
           </View>
         </View>
 
-        {emptyState ? <Text style={styles.copy}>{t("ko", "briefing.empty")}</Text> : null}
-        {!emptyState && !shownBrief ? <Text style={styles.copy}>{t("ko", "briefing.summaryCopy")}</Text> : null}
+        {emptyState ? <Text style={styles.copy}>{t("briefing.empty")}</Text> : null}
+        {!emptyState && !shownBrief ? <Text style={styles.copy}>{t("briefing.summaryCopy")}</Text> : null}
 
         {databaseMode ? (
           <>
             <SegmentedControl<RangeValue>
               items={[
-                { label: t("ko", "briefing.range3"), value: "3" },
-                { label: t("ko", "briefing.range7"), value: "7" },
-                { label: t("ko", "briefing.range14"), value: "14" },
+                { label: t("briefing.range3"), value: "3" },
+                { label: t("briefing.range7"), value: "7" },
+                { label: t("briefing.range14"), value: "14" },
               ]}
               value={range}
               onChange={setRange}
             />
             <PrimaryButton
-              label={t("ko", generating ? "briefing.generating" : "briefing.generate")}
+              label={t(generating ? "briefing.generating" : "briefing.generate")}
               onPress={() => generate(Number(range) as AiBriefRangeDays)}
               disabled={generating || !hasRecords}
             />
-            {failed && !generating ? <NoticeBanner text={t("ko", "briefing.failed")} icon="close" tone="error" /> : null}
+            {failed && !generating ? <NoticeBanner text={t("briefing.failed")} icon="close" tone="error" /> : null}
           </>
         ) : null}
 
@@ -71,18 +71,18 @@ export function AiBriefCard({
                 <Text style={styles.bulletText}>{highlight}</Text>
               </View>
             ))}
-            <Text style={styles.sectionLabel}>{t("ko", "briefing.questionsTitle")}</Text>
+            <Text style={styles.sectionLabel}>{t("briefing.questionsTitle")}</Text>
             {shownBrief.questionsForVet.map((question) => (
               <View key={question} style={styles.bulletRow}>
                 <View style={[styles.bulletDot, styles.questionDot]} />
                 <Text style={styles.bulletText}>{question}</Text>
               </View>
             ))}
-            {!databaseMode ? <Text style={styles.previewNote}>{t("ko", "briefing.previewNotice")}</Text> : null}
+            {!databaseMode ? <Text style={styles.previewNote}>{t("briefing.previewNotice")}</Text> : null}
           </View>
         ) : null}
 
-        <Text style={styles.disclaimer}>{t("ko", "briefing.disclaimer")}</Text>
+        <Text style={styles.disclaimer}>{t("briefing.disclaimer")}</Text>
       </View>
     </SurfaceCard>
   );

@@ -26,7 +26,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   const [reactionNote, setReactionNote] = useState("");
   const [status, setStatus] = useState<DoseStatus>("completed");
   const [scheduledTime, setScheduledTime] = useState("");
-  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: t("ko", "care.quickDoseNotice"), tone: "progress" });
+  const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: t("care.quickDoseNotice"), tone: "progress" });
   const setNotice = (text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone });
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
@@ -35,7 +35,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   useEffect(() => {
     if (!editingDose) {
       resetForm();
-      setNotice(t("ko", "care.quickDoseNotice"), "progress");
+      setNotice(t("care.quickDoseNotice"), "progress");
       return;
     }
 
@@ -47,7 +47,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
     setReactionNote(nextState.reactionNote);
     setStatus(nextState.status);
     setScheduledTime(nextState.scheduledTime);
-    setNotice(t("ko", "care.quickDoseEditingNotice"), "progress");
+    setNotice(t("care.quickDoseEditingNotice"), "progress");
   }, [editingDose]);
 
   async function saveDose() {
@@ -56,12 +56,12 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
     }
 
     if (!medicationName.trim()) {
-      setNotice(t("ko", "care.quickDoseMedicationRequired"), "error");
+      setNotice(t("care.quickDoseMedicationRequired"), "error");
       return;
     }
 
     if (isEditing && !isValidDoseTime(scheduledTime)) {
-      setNotice(t("ko", "care.quickDoseInvalidTime"), "error");
+      setNotice(t("care.quickDoseInvalidTime"), "error");
       return;
     }
 
@@ -76,13 +76,13 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         await onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status });
         resetForm();
       }
-      setNotice(t("ko", quickDoseSavedNoticeKey(status)));
+      setNotice(t(quickDoseSavedNoticeKey(status)));
     } catch (error) {
       const message = isEditing
-        ? t("ko", "care.quickDoseUpdateFailed")
+        ? t("care.quickDoseUpdateFailed")
         : error instanceof Error
           ? error.message
-          : t("ko", "care.quickDoseSaveFailed");
+          : t("care.quickDoseSaveFailed");
       setNotice(message, "error");
     } finally {
       savingRef.current = false;
@@ -104,7 +104,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         onCancelEdit?.();
       }
     } catch {
-      setNotice(t("ko", "care.quickDoseDeleteFailed"), "error");
+      setNotice(t("care.quickDoseDeleteFailed"), "error");
     } finally {
       savingRef.current = false;
       setIsSaving(false);
@@ -124,46 +124,46 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
 
   return (
     <View style={styles.quickForm}>
-      <Text style={styles.sectionTitle}>{t("ko", isEditing ? "care.quickDoseEditTitle" : "care.quickDoseTitle")}</Text>
+      <Text style={styles.sectionTitle}>{t(isEditing ? "care.quickDoseEditTitle" : "care.quickDoseTitle")}</Text>
       <NoticeBanner text={notice.text} icon={notice.tone === "error" ? "close" : "medication"} tone={notice.tone} />
-      <FieldLabel label={t("ko", "care.conditionPlaceholder")} />
-      <TextInput accessibilityLabel={t("ko", "care.conditionPlaceholder")} style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("ko", "care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
-      <FieldLabel label={t("ko", "care.medicationPlaceholder")} />
-      <TextInput accessibilityLabel={t("ko", "care.medicationPlaceholder")} style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("ko", "care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
-      {isEditing ? <TimePickerField accessibilityLabel={t("ko", "care.medicationTimeLabel")} value={scheduledTime} onChange={setScheduledTime} /> : null}
+      <FieldLabel label={t("care.conditionPlaceholder")} />
+      <TextInput accessibilityLabel={t("care.conditionPlaceholder")} style={styles.input} value={conditionName} onChangeText={(value) => setConditionName(value.slice(0, 80))} placeholder={t("care.conditionPlaceholder")} placeholderTextColor={colors.textSoft} />
+      <FieldLabel label={t("care.medicationPlaceholder")} />
+      <TextInput accessibilityLabel={t("care.medicationPlaceholder")} style={styles.input} value={medicationName} onChangeText={(value) => setMedicationName(value.slice(0, 80))} placeholder={t("care.medicationPlaceholder")} placeholderTextColor={colors.textSoft} />
+      {isEditing ? <TimePickerField accessibilityLabel={t("care.medicationTimeLabel")} value={scheduledTime} onChange={setScheduledTime} /> : null}
       <View style={styles.inputStack}>
-        <FieldLabel label={t("ko", "care.dosagePlaceholder")} />
-        <TextInput accessibilityLabel={t("ko", "care.dosagePlaceholder")} style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("ko", "care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
-        <FieldLabel label={t("ko", "care.administeredPlaceholder")} />
-        <TextInput accessibilityLabel={t("ko", "care.administeredPlaceholder")} style={styles.input} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("ko", "care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("care.dosagePlaceholder")} />
+        <TextInput accessibilityLabel={t("care.dosagePlaceholder")} style={styles.input} value={dosageLabel} onChangeText={(value) => setDosageLabel(value.slice(0, 80))} placeholder={t("care.dosagePlaceholder")} placeholderTextColor={colors.textSoft} />
+        <FieldLabel label={t("care.administeredPlaceholder")} />
+        <TextInput accessibilityLabel={t("care.administeredPlaceholder")} style={styles.input} value={administeredAmount} onChangeText={(value) => setAdministeredAmount(value.slice(0, 80))} placeholder={t("care.administeredPlaceholder")} placeholderTextColor={colors.textSoft} />
       </View>
       <SegmentedControl
         value={status}
         onChange={setStatus}
         items={[
-          { label: t("ko", "care.status.completedShort"), value: "completed" },
-          { label: t("ko", "care.status.partialShort"), value: "partial" },
-          { label: t("ko", "care.status.skippedShort"), value: "skipped" },
-          { label: t("ko", "care.status.pendingShort"), value: "pending" },
+          { label: t("care.status.completedShort"), value: "completed" },
+          { label: t("care.status.partialShort"), value: "partial" },
+          { label: t("care.status.skippedShort"), value: "skipped" },
+          { label: t("care.status.pendingShort"), value: "pending" },
         ]}
       />
-      <FieldLabel label={t("ko", "care.reactionPlaceholder")} />
+      <FieldLabel label={t("care.reactionPlaceholder")} />
       <TextInput
-        accessibilityLabel={t("ko", "care.reactionPlaceholder")}
+        accessibilityLabel={t("care.reactionPlaceholder")}
         multiline
         style={[styles.input, styles.noteInput]}
         value={reactionNote}
         onChangeText={(value) => setReactionNote(value.slice(0, 300))}
-        placeholder={t("ko", "care.reactionPlaceholder")}
+        placeholder={t("care.reactionPlaceholder")}
         placeholderTextColor={colors.textSoft}
       />
-      <PrimaryButton label={t("ko", isEditing ? "care.quickDoseUpdate" : "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} disabled={isSaving} />
+      <PrimaryButton label={t(isEditing ? "care.quickDoseUpdate" : "care.quickDoseSave")} icon="medication" onPress={isSaving ? undefined : saveDose} disabled={isSaving} />
       {isEditing ? (
         <View style={styles.editActions}>
-          <SecondaryButton label={t("ko", "care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
+          <SecondaryButton label={t("care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
           {canDelete ? (
-            <DangerButton label={t("ko", "care.quickDoseDelete")} onPress={deleteDose} disabled={isSaving} />
-          ) : <NoticeBanner text={t("ko", "permission.medicationDeleteOwnerOnly")} icon="shield" />}
+            <DangerButton label={t("care.quickDoseDelete")} onPress={deleteDose} disabled={isSaving} />
+          ) : <NoticeBanner text={t("permission.medicationDeleteOwnerOnly")} icon="shield" />}
         </View>
       ) : null}
     </View>

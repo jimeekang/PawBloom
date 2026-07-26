@@ -33,10 +33,10 @@ export function SettingsScreen({
     accountDeletion.requestConfirm();
     void confirmDestructiveAction(
       {
-        title: t("ko", "settings.deleteAccountConfirmTitle"),
-        message: t("ko", "settings.deleteAccountConfirmBody"),
-        cancelText: t("ko", "settings.deleteAccountConfirmCancel"),
-        confirmText: t("ko", "settings.deleteAccountConfirmAction"),
+        title: t("settings.deleteAccountConfirmTitle"),
+        message: t("settings.deleteAccountConfirmBody"),
+        cancelText: t("settings.deleteAccountConfirmCancel"),
+        confirmText: t("settings.deleteAccountConfirmAction"),
       },
       async () => (await accountDeletion.deleteAccount()).ok,
     ).then((confirmed) => {
@@ -52,22 +52,22 @@ export function SettingsScreen({
         <View style={styles.cardBody}>
           <View style={styles.rowTitle}>
             <AppIcon name="pet" size={iconSize.md} color={colors.orangeDeep} />
-            <Text style={styles.title}>{t("ko", configured ? "settings.accountTitle" : "settings.previewTitle")}</Text>
+            <Text style={styles.title}>{t(configured ? "settings.accountTitle" : "settings.previewTitle")}</Text>
           </View>
-          <Text style={styles.copy}>{email || t("ko", "settings.previewAccount")}</Text>
+          <Text style={styles.copy}>{email || t("settings.previewAccount")}</Text>
           {configured
-            ? <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
-            : <Text style={styles.copy}>{t("ko", "settings.previewCopy")}</Text>}
+            ? <SecondaryButton label={t("auth.signOut")} onPress={onSignOut} />
+            : <Text style={styles.copy}>{t("settings.previewCopy")}</Text>}
           {configured ? (
             <DangerButton
-              label={t("ko", deleting ? "settings.deleteAccountInProgress" : "settings.deleteAccount")}
+              label={t(deleting ? "settings.deleteAccountInProgress" : "settings.deleteAccount")}
               onPress={confirmDeleteAccount}
               disabled={deleting}
               busy={deleting}
             />
           ) : null}
-          {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("ko", "settings.deleteAccountError")} icon="close" tone="error" /> : null}
-          {identityError ? <NoticeBanner text={t("ko", identityError)} icon="close" tone="error" /> : null}
+          {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("settings.deleteAccountError")} icon="close" tone="error" /> : null}
+          {identityError ? <NoticeBanner text={t(identityError)} icon="close" tone="error" /> : null}
         </View>
       </SurfaceCard>
 
@@ -75,34 +75,34 @@ export function SettingsScreen({
         <View style={styles.cardBody}>
           <View style={styles.rowTitle}>
             <AppIcon name="settings" size={iconSize.md} color={colors.orangeDeep} />
-            <Text style={styles.title}>{t("ko", "settings.profileTitle")}</Text>
+            <Text style={styles.title}>{t("settings.profileTitle")}</Text>
           </View>
-          <Text style={styles.copy}>{t("ko", "settings.profileCopy")}</Text>
-          <PrimaryButton label={t("ko", "settings.openProfiles")} icon="pet" onPress={onOpenPetProfiles} />
+          <Text style={styles.copy}>{t("settings.profileCopy")}</Text>
+          <PrimaryButton label={t("settings.openProfiles")} icon="pet" onPress={onOpenPetProfiles} />
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.title}>{t("ko", "settings.language")}</Text>
+          <Text style={styles.title}>{t("settings.language")}</Text>
           <SegmentedControl
             value={language}
             onChange={setLanguage}
             items={[
-              { label: t("ko", "language.koNative"), value: "ko" },
-              { label: t("ko", "language.enNative"), value: "en" },
+              { label: t("language.koNative"), value: "ko" },
+              { label: t("language.enNative"), value: "en" },
             ]}
           />
-          <Text style={styles.copy}>{t("ko", "settings.languageCopy")}</Text>
+          <Text style={styles.copy}>{t("settings.languageCopy")}</Text>
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.title}>{t("ko", "settings.dataTitle")}</Text>
+          <Text style={styles.title}>{t("settings.dataTitle")}</Text>
           <View style={styles.statusPill}>
             <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.orange }]} />
-            <Text style={styles.statusText}>{t("ko", configured ? "settings.syncReady" : "settings.localOnly")}</Text>
+            <Text style={styles.statusText}>{t(configured ? "settings.syncReady" : "settings.localOnly")}</Text>
           </View>
         </View>
       </SurfaceCard>
@@ -110,20 +110,20 @@ export function SettingsScreen({
       <View style={styles.policyLinks}>
         <Pressable
           accessibilityRole="link"
-          accessibilityLabel={t("ko", "settings.privacyPolicy")}
+          accessibilityLabel={t("settings.privacyPolicy")}
           style={styles.policyLink}
           onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
         >
-          <Text style={styles.policyLinkText}>{t("ko", "settings.privacyPolicy")}</Text>
+          <Text style={styles.policyLinkText}>{t("settings.privacyPolicy")}</Text>
         </Pressable>
         <Text style={styles.policyDivider}>·</Text>
         <Pressable
           accessibilityRole="link"
-          accessibilityLabel={t("ko", "settings.support")}
+          accessibilityLabel={t("settings.support")}
           style={styles.policyLink}
           onPress={() => openExternalUrl(SUPPORT_URL)}
         >
-          <Text style={styles.policyLinkText}>{t("ko", "settings.support")}</Text>
+          <Text style={styles.policyLinkText}>{t("settings.support")}</Text>
         </Pressable>
       </View>
     </View>

@@ -36,14 +36,14 @@ export function ReportListSection({ icon, title, items }: { icon: AppIconName; t
 export function ReportMetricsCard({ summary, conditionTrend, petDetails }: { summary: ReportMetricSummary; conditionTrend: string; petDetails?: string }) {
   return (
     <SurfaceCard>
-      <Text style={styles.title}>{t("ko", "reports.recordCounts")}</Text>
+      <Text style={styles.title}>{t("reports.recordCounts")}</Text>
       {petDetails ? <Text selectable style={styles.petDetails}>{petDetails}</Text> : null}
-      <MetricRow icon="diary" label={t("ko", "reports.diaryCount")} value={`${summary.diaryCount}`} />
-      <MetricRow icon="condition" label={t("ko", "reports.conditionTrend")} value={conditionTrend} />
+      <MetricRow icon="diary" label={t("reports.diaryCount")} value={`${summary.diaryCount}`} />
+      <MetricRow icon="condition" label={t("reports.conditionTrend")} value={conditionTrend} />
       <MetricRow
         icon="medication"
-        label={t("ko", "reports.medicationAdherence")}
-        value={t("ko", "reports.medicationAdherenceValue")
+        label={t("reports.medicationAdherence")}
+        value={t("reports.medicationAdherenceValue")
           .replace("{completed}", `${summary.medicationCompletedCount}`)
           .replace("{pending}", `${summary.medicationPendingCount}`)
           .replace("{attention}", `${summary.medicationAttentionCount}`)}
@@ -67,14 +67,14 @@ export function ReportShareCard({ shareUrl, expiresAt }: { shareUrl: string; exp
     <SurfaceCard>
       <View style={styles.sectionTitleRow}>
         <AppIcon name="share" size={iconSize.sm} color={colors.orangeDeep} />
-        <Text style={styles.title}>{t("ko", "reports.actualShareTitle")}</Text>
+        <Text style={styles.title}>{t("reports.actualShareTitle")}</Text>
       </View>
-      <Text style={styles.body}>{t("ko", "reports.actualShareCopy")}</Text>
-      <Text style={styles.shareLabel}>{t("ko", "reports.shareUrlLabel")}</Text>
+      <Text style={styles.body}>{t("reports.actualShareCopy")}</Text>
+      <Text style={styles.shareLabel}>{t("reports.shareUrlLabel")}</Text>
       <Text selectable style={styles.shareUrl}>{shareUrl}</Text>
-      <SecondaryButton label={t("ko", copied ? "reports.linkCopied" : "reports.copyLink")} icon="share" onPress={() => void copyLink()} />
-      <Text style={styles.shareCaption}>{t("ko", "reports.actualShareExpiry").replace("{expiry}", formatReportExpiry(expiresAt, language === "ko" ? "ko-KR" : "en-AU"))}</Text>
-      <Text style={styles.shareCaption}>{t("ko", "reports.selectableLink")}</Text>
+      <SecondaryButton label={t(copied ? "reports.linkCopied" : "reports.copyLink")} icon="share" onPress={() => void copyLink()} />
+      <Text style={styles.shareCaption}>{t("reports.actualShareExpiry").replace("{expiry}", formatReportExpiry(expiresAt, language === "ko" ? "ko-KR" : "en-AU"))}</Text>
+      <Text style={styles.shareCaption}>{t("reports.selectableLink")}</Text>
     </SurfaceCard>
   );
 }

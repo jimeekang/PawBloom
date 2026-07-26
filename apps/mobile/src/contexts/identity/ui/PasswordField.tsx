@@ -44,7 +44,7 @@ export function PasswordField({
         />
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t("ko", visible ? "auth.hidePassword" : "auth.showPassword")}
+          accessibilityLabel={t(visible ? "auth.hidePassword" : "auth.showPassword")}
           style={styles.eyeButton}
           onPress={onToggleVisibility}
         >

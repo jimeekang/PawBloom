@@ -4,10 +4,10 @@ import { t } from "../../../i18n/translations";
 export function confirmAndSignOut(signOut: () => void | Promise<unknown>) {
   return confirmDestructiveAction(
     {
-      title: t("ko", "auth.signOutTitle"),
-      message: t("ko", "auth.signOutCopy"),
-      cancelText: t("ko", "auth.signOutCancel"),
-      confirmText: t("ko", "auth.signOutConfirm"),
+      title: t("auth.signOutTitle"),
+      message: t("auth.signOutCopy"),
+      cancelText: t("auth.signOutCancel"),
+      confirmText: t("auth.signOutConfirm"),
     },
     () => {
       void signOut();

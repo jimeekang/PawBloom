@@ -23,7 +23,7 @@ export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProp
       <View style={styles.headerActions}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${t("ko", "pet.selectTitle")}: ${petName}`}
+          accessibilityLabel={`${t("pet.selectTitle")}: ${petName}`}
           accessibilityState={{ disabled: !canSwitchPet }}
           hitSlop={6}
           style={({ pressed }) => [styles.petSwitch, pressed && canSwitchPet && styles.petSwitchPressed, !canSwitchPet && styles.petSwitchDisabled]}
@@ -43,7 +43,7 @@ export function DiaryHeader() {
     <View style={styles.header}>
       <View style={styles.careTitleRow}>
         <AppIcon name="diary" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("ko", "tabs.diary")}</Text>
+        <Text style={styles.screenTitle}>{t("tabs.diary")}</Text>
       </View>
       <View style={styles.headerSpacer} />
     </View>
@@ -53,8 +53,8 @@ export function DiaryHeader() {
 export function PetSettingsHeader({ onBack }: BackHeaderProps) {
   return (
     <View style={styles.header}>
-      <AppIconButton iconName="back" label={t("ko", "navigation.back")} onPress={onBack} />
-      <Text style={styles.screenTitle}>{t("ko", "pet.manageTitle")}</Text>
+      <AppIconButton iconName="back" label={t("navigation.back")} onPress={onBack} />
+      <Text style={styles.screenTitle}>{t("pet.manageTitle")}</Text>
       <View style={styles.headerSpacer}>
         <AppIcon name="pet" size={iconSize.md} color={colors.textSoft} />
       </View>
@@ -69,7 +69,7 @@ export function CareHeader() {
         <View style={styles.careBadge}>
           <AppIcon name="care" size={iconSize.lg} color={colors.white} />
         </View>
-        <Text style={styles.screenTitle}>{t("ko", "care.eyebrow")}</Text>
+        <Text style={styles.screenTitle}>{t("care.eyebrow")}</Text>
       </View>
       <View style={styles.headerSpacer} />
     </View>
@@ -81,7 +81,7 @@ export function ReportsHeader() {
     <View style={styles.header}>
       <View style={styles.careTitleRow}>
         <AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("ko", "tabs.reports")}</Text>
+        <Text style={styles.screenTitle}>{t("tabs.reports")}</Text>
       </View>
       <View style={styles.headerSpacer} />
     </View>
@@ -93,7 +93,7 @@ export function SettingsHeader() {
     <View style={styles.header}>
       <View style={styles.careTitleRow}>
         <AppIcon name="settings" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("ko", "tabs.settings")}</Text>
+        <Text style={styles.screenTitle}>{t("tabs.settings")}</Text>
       </View>
       <View style={styles.headerSpacer} />
     </View>

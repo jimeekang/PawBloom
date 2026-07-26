@@ -117,17 +117,17 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations.en;
 
-// Legacy screens still pass their former default locale into t(). The provider
-// sets this runtime override before rendering so one persisted preference drives
-// those call sites until they are incrementally migrated to useLanguage().
+// LanguageProvider sets this before the app tree renders, making it the single
+// language source for t(). Outside the provider (early module init, scripts,
+// tests that never call setRuntimeLanguage) the Korean default applies.
 let runtimeLanguage: Language | null = null;
 
 export function setRuntimeLanguage(language: Language | null) {
   runtimeLanguage = language;
 }
 
-export function t(language: Language, key: TranslationKey) {
-  return translations[runtimeLanguage ?? language][key];
+export function t(key: TranslationKey) {
+  return translations[runtimeLanguage ?? "ko"][key];
 }
 
 export function hasTranslation(key: string): key is TranslationKey {

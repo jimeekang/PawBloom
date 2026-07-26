@@ -20,27 +20,27 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
         <Text style={styles.sectionTitle}>{title}</Text>
         <SurfaceCard>
           <View style={styles.list}>
-            {status === "loading" ? <Text style={styles.emptyText}>{t("ko", "diary.listLoading")}</Text> : null}
+            {status === "loading" ? <Text style={styles.emptyText}>{t("diary.listLoading")}</Text> : null}
             {status === "error" ? (
               <View style={styles.errorWrap}>
-                <Text style={styles.errorText}>{t("ko", "diary.listLoadFailed")}</Text>
-                {onRetry ? <SecondaryButton label={t("ko", "diary.listRetry")} onPress={onRetry} /> : null}
+                <Text style={styles.errorText}>{t("diary.listLoadFailed")}</Text>
+                {onRetry ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetry} /> : null}
               </View>
             ) : null}
-            {status === "ready" && entries.length === 0 ? <Text style={styles.emptyText}>{t("ko", "diary.noEntries")}</Text> : null}
+            {status === "ready" && entries.length === 0 ? <Text style={styles.emptyText}>{t("diary.noEntries")}</Text> : null}
             {entries.map((entry) => {
               const visual = categoryVisuals[entry.category];
               const row = (
                 <>
                   <AppIcon name={visual.icon} size={iconSize.md} color={visual.color} />
                   <View style={styles.body}>
-                    <Text style={styles.title}>{t("ko", visual.labelKey)}</Text>
+                    <Text style={styles.title}>{t(visual.labelKey)}</Text>
                     <Text style={styles.summary} numberOfLines={2}>{getDiaryEntryDisplaySummary(entry)}</Text>
                   </View>
                   <View style={styles.meta}>
                     {showEntryDate ? <Text style={styles.entryDate}>{formatEntryDate(entry.entryDate, locale)}</Text> : null}
                     <Text style={styles.time}>{entry.occurredAt}</Text>
-                    {entry.photoCount ? <Text style={styles.photoCount}>{t("ko", "diary.photoCount").replace("{count}", String(entry.photoCount))}</Text> : null}
+                    {entry.photoCount ? <Text style={styles.photoCount}>{t("diary.photoCount").replace("{count}", String(entry.photoCount))}</Text> : null}
                   </View>
                 </>
               );
@@ -50,7 +50,7 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
                   {onEntryPress ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${t("ko", visual.labelKey)} ${entry.occurredAt} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
+                      accessibilityLabel={`${t(visual.labelKey)} ${entry.occurredAt} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
                       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                       onPress={() => onEntryPress(entry)}
                     >
@@ -65,7 +65,7 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
                         <Pressable
                           key={photoUrl}
                           accessibilityRole="imagebutton"
-                          accessibilityLabel={`${t("ko", "diary.photos")} ${index + 1}`}
+                          accessibilityLabel={`${t("diary.photos")} ${index + 1}`}
                           onPress={() => setSelectedPhotoUrl(photoUrl)}
                         >
                           <Image source={{ uri: photoUrl }} style={styles.photoThumbnail} />
@@ -82,7 +82,7 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
       <Modal visible={Boolean(selectedPhotoUrl)} transparent animationType="fade" onRequestClose={() => setSelectedPhotoUrl(null)}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t("ko", "diary.photoClose")}
+          accessibilityLabel={t("diary.photoClose")}
           style={styles.photoViewer}
           onPress={() => setSelectedPhotoUrl(null)}
         >
