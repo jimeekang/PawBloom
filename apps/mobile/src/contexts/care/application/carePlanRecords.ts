@@ -4,6 +4,7 @@ import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { mapMedicationSchedules, normalizeMedicationLocalTime } from "../../medication/application/medicationScheduleRecords";
 import type { ActiveCareSetup, CareConditionStatus, CareDoseStatus, CareMedicationSchedule, CareSetupInput } from "../domain/carePlan";
 import { saveCareSetupRecords } from "./carePlanPersistence";
+import { CodedError } from "../../../shared-kernel/appError";
 
 export { buildCareScheduleRequests } from "./carePlanPersistence";
 
@@ -35,7 +36,7 @@ export function useCreateCareSetup(petId: string | null, userId: string | null) 
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CareSetupInput) => {
-      if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
+      if (!supabase || !petId || !userId) throw new CodedError("common.loginRequired");
       return saveCareSetupRecords(petId, input);
     },
     onSuccess: (setup) => {
@@ -52,7 +53,7 @@ async function fetchActiveCareSetup(petId: string) {
     supabase!.from("medication_schedules").select("id,pet_id,medication_id,local_time,starts_on,ends_on,recurrence_interval_days,created_by,created_at").eq("pet_id", petId).order("local_time", { ascending: true }),
   ]);
   const error = conditions.error ?? plans.error ?? medications.error ?? schedules.error;
-  if (error) throw new Error(error.message);
+  if (error) throw new CodedError("care.setupSaveFailed", error.message);
   return mapCareSetup(conditions.data ?? [], plans.data ?? [], medications.data ?? [], schedules.data ?? []);
 }
 

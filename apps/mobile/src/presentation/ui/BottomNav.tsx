@@ -7,10 +7,10 @@ export type MainTab = "today" | "diary" | "care" | "reports" | "settings";
 
 const navItems: { key: MainTab; labelKey: TranslationKey; icon: AppIconName; activeIcon?: AppIconName }[] = [
   { key: "today", labelKey: "tabs.today", icon: "home", activeIcon: "homeFilled" },
-  { key: "diary", labelKey: "tabs.diary", icon: "diary" },
-  { key: "care", labelKey: "tabs.care", icon: "care" },
-  { key: "reports", labelKey: "tabs.reports", icon: "reports" },
-  { key: "settings", labelKey: "tabs.settings", icon: "settings" },
+  { key: "diary", labelKey: "tabs.diary", icon: "diary", activeIcon: "diaryFilled" },
+  { key: "care", labelKey: "tabs.care", icon: "care", activeIcon: "careFilled" },
+  { key: "reports", labelKey: "tabs.reports", icon: "reports", activeIcon: "reportsFilled" },
+  { key: "settings", labelKey: "tabs.settings", icon: "settings", activeIcon: "settingsFilled" },
 ];
 
 export function BottomNav({ activeTab, onChange }: { activeTab: MainTab; onChange: (tab: MainTab) => void }) {
@@ -23,12 +23,12 @@ export function BottomNav({ activeTab, onChange }: { activeTab: MainTab; onChang
             key={item.key}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            accessibilityLabel={t("ko", item.labelKey)}
+            accessibilityLabel={t(item.labelKey)}
             style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
             onPress={() => onChange(item.key)}
           >
             <AppIcon name={active && item.activeIcon ? item.activeIcon : item.icon} size={iconSize.md} color={active ? colors.orangeDeep : colors.textMuted} />
-            <Text style={[styles.label, active && styles.labelActive]}>{t("ko", item.labelKey)}</Text>
+            <Text style={[styles.label, active && styles.labelActive]}>{t(item.labelKey)}</Text>
           </Pressable>
         );
       })}

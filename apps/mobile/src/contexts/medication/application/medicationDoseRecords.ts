@@ -9,6 +9,7 @@ import { localDateKey, useCurrentLocalDateKey } from "./medicationDoseDate";
 import { findMedicationDoseInCachedLists, removeMedicationDoseFromCachedLists, replaceMedicationDoseInCachedLists } from "./medicationDoseCache";
 import { enqueueMedicationDoseInsert, enqueueMedicationDoseUpdate } from "./medicationDoseOfflineQueue";
 import { deleteMedicationDoseWithRetry } from "./medicationDoseDeletion";
+import { CodedError } from "../../../shared-kernel/appError";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, decodeMedicationDoseCareNote, encodeMedicationDoseCareNote } from "./medicationDosePayload";
 export { removeMedicationDoseFromList, replaceMedicationDoseInList } from "./medicationDoseCache";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
@@ -71,20 +72,20 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
   const todayDateKey = useCurrentLocalDateKey();
   return useMutation({
     mutationFn: async (input: QuickMedicationDoseInput) => {
-      if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
+      if (!supabase || !petId || !userId) throw new CodedError("common.loginRequired");
       const clientMutationId = createClientMutationId();
       const now = new Date();
       const payload = buildMedicationDoseInsertPayload({ ...input, petId, userId, now, clientMutationId });
       try {
         const { data, error } = await supabase.from("medication_doses").insert(payload).select().single();
         if (error) {
-          if (!isRetriableOfflineError(error)) throw new Error(error.message);
+          if (!isRetriableOfflineError(error)) throw new CodedError("care.quickDoseSaveFailed", error.message);
           const dose = await enqueueMedicationDoseInsert({ petId, userId, formInput: { ...input }, insertPayload: payload, clientMutationId });
           return { dose, queued: true };
         }
         return { dose: mapDoseRow(data), queued: false };
       } catch (error) {
-        if (!isRetriableOfflineError(error)) throw new Error(offlineErrorMessage(error));
+        if (!isRetriableOfflineError(error)) throw new CodedError("care.quickDoseSaveFailed", offlineErrorMessage(error));
         const dose = await enqueueMedicationDoseInsert({ petId, userId, formInput: { ...input }, insertPayload: payload, clientMutationId });
         return { dose, queued: true };
       }
@@ -118,22 +119,22 @@ export function useUpdateMedicationDose(petId: string | null, userId: string | n
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: UpdateMedicationDoseInput) => {
-      if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
+      if (!supabase || !petId) throw new CodedError("common.loginRequired");
       const clientMutationId = createClientMutationId();
       const updatePayload = buildMedicationDoseUpdatePayload(input, clientMutationId);
       const currentDose = findMedicationDoseInCachedLists(queryClient, petId, userId, input.id);
       try {
         const { data, error } = await supabase.from("medication_doses").update(updatePayload).eq("id", input.id).eq("pet_id", petId).select().single();
         if (error) {
-          if (!isRetriableOfflineError(error)) throw new Error(error.message);
-          if (!currentDose) throw new Error("오프라인 수정 원본을 찾지 못했습니다.");
+          if (!isRetriableOfflineError(error)) throw new CodedError("care.quickDoseUpdateFailed", error.message);
+          if (!currentDose) throw new CodedError("care.quickDoseUpdateFailed");
           const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { ...input }, updatePayload: { ...updatePayload }, clientMutationId, currentDose });
           return { dose, queued: true };
         }
         return { dose: mapDoseRow(data), queued: false };
       } catch (error) {
-        if (!isRetriableOfflineError(error)) throw new Error(offlineErrorMessage(error));
-        if (!currentDose) throw new Error("오프라인 수정 원본을 찾지 못했습니다.");
+        if (!isRetriableOfflineError(error)) throw new CodedError("care.quickDoseUpdateFailed", offlineErrorMessage(error));
+        if (!currentDose) throw new CodedError("care.quickDoseUpdateFailed");
         const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { ...input }, updatePayload: { ...updatePayload }, clientMutationId, currentDose });
         return { dose, queued: true };
       }
@@ -148,7 +149,7 @@ export function useDeleteMedicationDose(petId: string | null, userId: string | n
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
+      if (!supabase || !petId) throw new CodedError("common.loginRequired");
       const data = await deleteMedicationDoseWithRetry(supabase, petId, id);
       return { id, dose: data ? mapDoseRow(data) : null };
     },
@@ -164,22 +165,22 @@ export function useUpdateMedicationDoseStatus(petId: string | null, userId: stri
   const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: DoseStatus }) => {
-      if (!supabase || !petId) throw new Error("Supabase 클라이언트가 설정되어 있지 않습니다.");
+      if (!supabase || !petId) throw new CodedError("auth.clientMissing");
       const clientMutationId = createClientMutationId();
       const updatePayload = buildDoseStatusUpdate(status, clientMutationId);
       const currentDose = findMedicationDoseInCachedLists(queryClient, petId, userId, id);
       try {
         const { data, error } = await supabase.from("medication_doses").update(updatePayload).eq("id", id).eq("pet_id", petId).select().single();
         if (error) {
-          if (!isRetriableOfflineError(error)) throw new Error(error.message);
-          if (!currentDose) throw new Error("오프라인 투약 원본을 찾지 못했습니다.");
+          if (!isRetriableOfflineError(error)) throw new CodedError("care.quickDoseDeleteFailed", error.message);
+          if (!currentDose) throw new CodedError("care.quickDoseDeleteFailed");
           const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { id, status }, updatePayload, clientMutationId, currentDose });
           return { dose, queued: true };
         }
         return { dose: mapDoseRow(data), queued: false };
       } catch (error) {
-        if (!isRetriableOfflineError(error)) throw new Error(offlineErrorMessage(error));
-        if (!currentDose) throw new Error("오프라인 투약 원본을 찾지 못했습니다.");
+        if (!isRetriableOfflineError(error)) throw new CodedError("care.quickDoseDeleteFailed", offlineErrorMessage(error));
+        if (!currentDose) throw new CodedError("care.quickDoseDeleteFailed");
         const dose = await enqueueMedicationDoseUpdate({ petId, formInput: { id, status }, updatePayload, clientMutationId, currentDose });
         return { dose, queued: true };
       }
@@ -216,7 +217,7 @@ async function fetchMedicationDoses(petId: string, input: { fromDateKey: string;
     .gte("dose_date", input.fromDateKey)
     .lte("dose_date", input.toDateKey)
     .order("scheduled_at", { ascending: input.ascending });
-  if (error) throw new Error(error.message);
+  if (error) throw new CodedError("care.loadFailed", error.message);
   return (data ?? []).map(mapDoseRow);
 }
 function buildScheduledAtForTime(scheduledTime?: string) {

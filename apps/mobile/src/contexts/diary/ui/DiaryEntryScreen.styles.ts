@@ -19,6 +19,4 @@ export const styles = StyleSheet.create({
   counter: { ...type.caption, textAlign: "right" },
   photoEditNotice: { ...type.caption, color: colors.textMuted },
   actionStack: { gap: spacing.sm },
-  dangerButton: { minHeight: layout.buttonHeight, borderRadius: radius.md, borderWidth: 1, borderColor: colors.dangerBorder, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: spacing.sm },
-  dangerButtonText: { ...type.bodyStrong, color: colors.danger },
 });

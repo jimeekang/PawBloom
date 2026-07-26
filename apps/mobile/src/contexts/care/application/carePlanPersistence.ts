@@ -2,6 +2,7 @@ import { supabase } from "../../../shared-kernel/supabase/client";
 import { createClientMutationId } from "../../sync/application/offlineMutationPayload";
 import { normalizeMedicationLocalTime } from "../../medication/application/medicationScheduleRecords";
 import type { ActiveCareSetup, CareConditionStatus, CareSetupInput } from "../domain/carePlan";
+import { CodedError } from "../../../shared-kernel/appError";
 
 export type CareSetupRpcRequest = {
   version: 1;
@@ -16,9 +17,9 @@ export type CareSetupRpcRequest = {
 };
 
 export async function saveCareSetupRecords(petId: string, input: CareSetupInput): Promise<ActiveCareSetup> {
-  if (!supabase) throw new Error("로그인이 필요합니다.");
+  if (!supabase) throw new CodedError("common.loginRequired");
   const { data, error } = await supabase.rpc("save_care_setup_v1", buildCareSetupRpcArgs(petId, input));
-  if (error) throw new Error(error.message);
+  if (error) throw new CodedError("care.setupSaveFailed", error.message);
   return parseCareSetupRpcResult(data);
 }
 

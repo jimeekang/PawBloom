@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
+import { CodedError } from "../../../shared-kernel/appError";
 
 export type PhotoUploadInput = {
   uri: string;
@@ -30,7 +31,7 @@ export async function uploadDiaryPhotoObject(
     upsert: true,
   });
 
-  if (error) throw new Error(error.message ?? "사진 업로드에 실패했습니다.");
+  if (error) throw new CodedError("media.uploadFailed", error.message);
   return { storagePath, contentType };
 }
 
@@ -51,7 +52,7 @@ export function buildDiaryPhotoStoragePath(
 export async function removeUploadedPhotoObjects(client: SupabaseClient<Database>, storagePaths: string[]) {
   if (storagePaths.length === 0) return;
   const { error } = await client.storage.from("pet-media").remove(storagePaths);
-  if (error) throw new Error(error.message ?? "업로드된 사진 정리에 실패했습니다.");
+  if (error) throw new CodedError("media.cleanupFailed", error.message);
 }
 
 export function buildPhotoUploadBody(photo: PhotoUploadInput & { base64: string }): ArrayBuffer;
@@ -73,14 +74,14 @@ function extensionForContentType(contentType: string) {
 export function resolveSupportedPhotoContentType(photo: PhotoUploadInput) {
   if (photo.base64) return "image/jpeg";
   if (photo.mimeType === "image/jpeg" || photo.mimeType === "image/png" || photo.mimeType === "image/webp") return photo.mimeType;
-  if (photo.mimeType?.startsWith("image/")) throw new Error("JPEG, PNG, WebP 사진만 저장할 수 있습니다.");
+  if (photo.mimeType?.startsWith("image/")) throw new CodedError("media.unsupportedType");
   return "image/jpeg";
 }
 
 async function fetchPhotoBlob(uri: string) {
   const response = await fetch(uri);
   if (!response.ok) {
-    throw new Error("사진을 읽을 수 없습니다.");
+    throw new CodedError("media.unreadable");
   }
 
   return response.blob();
@@ -99,7 +100,7 @@ function decodeBase64ToArrayBuffer(base64: string) {
   for (const char of cleanBase64.replace(/=+$/, "")) {
     const value = alphabet.indexOf(char);
     if (value < 0) {
-      throw new Error("사진을 읽을 수 없습니다.");
+      throw new CodedError("media.unreadable");
     }
 
     buffer = (buffer << 6) | value;

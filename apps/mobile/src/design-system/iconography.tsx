@@ -10,8 +10,6 @@ type IconDefinition = {
 
 export const icon = {
   logo: { family: "fa5", name: "paw" },
-  bell: { family: "ion", name: "notifications-outline" },
-  menu: { family: "ion", name: "menu" },
   back: { family: "ion", name: "chevron-back" },
   calendar: { family: "ion", name: "calendar-clear-outline" },
   time: { family: "ion", name: "time-outline" },
@@ -22,7 +20,11 @@ export const icon = {
   home: { family: "ion", name: "home-outline" },
   homeFilled: { family: "ion", name: "home" },
   diary: { family: "ion", name: "calendar-outline" },
-  care: { family: "material", name: "medical-bag" },
+  care: { family: "ion", name: "medkit-outline" },
+  careFilled: { family: "ion", name: "medkit" },
+  diaryFilled: { family: "ion", name: "calendar" },
+  reportsFilled: { family: "ion", name: "document-text" },
+  settingsFilled: { family: "ion", name: "settings" },
   reports: { family: "ion", name: "document-text-outline" },
   food: { family: "material", name: "bowl" },
   water: { family: "ion", name: "water" },

@@ -1,11 +1,17 @@
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
+import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, layout, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAuth } from "../application/authContext";
 import { useAccountDeletion } from "../application/useAccountDeletion";
+
+function openExternalUrl(url: string) {
+  void Linking.openURL(url).catch(() => undefined);
+}
 
 export function SettingsScreen({
   email,
@@ -25,15 +31,19 @@ export function SettingsScreen({
 
   const confirmDeleteAccount = () => {
     accountDeletion.requestConfirm();
-    Alert.alert(
-      t("ko", "settings.deleteAccountConfirmTitle"),
-      t("ko", "settings.deleteAccountConfirmBody"),
-      [
-        { text: t("ko", "settings.deleteAccountConfirmCancel"), style: "cancel", onPress: accountDeletion.cancelConfirm },
-        { text: t("ko", "settings.deleteAccountConfirmAction"), style: "destructive", onPress: () => void accountDeletion.deleteAccount() },
-      ],
-      { cancelable: true, onDismiss: accountDeletion.cancelConfirm },
-    );
+    void confirmDestructiveAction(
+      {
+        title: t("settings.deleteAccountConfirmTitle"),
+        message: t("settings.deleteAccountConfirmBody"),
+        cancelText: t("settings.deleteAccountConfirmCancel"),
+        confirmText: t("settings.deleteAccountConfirmAction"),
+      },
+      async () => (await accountDeletion.deleteAccount()).ok,
+    ).then((confirmed) => {
+      // cancel is a no-op unless the dialog was dismissed while still confirming,
+      // so a failed deletion keeps its error state for the retry banner.
+      if (!confirmed) accountDeletion.cancelConfirm();
+    });
   };
 
   return (
@@ -42,25 +52,22 @@ export function SettingsScreen({
         <View style={styles.cardBody}>
           <View style={styles.rowTitle}>
             <AppIcon name="pet" size={iconSize.md} color={colors.orangeDeep} />
-            <Text style={styles.title}>{t("ko", configured ? "settings.accountTitle" : "settings.previewTitle")}</Text>
+            <Text style={styles.title}>{t(configured ? "settings.accountTitle" : "settings.previewTitle")}</Text>
           </View>
-          <Text style={styles.copy}>{email || t("ko", "settings.previewAccount")}</Text>
+          <Text style={styles.copy}>{email || t("settings.previewAccount")}</Text>
           {configured
-            ? <SecondaryButton label={t("ko", "auth.signOut")} onPress={onSignOut} />
-            : <Text style={styles.copy}>{t("ko", "settings.previewCopy")}</Text>}
+            ? <SecondaryButton label={t("auth.signOut")} onPress={onSignOut} />
+            : <Text style={styles.copy}>{t("settings.previewCopy")}</Text>}
           {configured ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: deleting }}
-              disabled={deleting}
-              style={({ pressed }) => [styles.deleteButton, pressed && !deleting && styles.deleteButtonPressed, deleting && styles.deleteButtonDisabled]}
+            <DangerButton
+              label={t(deleting ? "settings.deleteAccountInProgress" : "settings.deleteAccount")}
               onPress={confirmDeleteAccount}
-            >
-              <Text style={styles.deleteButtonText}>{t("ko", "settings.deleteAccount")}</Text>
-            </Pressable>
+              disabled={deleting}
+              busy={deleting}
+            />
           ) : null}
-          {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("ko", "settings.deleteAccountError")} icon="close" tone="error" /> : null}
-          {identityError ? <NoticeBanner text={t("ko", identityError)} icon="close" tone="error" /> : null}
+          {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("settings.deleteAccountError")} icon="close" tone="error" /> : null}
+          {identityError ? <NoticeBanner text={t(identityError)} icon="close" tone="error" /> : null}
         </View>
       </SurfaceCard>
 
@@ -68,37 +75,57 @@ export function SettingsScreen({
         <View style={styles.cardBody}>
           <View style={styles.rowTitle}>
             <AppIcon name="settings" size={iconSize.md} color={colors.orangeDeep} />
-            <Text style={styles.title}>{t("ko", "settings.profileTitle")}</Text>
+            <Text style={styles.title}>{t("settings.profileTitle")}</Text>
           </View>
-          <Text style={styles.copy}>{t("ko", "settings.profileCopy")}</Text>
-          <PrimaryButton label={t("ko", "settings.openProfiles")} icon="pet" onPress={onOpenPetProfiles} />
+          <Text style={styles.copy}>{t("settings.profileCopy")}</Text>
+          <PrimaryButton label={t("settings.openProfiles")} icon="pet" onPress={onOpenPetProfiles} />
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.title}>{t("ko", "settings.language")}</Text>
+          <Text style={styles.title}>{t("settings.language")}</Text>
           <SegmentedControl
             value={language}
             onChange={setLanguage}
             items={[
-              { label: t("ko", "settings.languageKo"), value: "ko" },
-              { label: t("ko", "settings.languageEn"), value: "en" },
+              { label: t("language.koNative"), value: "ko" },
+              { label: t("language.enNative"), value: "en" },
             ]}
           />
-          <Text style={styles.copy}>{t("ko", "settings.languageCopy")}</Text>
+          <Text style={styles.copy}>{t("settings.languageCopy")}</Text>
         </View>
       </SurfaceCard>
 
       <SurfaceCard>
         <View style={styles.cardBody}>
-          <Text style={styles.title}>{t("ko", "settings.dataTitle")}</Text>
+          <Text style={styles.title}>{t("settings.dataTitle")}</Text>
           <View style={styles.statusPill}>
             <View style={[styles.statusDot, { backgroundColor: configured ? colors.mintDeep : colors.orange }]} />
-            <Text style={styles.statusText}>{t("ko", configured ? "settings.syncReady" : "settings.localOnly")}</Text>
+            <Text style={styles.statusText}>{t(configured ? "settings.syncReady" : "settings.localOnly")}</Text>
           </View>
         </View>
       </SurfaceCard>
+
+      <View style={styles.policyLinks}>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("settings.privacyPolicy")}
+          style={styles.policyLink}
+          onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
+        >
+          <Text style={styles.policyLinkText}>{t("settings.privacyPolicy")}</Text>
+        </Pressable>
+        <Text style={styles.policyDivider}>·</Text>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("settings.support")}
+          style={styles.policyLink}
+          onPress={() => openExternalUrl(SUPPORT_URL)}
+        >
+          <Text style={styles.policyLinkText}>{t("settings.support")}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -122,26 +149,6 @@ const styles = StyleSheet.create({
     ...type.body,
     color: colors.textMuted,
   },
-  deleteButton: {
-    minHeight: layout.buttonHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.dangerBorder,
-    backgroundColor: colors.dangerBg,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  deleteButtonPressed: {
-    backgroundColor: colors.surfacePeach,
-  },
-  deleteButtonDisabled: {
-    opacity: 0.55,
-  },
-  deleteButtonText: {
-    ...type.bodyStrong,
-    color: colors.danger,
-  },
   statusPill: {
     minHeight: 44,
     borderRadius: radius.md,
@@ -161,5 +168,25 @@ const styles = StyleSheet.create({
     ...type.caption,
     color: colors.text,
     flex: 1,
+  },
+  policyLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  policyLink: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  policyLinkText: {
+    ...type.caption,
+    color: colors.textMuted,
+    textDecorationLine: "underline",
+  },
+  policyDivider: {
+    ...type.caption,
+    color: colors.textSoft,
   },
 });

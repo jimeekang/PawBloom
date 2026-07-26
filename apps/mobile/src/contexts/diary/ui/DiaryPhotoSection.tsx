@@ -16,7 +16,7 @@ type Props = {
 export function DiaryPhotoSection({ editingEntry, savedPhotoCount, photos, onChange, onNotice }: Props) {
   return (
     <>
-      <Text style={styles.sectionTitle}>{editingEntry ? t("ko", "diary.photos") : t("ko", "diary.addPhotos")}</Text>
+      <Text style={styles.sectionTitle}>{editingEntry ? t("diary.photos") : t("diary.addPhotos")}</Text>
       {editingEntry ? (
         <>
           <Text style={styles.photoEditNotice}>{formatExistingPhotoNotice(editingEntry.photoCount)}</Text>
@@ -53,6 +53,6 @@ const photoStyles = StyleSheet.create({
 
 function formatExistingPhotoNotice(photoCount?: number) {
   return photoCount
-    ? t("ko", "diary.existingPhotoCount").replace("{count}", String(photoCount))
-    : t("ko", "diary.photosUnchanged");
+    ? t("diary.existingPhotoCount").replace("{count}", String(photoCount))
+    : t("diary.photosUnchanged");
 }

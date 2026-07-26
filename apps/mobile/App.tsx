@@ -6,12 +6,14 @@ import { AppIcon } from "./src/design-system/iconography";
 import { AuthProvider, useAuth } from "./src/contexts/identity/application/authContext";
 import { PawBloomShell } from "./src/presentation/PawBloomShell";
 import { AuthScreen } from "./src/contexts/identity/ui/AuthScreen";
+import { PasswordRecoveryScreen } from "./src/contexts/identity/ui/PasswordRecoveryScreen";
 import { PetOnboardingScreen } from "./src/presentation/screens/PetOnboardingScreen";
 import { configureNetworkSync } from "./src/contexts/sync/application/syncStatus";
 import { colors, type as typeStyle } from "./src/design-system/tokens";
 import { LanguageProvider, useLanguage } from "./src/i18n/languageContext";
 import { t } from "./src/i18n/translations";
-import { PrimaryButton, SecondaryButton } from "./src/design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton } from "./src/design-system/components";
+import { confirmAndSignOut } from "./src/contexts/identity/ui/signOutConfirm";
 import { resolveAppGate } from "./src/presentation/appGate";
 import { configureLocalNotificationPresentation } from "./src/shared-kernel/notifications/localNotificationBootstrap";
 
@@ -43,13 +45,14 @@ export default function App() {
 }
 
 function AppBody() {
-  const { initialized, configured, user, activePet, petLoadStatus, retryPetLoad, signOut } = useAuth();
+  const { initialized, configured, user, activePet, petLoadStatus, passwordRecoveryActive, retryPetLoad, signOut, error } = useAuth();
   const { initialized: languageInitialized } = useLanguage();
   const gate = resolveAppGate({
     authInitialized: initialized,
     languageInitialized,
     configured,
     userPresent: Boolean(user),
+    passwordRecoveryActive,
     petLoadStatus,
     activePetPresent: Boolean(activePet),
   });
@@ -59,7 +62,7 @@ function AppBody() {
       <SafeAreaView style={styles.loadingArea}>
         <View style={styles.loadingWrap}>
           <AppIcon name="shield" size={40} color={colors.orangeDeep} />
-          <Text style={styles.loadingText}>{t("ko", "app.loading")}</Text>
+          <Text style={styles.loadingText}>{t("app.loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -67,21 +70,29 @@ function AppBody() {
 
   if (gate === "preview") return <PawBloomShell />;
   if (gate === "auth") return <AuthScreen />;
+  if (gate === "password-recovery") return <PasswordRecoveryScreen />;
   if (gate === "pet-load-error") {
     return (
       <SafeAreaView style={styles.loadingArea}>
         <View style={styles.loadingWrap}>
           <AppIcon name="close" size={40} color={colors.coral} />
-          <Text style={styles.loadingText}>{t("ko", "pet.loadFailed")}</Text>
+          <Text style={styles.loadingText}>{t("pet.loadFailed")}</Text>
+          {error ? <NoticeBanner text={t(error)} icon="close" tone="error" /> : null}
           <View style={styles.retryActions}>
-            <PrimaryButton label={t("ko", "pet.retryLoad")} onPress={retryPetLoad} />
-            <SecondaryButton label={t("ko", "auth.signOut")} onPress={() => void signOut()} />
+            <PrimaryButton label={t("pet.retryLoad")} onPress={retryPetLoad} />
+            <SecondaryButton label={t("auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} />
           </View>
         </View>
       </SafeAreaView>
     );
   }
-  if (gate === "pet-onboarding") return <PetOnboardingScreen />;
+  if (gate === "pet-onboarding") {
+    return (
+      <SafeAreaView style={styles.loadingArea}>
+        <PetOnboardingScreen />
+      </SafeAreaView>
+    );
+  }
   return <PawBloomShell />;
 }
 

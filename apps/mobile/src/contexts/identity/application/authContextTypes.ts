@@ -19,9 +19,13 @@ export type AppAuthState = {
   petLoadStatus: "idle" | "loading" | "ready" | "error";
   error: IdentityMessageKey | null;
   authMessage: IdentityMessageKey | null;
+  passwordRecoveryActive: boolean;
   signIn: (email: string, password: string) => Promise<IdentityMessageKey | null>;
   signUp: (email: string, password: string) => Promise<IdentityMessageKey | null>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<IdentityMessageKey | null>;
+  updatePassword: (password: string) => Promise<IdentityMessageKey | null>;
+  cancelPasswordRecovery: () => void;
   createPet: (input: CreatePetInput) => Promise<IdentityMessageKey | null>;
   updatePet: (input: UpdatePetInput) => Promise<IdentityMessageKey | null>;
   deletePet: (petId: string) => Promise<IdentityMessageKey | null>;
@@ -29,4 +33,5 @@ export type AppAuthState = {
   selectNextPet: () => void;
   retryPetLoad: () => void;
   resetMessage: () => void;
+  announceAccountDeleted: () => void;
 };

@@ -6,11 +6,12 @@ import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePho
 import { formatPetMetaLine, type PetProfile } from "../../contexts/pet/domain/pet";
 import { categoryVisuals } from "../../design-system/categoryVisuals";
 import { AppIcon } from "../../design-system/iconography";
-import { IconBubble, NoticeBanner, SectionHeader, SurfaceCard, type NoticeTone } from "../../design-system/components";
+import { IconBubble, NoticeBanner, SecondaryButton, SectionHeader, SurfaceCard, type NoticeTone } from "../../design-system/components";
 import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { useLanguage } from "../../i18n/languageContext";
 import { getDiaryEntryDisplaySummary } from "../../contexts/diary/ui/diaryEntryDisplay";
+import { AiBriefCard } from "../../contexts/briefing/ui/AiBriefCard";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
@@ -29,19 +30,24 @@ type Props = {
   showMedicationSummary?: boolean;
   notice: string;
   noticeTone?: NoticeTone;
+  todayStatus?: "ready" | "loading" | "error";
+  onRetryToday?: () => void;
   onChecklistToggle: (key: ChecklistKey) => void;
   onViewTimelineAll: () => void;
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const { language } = useLanguage();
-  const timeline = entries.slice(0, 4);
+  const timeline = [...entries].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)).slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
   const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
   const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
   const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder, medicationAgenda);
   const heroMeta = formatPetMetaLine(pet, language);
+  // Skipped/partial doses count as "recorded" for the tile, but the check mark
+  // shows coral so a skip is not mistaken for a completed dose (0006 E3).
+  const medicationAttention = (medicationAgenda.length > 0 ? medicationAgenda : doses).some((row) => row.status === "partial" || row.status === "skipped");
 
   return (
     <View>
@@ -55,15 +61,27 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
       <View style={styles.heroInfo}>
         <View style={styles.heroSummary}>
           <View style={styles.heroSummaryItem}>
-            <Text style={styles.heroSummaryLabel}>{t("ko", "today.dashboardCompletion")}</Text>
+            <Text style={styles.heroSummaryLabel}>{t("today.dashboardCompletion")}</Text>
             <Text style={styles.heroSummaryValue}>{dashboard.completedCount}/{dashboard.totalCount}</Text>
           </View>
           {showMedicationSummary ? <View style={styles.heroSummaryItem}>
-            <Text style={styles.heroSummaryLabel}>{t("ko", "today.dashboardMedicationPending")}</Text>
+            <Text style={styles.heroSummaryLabel}>{t("today.dashboardMedicationPending")}</Text>
             <Text style={styles.heroSummaryValue}>{dashboard.pendingMedicationCount}</Text>
           </View> : null}
         </View>
       </View>
+
+      {todayStatus === "error" ? (
+        <View style={styles.noticeWrap}>
+          <NoticeBanner text={t("today.loadFailed")} tone="error" icon="close" />
+          {onRetryToday ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryToday} /> : null}
+        </View>
+      ) : null}
+      {todayStatus === "loading" ? (
+        <View style={styles.noticeWrap}>
+          <Text style={styles.statusText}>{t("today.loading")}</Text>
+        </View>
+      ) : null}
 
       {notice ? (
         <View style={styles.noticeWrap}>
@@ -74,26 +92,27 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
       <AttentionStrip signals={dashboard.attentionSignals} />
 
       <SectionHeader
-        title={t("ko", "today.checklist.full")}
+        title={t("today.checklist.full")}
       />
       <View style={styles.checklist}>
         {checklistOrder.map((key) => {
           const item = categoryVisuals[key];
           const done = checklist[key];
-          const label = t("ko", item.labelKey);
+          const label = t(item.labelKey);
           return (
             <Pressable
               key={key}
               accessibilityRole="checkbox"
-              accessibilityLabel={`${label}, ${t("ko", done ? "today.checklistStatusComplete" : "today.checklistStatusIncomplete")}`}
-              accessibilityState={{ checked: done }}
+              accessibilityLabel={`${label}, ${t(done ? "today.checklistStatusComplete" : "today.checklistStatusIncomplete")}`}
+              accessibilityState={{ checked: done, disabled: todayStatus !== "ready" }}
               aria-checked={done}
-              style={styles.checkItem}
+              disabled={todayStatus !== "ready"}
+              style={[styles.checkItem, todayStatus !== "ready" && styles.checkItemDisabled]}
               onPress={() => onChecklistToggle(key)}
             >
               <IconBubble name={item.icon} color={item.color} background={item.background} size={50} />
               <View style={styles.checkMark}>
-                <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? colors.mintDeep : colors.textSoft} />
+                <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? (key === "medication" && medicationAttention ? colors.coral : colors.mintDeep) : colors.textSoft} />
               </View>
               <Text style={styles.checkLabel} numberOfLines={2}>{label}</Text>
             </Pressable>
@@ -101,13 +120,17 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         })}
       </View>
 
-      {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} /> : null}
+      {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} medicationAgenda={medicationAgenda} /> : null}
+
+      <View style={styles.briefCard}>
+        <AiBriefCard petId={pet.id} databaseMode={userId != null} hasRecords={entries.length > 0 || doses.length > 0} />
+      </View>
 
       <View style={styles.timelineCard}>
         <SurfaceCard>
-          <SectionHeader title={t("ko", "today.timeline.full")} action={t("ko", "today.seeAll")} onActionPress={onViewTimelineAll} />
+          <SectionHeader title={t("today.timeline.full")} action={t("today.seeAll")} onActionPress={onViewTimelineAll} />
           <View style={styles.timeline}>
-            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t("ko", "today.noTimeline")}</Text> : null}
+            {timeline.length === 0 ? <Text style={styles.emptyTimeline}>{t(todayStatus === "loading" ? "diary.listLoading" : "today.noTimeline")}</Text> : null}
             {timeline.map((entry) => {
               const item = categoryVisuals[entry.category];
               const row = (
@@ -117,7 +140,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                   </View>
                   <Text style={styles.time}>{entry.occurredAt}</Text>
                   <AppIcon name={item.icon} size={iconSize.sm} color={item.color} />
-                  <Text style={styles.timelineTitle}>{t("ko", item.labelKey)}</Text>
+                  <Text style={styles.timelineTitle}>{t(item.labelKey)}</Text>
                   <Text style={styles.timelineValue} numberOfLines={1}>{getDiaryEntryDisplaySummary(entry)}</Text>
                 </>
               );
@@ -125,7 +148,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
                 <Pressable
                   key={entry.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`${entry.occurredAt} ${t("ko", item.labelKey)} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
+                  accessibilityLabel={`${entry.occurredAt} ${t(item.labelKey)} ${getDiaryEntryDisplaySummary(entry)}`.trim()}
                   style={({ pressed }) => [styles.timelineRow, pressed && styles.timelineRowPressed]}
                   onPress={() => onTimelineEntryPress(entry)}
                 >
@@ -169,8 +192,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   checkItem: { width: 56, alignItems: "center", position: "relative" },
+  checkItemDisabled: { opacity: 0.5 },
+  statusText: { ...type.caption, color: colors.textMuted, textAlign: "center" },
   checkMark: { position: "absolute", top: 38, right: 5, width: 18, height: 18, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   checkLabel: { ...type.tiny, color: colors.text, textAlign: "center", marginTop: spacing.xs },
+  briefCard: { marginTop: spacing.md },
   timelineCard: { marginTop: spacing.md },
   timeline: { gap: spacing.md },
   timelineRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.md },

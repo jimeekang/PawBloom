@@ -9,6 +9,8 @@ export type AiBrief = {
   disclaimer: string;
 };
 
+export type AiBriefRangeDays = AiBrief["rangeDays"];
+
 export function hasRequiredDisclaimer(brief: AiBrief) {
   const normalized = brief.disclaimer.trim();
   return (

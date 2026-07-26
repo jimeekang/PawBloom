@@ -62,29 +62,11 @@ export function SecondaryButton({ label, icon, onPress, disabled = false }: { la
   );
 }
 
-export function OutlineIconButton({ icon, onPress }: { icon: AppIconName; onPress?: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" style={({ pressed }) => [styles.outlineIconButton, pressed && styles.outlineIconButtonPressed]} onPress={onPress}>
-      <AppIcon name={icon} size={iconSize.md} color={colors.text} />
-    </Pressable>
-  );
-}
-
 export function FieldLabel({ label }: { label: string }) {
   return <Text style={styles.fieldLabel}>{label}</Text>;
 }
 
-export type NoticeTone = "success" | "error";
-
-export function NoticeBanner({ text, icon = "check", tone = "success" }: { text: string; icon?: AppIconName; tone?: NoticeTone }) {
-  const isError = tone === "error";
-  return (
-    <View style={[styles.noticeBanner, isError && styles.noticeBannerError]}>
-      <AppIcon name={icon} size={iconSize.sm} color={isError ? colors.danger : colors.mintDeep} />
-      <Text style={styles.noticeText}>{text}</Text>
-    </View>
-  );
-}
+export { DangerButton, NoticeBanner, type NoticeTone } from "./feedback";
 
 export function SegmentedControl<T extends string>({
   items,
@@ -107,7 +89,7 @@ export function SegmentedControl<T extends string>({
           style={[styles.segment, value === item.value && styles.segmentActive]}
           onPress={() => onChange(item.value)}
         >
-          <Text style={[styles.segmentText, value === item.value && styles.segmentTextActive]}>{item.label}</Text>
+          <Text style={[styles.segmentText, value === item.value && styles.segmentTextActive]} numberOfLines={1} adjustsFontSizeToFit>{item.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -183,19 +165,6 @@ const styles = StyleSheet.create({
     ...type.bodyStrong,
     color: colors.orangeDeep,
   },
-  outlineIconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  outlineIconButtonPressed: {
-    backgroundColor: colors.surfaceWarm,
-  },
   segmented: {
     flexDirection: "row",
     backgroundColor: colors.surface,
@@ -206,7 +175,8 @@ const styles = StyleSheet.create({
   },
   segment: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 44,
+    paddingHorizontal: spacing.xs,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.sm,
@@ -229,26 +199,5 @@ const styles = StyleSheet.create({
     ...type.caption,
     color: colors.textMuted,
     fontWeight: font.weight.semibold,
-  },
-  noticeBanner: {
-    minHeight: 42,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceWarm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  noticeBannerError: {
-    backgroundColor: colors.dangerBg,
-    borderColor: colors.dangerBorder,
-  },
-  noticeText: {
-    ...type.caption,
-    flex: 1,
-    color: colors.text,
   },
 });

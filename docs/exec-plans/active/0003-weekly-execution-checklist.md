@@ -98,14 +98,8 @@ edit_policy: exclusive
 - [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
 - [ ] commit `feat: replay offline mutations`
 
-### Day 13: Family/caregiver 최소 초대 구조
-**신규:** `identity/application/memberRecords.ts`. **수정(필요 시):** `supabase/migrations/**`, `PetOnboardingScreen.tsx`, `i18n/translations.ts`
-- [ ] 기존 `pet_members` schema로 owner/caregiver 목록 조회 hook
-- [ ] owner가 caregiver email 초대 intent를 만드는 UI skeleton
-- [ ] 실제 email 발송 전에는 pending member row 또는 invite row만 생성
-- [ ] caregiver가 diary/care/medication 기록 가능하고 pet 삭제는 불가한지 RLS 확인
-- [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
-- [ ] commit `feat: add caregiver membership skeleton`
+### Day 13: Family/caregiver 최소 초대 구조 — **완료(2026-07-23 실측)**
+구현은 계획과 다른 경로로 완결됨: `pet/application/petMembers.ts` + `manage-pet-members` 엣지 함수 + `PetMembersCard`(목록/초대/삭제, entitlement 게이팅, 에러코드 i18n 매핑). 아래 원래 체크리스트는 이 구현으로 대체 충족.
 
 ### Day 14: Week 2 integration checkpoint
 - [ ] Auth/Pet/Diary/Care/Medication/Offline 경로를 한 계정으로 end-to-end 확인

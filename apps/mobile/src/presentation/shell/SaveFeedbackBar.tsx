@@ -10,7 +10,7 @@ const headerOffset = 76;
 export function SaveFeedbackBar({ feedback, onDismiss }: { feedback: SaveFeedback | null; onDismiss: () => void }) {
   useEffect(() => {
     if (!feedback) return;
-    AccessibilityInfo.announceForAccessibility(`${t("ko", feedback.titleKey)}. ${t("ko", feedback.messageKey)}`);
+    AccessibilityInfo.announceForAccessibility(`${t(feedback.titleKey)}. ${t(feedback.messageKey)}`);
     const timer = setTimeout(onDismiss, feedback.tone === "settings" ? 4200 : 3200);
     return () => clearTimeout(timer);
   }, [feedback, onDismiss]);
@@ -18,8 +18,8 @@ export function SaveFeedbackBar({ feedback, onDismiss }: { feedback: SaveFeedbac
   if (!feedback) return null;
 
   const isSettings = feedback.tone === "settings";
-  const title = t("ko", feedback.titleKey);
-  const message = t("ko", feedback.messageKey);
+  const title = t(feedback.titleKey);
+  const message = t(feedback.messageKey);
   const accentColor = isSettings ? colors.orangeDeep : colors.mintDeep;
 
   return (

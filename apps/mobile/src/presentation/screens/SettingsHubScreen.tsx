@@ -39,8 +39,9 @@ export function SettingsHubScreen({
         entitlement={entitlement}
         entitlementLoading={entitlementLoading}
         entitlementFailed={entitlementFailed}
+        onRetryEntitlement={() => void entitlementQuery.refetch()}
       />
-      <SubscriptionPlanCard
+      <SubscriptionPlanCard onRetry={() => void entitlementQuery.refetch()}
         entitlement={entitlement}
         ownedPetCount={ownedPetCount}
         loading={entitlementLoading}

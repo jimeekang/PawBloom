@@ -26,7 +26,7 @@ export function DiaryCategoryPicker({
           <Pressable
             key={key}
             accessibilityRole="radio"
-            accessibilityLabel={t("ko", item.labelKey)}
+            accessibilityLabel={t(item.labelKey)}
             accessibilityState={{ checked: active, disabled }}
             aria-checked={active}
             disabled={disabled}
@@ -34,7 +34,7 @@ export function DiaryCategoryPicker({
             onPress={() => onSelect(key)}
           >
             <AppIcon name={item.icon} size={iconSize.xl} color={item.color} />
-            <Text style={styles.categoryLabel}>{t("ko", item.labelKey)}</Text>
+            <Text style={styles.categoryLabel}>{t(item.labelKey)}</Text>
           </Pressable>
         );
       })}

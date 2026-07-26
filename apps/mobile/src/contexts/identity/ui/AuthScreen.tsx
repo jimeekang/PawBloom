@@ -1,17 +1,23 @@
-import { useEffect, useRef, useState, type ComponentProps } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FieldLabel, NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
 import { colors, iconSize } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
+import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAuth } from "../application/authContext";
 import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type AuthMode } from "./authFormState";
+import { PasswordField } from "./PasswordField";
 import { styles } from "./AuthScreen.styles";
 
+function openExternalUrl(url: string) {
+  void Linking.openURL(url).catch(() => undefined);
+}
+
 export function AuthScreen() {
-  const { signIn, signUp, error, authMessage, loading, resetMessage } = useAuth();
+  const { signIn, signUp, requestPasswordReset, error, authMessage, loading, resetMessage } = useAuth();
   const { language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
@@ -22,6 +28,7 @@ export function AuthScreen() {
   const submissionInFlight = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const isSignUp = mode === "signUp";
+  const isReset = mode === "resetRequest";
 
   useEffect(() => {
     if (!error && !localError && !authMessage) return;
@@ -42,6 +49,11 @@ export function AuthScreen() {
 
     submissionInFlight.current = true;
     try {
+      if (isReset) {
+        await requestPasswordReset(email);
+        return;
+      }
+
       if (isSignUp) {
         await signUp(email, password);
         return;
@@ -68,39 +80,43 @@ export function AuthScreen() {
           <View style={styles.langRow}>
             <SegmentedControl
               items={[
-                { label: t("ko", "language.koNative"), value: "ko" },
-                { label: t("ko", "language.enNative"), value: "en" },
+                { label: t("language.koNative"), value: "ko" },
+                { label: t("language.enNative"), value: "en" },
               ]}
               value={language}
               onChange={setLanguage}
             />
           </View>
-          <Text style={styles.title}>{t("ko", isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
-          <Text style={styles.copy}>{t("ko", "auth.copy")}</Text>
-          <View style={styles.valuePanel}>
-            {authValueItems.map((item) => (
-              <View key={item.key} style={styles.valueRow}>
-                <View style={styles.valueIcon}>
-                  <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
-                </View>
-                <Text style={styles.valueText}>{t("ko", item.key)}</Text>
+          <Text style={styles.title}>{t(isReset ? "auth.resetRequestTitle" : isSignUp ? "auth.signUpTitle" : "auth.signInTitle")}</Text>
+          <Text style={styles.copy}>{t(isReset ? "auth.resetRequestCopy" : "auth.copy")}</Text>
+          {!isReset ? (
+            <>
+              <View style={styles.valuePanel}>
+                {authValueItems.map((item) => (
+                  <View key={item.key} style={styles.valueRow}>
+                    <View style={styles.valueIcon}>
+                      <AppIcon name={item.icon} size={iconSize.sm} color={colors.orangeDeep} />
+                    </View>
+                    <Text style={styles.valueText}>{t(item.key)}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-          <Text style={styles.trustCopy}>{t("ko", "auth.trustCopy")}</Text>
+              <Text style={styles.trustCopy}>{t("auth.trustCopy")}</Text>
 
-          <SegmentedControl
-            items={[
-              { label: t("ko", "auth.signIn"), value: "signIn" },
-              { label: t("ko", "auth.signUp"), value: "signUp" },
-            ]}
-            value={mode}
-            onChange={changeMode}
-          />
+              <SegmentedControl
+                items={[
+                  { label: t("auth.signIn"), value: "signIn" },
+                  { label: t("auth.signUp"), value: "signUp" },
+                ]}
+                value={mode}
+                onChange={changeMode}
+              />
+            </>
+          ) : null}
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <FieldLabel label={t("ko", "auth.email")} />
+              <FieldLabel label={t("auth.email")} />
               <TextInput
                 style={styles.input}
                 autoCapitalize="none"
@@ -108,27 +124,29 @@ export function AuthScreen() {
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 autoComplete="email"
-                accessibilityLabel={t("ko", "auth.email")}
-                placeholder={t("ko", "auth.email")}
+                accessibilityLabel={t("auth.email")}
+                placeholder={t("auth.email")}
                 placeholderTextColor={colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
               />
             </View>
 
-            <PasswordField
-              label={t("ko", "auth.password")}
-              value={password}
-              onChangeText={setPassword}
-              visible={showPassword}
-              onToggleVisibility={() => setShowPassword((current) => !current)}
-              textContentType={isSignUp ? "newPassword" : "password"}
-              autoComplete={isSignUp ? "new-password" : "current-password"}
-            />
+            {!isReset ? (
+              <PasswordField
+                label={t("auth.password")}
+                value={password}
+                onChangeText={setPassword}
+                visible={showPassword}
+                onToggleVisibility={() => setShowPassword((current) => !current)}
+                textContentType={isSignUp ? "newPassword" : "password"}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
+              />
+            ) : null}
 
             {isSignUp ? (
               <PasswordField
-                label={t("ko", "auth.passwordConfirm")}
+                label={t("auth.passwordConfirm")}
                 value={passwordConfirm}
                 onChangeText={setPasswordConfirm}
                 visible={showPassword}
@@ -138,64 +156,64 @@ export function AuthScreen() {
               />
             ) : null}
 
-            <PrimaryButton label={t("ko", isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
+            <PrimaryButton label={t(isReset ? "auth.sendResetLink" : isSignUp ? "auth.signUp" : "auth.signIn")} onPress={submit} disabled={loading} />
 
-            {error || localError ? <NoticeBanner text={t("ko", error ?? localError!)} icon="close" tone="error" /> : null}
-            {authMessage ? <NoticeBanner text={t("ko", authMessage)} icon="check" /> : null}
+            {mode === "signIn" ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("auth.forgotPassword")}
+                style={styles.textLink}
+                onPress={() => changeMode("resetRequest")}
+              >
+                <Text style={styles.textLinkText}>{t("auth.forgotPassword")}</Text>
+              </Pressable>
+            ) : null}
+            {isReset ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("auth.backToSignIn")}
+                style={styles.textLink}
+                onPress={() => changeMode("signIn")}
+              >
+                <Text style={styles.textLinkText}>{t("auth.backToSignIn")}</Text>
+              </Pressable>
+            ) : null}
 
-            {isSignUp && <Text style={styles.hint}>{t("ko", "auth.signUpHint")}</Text>}
-            {loading ? <Text style={styles.notice}>{t("ko", "auth.wait")}</Text> : null}
+            {error || localError ? <NoticeBanner text={t(error ?? localError!)} icon="close" tone="error" /> : null}
+            {authMessage ? (
+              <NoticeBanner
+                text={t(authMessage)}
+                icon={authMessage === "auth.sessionExpired" ? "close" : authMessage === "auth.checkEmail" || authMessage === "auth.resetEmailSent" ? "shield" : "check"}
+                tone={authMessage === "auth.sessionExpired" ? "error" : authMessage === "auth.checkEmail" || authMessage === "auth.resetEmailSent" ? "progress" : "success"}
+              />
+            ) : null}
+
+            {isSignUp && <Text style={styles.hint}>{t("auth.signUpHint")}</Text>}
+            {loading ? <Text style={styles.notice}>{t("auth.wait")}</Text> : null}
+
+            <View style={styles.policyLinks}>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={t("settings.privacyPolicy")}
+                style={styles.policyLink}
+                onPress={() => openExternalUrl(PRIVACY_POLICY_URL)}
+              >
+                <Text style={styles.policyLinkText}>{t("settings.privacyPolicy")}</Text>
+              </Pressable>
+              <Text style={styles.policyDivider}>·</Text>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={t("settings.support")}
+                style={styles.policyLink}
+                onPress={() => openExternalUrl(SUPPORT_URL)}
+              >
+                <Text style={styles.policyLinkText}>{t("settings.support")}</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-function PasswordField({
-  label,
-  value,
-  onChangeText,
-  visible,
-  onToggleVisibility,
-  textContentType,
-  autoComplete,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  visible: boolean;
-  onToggleVisibility: () => void;
-  textContentType: ComponentProps<typeof TextInput>["textContentType"];
-  autoComplete: ComponentProps<typeof TextInput>["autoComplete"];
-}) {
-  return (
-    <View style={styles.fieldGroup}>
-      <FieldLabel label={label} />
-      <View style={styles.passwordRow}>
-        <TextInput
-          style={[styles.input, styles.passwordInput]}
-          secureTextEntry={!visible}
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType={textContentType}
-          autoComplete={autoComplete}
-          accessibilityLabel={label}
-          placeholder={label}
-          placeholderTextColor={colors.textMuted}
-          value={value}
-          onChangeText={onChangeText}
-        />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("ko", visible ? "auth.hidePassword" : "auth.showPassword")}
-          style={styles.eyeButton}
-          onPress={onToggleVisibility}
-        >
-          <AppIcon name={visible ? "eyeOff" : "eye"} size={iconSize.md} color={colors.textMuted} />
-        </Pressable>
-      </View>
-    </View>
   );
 }
 

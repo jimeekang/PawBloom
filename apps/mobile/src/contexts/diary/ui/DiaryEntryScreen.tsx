@@ -67,7 +67,7 @@ export function DiaryEntryScreen({
   const [timeDirty, setTimeDirty] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [lastAppliedInitialEditingEntryId, setLastAppliedInitialEditingEntryId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string>(t("ko", "diary.localDraft"));
+  const [notice, setNotice] = useState<string>(t("diary.localDraft"));
   const [isDetailPanelOpen, setDetailPanelOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
@@ -90,7 +90,7 @@ export function DiaryEntryScreen({
       return;
     }
     if (!canUpdate) {
-      setNotice(t("ko", "permission.diaryUpdateCareTeamOnly"));
+      setNotice(t("permission.diaryUpdateCareTeamOnly"));
       onInitialEditingEntryConsumed?.();
       return;
     }
@@ -104,14 +104,14 @@ export function DiaryEntryScreen({
   }
   async function saveEntry() {
     if (savingRef.current) return;
-    if (editingEntry && !canUpdate) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
-    if (!editingEntry && !canCreate) { setNotice(t("ko", "permission.diaryUpdateCareTeamOnly")); return; }
-    if (selected === "photo" && savedPhotoCount + photos.length > MAX_DIARY_PHOTOS) { setNotice(t("ko", "diary.photoLimitNotice")); return; }
-    if (!editingEntry && selected === "photo" && savedPhotoCount >= MAX_DIARY_PHOTOS) { setNotice(t("ko", "diary.photoLimitNotice")); return; }
-    if (!editingEntry && selected === "photo" && photos.length === 0) { setNotice(t("ko", "diary.photoRequired")); return; }
+    if (editingEntry && !canUpdate) { setNotice(t("permission.diaryUpdateCareTeamOnly")); return; }
+    if (!editingEntry && !canCreate) { setNotice(t("permission.diaryUpdateCareTeamOnly")); return; }
+    if (selected === "photo" && savedPhotoCount + photos.length > MAX_DIARY_PHOTOS) { setNotice(t("diary.photoLimitNotice")); return; }
+    if (!editingEntry && selected === "photo" && savedPhotoCount >= MAX_DIARY_PHOTOS) { setNotice(t("diary.photoLimitNotice")); return; }
+    if (!editingEntry && selected === "photo" && photos.length === 0) { setNotice(t("diary.photoRequired")); return; }
     const activeDetail = detail.category === selected ? detail : createDetailForCategory(selected, routine);
     const saveTime = resolveDiarySaveTime(occurredTime, Boolean(editingEntry) || timeDirty);
-    if (!saveTime) { setNotice(t("ko", "diary.invalidTime")); return; }
+    if (!saveTime) { setNotice(t("diary.invalidTime")); return; }
     const draftFingerprint = JSON.stringify({ selected, memo, activeDetail, selectedDateKey, saveTime, conditionScore, photos: photos.map((photo) => [photo.uri, photo.fileName, photo.mimeType]) });
     const nextSaveMutation = !editingEntry || selected === "photo" ? resolvePendingDiaryCreateMutation(pendingSaveMutation.current, draftFingerprint, createUuid) : null;
     const clientMutationId = nextSaveMutation?.id;
@@ -133,23 +133,23 @@ export function DiaryEntryScreen({
       if (editingEntry) {
         await onUpdate({ id: editingEntry.id, ...draft, occurredTime: saveTime });
         setEditingEntry(null);
-        setNotice(t("ko", "diary.localDraft"));
+        setNotice(t("diary.localDraft"));
       } else {
         const existingDailyEntry = findEditableDailyStructuredEntry(entries, selected, draft.entryDate ?? selectedDateKey);
         if (existingDailyEntry) {
           if (!canUpdate) {
-            setNotice(t("ko", "permission.diaryUpdateCareTeamOnly"));
+            setNotice(t("permission.diaryUpdateCareTeamOnly"));
             return;
           }
           await onUpdate({ id: existingDailyEntry.id, ...draft, occurredTime: saveTime });
-          setNotice(t("ko", "diary.localDraft"));
+          setNotice(t("diary.localDraft"));
         } else {
           const outcome = await onSave(draft);
-          setNotice(t("ko", outcome === "queued" ? "diary.queuedForSync" : "diary.localDraft"));
+          setNotice(t(outcome === "queued" ? "diary.queuedForSync" : "diary.localDraft"));
         }
       }
     } catch {
-      setNotice(t("ko", editingEntry ? "diary.updateFailed" : "diary.saveFailed"));
+      setNotice(t(editingEntry ? "diary.updateFailed" : "diary.saveFailed"));
       return;
     } finally {
       savingRef.current = false;
@@ -173,12 +173,12 @@ export function DiaryEntryScreen({
     setOccurredTime(normalizeDiaryTimeInput(entry.occurredAt) ?? formatDiaryTime());
     setTimeDirty(false);
     setDetailPanelOpen(true);
-    setNotice(t("ko", "diary.editingNotice"));
+    setNotice(t("diary.editingNotice"));
   }
 
   function editEntry(entry: DiaryEntry) {
     if (!canUpdate) {
-      setNotice(t("ko", "permission.diaryUpdateCareTeamOnly"));
+      setNotice(t("permission.diaryUpdateCareTeamOnly"));
       return;
     }
     loadEditingEntry(entry);
@@ -192,7 +192,7 @@ export function DiaryEntryScreen({
     setTimeDirty(false);
     setDetail(createDetailForCategory(selected, routine));
     setDetailPanelOpen(false);
-    setNotice(t("ko", "diary.localDraft"));
+    setNotice(t("diary.localDraft"));
   }
 
   async function deleteEditingEntry() {
@@ -201,16 +201,16 @@ export function DiaryEntryScreen({
       const deleted = await onDelete(editingEntry);
       if (deleted !== false) cancelEdit();
     } catch {
-      setNotice(t("ko", "diary.deleteFailed"));
+      setNotice(t("diary.deleteFailed"));
     }
   }
 
   return (
     <View style={styles.screen}>
       <DiaryCalendar selectedDateKey={selectedDateKey} filter={filter} onSelectDate={onDateChange} onFilterChange={onFilterChange} />
-      <NoticeBanner text={notice} icon="shield" />
+      <NoticeBanner text={notice} icon="close" tone="error" />
 
-      <Text style={styles.sectionTitle}>{t("ko", "diary.category")}</Text>
+      <Text style={styles.sectionTitle}>{t("diary.category")}</Text>
       <DiaryCategoryPicker categories={categories} selected={selected} disabled={Boolean(editingEntry)} onSelect={selectCategory} />
 
       {isDetailPanelOpen && formState.showsDetail && selected === "condition" ? <DiaryConditionScore value={conditionScore} onChange={setConditionScore} /> : null}
@@ -222,12 +222,12 @@ export function DiaryEntryScreen({
 
       {formState.showsMemo ? (
         <>
-          <Text style={styles.sectionTitle}>{t("ko", "diary.memo")}</Text>
+          <Text style={styles.sectionTitle}>{t("diary.memo")}</Text>
           <View style={styles.memoBox}>
             <TextInput
-              accessibilityLabel={t("ko", "diary.memo")}
+              accessibilityLabel={t("diary.memo")}
               multiline
-              placeholder={t("ko", "diary.memoPlaceholder")}
+              placeholder={t("diary.memoPlaceholder")}
               placeholderTextColor={colors.textSoft}
               value={memo}
               onChangeText={(value) => setMemo(value.slice(0, 500))}
@@ -238,11 +238,11 @@ export function DiaryEntryScreen({
         </>
       ) : null}
 
-      <Text style={styles.sectionTitle}>{t("ko", "diary.timeLabel")}</Text>
-      <TimePickerField accessibilityLabel={t("ko", "diary.timeLabel")} value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
+      <Text style={styles.sectionTitle}>{t("diary.timeLabel")}</Text>
+      <TimePickerField accessibilityLabel={t("diary.timeLabel")} value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
 
       <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
-      <DiaryEntryList entries={entries} title={filter === "day" ? t("ko", "diary.selectedDateEntries") : t("ko", "diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} showEntryDate={filter === "week"} status={listStatus} onRetry={onRetryList} />
+      <DiaryEntryList entries={entries} title={filter === "day" ? t("diary.selectedDateEntries") : t("diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} showEntryDate={filter === "week"} status={listStatus} onRetry={onRetryList} />
     </View>
   );
 }

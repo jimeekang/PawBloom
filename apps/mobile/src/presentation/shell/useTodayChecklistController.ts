@@ -59,7 +59,7 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
       }
     }
     if (isChecklistRecordBlocked({ key, checklist, entries: activeEntries, entryDate: today, pendingKeys: pendingChecklistKeys.current, hasPendingMedicationAgenda: Boolean(pendingMedicationAgendaRow) })) {
-      setNotice(t("ko", "today.checklistAlreadyRecorded"));
+      setNotice(t("today.checklistAlreadyRecorded"));
       return;
     }
     pendingChecklistKeys.current = [...pendingChecklistKeys.current, key];
@@ -97,20 +97,20 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
   }
 
   function confirmChecklistRecord(key: ChecklistKey) {
-    const itemLabel = t("ko", `category.${key === "medication" ? "medication" : key}` as TranslationKey);
+    const itemLabel = t(`category.${key === "medication" ? "medication" : key}` as TranslationKey);
     return confirmPrimaryAction(
       {
-        title: t("ko", "today.checklistConfirmTitle"),
-        message: t("ko", "today.checklistConfirmCopy").replace("{item}", itemLabel),
-        cancelText: t("ko", "today.checklistConfirmCancel"),
-        confirmText: t("ko", "today.checklistConfirmConfirm"),
+        title: t("today.checklistConfirmTitle"),
+        message: t("today.checklistConfirmCopy").replace("{item}", itemLabel),
+        cancelText: t("today.checklistConfirmCancel"),
+        confirmText: t("today.checklistConfirmConfirm"),
       },
       () => true,
     );
   }
 
   function recordLocalChecklistItem(key: ChecklistKey, entryDate: string) {
-    const result = createLocalChecklistRecord({ key, entryDate, activePetId, entries: localEntries, doses: localDoses, activeDoses, checklist, quickMedicationName: t("ko", "care.quickMedicationName") });
+    const result = createLocalChecklistRecord({ key, entryDate, activePetId, entries: localEntries, doses: localDoses, activeDoses, checklist, quickMedicationName: t("care.quickMedicationName") });
     if (!result) return;
     if (result.nextEntries) replaceLocalEntries(result.nextEntries);
     if (result.nextDoses) replaceLocalDoses(result.nextDoses);
@@ -121,7 +121,7 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
   }
 
   async function recordChecklistItem(key: ChecklistKey) {
-    const result = await recordRemoteChecklistItem({ key, activeDoses, quickMedicationName: t("ko", "care.quickMedicationName"), createDiaryEntry: createDiaryEntryRemote, createMedicationDose: createMedicationDoseRemote, updateMedicationDoseStatus: updateMedicationDoseStatusRemote });
+    const result = await recordRemoteChecklistItem({ key, activeDoses, quickMedicationName: t("care.quickMedicationName"), createDiaryEntry: createDiaryEntryRemote, createMedicationDose: createMedicationDoseRemote, updateMedicationDoseStatus: updateMedicationDoseStatusRemote });
     if (key === "medication") medicationUndoRef.current = result.medicationUndo ?? null;
     setNotice(getChecklistSuccessHomeNotice());
     showSaveFeedback(result.feedbackKind);
@@ -148,15 +148,15 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
 
     const resolution = resolveDiaryChecklistUndo(activeEntries, key, entryDate);
     if (resolution.status === "protected") {
-      setNotice(t("ko", "today.checklistProtectedDiary"));
+      setNotice(t("today.checklistProtectedDiary"));
       return;
     }
     if (resolution.status === "unavailable") {
-      setNotice(t("ko", "today.checklistUndoUnavailable"));
+      setNotice(t("today.checklistUndoUnavailable"));
       return;
     }
     if (!canDeleteDiary) {
-      setNotice(t("ko", "permission.diaryDeleteOwnerOnly"));
+      setNotice(t("permission.diaryDeleteOwnerOnly"));
       return;
     }
 
@@ -167,27 +167,27 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
       replaceLocalEntries(nextEntries);
       syncLocalChecklist(nextEntries, localDoses, entryDate);
     }
-    setNotice(t("ko", "today.checklistUndone"));
+    setNotice(t("today.checklistUndone"));
   }
 
   async function undoMedicationChecklistItem(entryDate: string) {
     const undo = medicationUndoRef.current;
     if (!undo) {
-      setNotice(t("ko", "today.checklistProtectedMedication"));
+      setNotice(t("today.checklistProtectedMedication"));
       return;
     }
     const dose = resolveMedicationUndoDose(activeDoses, undo);
     if (!dose) {
       medicationUndoRef.current = null;
-      setNotice(t("ko", "today.checklistUndoUnavailable"));
+      setNotice(t("today.checklistUndoUnavailable"));
       return;
     }
     if (undo.kind === "restore-status" && !canManageCare) {
-      setNotice(t("ko", "permission.careTeamOnly"));
+      setNotice(t("permission.careTeamOnly"));
       return;
     }
     if (undo.kind === "delete-dose" && !canDeleteDose) {
-      setNotice(t("ko", "permission.medicationDeleteOwnerOnly"));
+      setNotice(t("permission.medicationDeleteOwnerOnly"));
       return;
     }
 
@@ -198,14 +198,14 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
       const nextDoses = applyLocalMedicationUndo(localDoses, undo);
       if (!nextDoses) {
         medicationUndoRef.current = null;
-        setNotice(t("ko", "today.checklistUndoUnavailable"));
+        setNotice(t("today.checklistUndoUnavailable"));
         return;
       }
       replaceLocalDoses(nextDoses);
       syncLocalChecklist(localEntries, nextDoses, entryDate);
     }
     medicationUndoRef.current = null;
-    setNotice(t("ko", "today.checklistUndone"));
+    setNotice(t("today.checklistUndone"));
   }
 
   function syncLocalChecklist(nextEntries: DiaryEntry[], nextDoses: DoseRecord[], entryDate: string) {

@@ -1,5 +1,6 @@
 import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
+import { CodedError } from "../../../shared-kernel/appError";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { enqueueOfflineMutation } from "../../sync/application/offlineOutbox";
 import { isRetriableOfflineError } from "../../sync/application/offlineErrorPolicy";
@@ -86,10 +87,10 @@ export function useUpdateDiaryEntry(petId: string | null, userId: string | null 
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: UpdateDiaryEntryInput) => {
-      if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
+      if (!supabase || !petId) throw new CodedError("common.loginRequired");
       if (input.category === "photo") {
-        if (!userId || !input.clientMutationId) throw new Error("사진 수정 식별자를 만들지 못했습니다.");
-        if ((input.photos?.length ?? 0) > 5) throw new Error("하루 사진은 최대 5장까지 저장할 수 있습니다.");
+        if (!userId || !input.clientMutationId) throw new CodedError("diary.photoIdFailed");
+        if ((input.photos?.length ?? 0) > 5) throw new CodedError("diary.photoLimitNotice");
         return mapDiaryRow(await updatePhotoDiaryEntryAtomic({
           client: supabase,
           petId,
@@ -99,7 +100,7 @@ export function useUpdateDiaryEntry(petId: string | null, userId: string | null 
         }));
       }
       const { data, error } = await supabase.from("diary_entries").update(buildDiaryUpdatePayload(input)).eq("id", input.id).eq("pet_id", petId).is("superseded_by", null).select(diaryEntrySelect).single();
-      if (error) throw new Error(error.message);
+      if (error) throw new CodedError("diary.updateFailed", error.message);
       return mapDiaryRow(data as DiaryRowWithMedia);
     },
     onSuccess: (entry) => {
@@ -114,7 +115,7 @@ export function useDeleteDiaryEntry(petId: string | null, userId: string | null 
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      if (!supabase || !petId) throw new Error("로그인이 필요합니다.");
+      if (!supabase || !petId) throw new CodedError("common.loginRequired");
       const deleted = await deleteDiaryEntryAtomic(supabase, petId, id);
       return { id, entry: deleted ? mapDiaryRow(deleted) : null };
     },
@@ -129,15 +130,15 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateDiaryEntryInput) => {
-      if (!supabase || !petId || !userId) throw new Error("로그인이 필요합니다.");
-      if ((input.photos?.length ?? 0) > 5) throw new Error("하루 사진은 최대 5장까지 저장할 수 있습니다.");
+      if (!supabase || !petId || !userId) throw new CodedError("common.loginRequired");
+      if ((input.photos?.length ?? 0) > 5) throw new CodedError("diary.photoLimitNotice");
       const entryDate = input.entryDate ?? getLocalDateKey();
       const clientMutationId = input.clientMutationId ?? createUuid();
       if (input.category === "photo") {
-        if (!input.photos?.length) throw new Error("저장할 사진을 한 장 이상 선택해 주세요.");
+        if (!input.photos?.length) throw new CodedError("diary.photoRequired");
         return { entry: mapDiaryRow(await createPhotoDiaryEntryAtomic({ client: supabase, petId, input: { ...input, entryDate }, entryId: clientMutationId, clientMutationId })), queued: false };
       }
-      if (input.photos?.length) throw new Error("사진은 사진 카테고리에서만 저장할 수 있습니다.");
+      if (input.photos?.length) throw new CodedError("diary.photoCategoryOnly");
       const existingEntry = isStructuredDailyCategory(input.category) ? await fetchExistingDailyStructuredEntry(petId, input.category, entryDate) : null;
       if (existingEntry) {
         if (input.origin === "checklist") return { entry: mapDiaryRow(existingEntry), queued: false };
@@ -186,7 +187,7 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
           await enqueueOfflineMutation(buildDiaryInsertOfflineMutation({ petId, userId, input: input as unknown as Record<string, unknown>, clientMutationId }));
           return { entry: mapQueuedDiaryEntry(payload, clientMutationId), queued: true };
         }
-        throw new Error(error.message);
+        throw new CodedError("diary.saveFailed", error.message);
       }
 
       return { entry: mapDiaryRow({ ...data, media_assets: [] } as DiaryRowWithMedia), queued: false };

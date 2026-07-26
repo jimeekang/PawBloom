@@ -4,7 +4,9 @@ domain: planning
 edit_policy: exclusive
 ---
 
-# 0004 투약·식사 시간 로컬 알림 구현계획
+# 0004 투약·식사 시간 로컬 알림 구현계획 — **완료·아카이브(2026-07-24)**
+
+> 구현 완료 실측(0006 감사): App.tsx 표시 부트스트랩 + expo-notifications 플러그인, mealReminderNotifications/reminderScheduling 스케줄링, 식사·투약 On/Off 토글(0006 B7/B9). 체크박스는 사후 검증으로 대체한다.
 
 > **에이전트 워커(codex-high):** REQUIRED SUB-SKILL — `superpowers:subagent-driven-development`(권장) 또는 `superpowers:executing-plans`로 task-by-task 구현. 단계는 `- [ ]` 체크박스로 추적한다.
 

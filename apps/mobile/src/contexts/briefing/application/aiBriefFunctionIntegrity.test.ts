@@ -4,7 +4,7 @@ declare const process: { cwd(): string };
 const { readFileSync } = require("node:fs") as { readFileSync(path: string, encoding: "utf8"): string };
 const { AiBriefRequestError, parseAiBriefRequest } = require("../../../../../../supabase/functions/generate-ai-brief/contract.ts") as {
   AiBriefRequestError: new (message: string) => Error;
-  parseAiBriefRequest(input: unknown): { petId: string; rangeDays: 3 | 7 | 14 };
+  parseAiBriefRequest(input: unknown): { petId: string; rangeDays: 3 | 7 | 14; language: "en" | "ko" };
 };
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -25,6 +25,21 @@ for (const rangeDays of [undefined, null, 0, 2, 4, 8, 13, 15, 3.5, "3", "7", tru
     thrown = error;
   }
   assert(thrown instanceof AiBriefRequestError, `the brief request parser must reject rangeDays=${String(rangeDays)}`);
+}
+
+assert(parseAiBriefRequest({ petId: "pet-1", rangeDays: 7 }).language === "en", "older clients without a language must keep English briefs");
+for (const language of ["en", "ko"] as const) {
+  assert(parseAiBriefRequest({ petId: "pet-1", rangeDays: 7, language }).language === language, `the brief request parser must accept language=${language}`);
+}
+
+for (const language of ["kr", "EN", "Ko", "", "ja", 1, true, {}, [], null]) {
+  let thrown: unknown;
+  try {
+    parseAiBriefRequest({ petId: "pet-1", rangeDays: 7, language });
+  } catch (error) {
+    thrown = error;
+  }
+  assert(thrown instanceof AiBriefRequestError, `the brief request parser must reject language=${String(language)}`);
 }
 
 for (const input of [null, undefined, [], {}, { petId: "", rangeDays: 7 }, { petId: "   ", rangeDays: 7 }]) {
@@ -52,3 +67,21 @@ for (const required of [
 }
 
 assert(!source.includes("const [{ data: entries }, { data: doses }]"), "source-query errors must not be discarded while destructuring data");
+
+// C7: the edge function must render language-branched copy, and every
+// disclaimer it can emit must pass the client-side safety validator —
+// otherwise generated briefs would be rejected outright at the contract.
+const { hasRequiredDisclaimer } = require("../domain/aiBrief.ts") as {
+  hasRequiredDisclaimer(brief: { disclaimer: string } & Record<string, unknown>): boolean;
+};
+
+for (const required of ["const copy = briefCopy[body.language]", "disclaimer: copy.disclaimer"]) {
+  assert(source.includes(required), `generate-ai-brief must build the payload from language-branched copy: ${required}`);
+}
+
+const disclaimers = [...source.matchAll(/disclaimer: "([^"]+)"/g)].map((match) => match[1]);
+assert(disclaimers.length >= 2, "generate-ai-brief must define a disclaimer per supported language");
+for (const disclaimer of disclaimers) {
+  const brief = { id: "b", petId: "p", rangeDays: 7 as const, highlights: ["h"], questionsForVet: [], disclaimer };
+  assert(hasRequiredDisclaimer(brief), `edge-function disclaimer must satisfy the client validator: ${disclaimer}`);
+}

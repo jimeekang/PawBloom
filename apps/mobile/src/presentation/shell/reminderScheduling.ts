@@ -24,7 +24,7 @@ export function refreshMedicationReminders({ userId, petId, petName, schedules, 
     userId,
     petId,
     petName,
-    reminderTitle: t("ko", "care.reminderTitle").replace("{petName}", petName),
+    reminderTitle: t("care.reminderTitle").replace("{petName}", petName),
     schedules,
     previousScheduleIds,
     fromDate: getLocalDateKey(),
@@ -41,34 +41,35 @@ export function refreshMealReminders({ userId, petId, petName, routine, requestP
     userId,
     petId,
     petName,
-    title: t("ko", "routine.mealReminderTitle").replace("{petName}", petName),
+    title: t("routine.mealReminderTitle").replace("{petName}", petName),
     slotLabels: {
-      breakfast: t("ko", "routine.breakfast"),
-      lunch: t("ko", "routine.lunch"),
-      dinner: t("ko", "routine.dinner"),
-      snack: t("ko", "diary.meal.snack"),
+      breakfast: t("routine.breakfast"),
+      lunch: t("routine.lunch"),
+      dinner: t("routine.dinner"),
+      snack: t("diary.meal.snack"),
     },
     routine,
     requestPermission,
   });
 }
 
-export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, language, schedules, activeRoutine }: ReminderPetContext & {
+export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, language, schedules, activeRoutine, medicationRemindersEnabled = true }: ReminderPetContext & {
   databaseMode: boolean;
   language: Language;
   schedules: CareMedicationSchedule[];
   activeRoutine: PetRoutine;
+  medicationRemindersEnabled?: boolean;
 }) {
   const reminderScheduleKey = schedules.map((schedule) => `${schedule.id}:${schedule.localTime}:${schedule.startsOn}:${schedule.endsOn ?? ""}:${schedule.recurrenceIntervalDays}`).join("|");
   const mealReminderScheduleKey = [activeRoutine.food.mealRemindersEnabled, ...(["breakfast", "lunch", "dinner", "snack"] as RoutineMealSlot[]).map((slot) => `${slot}:${activeRoutine.food.meals[slot]?.localTime ?? ""}`)].join("|");
 
   useEffect(() => {
-    if (!databaseMode || schedules.length === 0) return;
+    if (!databaseMode || schedules.length === 0 || !medicationRemindersEnabled) return;
     const refresh = () => void refreshMedicationReminders({ userId, petId, petName, schedules, requestPermission: false }).catch(() => undefined);
     refresh();
     const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
     return () => subscription.remove();
-  }, [petId, petName, databaseMode, language, reminderScheduleKey, userId]);
+  }, [petId, petName, databaseMode, language, medicationRemindersEnabled, reminderScheduleKey, userId]);
 
   useEffect(() => {
     if (!databaseMode || !userId) return;

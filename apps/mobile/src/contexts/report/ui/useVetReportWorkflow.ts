@@ -67,11 +67,11 @@ export function useVetReportWorkflow({ petId, userId, enabled, hasRecords, canGe
       if (activeUserIdRef.current !== userId) throw new Error("The active account changed before sharing.");
       const result = await Share.share(
         {
-          title: t("ko", "reports.shareDialogTitle"),
-          message: t("ko", "reports.shareMessage").replace("{url}", shareableReport.shareUrl),
+          title: t("reports.shareDialogTitle"),
+          message: t("reports.shareMessage").replace("{url}", shareableReport.shareUrl),
           url: shareableReport.shareUrl,
         },
-        { dialogTitle: t("ko", "reports.shareDialogTitle") },
+        { dialogTitle: t("reports.shareDialogTitle") },
       );
       if (result.action !== Share.sharedAction) return { report: shareableReport, shared: false };
       return { report: { ...shareableReport, status: "shared" as const }, shared: true };
@@ -209,6 +209,7 @@ export function useVetReportWorkflow({ petId, userId, enabled, hasRecords, canGe
     share,
     revoke,
     reset,
+    retryLoad: () => void reportStateQuery.refetch(),
   };
 }
 

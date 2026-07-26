@@ -37,8 +37,8 @@ await writeLanguagePreference("en", storage);
 if (values.get(LANGUAGE_STORAGE_KEY) !== "en") throw new Error("language changes must persist");
 
 setRuntimeLanguage("en");
-if (t("ko", "tabs.settings") !== "Settings") throw new Error("runtime language must update hard-coded legacy translation calls");
+if (t("tabs.settings") !== "Settings") throw new Error("the runtime language must drive every translation call");
 setRuntimeLanguage("ko");
-if (t("en", "tabs.settings") !== "설정") throw new Error("runtime Korean must update the full app tree");
+if (t("tabs.settings") !== "설정") throw new Error("runtime Korean must update the full app tree");
 setRuntimeLanguage(null);
-if (t("en", "tabs.settings") !== "Settings") throw new Error("pure translation calls must retain explicit-language behavior outside the provider");
+if (t("tabs.settings") !== "설정") throw new Error("outside the provider the Korean default must apply");

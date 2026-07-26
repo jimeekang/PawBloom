@@ -41,7 +41,7 @@ export async function saveMedicationDoseEdit({
       args.setNotice("");
       args.onSaved("medication");
     } catch (error) {
-      args.setNotice(t("ko", "care.quickDoseUpdateFailed"), "error");
+      args.setNotice(t("care.quickDoseUpdateFailed"), "error");
       throw error;
     }
     return;
@@ -62,14 +62,14 @@ export function confirmAndDeleteMedicationDose({
   dose: DoseRecord;
   deleteMedicationDose: DeleteMedicationDoseMutation;
 }) {
-  return confirmDestructiveAction({ title: t("ko", "care.quickDoseDeleteTitle"), message: t("ko", "care.quickDoseDeleteCopy"), cancelText: t("ko", "care.quickDoseDeleteCancel"), confirmText: t("ko", "care.quickDoseDeleteConfirm") }, async () => {
+  return confirmDestructiveAction({ title: t("care.quickDoseDeleteTitle"), message: t("care.quickDoseDeleteCopy"), cancelText: t("care.quickDoseDeleteCancel"), confirmText: t("care.quickDoseDeleteConfirm") }, async () => {
     if (args.databaseMode) {
       try {
         await deleteMedicationDose.mutateAsync(dose.id);
-        args.setNotice(t("ko", "today.medicationDeletedRemote"));
+        args.setNotice(t("today.medicationDeletedRemote"));
         return true;
       } catch {
-        args.setNotice(t("ko", "care.quickDoseDeleteFailed"), "error");
+        args.setNotice(t("care.quickDoseDeleteFailed"), "error");
         return false;
       }
     }
@@ -77,7 +77,7 @@ export function confirmAndDeleteMedicationDose({
     const nextDoses = args.doses.filter((item) => item.id !== dose.id);
     args.setDoses(nextDoses);
     args.onLocalDosesChanged(nextDoses);
-    args.setNotice(t("ko", "today.medicationDeleted"));
+    args.setNotice(t("today.medicationDeleted"));
     return true;
   });
 }
@@ -102,7 +102,7 @@ export function saveMedicationAgendaStatus({
 }): Promise<void> | void {
   if (row.doseId) {
     if (databaseMode) {
-      return updateMedicationDoseStatus.mutateAsync({ id: row.doseId, status }).then(() => { setNotice(""); onSaved("medicationStatus"); }).catch(() => setNotice(t("ko", "care.quickDoseSaveFailed"), "error"));
+      return updateMedicationDoseStatus.mutateAsync({ id: row.doseId, status }).then(() => { setNotice(""); onSaved("medicationStatus"); }).catch(() => setNotice(t("care.quickDoseSaveFailed"), "error"));
     }
     const nextDoses = doses.map((dose) => (dose.id === row.doseId ? { ...dose, status, recordedAt: buildDoseRecordedAt(status) ?? undefined } : dose));
     setDoses(nextDoses);

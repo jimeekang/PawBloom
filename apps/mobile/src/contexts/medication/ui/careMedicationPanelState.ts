@@ -53,9 +53,9 @@ export function doseStatusUpdateForEdit(currentStatus: DoseStatus, selectedStatu
 }
 
 export function careStatusActionLabel(status: "completed" | "skipped" | "partial") {
-  if (status === "completed") return t("ko", "care.status.given");
-  if (status === "partial") return t("ko", "care.status.partialAction");
-  return t("ko", "care.status.notGiven");
+  if (status === "completed") return t("care.status.given");
+  if (status === "partial") return t("care.status.partialAction");
+  return t("care.status.notGiven");
 }
 
 export function shouldShowTemporaryMedicationForm(expanded: boolean) {

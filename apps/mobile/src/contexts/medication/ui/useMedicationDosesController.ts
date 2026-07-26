@@ -34,6 +34,10 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
   const [doses, setDoses] = useState<DoseRecord[]>(() => buildSampleDoses(fallbackPetId, language));
 
   const activeDoses = useMemo(() => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId)), [activePetId, databaseMode, doses, dosesQuery.data]);
+  const todayDosesStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : dosesQuery.isError ? "error" : dosesQuery.isLoading ? "loading" : "ready";
+  function refetchTodayDoses() {
+    void dosesQuery.refetch();
+  }
   const todayDoseDate = getLocalDateKey();
   const medicationAgenda = useMemo(() => createTodayMedicationAgendaRows({ schedules, doses: activeDoses, doseDate: todayDoseDate }), [activeDoses, schedules, todayDoseDate]);
 
@@ -43,19 +47,19 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
 
   async function addMedicationDose(input: QuickMedicationDoseInput) {
     if (!databaseMode) {
-      setDoses((current) => [createLocalDoseRecord(activePetId, input, t("ko", "care.quickMedicationName")), ...current]);
+      setDoses((current) => [createLocalDoseRecord(activePetId, input, t("care.quickMedicationName")), ...current]);
       onLocalDoseSaved(input);
-      onNotice(t("ko", "care.medicationAdded"));
+      onNotice(t("care.medicationAdded"));
       onSaved("medication");
       return;
     }
 
     try {
       await createMedicationDose.mutateAsync(input);
-      onNotice(t("ko", "care.medicationAdded"));
+      onNotice(t("care.medicationAdded"));
       onSaved("medication");
     } catch (error) {
-      const message = t("ko", isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
+      const message = t(isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
       onNotice(message, "error");
       throw new Error(message);
     }
@@ -78,6 +82,8 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
     replaceLocalDoses: setDoses,
     activeDoses,
     medicationAgenda,
+    todayDosesStatus,
+    refetchTodayDoses,
     addMedicationDose,
     saveAgendaStatus,
     updateDoseRecord,

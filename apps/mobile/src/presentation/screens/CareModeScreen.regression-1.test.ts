@@ -18,6 +18,6 @@ if (source.includes("CareReportPanel") || source.includes('"care.segment.reports
   throw new Error("Care must not keep a second, static report workflow");
 }
 
-if (!source.includes('label={t("ko", "care.generateVetReport")}') || !source.includes("onPress={onGenerateReport}")) {
+if (!source.includes('label={t("care.generateVetReport")}') || !source.includes("onPress={onGenerateReport}")) {
   throw new Error("Care must keep one explicit handoff to the real Reports tab");
 }

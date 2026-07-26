@@ -36,6 +36,8 @@ export const colors = {
   inactive: "#D4D0CB",
   shadow: "#211B16",
   heroScrim: "rgba(0, 0, 0, 0.32)",
+  scrimStrong: "rgba(0, 0, 0, 0.92)",
+  scrimSoft: "rgba(0, 0, 0, 0.55)",
 } as const;
 
 export const spacing = {

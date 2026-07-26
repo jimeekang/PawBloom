@@ -10,6 +10,7 @@ import { loadPetRows } from "./authContextQueries";
 import type { IdentityMessageKey } from "./identityMessage";
 import { useAuthActions } from "./useAuthActions";
 import { useAuthSessionSync } from "./useAuthSessionSync";
+import { usePasswordRecoveryLink } from "./passwordRecoveryLink";
 import { clearAccountScopedQueryCache, isCurrentAccountWork } from "./authAccountBoundary";
 import { cancelMedicationRemindersForAccount, setActiveMedicationReminderAccount } from "../../medication/application/medicationReminderNotifications";
 import { cancelMealRemindersForAccount, setActiveMealReminderAccount } from "../../routine/application/mealReminderNotifications";
@@ -25,6 +26,7 @@ export function useAuthState() {
   const [petLoadStatus, setPetLoadStatus] = useState<AppAuthState["petLoadStatus"]>("idle");
   const [error, setError] = useState<IdentityMessageKey | null>(null);
   const [authMessage, setAuthMessage] = useState<IdentityMessageKey | null>(null);
+  const [passwordRecoveryActive, setPasswordRecoveryActive] = useState(false);
   const activeUserIdRef = useRef<string | null>(null);
   const explicitSignOutRef = useRef(false);
   const petLoadRevisionRef = useRef(0);
@@ -36,6 +38,13 @@ export function useAuthState() {
   const clearMessages = useCallback(() => {
     setError(null);
     setAuthMessage(null);
+  }, []);
+
+  // Set after sign-out completes so it wins over any message the SIGNED_OUT
+  // auth callback wrote while the session was being torn down.
+  const announceAccountDeleted = useCallback(() => {
+    setError(null);
+    setAuthMessage("auth.accountDeleted");
   }, []);
 
   const loadPets = useCallback(async (userId: string, blocking = true) => {
@@ -98,6 +107,9 @@ export function useAuthState() {
     if (changed) {
       petLoadRevisionRef.current += 1;
       petListReadyRef.current = false;
+      // Any account change (sign-out or switch) invalidates a pending recovery
+      // gate; a fresh recovery link re-activates it after its own setSession.
+      setPasswordRecoveryActive(false);
       setActiveMedicationReminderAccount(nextUserId);
       setActiveMealReminderAccount(nextUserId);
       if (previousUserId) {
@@ -110,8 +122,17 @@ export function useAuthState() {
     }
     return changed;
   }, [queryClient]);
-  const handleSignedOut = useCallback(() => {
+  // The explicit-sign-out flag is raised before supabase.auth.signOut() runs
+  // (its SIGNED_OUT callback fires inside the await) and lowered again when
+  // the call fails, so a later real expiry still notifies. The session sync
+  // consumes and lowers the flag after each signed-out event.
+  const beginExplicitSignOut = useCallback(() => {
     explicitSignOutRef.current = true;
+  }, []);
+  const abortExplicitSignOut = useCallback(() => {
+    explicitSignOutRef.current = false;
+  }, []);
+  const handleSignedOut = useCallback(() => {
     updateAccountBoundary(null);
   }, [updateAccountBoundary]);
 
@@ -130,9 +151,15 @@ export function useAuthState() {
 
   usePendingMediaCleanupRetry(user?.id ?? null);
 
-  const { signIn, signUp, signOut } = useAuthActions({
+  const beginPasswordRecovery = useCallback(() => setPasswordRecoveryActive(true), []);
+  const endPasswordRecovery = useCallback(() => setPasswordRecoveryActive(false), []);
+  usePasswordRecoveryLink({ activate: beginPasswordRecovery, setError });
+
+  const { signIn, signUp, signOut, requestPasswordReset, updatePassword } = useAuthActions({
     clearMessages,
     onSignedOut: handleSignedOut,
+    onSignOutStarted: beginExplicitSignOut,
+    onSignOutAborted: abortExplicitSignOut,
     setLoading: setAuthLoading,
     setSession,
     setUser,
@@ -181,9 +208,13 @@ export function useAuthState() {
     petLoadStatus,
     error,
     authMessage,
+    passwordRecoveryActive,
     signIn,
     signUp,
     signOut,
+    requestPasswordReset,
+    updatePassword,
+    cancelPasswordRecovery: endPasswordRecovery,
     createPet,
     updatePet,
     deletePet,
@@ -191,5 +222,6 @@ export function useAuthState() {
     selectNextPet,
     retryPetLoad,
     resetMessage: clearMessages,
+    announceAccountDeleted,
   } satisfies AppAuthState;
 }

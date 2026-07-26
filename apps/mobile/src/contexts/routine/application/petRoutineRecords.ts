@@ -4,6 +4,7 @@ import type { Database, Json } from "../../../shared-kernel/supabase/database.ty
 import type { Species } from "../../pet/domain/pet";
 import type { PetRoutine, PetRoutineInput } from "../domain/petRoutine";
 import { createDefaultPetRoutine } from "./petRoutineDefaults";
+import { CodedError } from "../../../shared-kernel/appError";
 
 export { createDefaultPetRoutine };
 
@@ -22,7 +23,7 @@ export function usePetRoutine(petId: string | null, species: Species = "dog", us
     queryFn: async () => {
       if (!supabase || !petId) return null;
       const { data, error } = await supabase.from("pet_routines").select("id,pet_id,routine,created_by,created_at,updated_at").eq("pet_id", petId).maybeSingle();
-      if (error) throw new Error(error.message);
+      if (error) throw new CodedError("routine.saveFailed", error.message);
       return data ? mapRoutineRow(data, species) : createDefaultPetRoutine(petId, species);
     },
   });
@@ -33,7 +34,7 @@ export function useUpsertPetRoutine(petId: string | null, userId: string | null,
   return useMutation({
     mutationFn: async (input: PetRoutineInput) => {
       const client = supabase;
-      if (!client || !petId || !userId) throw new Error("로그인이 필요합니다.");
+      if (!client || !petId || !userId) throw new CodedError("common.loginRequired");
       const updatedAt = new Date().toISOString();
       const updatePayload: RoutineUpdate = { routine: input as unknown as Json, updated_at: updatedAt };
       const updateExisting = () => client
@@ -44,7 +45,7 @@ export function useUpsertPetRoutine(petId: string | null, userId: string | null,
         .maybeSingle();
 
       const updated = await updateExisting();
-      if (updated.error) throw new Error(updated.error.message);
+      if (updated.error) throw new CodedError("routine.saveFailed", updated.error.message);
       if (updated.data) return mapRoutineRow(updated.data, species);
 
       const insertPayload: RoutineInsert = {
@@ -55,13 +56,13 @@ export function useUpsertPetRoutine(petId: string | null, userId: string | null,
       };
       const inserted = await client.from("pet_routines").insert(insertPayload).select().single();
       if (!inserted.error) return mapRoutineRow(inserted.data, species);
-      if (inserted.error.code !== "23505") throw new Error(inserted.error.message);
+      if (inserted.error.code !== "23505") throw new CodedError("routine.saveFailed", inserted.error.message);
 
       // Another device can create the one-per-pet row between our update and
       // insert. Retry only the mutable columns; creator attribution stays fixed.
       const racedUpdate = await updateExisting();
       if (racedUpdate.error || !racedUpdate.data) {
-        throw new Error(racedUpdate.error?.message ?? "루틴을 저장하지 못했습니다.");
+        throw new CodedError("routine.saveFailed", racedUpdate.error?.message);
       }
       return mapRoutineRow(racedUpdate.data, species);
     },

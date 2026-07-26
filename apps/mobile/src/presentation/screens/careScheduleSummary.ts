@@ -7,7 +7,7 @@ export function schedulePeriodBadge(schedule: Pick<CareMedicationSchedule, "ends
   if (!schedule.endsOn) return null;
   const match = schedule.endsOn.match(/^\d{4}-(\d{2})-(\d{2})/);
   if (!match) return null;
-  return t("ko", "care.scheduleUntil").replace("{date}", `${Number(match[1])}/${Number(match[2])}`);
+  return t("care.scheduleUntil").replace("{date}", `${Number(match[1])}/${Number(match[2])}`);
 }
 
 export function partitionCareSchedules<S>(schedules: S[], expanded: boolean): { visible: S[]; hiddenCount: number } {

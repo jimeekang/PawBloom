@@ -31,17 +31,17 @@ export function CareMedicationAddCard({
           value={scope}
           onChange={setScope}
           items={[
-            { label: t("ko", "care.addScope.today"), value: "today" },
-            { label: t("ko", "care.addScope.short"), value: "short" },
-            { label: t("ko", "care.addScope.daily"), value: "daily" },
+            { label: t("care.addScope.today"), value: "today" },
+            { label: t("care.addScope.short"), value: "short" },
+            { label: t("care.addScope.daily"), value: "daily" },
           ]}
         />
         {scope === "today" ? <QuickMedicationForm onSave={onAddDose} /> : null}
         {scope === "short" ? <ShortTermMedicationForm key={petId} onSave={onSaveCareSetup} onSaved={onSaved} /> : null}
         {scope === "daily" ? (
           <View style={styles.dailyBox}>
-            <Text style={styles.dailyHint}>{t("ko", "care.addDailyHint")}</Text>
-            <SecondaryButton label={t("ko", "care.addDailyManage")} onPress={onOpenProfileCare} />
+            <Text style={styles.dailyHint}>{t("care.addDailyHint")}</Text>
+            <SecondaryButton label={t("care.addDailyManage")} onPress={onOpenProfileCare} />
           </View>
         ) : null}
       </View>

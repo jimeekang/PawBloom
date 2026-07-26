@@ -19,12 +19,18 @@ export const styles = StyleSheet.create({
     ...type.body,
     color: colors.text,
   },
+  flex: {
+    flex: 1,
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
+    gap: spacing.sm,
+  },
+  cardBody: {
     gap: spacing.sm,
   },
   sectionTitle: {
@@ -73,7 +79,7 @@ export const styles = StyleSheet.create({
     fontWeight: font.weight.semibold,
   },
   speciesPill: {
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
@@ -131,22 +137,6 @@ export const styles = StyleSheet.create({
     ...type.bodyStrong,
     color: colors.text,
     flex: 1,
-  },
-  dangerButton: {
-    minHeight: layout.buttonHeight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.dangerBorder,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  dangerButtonText: {
-    ...type.bodyStrong,
-    color: colors.danger,
   },
   actionRow: {
     marginTop: spacing.xs,

@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppIcon } from "./iconography";
 import { colors, font, iconSize, layout, radius, spacing, type } from "./tokens";
-import { formatDateValue, parseDateValue } from "./DatePickerField.logic";
+import { useLanguage } from "../i18n/languageContext";
+import { formatDateDisplay, formatDateValue, parseDateValue } from "./DatePickerField.logic";
 
 type Props = {
   value?: string;
@@ -16,8 +17,9 @@ type Props = {
 
 export function DatePickerField({ value, onChange, placeholder, accessibilityLabel = placeholder, allowClear = false, clearLabel = "Clear" }: Props) {
   const [open, setOpen] = useState(false);
+  const { language } = useLanguage();
   const selectedDate = parseDateValue(value);
-  const displayValue = value || placeholder;
+  const displayValue = value ? formatDateDisplay(value, language) : placeholder;
 
   function handleValueChange(_event: DateTimePickerChangeEvent, date?: Date) {
     if (Platform.OS !== "ios") setOpen(false);
@@ -34,7 +36,7 @@ export function DatePickerField({ value, onChange, placeholder, accessibilityLab
         </View>
         <DateTimePicker accessibilityLabel={accessibilityLabel} value={selectedDate} mode="date" display="compact" onValueChange={handleValueChange} />
         {allowClear && value ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => onChange("")} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} style={styles.clearInline} onPress={() => onChange("")} hitSlop={8}>
             <Text style={styles.clearText}>{clearLabel}</Text>
           </Pressable>
         ) : null}
@@ -106,8 +108,13 @@ const styles = StyleSheet.create({
     color: colors.textSoft,
     fontWeight: font.weight.regular,
   },
+  clearInline: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
   clearButton: {
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,

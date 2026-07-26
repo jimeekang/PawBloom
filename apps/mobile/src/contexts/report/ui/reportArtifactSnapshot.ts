@@ -1,5 +1,6 @@
 import type { VetReportPayload } from "../application/vetReportContract";
-import type { ConditionTrendDirection } from "../application/reportDraftRecords";
+import type { ConditionTrendDirection, ReportTimelineItem } from "../application/reportDraftRecords";
+import { t } from "../../../i18n/translations";
 
 export type ReportArtifactSnapshot = {
   hasRecords: boolean;
@@ -14,7 +15,7 @@ export type ReportArtifactSnapshot = {
     previousScore?: 1 | 2 | 3 | 4 | 5;
   };
   petDetails: string;
-  timelineItems: string[];
+  timelineItems: ReportTimelineItem[];
 };
 
 export function createReportArtifactSnapshot(payload: VetReportPayload): ReportArtifactSnapshot {
@@ -43,34 +44,58 @@ export function createReportArtifactSnapshot(payload: VetReportPayload): ReportA
   };
 }
 
-function createTimelineItems(payload: VetReportPayload) {
+// Emits the same neutral ReportTimelineItem shape as the pre-generation draft
+// summary, so both timelines render through reportDraftDisplay (0006 C4).
+function createTimelineItems(payload: VetReportPayload): ReportTimelineItem[] {
   const entries = payload.entries.map((entry) => ({
     sortKey: entry.occurredAt,
-    text: `${entry.occurredAt} · ${entry.category} · ${entry.summary} · condition score: ${entry.conditionScore ?? "none"}`,
+    item: {
+      kind: "diary" as const,
+      ...splitIsoDateTime(entry.occurredAt),
+      category: entry.category,
+      summary: entry.summary,
+      conditionScore: entry.conditionScore ?? undefined,
+    },
   }));
   const doses = payload.medicationDoses.map((dose) => ({
     sortKey: dose.scheduledAt,
-    text: [
-      `${dose.scheduledAt} · ${dose.medicationName} · ${dose.status}`,
-      dose.dosageLabel ? `prescribed: ${dose.dosageLabel}` : "",
-      dose.administeredAmount ? `given: ${dose.administeredAmount}` : "",
-      dose.reactionNote ? `reaction: ${dose.reactionNote}` : "",
-    ].filter(Boolean).join(" · "),
+    item: {
+      kind: "medication" as const,
+      ...splitIsoDateTime(dose.scheduledAt),
+      medicationName: dose.medicationName,
+      status: dose.status,
+      dosageLabel: dose.dosageLabel ?? undefined,
+      administeredAmount: dose.administeredAmount ?? undefined,
+      reactionNote: dose.reactionNote ?? undefined,
+    },
   }));
 
   return [...entries, ...doses]
     .sort((left, right) => right.sortKey.localeCompare(left.sortKey))
-    .map((item) => item.text);
+    .map(({ item }) => item);
+}
+
+function splitIsoDateTime(value: string): { dateKey?: string; time: string } {
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  if (match && match[1] && match[2]) return { dateKey: match[1], time: match[2] };
+  return { time: value };
 }
 
 function formatPetDetails(payload: VetReportPayload) {
-  if (!payload.pet) return "pet: null";
+  if (!payload.pet) return t("reports.notRecorded");
+  const notRecorded = t("reports.notRecorded");
   return [
-    `name: ${payload.pet.name}`,
-    `species: ${payload.pet.species}`,
-    `breed: ${payload.pet.breed ?? "null"}`,
-    `weight_kg: ${payload.pet.weightKg ?? "null"}`,
+    `${t("pet.nameLabel")}: ${payload.pet.name}`,
+    `${t("pet.speciesLabel")}: ${speciesLabel(payload.pet.species)}`,
+    `${t("pet.breedLabel")}: ${payload.pet.breed ?? notRecorded}`,
+    `${t("reports.petWeight")}: ${payload.pet.weightKg != null ? `${payload.pet.weightKg}kg` : notRecorded}`,
   ].join(" · ");
+}
+
+function speciesLabel(species: string) {
+  if (species === "dog") return t("pet.speciesDog");
+  if (species === "cat") return t("pet.speciesCat");
+  return species || t("pet.speciesOther");
 }
 
 function isConditionScore(value: number | null): value is 1 | 2 | 3 | 4 | 5 {

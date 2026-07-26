@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../../design-system/components";
+import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
@@ -23,6 +23,7 @@ export function PetMembersCard({
   entitlement,
   entitlementLoading,
   entitlementFailed,
+  onRetryEntitlement,
 }: {
   pet: PetProfile;
   configured: boolean;
@@ -30,6 +31,7 @@ export function PetMembersCard({
   entitlement: Entitlement | null;
   entitlementLoading: boolean;
   entitlementFailed: boolean;
+  onRetryEntitlement?: () => void;
 }) {
   const owner = pet.role === "owner";
   const membersQuery = usePetMembers(pet.id, userId, configured && owner);
@@ -40,7 +42,7 @@ export function PetMembersCard({
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
   const previewMembers: PetMember[] = [{
     membershipId: "preview-owner",
-    email: t("ko", "settings.membersPreviewOwner"),
+    email: t("settings.membersPreviewOwner"),
     role: "owner",
     status: "active",
     startsAt: null,
@@ -67,10 +69,10 @@ export function PetMembersCard({
     setNoticeKey(null);
     setErrorKey(null);
     await confirmDestructiveAction({
-      title: t("ko", "settings.membersRemoveTitle"),
-      message: t("ko", "settings.membersRemoveCopy").replace("{email}", member.email || t("ko", "settings.membersUnknown")),
-      cancelText: t("ko", "settings.membersRemoveCancel"),
-      confirmText: t("ko", "settings.membersRemoveConfirm"),
+      title: t("settings.membersRemoveTitle"),
+      message: t("settings.membersRemoveCopy").replace("{email}", member.email || t("settings.membersUnknown")),
+      cancelText: t("settings.membersRemoveCancel"),
+      confirmText: t("settings.membersRemoveConfirm"),
     }, async () => {
       try {
         await removeMutation.mutateAsync(member.membershipId);
@@ -89,41 +91,42 @@ export function PetMembersCard({
         <View style={styles.titleRow}>
           <AppIcon name="pet" size={iconSize.md} color={colors.orangeDeep} />
           <View style={styles.titleCopy}>
-            <Text style={styles.title}>{t("ko", "settings.membersTitle")}</Text>
-            <Text style={styles.copy}>{t("ko", "settings.membersCopy").replace("{petName}", pet.name)}</Text>
+            <Text style={styles.title}>{t("settings.membersTitle")}</Text>
+            <Text style={styles.copy}>{t("settings.membersCopy").replace("{petName}", pet.name)}</Text>
           </View>
         </View>
 
-        {!owner ? <NoticeBanner text={t("ko", "settings.membersOwnerOnly")} icon="shield" /> : null}
-        {owner && membersQuery.isLoading ? <Text style={styles.copy}>{t("ko", "settings.membersLoading")}</Text> : null}
-        {owner && membersQuery.isError ? <NoticeBanner text={t("ko", "settings.membersListFailed")} icon="close" tone="error" /> : null}
+        {!owner ? <NoticeBanner text={t("settings.membersOwnerOnly")} icon="shield" /> : null}
+        {owner && membersQuery.isLoading ? <Text style={styles.copy}>{t("settings.membersLoading")}</Text> : null}
+        {owner && membersQuery.isError ? <NoticeBanner text={t("settings.membersListFailed")} icon="close" tone="error" /> : null}
         {owner ? members.map((member) => <MemberRow key={member.membershipId} member={member} busy={busy} onRemove={remove} />) : null}
 
-        {owner && entitlementLoading ? <NoticeBanner text={t("ko", "settings.planLoading")} icon="lock" /> : null}
-        {owner && entitlementFailed ? <NoticeBanner text={t("ko", "settings.planLoadFailed")} icon="close" tone="error" /> : null}
-        {owner && entitlement && !entitlement.familySharingEnabled ? <NoticeBanner text={t("ko", "settings.membersFamilyLocked")} icon="lock" /> : null}
-        {owner && entitlement?.familySharingEnabled && !configured ? <NoticeBanner text={t("ko", "settings.membersAccountRequired")} icon="shield" /> : null}
+        {owner && entitlementLoading ? <NoticeBanner text={t("settings.planLoading")} icon="lock" /> : null}
+        {owner && entitlementFailed ? <NoticeBanner text={t("settings.planLoadFailed")} icon="close" tone="error" /> : null}
+        {owner && entitlementFailed && onRetryEntitlement ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryEntitlement} /> : null}
+        {owner && entitlement && !entitlement.familySharingEnabled ? <NoticeBanner text={t("settings.membersFamilyLocked")} icon="lock" /> : null}
+        {owner && entitlement?.familySharingEnabled && !configured ? <NoticeBanner text={t("settings.membersAccountRequired")} icon="shield" /> : null}
         {owner && entitlement?.familySharingEnabled ? (
           <View style={styles.inviteBlock}>
-            <Text style={styles.fieldLabel}>{t("ko", "settings.membersInviteLabel")}</Text>
+            <Text style={styles.fieldLabel}>{t("settings.membersInviteLabel")}</Text>
             <TextInput
-              accessibilityLabel={t("ko", "settings.membersInviteLabel")}
+              accessibilityLabel={t("settings.membersInviteLabel")}
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder={t("ko", "settings.membersInvitePlaceholder")}
+              placeholder={t("settings.membersInvitePlaceholder")}
               placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
               editable={!busy}
             />
-            <PrimaryButton label={t("ko", "settings.membersInvite")} icon="add" onPress={() => void invite()} disabled={!inviteEnabled || !email.trim() || busy} />
+            <PrimaryButton label={t("settings.membersInvite")} icon="add" onPress={() => void invite()} disabled={!inviteEnabled || !email.trim() || busy} />
           </View>
         ) : null}
 
-        {noticeKey ? <NoticeBanner text={t("ko", noticeKey)} icon="check" /> : null}
-        {errorKey ? <NoticeBanner text={t("ko", errorKey)} icon="close" tone="error" /> : null}
+        {noticeKey ? <NoticeBanner text={t(noticeKey)} icon="check" /> : null}
+        {errorKey ? <NoticeBanner text={t(errorKey)} icon="close" tone="error" /> : null}
       </View>
     </SurfaceCard>
   );
@@ -133,13 +136,13 @@ function MemberRow({ member, busy, onRemove }: { member: PetMember; busy: boolea
   return (
     <View style={styles.memberRow}>
       <View style={styles.memberCopy}>
-        <Text style={styles.memberEmail}>{member.email || t("ko", "settings.membersUnknown")}</Text>
+        <Text style={styles.memberEmail}>{member.email || t("settings.membersUnknown")}</Text>
         <Text style={styles.memberMeta}>
-          {t("ko", `settings.membersRole.${member.role}` as const)} · {t("ko", `settings.membersStatus.${member.status}` as const)}
+          {t(`settings.membersRole.${member.role}` as const)} · {t(`settings.membersStatus.${member.status}` as const)}
         </Text>
       </View>
       {!member.isCurrentUser && member.role !== "owner"
-        ? <SecondaryButton label={t("ko", "settings.membersRemove")} icon="close" onPress={() => void onRemove(member)} disabled={busy} />
+        ? <DangerButton label={t("settings.membersRemove")} icon="close" onPress={() => void onRemove(member)} disabled={busy} />
         : null}
     </View>
   );

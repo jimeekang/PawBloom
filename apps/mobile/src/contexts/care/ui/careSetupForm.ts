@@ -52,6 +52,12 @@ export function createCareSetupFormDraft(
   };
 }
 
+// An inverted period would make scheduleAppliesOnDate false for every date,
+// silently dropping the schedule from agendas and reminders (0006 B6).
+export function isCareSetupPeriodInvalid(draft: Pick<CareSetupFormDraft, "startsOn" | "endsOn">): boolean {
+  return Boolean(draft.endsOn) && draft.endsOn < draft.startsOn;
+}
+
 export function buildCareSetupInput(
   setup: ActiveCareSetup,
   draft: CareSetupFormDraft,

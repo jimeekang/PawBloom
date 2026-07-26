@@ -15,3 +15,5 @@ export function parseDateValue(value: string | undefined, fallback = new Date())
 export function formatDateValue(date: Date) {
   return `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, "0")}-${`${date.getDate()}`.padStart(2, "0")}`;
 }
+
+export { formatDateKeyDisplay as formatDateDisplay } from "../shared-kernel/date";
