@@ -27,7 +27,16 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
     return createDefaultPetRoutine(activePetId, activePetSpecies);
   }, [activePetId, activePetSpecies, databaseMode, localRoutine, routineQuery.data]);
 
+  // While the query is pending or failed, activeRoutine falls back to the
+  // species defaults. Saving that back would overwrite the routine the user
+  // actually has with defaults they never chose.
+  const routineLoaded = !databaseMode || (!routineQuery.isLoading && !routineQuery.isError);
+
   async function saveRoutine(input: PetRoutineInput) {
+    if (!routineLoaded) {
+      onNotice(t("routine.saveBlockedUntilLoaded"), "error");
+      throw new Error("routine.saveBlockedUntilLoaded");
+    }
     if (!databaseMode) {
       setLocalRoutine({ ...input, petId: activePetId });
       onNotice(t("routine.saved"));
@@ -44,5 +53,5 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
     }
   }
 
-  return { activeRoutine, saveRoutine };
+  return { activeRoutine, saveRoutine, routineLoaded };
 }
