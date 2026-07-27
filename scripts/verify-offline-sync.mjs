@@ -9,9 +9,18 @@ const syncStatusText = readFileSync(join(process.cwd(), "apps/mobile/src/context
 const syncRequired = ["replayOutboxOnce", "isInternetReachable"];
 const syncMissing = syncRequired.filter((needle) => !syncStatusText.includes(needle));
 
-if (missing.length || syncMissing.length) {
+// syncStatus wires onlineManager to NetInfo, so React Query's default
+// networkMode ("online") would pause every mutation while offline — and the
+// outbox enqueue lives inside mutationFn. Without networkMode "always" the
+// queue never receives the write and paused queries read as "no records".
+const appText = readFileSync(join(process.cwd(), "apps/mobile/App.tsx"), "utf8");
+const networkModeCount = (appText.match(/networkMode:\s*"always"/g) ?? []).length;
+const networkModeMissing = networkModeCount < 2;
+
+if (missing.length || syncMissing.length || networkModeMissing) {
   if (missing.length) console.error(`Offline outbox contract missing: ${missing.join(", ")}`);
   if (syncMissing.length) console.error(`Offline replay trigger missing: ${syncMissing.join(", ")}`);
+  if (networkModeMissing) console.error('QueryClient must set networkMode: "always" for both queries and mutations so offline writes reach the outbox');
   process.exit(1);
 }
 
