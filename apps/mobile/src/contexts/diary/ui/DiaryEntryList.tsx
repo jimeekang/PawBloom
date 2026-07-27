@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry } from "../domain/diaryEntry";
 import { categoryVisuals } from "../../../design-system/categoryVisuals";
@@ -13,6 +13,13 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
   const { language } = useLanguage();
   const locale = language === "ko" ? "ko-KR" : "en-AU";
+  // Callers hand us rows from different sources: the remote query is already
+  // newest-first, but preview state and offline-queued rows are prepended or
+  // appended. Sort here so the list order never depends on the source.
+  const orderedEntries = useMemo(
+    () => [...entries].sort((left, right) => `${right.entryDate} ${right.occurredAt}`.localeCompare(`${left.entryDate} ${left.occurredAt}`)),
+    [entries],
+  );
 
   return (
     <>
@@ -28,7 +35,7 @@ export function DiaryEntryList({ entries, title, onEntryPress, showEntryDate = f
               </View>
             ) : null}
             {status === "ready" && entries.length === 0 ? <Text style={styles.emptyText}>{t("diary.noEntries")}</Text> : null}
-            {entries.map((entry) => {
+            {orderedEntries.map((entry) => {
               const visual = categoryVisuals[entry.category];
               const row = (
                 <>
