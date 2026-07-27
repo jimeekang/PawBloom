@@ -20,7 +20,12 @@ export type ReportTimelineItem = {
   dateKey?: string;
   time: string;
   category?: DiaryEntry["category"];
+  // summary is the stored fallback text (memo or legacy rows). Structured
+  // entries also carry detail/memo so the ui layer can rebuild the sentence in
+  // the reader's language instead of replaying the writer's.
   summary?: string;
+  detail?: DiaryEntry["detail"];
+  memo?: string;
   conditionScore?: number;
   medicationName?: string;
   status?: DoseStatus;
@@ -154,7 +159,7 @@ function createMissingRecords(entries: DiaryEntry[], doses: DoseRecord[], latest
 function createTimelineHighlights(entries: DiaryEntry[], doses: DoseRecord[]) {
   const entryHighlights = entries.map((entry) => ({
     sortKey: `${entry.entryDate} ${entry.occurredAt}`,
-    item: { kind: "diary" as const, dateKey: entry.entryDate, time: entry.occurredAt, category: entry.category, summary: entry.summary },
+    item: { kind: "diary" as const, dateKey: entry.entryDate, time: entry.occurredAt, category: entry.category, summary: entry.summary, detail: entry.detail, memo: entry.memo },
   }));
   const doseHighlights = doses.map((dose) => ({
     sortKey: `${dose.doseDate ?? ""} ${dose.scheduledAt}`,

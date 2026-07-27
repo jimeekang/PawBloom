@@ -4,6 +4,12 @@ import { t, type TranslationKey } from "../../../i18n/translations";
 import type { DoseStatus } from "../../medication/domain/medication";
 import type { ReportMissingKind, ReportTimelineItem, ReportVetQuestionKind } from "../application/reportDraftRecords";
 
+// Structured diary rows store the writer's language in `summary`, so the vet
+// report would print Korean sentences to an English reader. The diary context
+// owns that vocabulary and the architecture guard forbids importing it here, so
+// the shell injects its formatter; without one we fall back to the stored text.
+export type DiarySummaryFormatter = (item: Pick<ReportTimelineItem, "summary" | "detail" | "memo" | "category">) => string;
+
 // Localizes the language-neutral report draft summary for display (0006 C3).
 // The application layer stays i18n-free; every user-facing string lives here.
 
@@ -22,11 +28,12 @@ const doseStatusKeys: Record<DoseStatus, TranslationKey> = {
   skipped: "care.status.skipped",
 };
 
-export function formatReportTimelineItem(item: ReportTimelineItem, language: Language): string {
+export function formatReportTimelineItem(item: ReportTimelineItem, language: Language, formatDiarySummary?: DiarySummaryFormatter): string {
   const datePart = item.dateKey ? `${formatDateKeyDisplay(item.dateKey, language)} ` : "";
   if (item.kind === "diary") {
     const score = item.conditionScore ? ` · ${t("reports.timelineScore")} ${item.conditionScore}/5` : "";
-    return `${datePart}${item.time} · ${t(`category.${item.category ?? "memo"}` as TranslationKey)}: ${item.summary ?? ""}${score}`;
+    const summary = formatDiarySummary ? formatDiarySummary(item) : item.summary ?? "";
+    return `${datePart}${item.time} · ${t(`category.${item.category ?? "memo"}` as TranslationKey)}: ${summary}${score}`;
   }
   const dosage = item.dosageLabel ? ` · ${t("care.dosageLabel")}: ${item.dosageLabel}` : "";
   const given = item.administeredAmount ? t("reports.timelineGiven").replace("{amount}", item.administeredAmount) : "";
