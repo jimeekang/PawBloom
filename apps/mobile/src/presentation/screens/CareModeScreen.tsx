@@ -167,6 +167,15 @@ function CarePanel({
 
 function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped" | "partial") => void }) {
   const visual = row.status === "completed" ? { accent: colors.mint, icon: colors.mintDeep, label: t("care.status.completed") } : row.status === "skipped" ? { accent: colors.inactive, icon: colors.textSoft, label: t("care.status.skipped") } : row.status === "partial" ? { accent: colors.memo, icon: colors.orangeDeep, label: t("care.status.partial") } : { accent: colors.salmon, icon: colors.salmon, label: t("care.status.pending") };
+  // The first tap creates the dose row; a second tap before it lands creates a
+  // duplicate that the unique constraint rejects, so the user sees "save
+  // failed" for a dose that was in fact saved.
+  const [saving, setSaving] = useState(false);
+  const submitStatus = (status: "completed" | "skipped" | "partial") => {
+    if (saving) return;
+    setSaving(true);
+    void Promise.resolve(onStatusChange(status)).finally(() => setSaving(false));
+  };
 
   return (
     <View style={styles.agendaRow}>
@@ -185,7 +194,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityState={{ selected: row.status === "completed" }}
             aria-pressed={row.status === "completed"}
             style={[styles.givenButton, row.status === "completed" && styles.agendaActionSelected]}
-            onPress={() => onStatusChange("completed")}
+            disabled={saving}
+            onPress={() => submitStatus("completed")}
           >
             <Text numberOfLines={1} style={styles.givenButtonText}>{careStatusActionLabel("completed")}</Text>
           </Pressable>
@@ -195,7 +205,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityState={{ selected: row.status === "partial" }}
             aria-pressed={row.status === "partial"}
             style={[styles.partialButton, row.status === "partial" && styles.agendaActionSelected]}
-            onPress={() => onStatusChange("partial")}
+            disabled={saving}
+            onPress={() => submitStatus("partial")}
           >
             <Text numberOfLines={1} style={styles.partialButtonText}>{careStatusActionLabel("partial")}</Text>
           </Pressable>
@@ -205,7 +216,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityState={{ selected: row.status === "skipped" }}
             aria-pressed={row.status === "skipped"}
             style={[styles.skipButton, row.status === "skipped" && styles.agendaActionSelected]}
-            onPress={() => onStatusChange("skipped")}
+            disabled={saving}
+            onPress={() => submitStatus("skipped")}
           >
             <Text numberOfLines={1} style={styles.skipButtonText}>{careStatusActionLabel("skipped")}</Text>
           </Pressable>
