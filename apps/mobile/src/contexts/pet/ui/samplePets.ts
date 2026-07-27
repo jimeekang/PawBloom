@@ -17,12 +17,12 @@ export function buildSamplePets(language: Language = "ko"): PetProfile[] {
   if (language === "en") {
     return [
       { ...samplePet, id: "pet-demo-mochi", name: "Mochi", breed: "Shiba Inu", ageLabel: "2 years 3 months", weightKg: 9.2 },
-      { ...samplePet, id: "pet-demo-luna", name: "Luna", breed: "Domestic Shorthair", ageLabel: "5 years", weightKg: 4.1, careMode: false },
+      { ...samplePet, id: "pet-demo-luna", name: "Luna", species: "cat", breed: "Domestic Shorthair", ageLabel: "5 years", weightKg: 4.1, careMode: false },
     ];
   }
 
   return [
     { ...samplePet, id: "pet-demo-mochi", name: "모찌", breed: "시바", ageLabel: "2살 3개월", weightKg: 9.2 },
-    { ...samplePet, id: "pet-demo-luna", name: "루나", breed: "코리안 숏헤어", ageLabel: "5살", weightKg: 4.1, careMode: false },
+    { ...samplePet, id: "pet-demo-luna", name: "루나", species: "cat", breed: "코리안 숏헤어", ageLabel: "5살", weightKg: 4.1, careMode: false },
   ];
 }
