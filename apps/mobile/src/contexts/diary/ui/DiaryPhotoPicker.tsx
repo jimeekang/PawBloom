@@ -3,7 +3,8 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DiaryPhotoInput } from "../domain/diaryEntry";
 import { AppIcon } from "../../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
-import { t } from "../../../i18n/translations";
+import { t, type TranslationKey } from "../../../i18n/translations";
+import type { NoticeTone } from "../../../design-system/components";
 import { getRemainingDiaryPhotoSlots, MAX_DIARY_PHOTOS, toDiaryPhotoInputs } from "./DiaryPhotoPicker.logic";
 
 const IMAGE_OPTIONS = {
@@ -21,13 +22,13 @@ export function DiaryPhotoPicker({
   photos: DiaryPhotoInput[];
   savedPhotoCount?: number;
   onChange: (photos: DiaryPhotoInput[]) => void;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: TranslationKey, tone?: NoticeTone) => void;
 }) {
   const totalPhotoCount = savedPhotoCount + photos.length;
 
   const canAddPhoto = () => {
     if (getRemainingDiaryPhotoSlots(totalPhotoCount) === 0) {
-      onNotice(t("diary.photoLimitNotice"));
+      onNotice("diary.photoLimitNotice", "error");
       return false;
     }
     return true;
@@ -51,7 +52,7 @@ export function DiaryPhotoPicker({
 
       addPickedAssets(result);
     } catch {
-      onNotice(t("diary.photoLibraryFailed"));
+      onNotice("diary.photoLibraryFailed", "error");
     }
   };
 
@@ -68,7 +69,7 @@ export function DiaryPhotoPicker({
       const result = await ImagePicker.launchCameraAsync(IMAGE_OPTIONS);
       addPickedAssets(result);
     } catch {
-      onNotice(t("diary.photoCameraFailed"));
+      onNotice("diary.photoCameraFailed", "error");
     }
   };
 
@@ -78,7 +79,7 @@ export function DiaryPhotoPicker({
     const nextPhotos = toDiaryPhotoInputs(result.assets, getRemainingDiaryPhotoSlots(totalPhotoCount));
 
     onChange([...photos, ...nextPhotos]);
-    onNotice(t("diary.photoAddedNotice"));
+    onNotice("diary.photoAddedNotice");
   };
 
   return (
@@ -94,7 +95,7 @@ export function DiaryPhotoPicker({
               style={styles.removeBadge}
               onPress={() => {
                 onChange(photos.filter((_, photoIndex) => photoIndex !== index));
-                onNotice(t("diary.photoRemovedNotice"));
+                onNotice("diary.photoRemovedNotice");
               }}
             >
               <AppIcon name="close" size={iconSize.xs} color={colors.white} />

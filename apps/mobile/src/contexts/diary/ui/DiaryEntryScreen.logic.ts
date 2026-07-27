@@ -1,4 +1,5 @@
 import type { DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
+import { getLocalDateKey } from "../../../shared-kernel/date";
 
 const structuredDailyCategories = new Set<DiaryCategory>(["food", "water", "walk", "stool", "condition"]);
 
@@ -78,4 +79,12 @@ export function resolveRemoteDiarySaveOutcome(queued: boolean) {
 
 export function formatDiaryTime(date = new Date()) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+// A saved record only lands on today's timeline when the calendar is on today;
+// otherwise it appears under the selected date, so the confirmation has to say
+// which one. diary.savedForDate / diary.updatedForDate exist for exactly this.
+export function getDiarySavedNoticeKey(savedDate: string, editing: boolean) {
+  if (savedDate === getLocalDateKey()) return "diary.localDraft" as const;
+  return editing ? ("diary.updatedForDate" as const) : ("diary.savedForDate" as const);
 }
