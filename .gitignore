@@ -14,3 +14,5 @@ AuthKey_*.p8
 Thumbs.db
 supabase/.temp/
 .gstack/
+.claude/
+.superpowers/

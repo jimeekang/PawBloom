@@ -3,6 +3,7 @@ import { createDefaultPetRoutine, usePetRoutine, useUpsertPetRoutine } from "../
 import type { PetRoutineInput } from "../domain/petRoutine";
 import type { Species } from "../../pet/domain/pet";
 import { t } from "../../../i18n/translations";
+import type { NoticeTone } from "../../../design-system/components";
 
 type Params = {
   activePetId: string;
@@ -11,7 +12,7 @@ type Params = {
   livePetId: string | null;
   userId: string | null;
   fallbackPet: { id: string; species: Species };
-  onNotice: (notice: string) => void;
+  onNotice: (notice: string, tone?: NoticeTone) => void;
   onSaved: () => void;
 };
 
@@ -38,7 +39,7 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
       onNotice(t("routine.saved"));
       onSaved();
     } catch (error) {
-      onNotice(t("routine.saveFailed"));
+      onNotice(t("routine.saveFailed"), "error");
       throw error;
     }
   }
