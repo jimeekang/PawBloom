@@ -1,21 +1,6 @@
----
-owner_model: claude-opus-4.8-extra
-domain: pm
-edit_policy: exclusive
----
-
-<!--
-  OPERATOR: Before hosting, replace the three placeholders below everywhere they appear:
-    [SUPPORT_EMAIL]   — the real support/privacy contact email address
-    [EFFECTIVE_DATE]  — the date this policy takes effect (e.g. 2026-08-01)
-    [SUPABASE_REGION] — the actual Supabase project region where data is hosted
-                        (e.g. "Sydney, Australia (ap-southeast-2)")
-  Do not host with the placeholders still in place.
--->
-
 # PawBloom Privacy Policy
 
-Effective date: [EFFECTIVE_DATE]
+Effective date: 2026-07-28
 
 PawBloom ("PawBloom", "we", "us") is a bilingual pet diary and care-record app.
 This policy explains what personal information the app collects, how we use and
@@ -69,7 +54,7 @@ our own backend — your data is **not** sent to any third-party AI service.
 - Access to database records is enforced per pet, so only members of a pet can
   read that pet's records.
 - **Cross-border storage.** Supabase infrastructure processes and stores your
-  data in [SUPABASE_REGION], which may be outside your country of residence. By
+  data in Sydney, Australia (AWS ap-southeast-2), which may be outside your country of residence. By
   using PawBloom you consent to your information being transferred to, stored in,
   and processed in that region for the purpose of providing the app, for as long
   as your account exists (until account deletion).
@@ -103,17 +88,17 @@ pet's information. The pet owner controls who is invited.
 
 You can view and edit your records directly in the app at any time. For a copy
 (export) of your data, or any other privacy request, contact us at
-[SUPPORT_EMAIL] and we will handle it manually.
+kjm12081@gmail.com and we will handle it manually.
 
 **Australia (Privacy Act 1988 / Australian Privacy Principles).** You may request
 access to, and correction of, the personal information we hold about you. If you
 have a concern about how we handle your information, contact us first at
-[SUPPORT_EMAIL]. If you are not satisfied, you may complain to the Office of the
+kjm12081@gmail.com. If you are not satisfied, you may complain to the Office of the
 Australian Information Commissioner (OAIC) at oaic.gov.au.
 
 **Korea (Personal Information Protection Act).** You have the right to access,
 correct, delete, and request suspension of processing of your personal
-information, and to withdraw consent. Contact us at [SUPPORT_EMAIL] to exercise
+information, and to withdraw consent. Contact us at kjm12081@gmail.com to exercise
 these rights. You may also report concerns to the Personal Information Dispute
 Mediation Committee or the Korea Internet & Security Agency's Privacy
 Infringement Report Center (privacy.kisa.or.kr, dial 118), or the Personal
@@ -124,7 +109,7 @@ Information Protection Commission (PIPC, pipc.go.kr).
 PawBloom is not directed at children under 13. In Korea, users under 14 require
 the consent of a legal guardian. We do not knowingly collect personal information
 from children. If you believe a child has provided us information, contact us at
-[SUPPORT_EMAIL] and we will delete it.
+kjm12081@gmail.com and we will delete it.
 
 ## 10. Changes to this policy
 
@@ -133,13 +118,13 @@ above and, where appropriate, notify you in the app.
 
 ## 11. Contact
 
-For any privacy question or request, contact us at [SUPPORT_EMAIL].
+For any privacy question or request, contact us at kjm12081@gmail.com.
 
 ---
 
 # PawBloom 개인정보처리방침 (한국어)
 
-시행일: [EFFECTIVE_DATE]
+시행일: 2026-07-28
 
 PawBloom("PawBloom", "회사")는 이중 언어 반려동물 다이어리·케어 기록 앱입니다.
 본 방침은 앱이 수집하는 개인정보, 그 이용·보관 방법, 이용자의 권리를 설명합니다.
@@ -186,10 +171,10 @@ PawBloom("PawBloom", "회사")는 이중 언어 반려동물 다이어리·케�
   버킷**에 보관됩니다.
 - 데이터베이스 접근은 반려동물 단위로 통제되어, 해당 반려동물의 구성원만
   그 기록을 열람할 수 있습니다.
-- **개인정보 국외 이전.** 이용자의 개인정보는 [SUPABASE_REGION]에 위치한
+- **개인정보 국외 이전.** 이용자의 개인정보는 Sydney, Australia (AWS ap-southeast-2)에 위치한
   Supabase 인프라에서 저장·처리되며, 이는 국외 이전에 해당할 수 있습니다.
   국외 이전 사항은 다음과 같습니다 — 이전받는 자: Supabase Inc.; 이전
-  국가/지역: [SUPABASE_REGION]; 이전 목적: 서비스 제공을 위한 저장·처리;
+  국가/지역: Sydney, Australia (AWS ap-southeast-2); 이전 목적: 서비스 제공을 위한 저장·처리;
   보유 기간: 계정 삭제 시까지.
 
 ## 5. 오프라인 사본과 알림
@@ -218,24 +203,24 @@ PawBloom("PawBloom", "회사")는 이중 언어 반려동물 다이어리·케�
 ## 8. 이용자의 권리
 
 이용자는 앱에서 언제든 자신의 기록을 열람·수정할 수 있습니다. 데이터 사본(내보
-내기)이나 그 밖의 개인정보 관련 요청은 [SUPPORT_EMAIL]로 문의하시면 수동으로
+내기)이나 그 밖의 개인정보 관련 요청은 kjm12081@gmail.com로 문의하시면 수동으로
 처리합니다.
 
 **대한민국(개인정보보호법).** 이용자는 개인정보의 열람·정정·삭제·처리정지를
-요구하고 동의를 철회할 권리가 있습니다. 권리 행사는 [SUPPORT_EMAIL]로 문의하십
+요구하고 동의를 철회할 권리가 있습니다. 권리 행사는 kjm12081@gmail.com로 문의하십
 시오. 침해 신고나 상담은 개인정보분쟁조정위원회, 한국인터넷진흥원
 개인정보침해신고센터(privacy.kisa.or.kr, 국번없이 118), 개인정보보호위원회
 (pipc.go.kr)에 하실 수 있습니다.
 
 **호주(Privacy Act 1988).** 회사가 보유한 개인정보의 열람·정정을 요청할 수
-있습니다. 처리 방식에 대한 우려는 먼저 [SUPPORT_EMAIL]로 문의하시고, 해소되지
+있습니다. 처리 방식에 대한 우려는 먼저 kjm12081@gmail.com로 문의하시고, 해소되지
 않으면 호주 정보위원회(OAIC, oaic.gov.au)에 진정할 수 있습니다.
 
 ## 9. 아동
 
 PawBloom는 만 13세 미만 아동을 대상으로 하지 않습니다. 대한민국에서는 만 14세
 미만 이용자의 경우 법정대리인의 동의가 필요합니다. 회사는 아동의 개인정보를
-고의로 수집하지 않습니다. 아동이 정보를 제공했다고 판단되면 [SUPPORT_EMAIL]로
+고의로 수집하지 않습니다. 아동이 정보를 제공했다고 판단되면 kjm12081@gmail.com로
 문의해 주시면 삭제합니다.
 
 ## 10. 방침의 변경
@@ -245,4 +230,4 @@ PawBloom는 만 13세 미만 아동을 대상으로 하지 않습니다. 대한�
 
 ## 11. 문의처
 
-개인정보 관련 문의·요청은 [SUPPORT_EMAIL]로 연락해 주십시오.
+개인정보 관련 문의·요청은 kjm12081@gmail.com로 연락해 주십시오.

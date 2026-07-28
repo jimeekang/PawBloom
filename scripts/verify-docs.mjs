@@ -17,7 +17,9 @@ const DOMAINS_BY_OWNER = {
   "codex-high": CODEX_DOMAINS,
 };
 // README.md는 저장소 공개 첫 화면이라 frontmatter를 면제한다 (소유는 AGENTS.md 라우팅 표로 선언).
-const FRONTMATTER_EXEMPT = new Set(["README.md"]);
+// PRIVACY_POLICY.md는 앱이 링크하는 대외 게시 문서다 — frontmatter가 GitHub에서
+// 표로 렌더되어 내부 메타데이터가 이용자에게 노출되므로 면제한다 (소유: 라우팅 표).
+const FRONTMATTER_EXEMPT = new Set(["README.md", "docs/product/PRIVACY_POLICY.md"]);
 
 const root = process.cwd();
 const tracked = execSync("git ls-files '*.md'", { cwd: root, encoding: "utf8" })
