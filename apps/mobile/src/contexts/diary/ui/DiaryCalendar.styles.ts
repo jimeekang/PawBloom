@@ -76,6 +76,7 @@ export const styles = StyleSheet.create({
   day: {
     flex: 1,
     aspectRatio: 1,
+    minHeight: 44,
     borderRadius: radius.sm,
     alignItems: "center",
     justifyContent: "center",

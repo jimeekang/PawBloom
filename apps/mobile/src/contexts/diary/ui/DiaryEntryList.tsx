@@ -4,7 +4,7 @@ import type { DiaryEntry } from "../domain/diaryEntry";
 import { categoryVisuals } from "../../../design-system/categoryVisuals";
 import { SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 import { getDiaryEntryDisplaySummary } from "./diaryEntryDisplay";
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   photoThumbnail: {
     width: 72,
     height: 72,
-    borderRadius: 12,
+    borderRadius: radius.md,
     backgroundColor: colors.border,
   },
   photoViewer: {

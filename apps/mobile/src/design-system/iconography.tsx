@@ -28,7 +28,8 @@ export const icon = {
   reports: { family: "ion", name: "document-text-outline" },
   food: { family: "material", name: "bowl" },
   water: { family: "ion", name: "water" },
-  walk: { family: "fa5", name: "paw" },
+  // distinct from the paw logo glyph — one symbol per meaning (0007 E5)
+  walk: { family: "fa5", name: "walking" },
   stool: { family: "material", name: "emoticon-poop" },
   condition: { family: "ion", name: "heart" },
   memo: { family: "ion", name: "document-text" },

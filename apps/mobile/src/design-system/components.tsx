@@ -12,7 +12,7 @@ export function SectionHeader({ title, action, onActionPress }: { title: string;
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {action && onActionPress ? (
-        <Pressable accessibilityRole="button" hitSlop={8} onPress={onActionPress}>
+        <Pressable accessibilityRole="button" hitSlop={8} style={styles.sectionActionButton} onPress={onActionPress}>
           <Text style={styles.sectionAction}>{action}</Text>
         </Pressable>
       ) : action ? (
@@ -116,6 +116,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...type.sectionTitle,
+  },
+  sectionActionButton: {
+    minHeight: 44,
+    justifyContent: "center",
   },
   sectionAction: {
     ...type.caption,

@@ -34,6 +34,7 @@ import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./
 import { createChecklistFromRecords } from "./shell/todayChecklist";
 import { refreshMealReminders, refreshMedicationReminders, useReminderAutoRefresh } from "./shell/reminderScheduling";
 import { useMedicationReminderToggle } from "./shell/useMedicationReminderToggle";
+import { useAndroidBackNavigation } from "./shell/useAndroidBackNavigation";
 import { buildSampleDiaryEntries } from "../contexts/diary/ui/sampleDiaryEntries";
 import { getDiaryEntryDisplaySummary } from "../contexts/diary/ui/diaryEntryDisplay";
 import { buildSampleDoses } from "../contexts/medication/ui/sampleDoses";
@@ -82,6 +83,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     }
     setActiveTabState(tab);
   }, [activeTab, databaseMode, setNotice]);
+
+  useAndroidBackNavigation({ activeTab, showPetSettings, setActiveTab, closePetSettings: () => setShowPetSettings(false) });
 
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
   const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });

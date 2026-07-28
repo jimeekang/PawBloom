@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   label: { ...type.caption, color: colors.text },
   savedText: { ...type.caption, color: colors.textMuted },
   medicationSelector: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  medicationOption: { minWidth: 112, gap: spacing.xxs, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  medicationOption: { minWidth: 112, minHeight: 44, justifyContent: "center", gap: spacing.xxs, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   medicationOptionSelected: { borderColor: colors.orangeDeep, backgroundColor: colors.surfacePeach },
   medicationOptionTitle: { ...type.bodyStrong, color: colors.text },
   medicationOptionTitleSelected: { color: colors.orangeDeep },

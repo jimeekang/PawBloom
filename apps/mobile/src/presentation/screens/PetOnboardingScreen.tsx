@@ -133,7 +133,7 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
     void confirmDestructiveAction(
       {
         title: t("pet.deleteTitle"),
-        message: `${activePet.name} ${t("pet.deleteCopy")}`,
+        message: t("pet.deleteCopy").replace("{petName}", activePet.name),
         cancelText: t("pet.deleteCancel"),
         confirmText: t("pet.deleteConfirm"),
       },

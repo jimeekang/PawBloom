@@ -11,7 +11,9 @@ export const colors = {
   segmentActiveBorder: "#FFC9B9",
   text: "#1F1A14",
   textMuted: "#6B645A",
-  textSoft: "#9C9284",
+  // 4.54:1 on the warm surface (#FFF8F1) — the old #9C9284 sat at 2.9:1,
+  // below AA for the placeholders and captions that use it.
+  textSoft: "#7C7160",
   white: "#FFFFFF",
   orange: "#E06D10",
   orangePressed: "#C25510",
