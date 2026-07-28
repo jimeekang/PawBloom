@@ -10,6 +10,7 @@ import { hasRecordedMedication } from "../contexts/medication/ui/medicationDoseA
 import { shouldMarkMedicationChecklist } from "../contexts/medication/ui/localMedicationState";
 import { useMedicationDosesController } from "../contexts/medication/ui/useMedicationDosesController";
 import { buildQuickDoseFromSchedule } from "../contexts/care/application/carePlanRecords";
+import { restoreMedicationRemindersForPets } from "./shell/medicationReminderRestore";
 import { findDoseForScheduleDate } from "../contexts/medication/application/medicationDosePayload";
 import type { CareMedicationSchedule, CareSetupInput } from "../contexts/care/domain/carePlan";
 import { useCareSetupState } from "../contexts/care/ui/useCareSetupState";
@@ -78,7 +79,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   useEffect(() => {
     void readMedicationRemindersEnabled().then(setMedicationRemindersEnabled);
   }, []);
-  useReminderAutoRefresh({ databaseMode, userId, petId: activePet.id, petName: activePet.name, language, schedules: care.activeCareSetup.schedules, activeRoutine: routine.activeRoutine, medicationRemindersEnabled });
+  useReminderAutoRefresh({ databaseMode, userId, petId: activePet.id, petName: activePet.name, language, schedules: care.activeCareSetup.schedules, activeRoutine: routine.activeRoutine, medicationRemindersEnabled, routineLoaded: routine.routineLoaded });
 
   async function toggleMedicationReminders(enabled: boolean) {
     setMedicationRemindersEnabled(enabled);
@@ -89,8 +90,8 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
       return;
     }
     try {
-      const scheduled = await refreshMedicationReminders({ userId, petId: activePet.id, petName: activePet.name, schedules: care.activeCareSetup.schedules, requestPermission: true });
-      setNotice(scheduled ? t("care.reminderScheduled") : t("care.reminderPermissionDenied"), scheduled ? "success" : "error");
+      const outcome = await restoreMedicationRemindersForPets({ userId, pets: authPets && authPets.length > 0 ? authPets : [activePet], activePetId: activePet.id, activePetSchedules: care.activeCareSetup.schedules });
+      setNotice(outcome === "scheduled" ? t("care.reminderScheduled") : t("care.reminderPermissionDenied"), outcome === "scheduled" ? "success" : "error");
     } catch {
       setNotice(t("care.reminderScheduleFailed"), "error");
     }

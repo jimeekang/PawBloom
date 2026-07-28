@@ -12,6 +12,8 @@ import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from ".
 import { CareMedicationAddCard } from "./CareMedicationAddCard";
 import { VetReportReadinessCard } from "../../contexts/care/ui/CareReportReadinessCard";
 import { partitionCareSchedules, schedulePeriodBadge } from "./careScheduleSummary";
+import { scheduleAppliesOnDate } from "../../contexts/medication/application/medicationScheduleRules";
+import { getLocalDateKey } from "../../shared-kernel/date";
 import { styles } from "./CareModeScreen.styles";
 
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
@@ -123,13 +125,18 @@ function CarePanel({
           {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t("care.scheduleSummaryCopy")}</Text> : null}
           {visibleSchedules.map((schedule) => {
             const badge = schedulePeriodBadge(schedule);
+            // A schedule outside its window (or off its recurrence day) still
+            // lists for reference, but offering "use today" on it would create
+            // a dose the plan never asked for today.
+            const appliesToday = scheduleAppliesOnDate(schedule, getLocalDateKey());
+            const usable = canManageCare && appliesToday;
             return (
               <Pressable
                 key={schedule.id}
                 accessibilityRole="button"
                 accessibilityLabel={`${schedule.localTime.slice(0, 5)}, ${schedule.medicationName}, ${schedule.dosageLabel}${badge ? `, ${badge}` : ""}`}
-                accessibilityState={{ disabled: !canManageCare }}
-                disabled={!canManageCare}
+                accessibilityState={{ disabled: !usable }}
+                disabled={!usable}
                 style={styles.scheduleRow}
                 onPress={() => onUseSchedule(schedule)}
               >
@@ -138,7 +145,8 @@ function CarePanel({
                   <Text style={styles.medTitle}>{schedule.localTime.slice(0, 5)} · {schedule.medicationName}</Text>
                   <Text style={styles.medMeta}>{schedule.dosageLabel}{badge ? ` · ${badge}` : ""}</Text>
                 </View>
-                {canManageCare ? <Text style={styles.useText}>{t("care.useToday")}</Text> : null}
+                {usable ? <Text style={styles.useText}>{t("care.useToday")}</Text> : null}
+                {canManageCare && !appliesToday ? <Text style={styles.medMeta}>{t("care.scheduleNotToday")}</Text> : null}
               </Pressable>
             );
           })}

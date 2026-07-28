@@ -18,7 +18,10 @@ export const carePlanKeys = {
 };
 
 export function buildQuickDoseFromSchedule<TStatus extends CareDoseStatus = "pending">(schedule: CareMedicationSchedule, status: TStatus = "pending" as TStatus) {
-  return { scheduleId: schedule.id, conditionName: schedule.conditionName, medicationName: schedule.medicationName, dosageLabel: schedule.dosageLabel, administeredAmount: "", reactionNote: "", status };
+  // scheduledTime keeps the schedule's dose time on the record; without it the
+  // payload builder falls back to "now", so an 08:00 dose loaded at 21:00 was
+  // stored as a 21:00 dose.
+  return { scheduleId: schedule.id, scheduledTime: schedule.localTime, conditionName: schedule.conditionName, medicationName: schedule.medicationName, dosageLabel: schedule.dosageLabel, administeredAmount: "", reactionNote: "", status };
 }
 
 export function useActiveCareSetup(petId: string | null, userId: string | null = null) {
@@ -43,6 +46,14 @@ export function useCreateCareSetup(petId: string | null, userId: string | null) 
       queryClient.setQueryData(carePlanKeys.active(petId, userId), setup);
     },
   });
+}
+
+// Reminder restoration needs every pet's schedules, not just the active pet's
+// query cache — the toggle otherwise silently drops the other pets' reminders.
+export async function fetchActiveCareSchedulesForPet(petId: string): Promise<CareMedicationSchedule[]> {
+  if (!supabase) return [];
+  const setup = await fetchActiveCareSetup(petId);
+  return setup.schedules;
 }
 
 async function fetchActiveCareSetup(petId: string) {
