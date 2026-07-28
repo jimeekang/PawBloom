@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocalDateKey } from "../../../shared-kernel/useLocalDateKey";
 import { getLocalDateKey, getWeekDateRange, useCreateDiaryEntry, useDeleteDiaryEntry, useDiaryEntriesByDate, useDiaryEntriesByDateRange, useTodayDiaryEntries, useUpdateDiaryEntry } from "../application/diaryRecords";
 import type { DiaryEntry } from "../domain/diaryEntry";
 import { t } from "../../../i18n/translations";
@@ -31,6 +32,17 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
   const deleteDiaryEntry = useDeleteDiaryEntry(livePetId, userId);
   const [entries, setEntries] = useState<DiaryEntry[]>(() => buildSampleDiaryEntries(fallbackPetId, language));
   const [selectedDiaryDate, setSelectedDiaryDate] = useState(getLocalDateKey());
+  // Crossing midnight: if the selection was "today", follow the new day —
+  // otherwise Home records to the new day while Diary still shows yesterday.
+  // A deliberately selected past date stays put.
+  const todayKey = useLocalDateKey();
+  const previousTodayRef = useRef(todayKey);
+  useEffect(() => {
+    if (previousTodayRef.current === todayKey) return;
+    const previousToday = previousTodayRef.current;
+    previousTodayRef.current = todayKey;
+    setSelectedDiaryDate((current) => (current === previousToday ? todayKey : current));
+  }, [todayKey]);
   const [diaryFilter, setDiaryFilter] = useState<DiaryFilter>("day");
   const [timelineEditEntry, setTimelineEditEntry] = useState<DiaryEntry | null>(null);
   const selectedWeekRange = useMemo(() => getWeekDateRange(selectedDiaryDate), [selectedDiaryDate]);

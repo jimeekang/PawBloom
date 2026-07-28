@@ -5,6 +5,7 @@ import { useMedicationDosesByDateRange } from "../../medication/application/medi
 import type { DoseRecord, DoseStatus } from "../../medication/domain/medication";
 
 import { getLast7DayReportRange } from "./reportDateRange";
+import { useLocalDateKey } from "../../../shared-kernel/useLocalDateKey";
 
 export { getLast7DayReportRange, getReportCalendarRange, type ReportDateRange } from "./reportDateRange";
 
@@ -66,7 +67,10 @@ export function useReportDraftSummary({
   entries: DiaryEntry[];
   doses: DoseRecord[];
 }) {
-  const range = useMemo(() => getLast7DayReportRange(), []);
+  // Re-anchors after midnight so the "last 7 days" window follows the device
+  // calendar instead of freezing at mount (0007 E1).
+  const todayKey = useLocalDateKey();
+  const range = useMemo(() => getLast7DayReportRange(), [todayKey]);
   const diaryQuery = useDiaryEntriesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
   const dosesQuery = useMedicationDosesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
   const summary = useMemo(() => {

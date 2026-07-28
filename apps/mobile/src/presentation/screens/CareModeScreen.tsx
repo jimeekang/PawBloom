@@ -6,6 +6,7 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../..
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { useLanguage } from "../../i18n/languageContext";
 import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
 import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
@@ -71,6 +72,7 @@ function CarePanel({
   canDeleteDose: boolean;
   canManageReports: boolean;
 }) {
+  const { language } = useLanguage();
   const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
   const [addCardOpen, setAddCardOpen] = useState(false);
   const [schedulesExpanded, setSchedulesExpanded] = useState(false);
@@ -125,7 +127,7 @@ function CarePanel({
           {/* Loading/failed setup must not read as "nothing registered" (C3). */}
           {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t(careStatus === "ready" ? "care.scheduleSummaryCopy" : careStatus === "loading" ? "diary.listLoading" : "care.loadFailed")}</Text> : null}
           {visibleSchedules.map((schedule) => {
-            const badge = schedulePeriodBadge(schedule);
+            const badge = schedulePeriodBadge(schedule, language);
             // A schedule outside its window (or off its recurrence day) still
             // lists for reference, but offering "use today" on it would create
             // a dose the plan never asked for today.
