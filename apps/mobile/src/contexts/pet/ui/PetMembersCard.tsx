@@ -96,16 +96,16 @@ export function PetMembersCard({
           </View>
         </View>
 
-        {!owner ? <NoticeBanner text={t("settings.membersOwnerOnly")} icon="shield" /> : null}
+        {!owner ? <NoticeBanner text={t("settings.membersOwnerOnly")} icon="shield" tone="info" /> : null}
         {owner && membersQuery.isLoading ? <Text style={styles.copy}>{t("settings.membersLoading")}</Text> : null}
         {owner && membersQuery.isError ? <NoticeBanner text={t("settings.membersListFailed")} icon="close" tone="error" /> : null}
         {owner ? members.map((member) => <MemberRow key={member.membershipId} member={member} busy={busy} onRemove={remove} />) : null}
 
-        {owner && entitlementLoading ? <NoticeBanner text={t("settings.planLoading")} icon="lock" /> : null}
+        {owner && entitlementLoading ? <NoticeBanner text={t("settings.planLoading")} icon="lock" tone="progress" /> : null}
         {owner && entitlementFailed ? <NoticeBanner text={t("settings.planLoadFailed")} icon="close" tone="error" /> : null}
         {owner && entitlementFailed && onRetryEntitlement ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryEntitlement} /> : null}
-        {owner && entitlement && !entitlement.familySharingEnabled ? <NoticeBanner text={t("settings.membersFamilyLocked")} icon="lock" /> : null}
-        {owner && entitlement?.familySharingEnabled && !configured ? <NoticeBanner text={t("settings.membersAccountRequired")} icon="shield" /> : null}
+        {owner && entitlement && !entitlement.familySharingEnabled ? <NoticeBanner text={t("settings.membersFamilyLocked")} icon="lock" tone="info" /> : null}
+        {owner && entitlement?.familySharingEnabled && !configured ? <NoticeBanner text={t("settings.membersAccountRequired")} icon="shield" tone="info" /> : null}
         {owner && entitlement?.familySharingEnabled ? (
           <View style={styles.inviteBlock}>
             <Text style={styles.fieldLabel}>{t("settings.membersInviteLabel")}</Text>
@@ -125,7 +125,7 @@ export function PetMembersCard({
           </View>
         ) : null}
 
-        {noticeKey ? <NoticeBanner text={t(noticeKey)} icon="check" /> : null}
+        {noticeKey ? <NoticeBanner text={t(noticeKey)} icon="check" tone="success" /> : null}
         {errorKey ? <NoticeBanner text={t(errorKey)} icon="close" tone="error" /> : null}
       </View>
     </SurfaceCard>

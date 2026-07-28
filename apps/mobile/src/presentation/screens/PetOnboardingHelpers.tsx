@@ -191,7 +191,7 @@ export function PetProfileFormFields({
       </View>
       <View style={styles.fieldGroup}>
         <FieldLabel label={birthdateLabel} />
-        <DatePickerField accessibilityLabel={birthdateLabel} value={birthdate} onChange={onBirthdateChange} placeholder={t("pet.birthdatePlaceholder")} allowClear clearLabel={t("pet.birthdateClear")} />
+        <DatePickerField accessibilityLabel={birthdateLabel} value={birthdate} onChange={onBirthdateChange} placeholder={t("pet.birthdatePlaceholder")} allowClear clearLabel={t("pet.birthdateClear")} maximumDate={new Date()} />
       </View>
       <View style={styles.fieldGroup}>
         <FieldLabel label={weightLabel} />

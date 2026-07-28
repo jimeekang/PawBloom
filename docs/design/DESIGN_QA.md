@@ -80,3 +80,16 @@ edit_policy: exclusive
 | 07-04 audit 스크린샷 | `.codex-audits/pawbloom-product-analysis-2026-07-04/` (`01-today-viewport.png`, `03-diary-form.png`, `04-care.png` 등) |
 
 재실행 시 이 표의 unavailable 항목을 캡처 경로로 갱신하고, §3 회귀 항목의 해결 상태를 현재 코드 기준으로 재대조한다.
+
+## §4 회귀 체크 항목 이관 (0007, 2026-07-28)
+
+다음 재감사·QA pass에서 반드시 재확인:
+
+- 다이어리 배너: 안내/성공이 에러 톤으로 렌더되지 않는가 (`DiaryEntryScreen` notice tone).
+- 과거 날짜 저장 안내가 "오늘 타임라인"을 주장하지 않는가 (`diary.savedForDate`).
+- 실패·거부가 초록 체크로 렌더되지 않는가 (NoticeBanner tone 필수화 유지).
+- 펫 전환 시 AI 브리핑·케어 로컬 상태가 이전 펫 것으로 남지 않는가.
+- 홈 투약 타일과 히어로 "확인할 투약 N"이 일치하는가 (agenda 기준 단일화).
+- 오프라인(비행기 모드)에서 저장→큐 적재→복귀 동기화가 되는가 (networkMode always).
+- 서울(UTC+9) 기기 23:30에 다이어리·투약 저장이 성공하는가 (시간대 RLS — db push 후).
+- 자정 경과 후 다이어리 선택 날짜·리포트 7일 창이 새 날을 따라오는가.

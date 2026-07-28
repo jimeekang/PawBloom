@@ -14,9 +14,19 @@ export function decodeDiarySummary(value: string, fallbackCategory: DiaryCategor
   }
 }
 
+// Written to the DB when an entry carries neither detail nor memo, so the row
+// keeps a non-empty summary. It is placeholder text, not content: the category
+// is the only information in it, and the ui layer re-renders it in the reader's
+// language via isDefaultDiarySummary rather than replaying the writer's.
+const DEFAULT_SUMMARIES: Record<CreateDiaryEntryInput["category"], string> = { food: "식사가 기록되었습니다.", water: "물 섭취가 기록되었습니다.", walk: "산책이 기록되었습니다.", stool: "배변이 기록되었습니다.", condition: "컨디션 체크가 기록되었습니다.", memo: "메모가 기록되었습니다.", photo: "사진이 기록되었습니다." };
+const DEFAULT_SUMMARY_VALUES = new Set(Object.values(DEFAULT_SUMMARIES));
+
 export function defaultDiarySummary(category: CreateDiaryEntryInput["category"]) {
-  const labels: Record<CreateDiaryEntryInput["category"], string> = { food: "식사가 기록되었습니다.", water: "물 섭취가 기록되었습니다.", walk: "산책이 기록되었습니다.", stool: "배변이 기록되었습니다.", condition: "컨디션 체크가 기록되었습니다.", memo: "메모가 기록되었습니다.", photo: "사진이 기록되었습니다." };
-  return labels[category];
+  return DEFAULT_SUMMARIES[category];
+}
+
+export function isDefaultDiarySummary(value: string | undefined) {
+  return Boolean(value && DEFAULT_SUMMARY_VALUES.has(value.trim()));
 }
 
 function buildDetailSummary(detail: DiaryDetailInput, memo?: string) {

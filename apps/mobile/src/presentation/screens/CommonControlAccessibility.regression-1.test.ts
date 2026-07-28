@@ -27,8 +27,10 @@ if (!timePicker.includes("aria-expanded={open}") || !homePanel.includes("aria-ex
   throw new Error("time and care summary disclosures must expose expanded state");
 }
 
-if (!care.includes("accessibilityState={{ disabled: !canManageCare }}")) {
-  throw new Error("care schedule actions must announce their disabled state");
+// The disabled state now also reflects the schedule window (B7): a schedule
+// that does not apply today announces disabled even for care managers.
+if (!care.includes("accessibilityState={{ disabled: !usable }}") || !care.includes("const usable = canManageCare && appliesToday;")) {
+  throw new Error("care schedule actions must announce their disabled state (role and schedule window)");
 }
 
 if (!photos.includes("diary.photoRemoveA11y")) {

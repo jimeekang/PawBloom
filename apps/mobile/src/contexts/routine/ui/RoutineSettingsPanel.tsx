@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     ...type.caption,
-    color: colors.coral,
+    color: colors.danger,
   },
   grid: {
     flexDirection: "row",

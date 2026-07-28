@@ -33,8 +33,18 @@ if (!authenticatedInsertGrant || !authenticatedUpdateGrant) throw new Error("dia
 if (authenticatedInsertGrant.includes("superseded_by") || authenticatedUpdateGrant.includes("superseded_by")) {
   throw new Error("authenticated clients must not control the server-owned superseded marker");
 }
-if (!migration.includes("and category <> 'photo'") || !migration.includes("'australia/sydney'") || !migration.includes("occurred_at))::date = entry_date")) {
-  throw new Error("direct diary inserts must exclude photos and restrict pet sitters to the Sydney-local current day");
+// The date rules were later relaxed to the device-local window (see the
+// _relax_record_dates_to_device_local migration and petSitterTodaySecurity
+// test); this migration must still establish the photo boundary, and the relax
+// migration must carry it forward.
+if (!migration.includes("and category <> 'photo'")) {
+  throw new Error("direct diary inserts must exclude photos (photos go through the atomic function)");
+}
+const relaxName = readdirSync(`${root}/supabase/migrations`).filter((name) => name.endsWith("_relax_record_dates_to_device_local.sql")).sort().pop();
+if (!relaxName) throw new Error("the device-local date relaxation migration must exist");
+const relaxSql = readFileSync(`${root}/supabase/migrations/${relaxName}`, "utf8").toLowerCase();
+if (!relaxSql.includes("and category <> 'photo'") || !relaxSql.includes("matches_local_entry_date(occurred_at, entry_date)")) {
+  throw new Error("the relaxed diary insert policy must keep the photo boundary and date/time consistency");
 }
 if (authenticatedUpdateGrant.includes("category") || authenticatedUpdateGrant.includes("entry_date")) {
   throw new Error("authenticated clients must not move diary records across categories or dates");

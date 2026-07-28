@@ -20,11 +20,20 @@ import { configureLocalNotificationPresentation } from "./src/shared-kernel/noti
 configureNetworkSync();
 void configureLocalNotificationPresentation();
 
+// networkMode "always" is required, not cosmetic: this app owns its offline
+// path (enqueueOfflineMutation runs inside mutationFn, and queries surface
+// failures as isError). React Query's default "online" mode pauses both while
+// onlineManager reports offline, so the outbox would never receive the write
+// and a paused query would read as "no records" instead of an error.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
       retry: 2,
+      networkMode: "always",
+    },
+    mutations: {
+      networkMode: "always",
     },
   },
 });

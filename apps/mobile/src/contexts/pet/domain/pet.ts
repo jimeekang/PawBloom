@@ -50,7 +50,10 @@ export function humanizeAgeLabel(birthdate: string | null): string {
     return "--";
   }
 
-  const birth = new Date(`${birthdate}T00:00:00.000Z`);
+  // Parse as a local calendar date: the old UTC-midnight parse compared UTC
+  // fields against local ones, shifting the birthday by a day in UTC- zones.
+  const [birthYear, birthMonth, birthDay] = birthdate.split("-").map(Number);
+  const birth = new Date(birthYear ?? Number.NaN, (birthMonth ?? 1) - 1, birthDay ?? 1);
   if (Number.isNaN(birth.getTime())) {
     return "--";
   }

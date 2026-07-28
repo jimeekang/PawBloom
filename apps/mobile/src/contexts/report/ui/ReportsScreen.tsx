@@ -8,7 +8,7 @@ import { colors, font, iconSize, radius, spacing, type } from "../../../design-s
 import { t, type TranslationKey } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
-import { formatReportMissingRecord, formatReportTimelineItem, formatReportVetQuestion } from "./reportDraftDisplay";
+import { formatReportMissingRecord, formatReportTimelineItem, formatReportVetQuestion, type DiarySummaryFormatter } from "./reportDraftDisplay";
 import { ReportListSection, ReportMetricsCard, ReportShareCard } from "./ReportArtifactSections";
 import { createReportArtifactSnapshot, type ReportArtifactSnapshot } from "./reportArtifactSnapshot";
 import { getReportPrimaryAction, type ReportWorkflowAction, type ReportWorkflowError } from "./reportWorkflow";
@@ -30,9 +30,10 @@ type Props = {
   onReset: () => void;
   onNewDiary: () => void;
   onRetryLoad?: () => void;
+  formatDiarySummary?: DiarySummaryFormatter;
 };
 
-export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, canShare, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onRevoke, onReset, onNewDiary, onRetryLoad }: Props) {
+export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, canShare, blockedReason, error, pendingAction, isBusy, onGenerate, onConfirm, onShare, onRevoke, onReset, onNewDiary, onRetryLoad, formatDiarySummary }: Props) {
   const { language } = useLanguage();
   const stage = report?.status ?? "empty";
   const stageContent = stageCopy[stage];
@@ -52,8 +53,8 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
   return (
     <View style={styles.screen}>
-      <NoticeBanner text={t(stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
-      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("permission.reportOwnerConfirmation")} icon="shield" /> : null}
+      <NoticeBanner text={t(stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} tone="info" />
+      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("permission.reportOwnerConfirmation")} icon="shield" tone="info" /> : null}
       {visibleError ? <NoticeBanner text={t(workflowErrorKey[visibleError])} icon="close" tone="error" /> : null}
       {visibleError === "load" && onRetryLoad ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryLoad} /> : null}
 
@@ -65,7 +66,9 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
             <Text style={styles.caption}>{t("reports.rangeLabel")}</Text>
           </View>
         </View>
-        <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t("reports.emptyCopy")}</Text>
+        {/* While the 7-day sources are loading or failed, "add records to
+            build a preview" would assert an empty week that is not known (C3). */}
+        <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t(reportSummary.sourceStatus === "loading" ? "diary.listLoading" : reportSummary.sourceStatus === "error" ? "reports.loadFailed" : "reports.emptyCopy")}</Text>
         <View style={styles.notice}>
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
           <Text style={styles.noticeText}>{t("briefing.disclaimer")}</Text>
@@ -80,7 +83,7 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
       {hasDisplayedRecords ? (
         <>
-          <ReportListSection icon="time" title={t("reports.timelineHighlights")} items={(artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights).map((item) => formatReportTimelineItem(item, language))} />
+          <ReportListSection icon="time" title={t("reports.timelineHighlights")} items={(artifactSnapshot?.timelineItems ?? reportSummary.timelineHighlights).map((item) => formatReportTimelineItem(item, language, formatDiarySummary))} />
           {!artifactSnapshot ? <ReportListSection icon="shield" title={t("reports.missingRecords")} items={reportSummary.missingRecords.length > 0 ? reportSummary.missingRecords.map(formatReportMissingRecord) : [t("reports.noMissingRecords")]} /> : null}
           {!artifactSnapshot ? <ReportListSection icon="condition" title={t("reports.vetQuestions")} items={reportSummary.vetQuestions.map(formatReportVetQuestion)} /> : null}
           <ReportMetricsCard summary={displayedSummary} conditionTrend={conditionTrend} petDetails={artifactSnapshot?.petDetails} />

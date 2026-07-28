@@ -89,6 +89,16 @@ export async function rescheduleMealReminders({ userId, petId, petName, title, s
   return true;
 }
 
+// Deleting a pet has to take its reminders with it, or the phone keeps firing
+// "time to feed <deleted pet>" with nothing left to record against.
+export async function cancelMealRemindersForPet(userId: string, petId: string): Promise<void> {
+  if (Platform.OS === "web") return;
+  const Notifications = await import("expo-notifications");
+  const pending = await Notifications.getAllScheduledNotificationsAsync();
+  const owned = selectMealRemindersToCancel(pending, { userId, petId, keepIdentifiers: new Set<string>() });
+  await Promise.all(owned.map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier)));
+}
+
 export async function cancelMealRemindersForAccount(userId: string): Promise<void> {
   if (Platform.OS === "web") return;
   const Notifications = await import("expo-notifications");

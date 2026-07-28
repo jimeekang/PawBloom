@@ -32,12 +32,19 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
   const savingRef = useRef(false);
   const isEditing = Boolean(editingDose);
 
+  const appliedEditingDoseId = useRef<string | null>(null);
   useEffect(() => {
     if (!editingDose) {
+      appliedEditingDoseId.current = null;
       resetForm();
       setNotice(t("care.quickDoseNotice"), "progress");
       return;
     }
+    // The doses query refetches while the form is open (e.g. the row's status
+    // button lands), handing us a fresh object for the same dose. Re-applying
+    // it would silently wipe whatever the user has typed.
+    if (appliedEditingDoseId.current === editingDose.id) return;
+    appliedEditingDoseId.current = editingDose.id;
 
     const nextState = createQuickMedicationEditState(editingDose);
     setConditionName(nextState.conditionName);
@@ -163,7 +170,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
           <SecondaryButton label={t("care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
           {canDelete ? (
             <DangerButton label={t("care.quickDoseDelete")} onPress={deleteDose} disabled={isSaving} />
-          ) : <NoticeBanner text={t("permission.medicationDeleteOwnerOnly")} icon="shield" />}
+          ) : <NoticeBanner text={t("permission.medicationDeleteOwnerOnly")} icon="shield" tone="info" />}
         </View>
       ) : null}
     </View>

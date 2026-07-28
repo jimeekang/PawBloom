@@ -53,12 +53,13 @@ export function refreshMealReminders({ userId, petId, petName, routine, requestP
   });
 }
 
-export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, language, schedules, activeRoutine, medicationRemindersEnabled = true }: ReminderPetContext & {
+export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, language, schedules, activeRoutine, medicationRemindersEnabled = true, routineLoaded = true }: ReminderPetContext & {
   databaseMode: boolean;
   language: Language;
   schedules: CareMedicationSchedule[];
   activeRoutine: PetRoutine;
   medicationRemindersEnabled?: boolean;
+  routineLoaded?: boolean;
 }) {
   const reminderScheduleKey = schedules.map((schedule) => `${schedule.id}:${schedule.localTime}:${schedule.startsOn}:${schedule.endsOn ?? ""}:${schedule.recurrenceIntervalDays}`).join("|");
   const mealReminderScheduleKey = [activeRoutine.food.mealRemindersEnabled, ...(["breakfast", "lunch", "dinner", "snack"] as RoutineMealSlot[]).map((slot) => `${slot}:${activeRoutine.food.meals[slot]?.localTime ?? ""}`)].join("|");
@@ -72,10 +73,13 @@ export function useReminderAutoRefresh({ databaseMode, userId, petId, petName, l
   }, [petId, petName, databaseMode, language, medicationRemindersEnabled, reminderScheduleKey, userId]);
 
   useEffect(() => {
-    if (!databaseMode || !userId) return;
+    // While the routine query is loading or failed, activeRoutine is the
+    // species default (usually reminders off). Refreshing from that placeholder
+    // would cancel every reminder the user actually scheduled.
+    if (!databaseMode || !userId || !routineLoaded) return;
     const refresh = () => void refreshMealReminders({ userId, petId, petName, routine: activeRoutine, requestPermission: false }).catch(() => undefined);
     refresh();
     const subscription = AppState.addEventListener("change", (state) => { if (state === "active") refresh(); });
     return () => subscription.remove();
-  }, [petId, petName, databaseMode, language, mealReminderScheduleKey, userId]);
+  }, [petId, petName, databaseMode, language, mealReminderScheduleKey, routineLoaded, userId]);
 }

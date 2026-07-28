@@ -34,3 +34,17 @@ if (installed.length !== 2 || canceled.length !== 1 || canceled[0] !== "meal:use
 
 setActiveMealReminderAccount("user-2");
 if (await rescheduleMealReminders({ userId: "user-1", petId: "pet-1", petName: "Mandu", title: "Mandu meal time", slotLabels: {}, routine, requestPermission: true })) throw new Error("stale meal reminder account must not reschedule");
+
+// Deleting a pet must sweep every reminder for that pet and nothing else.
+const deletionPending = [
+  { identifier: "meal:user-1:pet-1:breakfast" },
+  { identifier: "meal:user-1:pet-1:dinner" },
+  { identifier: "meal:user-1:pet-2:breakfast" },
+  { identifier: "meal:user-2:pet-1:breakfast" },
+  { identifier: "medication:user-1:pet-1:daily" },
+];
+const petSweep = selectMealRemindersToCancel(deletionPending, { userId: "user-1", petId: "pet-1", keepIdentifiers: new Set<string>() });
+if (petSweep.length !== 2) throw new Error("deleting a pet must cancel every meal reminder for that pet");
+if (petSweep.some((notification) => !notification.identifier.startsWith("meal:user-1:pet-1:"))) {
+  throw new Error("pet deletion must not cancel reminders belonging to another pet or account");
+}

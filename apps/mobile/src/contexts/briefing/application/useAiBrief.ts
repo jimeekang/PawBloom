@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Language } from "../../../shared-kernel/types";
@@ -21,10 +22,18 @@ export function useAiBrief(petId: string | null, language: Language) {
     },
   });
 
+  // A brief describes one pet over one range. Keeping the previous result after
+  // either changes would attribute another pet's records to the current one.
+  const { reset } = mutation;
+  useEffect(() => {
+    reset();
+  }, [petId, reset]);
+
   return {
     brief: mutation.data ?? null,
     generating: mutation.isPending,
     failed: mutation.isError,
     generate: mutation.mutate,
+    reset,
   };
 }

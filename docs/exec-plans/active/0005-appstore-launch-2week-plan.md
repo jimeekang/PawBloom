@@ -71,9 +71,9 @@ edit_policy: exclusive
 
 ## Task 3: 개인정보처리방침·지원 페이지 `[문서/판정]`→`[운영]`→`[코드]` (D2~D5)
 
-- [ ] D2~D3 초안 작성(EN/KO): 수집 항목은 감사 05 §7 표 그대로(이메일·반려동물 건강기록·다이어리·사진·UUID), 처리자 Supabase, 보관·삭제(계정 삭제 시 전체 파기 — T1과 문구 일치), 오프라인 기기 캐시, 제3자 제공 없음·추적 없음, 호주 Privacy Act APP + 한국 개인정보보호법 열람·정정·파기 조항, 문의처. 저장소에는 `docs/product/PRIVACY_POLICY.md`로 원문 보관(300줄 제한 준수).
+- [x] D2~D3 초안 작성(EN/KO — cee3929·c9019fa, 자리표시자 치환은 2026-07-28 f4acb29): 수집 항목은 감사 05 §7 표 그대로(이메일·반려동물 건강기록·다이어리·사진·UUID), 처리자 Supabase, 보관·삭제(계정 삭제 시 전체 파기 — T1과 문구 일치), 오프라인 기기 캐시, 제3자 제공 없음·추적 없음, 호주 Privacy Act APP + 한국 개인정보보호법 열람·정정·파기 조항, 문의처. 저장소에는 `docs/product/PRIVACY_POLICY.md`로 원문 보관(300줄 제한 준수).
 - [ ] D4 호스팅 `[운영]`: GitHub Pages(무료·즉시) 또는 보유 도메인에 `/privacy`(EN)·`/privacy-ko` 게시 + 지원 채널 확정(`support@` 메일 또는 간단한 지원 페이지). URL 2종 확보가 완료 조건.
-- [ ] D5 인앱 링크 `[코드]`: SettingsScreen과 AuthScreen 하단에 `Linking.openURL` 텍스트 링크 2개(개인정보처리방침·지원). i18n 키 `settings.privacyPolicy`("Privacy Policy"/"개인정보처리방침"), `settings.support`("Support"/"지원"). URL 상수는 `apps/mobile/src/shared-kernel/config.ts`에 `PRIVACY_POLICY_URL`·`SUPPORT_URL`로. commit `feat: link privacy policy and support`.
+- [x] D5 인앱 링크 `[코드]`(0006 A1에서 완료): SettingsScreen과 AuthScreen 하단에 `Linking.openURL` 텍스트 링크 2개(개인정보처리방침·지원). i18n 키 `settings.privacyPolicy`("Privacy Policy"/"개인정보처리방침"), `settings.support`("Support"/"지원"). URL 상수는 `apps/mobile/src/shared-kernel/config.ts`에 `PRIVACY_POLICY_URL`·`SUPPORT_URL`로. commit `feat: link privacy policy and support`.
 
 ## Task 4: 스토어 설정 일괄 `[코드]` (D4)
 
@@ -157,7 +157,7 @@ edit_policy: exclusive
 - **T4 완료** `9159f09` — app.json 스토어 설정 전체 + expo-splash-screen. expo-doctor 기존 실패 2건(expo-font peer 누락·패치 버전 불일치)은 T8 전 정리 필요.
 - **T6 완료** `9b1b1bb` — 기기 로케일 언어 기본값(resolveInitialLanguage TDD) + Environment 카드 `__DEV__` 게이트.
 - **T7 완료** `655f86e`+`0929aab` — 시드 스크립트(스키마 전수 검증, skipped 투약 데이터 모순 수정). 라이브 실행은 T8/T11에서(edge fn 배포 + env 필요).
-- **T3 초안 완료** `cee3929`+`c9019fa` — PRIVACY_POLICY.md EN/KO + 해외 이전 조항. 호스팅 전 치환 필요: `[SUPPORT_EMAIL]`, `[EFFECTIVE_DATE]`, `[SUPABASE_REGION]`. 호스팅·인앱 링크는 URL 확정 대기.
+- **T3 초안 완료** `cee3929`+`c9019fa` — PRIVACY_POLICY.md EN/KO + 해외 이전 조항. 자리표시자 3종은 2026-07-28 치환 완료(`f4acb29`: 시행일 2026-07-28·지원 이메일·ap-southeast-2), 인앱 링크는 0006 A1 완료. GitHub Pages 등 전용 호스팅 이전만 선택 잔여.
 - **최종 전체 리뷰**: 머지 가능 판정. Critical 0. 잔여 Minor는 원장(.superpowers/sdd/progress.md) 참조.
 - **대기(사용자 액션)**: T2 Apple Developer 등록(최우선·리드타임 병목), 정책 호스팅 결정, Supabase 프로덕션 edge fn 배포·시드 env. → T5, T8~T11 순차 진행.
 

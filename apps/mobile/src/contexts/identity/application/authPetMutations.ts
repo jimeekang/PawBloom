@@ -9,6 +9,8 @@ import { petDeleteValidationKey, petProfileValidationKey } from "./petProfileVal
 import type { IdentityMessageKey } from "./identityMessage";
 import { isCurrentAccountWork } from "./authAccountBoundary";
 import { petMutationErrorKey } from "./petMutationError";
+import { cancelMedicationRemindersForPet } from "../../medication/application/medicationReminderNotifications";
+import { cancelMealRemindersForPet } from "../../routine/application/mealReminderNotifications";
 
 type AuthPetMutationState = {
   user: User | null;
@@ -144,6 +146,14 @@ export function useAuthPetMutations({
       clearMessages();
       try {
         await deletePetRow(supabase!, petId);
+        // Reminders are scheduled on the device, so deleting the row server-side
+        // leaves them firing for a pet the user can no longer open.
+        if (requestUserId) {
+          await Promise.all([
+            cancelMedicationRemindersForPet(requestUserId, petId).catch(() => undefined),
+            cancelMealRemindersForPet(requestUserId, petId).catch(() => undefined),
+          ]);
+        }
         if (!isCurrentAccountWork(getActiveUserId(), requestUserId, mutationEpoch.current, requestEpoch)) return "auth.wait" as const;
         setPets((current) => {
           const nextPets = current.filter((pet) => pet.id !== petId);

@@ -24,4 +24,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: layout.screenPadding,
     paddingBottom: spacing.xxxl,
   },
+  // Keeps the diary form mounted (draft preserved) without occupying layout.
+  hiddenTab: {
+    display: "none",
+  },
 });

@@ -31,6 +31,9 @@ export function createShortTermMedicationDraft(todayKey: string): ShortTermMedic
 
 export function shortTermDraftErrorKey(draft: ShortTermMedicationDraft): TranslationKey | null {
   if (!draft.medicationName.trim()) return "care.quickDoseMedicationRequired";
+  // dosage_label is NOT NULL server-side; without this the save only fails
+  // remotely as an opaque "save failed" the user cannot resolve (B4).
+  if (!draft.dosageLabel.trim()) return "care.dosageRequired";
   if (!draft.endsOn || draft.endsOn < draft.startsOn) return "care.shortTermPeriodInvalid";
   return null;
 }

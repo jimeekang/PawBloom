@@ -3,13 +3,14 @@ import { useActiveCareSetup, useCreateCareSetup } from "../application/carePlanR
 import type { ActiveCareSetup, CareSetupInput } from "../domain/carePlan";
 import { t } from "../../../i18n/translations";
 import { errorNoticeText } from "../../../i18n/errorNotice";
+import type { NoticeTone } from "../../../design-system/components";
 import { buildNextLocalCareSetup } from "./careSetupLocalState";
 
 type Params = {
   databaseMode: boolean;
   livePetId: string | null;
   userId: string | null;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: string, tone?: NoticeTone) => void;
   onSaved: () => void;
 };
 
@@ -43,7 +44,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
       return savedSetup;
     } catch (error) {
       const message = errorNoticeText(error, "care.setupSaveFailed");
-      onNotice(message);
+      onNotice(message, "error");
       throw error instanceof Error ? error : new Error(message);
     }
   }

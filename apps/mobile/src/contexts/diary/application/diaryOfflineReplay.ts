@@ -8,18 +8,27 @@ import { defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
 import { resolveDiaryUniqueConflict, shouldApplyDiaryReplayOverCanonical } from "./diaryUniqueConflict";
 
 export function buildDiaryInsertOfflineMutation(input: BaseOfflineMutationInput & { petId: string; userId: string; input: Record<string, unknown> }): OfflineMutation {
+  // Freeze the record's calendar position at enqueue time. Replay can run
+  // after midnight (or days later); re-deriving date and time then moved the
+  // record to the replay day at 00:00 instead of when it was written.
+  const queuedInput = { ...input.input };
+  if (!stringValue(queuedInput.entryDate)) queuedInput.entryDate = getLocalDateKey();
+  if (!stringValue(queuedInput.occurredTime)) queuedInput.occurredTime = formatClockTime(new Date());
   return buildOfflineMutation({
     aggregate: "diary",
     operation: "insert",
-    payload: { petId: input.petId, userId: input.userId, input: input.input },
+    payload: { petId: input.petId, userId: input.userId, input: queuedInput },
     clientMutationId: input.clientMutationId,
     createdAt: input.createdAt,
   });
 }
 
-export function buildDiaryReplayInsertPayload(input: { petId: string; userId: string; clientMutationId: string; input: Record<string, unknown> }) {
+export function buildDiaryReplayInsertPayload(input: { petId: string; userId: string; clientMutationId: string; input: Record<string, unknown>; queuedAt?: string }) {
   const category = normalizeDiaryCategory(input.input.category);
-  const entryDate = stringValue(input.input.entryDate) ?? getLocalDateKey();
+  // Mutations queued before enqueue-time freezing carry no date/time; fall
+  // back to when they were queued, never to when the replay happens to run.
+  const queuedAtDate = input.queuedAt ? new Date(input.queuedAt) : new Date();
+  const entryDate = stringValue(input.input.entryDate) ?? getLocalDateKey(queuedAtDate);
   return {
     pet_id: input.petId,
     created_by: input.userId,
@@ -27,7 +36,7 @@ export function buildDiaryReplayInsertPayload(input: { petId: string; userId: st
     summary: encodeDiarySummary({ category, memo: stringValue(input.input.summary) ?? "", detail: input.input.detail as never }) || defaultDiarySummary(category),
     condition_score: category === "condition" ? normalizeConditionScore(input.input.conditionScore) : null,
     entry_date: entryDate,
-    occurred_at: buildOccurredAt(entryDate, stringValue(input.input.occurredTime)),
+    occurred_at: buildOccurredAt(entryDate, stringValue(input.input.occurredTime) ?? formatClockTime(queuedAtDate)),
     record_origin: input.input.origin === "checklist" ? "checklist" as const : "diary" as const,
     client_mutation_id: input.clientMutationId,
   };
@@ -42,6 +51,7 @@ async function replayDiaryInsert(mutation: OfflineMutation): Promise<OfflineRepl
     userId: requireString(payload.userId, "diary replay user id"),
     input: toRecord(payload.input),
     clientMutationId: mutation.clientMutationId,
+    queuedAt: mutation.createdAt,
   });
   const { error } = await supabase.from("diary_entries").insert(insertPayload);
   if (!error) return { status: "applied", reason: "diary insert replayed" };
@@ -140,4 +150,8 @@ function buildOccurredAt(dateKey: string, time?: string) {
 function parseDateKey(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
+}
+
+function formatClockTime(date: Date) {
+  return `${`${date.getHours()}`.padStart(2, "0")}:${`${date.getMinutes()}`.padStart(2, "0")}`;
 }

@@ -30,6 +30,9 @@ type Props = {
   showMedicationSummary?: boolean;
   notice: string;
   noticeTone?: NoticeTone;
+  // The brief covers 3/7/14 days; gating it on today's records alone locked
+  // it for anyone who last recorded yesterday (0007 D6).
+  briefHasRecords?: boolean;
   todayStatus?: "ready" | "loading" | "error";
   onRetryToday?: () => void;
   onChecklistToggle: (key: ChecklistKey) => void;
@@ -37,7 +40,7 @@ type Props = {
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", briefHasRecords, todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const { language } = useLanguage();
   const timeline = [...entries].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)).slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
@@ -62,11 +65,13 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         <View style={styles.heroSummary}>
           <View style={styles.heroSummaryItem}>
             <Text style={styles.heroSummaryLabel}>{t("today.dashboardCompletion")}</Text>
-            <Text style={styles.heroSummaryValue}>{dashboard.completedCount}/{dashboard.totalCount}</Text>
+            {/* While records are loading or failed, "0/7" would read as a
+                confirmed count of nothing; show a placeholder instead (C3). */}
+            <Text style={styles.heroSummaryValue}>{todayStatus === "ready" ? `${dashboard.completedCount}/${dashboard.totalCount}` : "–"}</Text>
           </View>
           {showMedicationSummary ? <View style={styles.heroSummaryItem}>
             <Text style={styles.heroSummaryLabel}>{t("today.dashboardMedicationPending")}</Text>
-            <Text style={styles.heroSummaryValue}>{dashboard.pendingMedicationCount}</Text>
+            <Text style={styles.heroSummaryValue}>{todayStatus === "ready" ? dashboard.pendingMedicationCount : "–"}</Text>
           </View> : null}
         </View>
       </View>
@@ -123,7 +128,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
       {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} medicationAgenda={medicationAgenda} /> : null}
 
       <View style={styles.briefCard}>
-        <AiBriefCard petId={pet.id} databaseMode={userId != null} hasRecords={entries.length > 0 || doses.length > 0} />
+        <AiBriefCard petId={pet.id} databaseMode={userId != null} hasRecords={briefHasRecords ?? (entries.length > 0 || doses.length > 0)} />
       </View>
 
       <View style={styles.timelineCard}>

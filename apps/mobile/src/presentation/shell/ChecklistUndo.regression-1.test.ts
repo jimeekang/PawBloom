@@ -106,6 +106,6 @@ const shellSource = readFileSync(
   `${process.cwd()}/apps/mobile/src/presentation/PawBloomShell.tsx`,
   "utf8",
 );
-if (!shellSource.includes("createChecklistFromRecords(diary.activeEntries, medication.activeDoses)")) {
-  throw new Error("preview checklist state must stay derived from the records it displays");
+if (!shellSource.includes("createChecklistFromRecords(diary.activeEntries, medication.activeDoses, medication.medicationAgenda)")) {
+  throw new Error("preview checklist state must stay derived from the records (and agenda) it displays");
 }

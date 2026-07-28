@@ -30,8 +30,14 @@ if (!panel.includes("onToggleMedicationReminders") || !panel.includes("care.medi
   throw new Error("ProfileCareDefaultsPanel must expose the medication reminders toggle (B7)");
 }
 
-if (!shell.includes("readMedicationRemindersEnabled") || !shell.includes("cancelMedicationRemindersForAccount")) {
-  throw new Error("the shell must load the reminder preference and cancel scheduled reminders when toggled off (B7)");
+// The preference load + account-wide cancel moved into the toggle hook the
+// shell mounts; the guarantee follows the code.
+const reminderToggleHook = read("presentation/shell/useMedicationReminderToggle.ts");
+if (!shell.includes("useMedicationReminderToggle")
+  || !reminderToggleHook.includes("readMedicationRemindersEnabled")
+  || !reminderToggleHook.includes("cancelMedicationRemindersForAccount")
+  || !reminderToggleHook.includes("restoreMedicationRemindersForPets")) {
+  throw new Error("the shell must load the reminder preference, cancel on toggle-off, and restore every pet on toggle-on (B7/0007 B2)");
 }
 
 if (!scheduling.includes("medicationRemindersEnabled")) {

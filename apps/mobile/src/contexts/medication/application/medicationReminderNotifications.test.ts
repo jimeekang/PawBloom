@@ -126,3 +126,16 @@ await installMedicationReminderPlan(manyOneShots.slice(0, 2), [
 if (!rollingOperations.every((operation, index) => !operation.startsWith("cancel:") || rollingOperations[index - 1]?.startsWith("schedule:"))) {
   throw new Error("rolling reminder replacement must free one obsolete slot only after installing its replacement");
 }
+
+// Deleting a pet must sweep every medication reminder for that pet and nothing else.
+const petDeletionPending = [
+  { identifier: "medication:user-1:schedule-1:2026-07-04", content: { data: { userId: "user-1", petId: "pet-1", scheduleId: "schedule-1" } } },
+  { identifier: "medication:user-1:schedule-2:2026-07-05", content: { data: { userId: "user-1", petId: "pet-1", scheduleId: "schedule-2" } } },
+  { identifier: "medication:user-1:schedule-3:2026-07-05", content: { data: { userId: "user-1", petId: "pet-2", scheduleId: "schedule-3" } } },
+  { identifier: "medication:user-2:schedule-4:2026-07-05", content: { data: { userId: "user-2", petId: "pet-1", scheduleId: "schedule-4" } } },
+];
+const medicationSweep = petDeletionPending.filter((notification) => shouldCancelMedicationReminder(notification, "pet-1", new Set<string>(), "user-1"));
+if (medicationSweep.length !== 2) throw new Error("deleting a pet must cancel every medication reminder for that pet");
+if (medicationSweep.some((notification) => notification.content.data.petId !== "pet-1" || notification.content.data.userId !== "user-1")) {
+  throw new Error("pet deletion must not cancel medication reminders belonging to another pet or account");
+}

@@ -167,6 +167,14 @@ export function shouldCancelMedicationReminder(notification: ScheduledNotificati
   return Boolean(scheduleId && scheduleIds.has(scheduleId));
 }
 
+// Deleting a pet has to take its reminders with it (see the meal-reminder twin).
+export async function cancelMedicationRemindersForPet(userId: string, petId: string) {
+  const Notifications = await import("expo-notifications");
+  const pending = await Notifications.getAllScheduledNotificationsAsync();
+  const owned = pending.filter((notification) => shouldCancelMedicationReminder(notification, petId, new Set<string>(), userId));
+  await Promise.all(owned.map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier)));
+}
+
 export async function cancelMedicationRemindersForAccount(userId: string) {
   const Notifications = await import("expo-notifications");
   const pending = await Notifications.getAllScheduledNotificationsAsync();

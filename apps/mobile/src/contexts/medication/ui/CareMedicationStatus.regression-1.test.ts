@@ -20,8 +20,15 @@ const source = readFileSync(
   "utf8",
 );
 
-if (!source.includes('onStatusChange("partial")')) {
-  throw new Error("the medication agenda must send the partial status directly");
+// The partial action must stay reachable from the agenda and carry the partial
+// status through to the handler. Matching either the direct call or the
+// in-flight-guarded wrapper keeps this about behavior rather than one spelling.
+if (!/(?:submitStatus|onStatusChange)\("partial"\)/.test(source)) {
+  throw new Error("the medication agenda must offer a partial-dose action");
+}
+
+if (!source.includes("onStatusChange(status)") && !source.includes('onStatusChange("partial")')) {
+  throw new Error("the medication agenda must send the chosen status to its handler");
 }
 
 if (!source.includes('accessibilityState={{ selected: row.status === "partial" }}')) {

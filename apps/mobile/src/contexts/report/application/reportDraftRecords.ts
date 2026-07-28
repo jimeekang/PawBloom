@@ -4,10 +4,10 @@ import { useDiaryEntriesByDateRange } from "../../diary/application/diaryRecords
 import { useMedicationDosesByDateRange } from "../../medication/application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../../medication/domain/medication";
 
-export type ReportDateRange = {
-  fromDateKey: string;
-  toDateKey: string;
-};
+import { getLast7DayReportRange } from "./reportDateRange";
+import { useLocalDateKey } from "../../../shared-kernel/useLocalDateKey";
+
+export { getLast7DayReportRange, getReportCalendarRange, type ReportDateRange } from "./reportDateRange";
 
 export type ConditionTrendDirection = "none" | "stable" | "improving" | "declining";
 
@@ -20,7 +20,12 @@ export type ReportTimelineItem = {
   dateKey?: string;
   time: string;
   category?: DiaryEntry["category"];
+  // summary is the stored fallback text (memo or legacy rows). Structured
+  // entries also carry detail/memo so the ui layer can rebuild the sentence in
+  // the reader's language instead of replaying the writer's.
   summary?: string;
+  detail?: DiaryEntry["detail"];
+  memo?: string;
   conditionScore?: number;
   medicationName?: string;
   status?: DoseStatus;
@@ -62,7 +67,10 @@ export function useReportDraftSummary({
   entries: DiaryEntry[];
   doses: DoseRecord[];
 }) {
-  const range = useMemo(() => getLast7DayReportRange(), []);
+  // Re-anchors after midnight so the "last 7 days" window follows the device
+  // calendar instead of freezing at mount (0007 E1).
+  const todayKey = useLocalDateKey();
+  const range = useMemo(() => getLast7DayReportRange(), [todayKey]);
   const diaryQuery = useDiaryEntriesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
   const dosesQuery = useMedicationDosesByDateRange(livePetId, range.fromDateKey, range.toDateKey, userId);
   const summary = useMemo(() => {
@@ -88,17 +96,6 @@ export function useReportDraftSummary({
   };
 
   return { ...summary, sourceStatus, refetchSources };
-}
-
-export function getLast7DayReportRange(anchorDate = new Date()): ReportDateRange {
-  const toDate = new Date(anchorDate);
-  toDate.setHours(0, 0, 0, 0);
-  const fromDate = addDays(toDate, -6);
-
-  return {
-    fromDateKey: getLocalDateKey(fromDate),
-    toDateKey: getLocalDateKey(toDate),
-  };
 }
 
 export function createReportDraftSummary(entries: DiaryEntry[], doses: DoseRecord[]): ReportDraftSummary {
@@ -154,7 +151,7 @@ function createMissingRecords(entries: DiaryEntry[], doses: DoseRecord[], latest
 function createTimelineHighlights(entries: DiaryEntry[], doses: DoseRecord[]) {
   const entryHighlights = entries.map((entry) => ({
     sortKey: `${entry.entryDate} ${entry.occurredAt}`,
-    item: { kind: "diary" as const, dateKey: entry.entryDate, time: entry.occurredAt, category: entry.category, summary: entry.summary },
+    item: { kind: "diary" as const, dateKey: entry.entryDate, time: entry.occurredAt, category: entry.category, summary: entry.summary, detail: entry.detail, memo: entry.memo },
   }));
   const doseHighlights = doses.map((dose) => ({
     sortKey: `${dose.doseDate ?? ""} ${dose.scheduledAt}`,
@@ -245,8 +242,3 @@ function getLocalDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
-}

@@ -13,9 +13,11 @@ type Props = {
   accessibilityLabel?: string;
   allowClear?: boolean;
   clearLabel?: string;
+  // Caps the native picker (e.g. birthdates cannot be in the future).
+  maximumDate?: Date;
 };
 
-export function DatePickerField({ value, onChange, placeholder, accessibilityLabel = placeholder, allowClear = false, clearLabel = "Clear" }: Props) {
+export function DatePickerField({ value, onChange, placeholder, accessibilityLabel = placeholder, allowClear = false, clearLabel = "Clear", maximumDate }: Props) {
   const [open, setOpen] = useState(false);
   const { language } = useLanguage();
   const selectedDate = parseDateValue(value);
@@ -34,7 +36,7 @@ export function DatePickerField({ value, onChange, placeholder, accessibilityLab
           <AppIcon name="calendar" size={iconSize.md} color={colors.orangeDeep} />
           <Text style={[styles.value, !value && styles.placeholder]}>{displayValue}</Text>
         </View>
-        <DateTimePicker accessibilityLabel={accessibilityLabel} value={selectedDate} mode="date" display="compact" onValueChange={handleValueChange} />
+        <DateTimePicker accessibilityLabel={accessibilityLabel} value={selectedDate} mode="date" display="compact" maximumDate={maximumDate} onValueChange={handleValueChange} />
         {allowClear && value ? (
           <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} style={styles.clearInline} onPress={() => onChange("")} hitSlop={8}>
             <Text style={styles.clearText}>{clearLabel}</Text>
@@ -62,7 +64,7 @@ export function DatePickerField({ value, onChange, placeholder, accessibilityLab
           <Text style={styles.clearText}>{clearLabel}</Text>
         </Pressable>
       ) : null}
-      {open ? <DateTimePicker value={selectedDate} mode="date" display="default" onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
+      {open ? <DateTimePicker value={selectedDate} mode="date" display="default" maximumDate={maximumDate} onValueChange={handleValueChange} onDismiss={() => setOpen(false)} /> : null}
     </View>
   );
 }

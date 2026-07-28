@@ -20,11 +20,16 @@ export function DangerButton({ label, icon, onPress, disabled = false, busy = fa
   );
 }
 
-export type NoticeTone = "success" | "error" | "progress";
+// "info" is neutral guidance (permissions, sign-in prompts, locked features);
+// "progress" is work in flight. Both render muted so only real success is
+// green. tone is required: the old "success" default let failures and
+// refusals render with a green check whenever a call site forgot to pass it
+// — the root cause behind six audited tone defects (0007 C2).
+export type NoticeTone = "success" | "error" | "progress" | "info";
 
-export function NoticeBanner({ text, icon = "check", tone = "success" }: { text: string; icon?: AppIconName; tone?: NoticeTone }) {
+export function NoticeBanner({ text, icon = "check", tone }: { text: string; icon?: AppIconName; tone: NoticeTone }) {
   const isError = tone === "error";
-  const iconColor = isError ? colors.danger : tone === "progress" ? colors.textMuted : colors.mintDeep;
+  const iconColor = isError ? colors.danger : tone === "success" ? colors.mintDeep : colors.textMuted;
   return (
     <View
       accessibilityRole={isError ? "alert" : undefined}

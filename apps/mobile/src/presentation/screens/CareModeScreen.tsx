@@ -6,12 +6,15 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../..
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { useLanguage } from "../../i18n/languageContext";
 import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
 import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
 import { medicationAgendaSourceLabelKey, type TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { CareMedicationAddCard } from "./CareMedicationAddCard";
 import { VetReportReadinessCard } from "../../contexts/care/ui/CareReportReadinessCard";
 import { partitionCareSchedules, schedulePeriodBadge } from "./careScheduleSummary";
+import { scheduleAppliesOnDate } from "../../contexts/medication/application/medicationScheduleRules";
+import { getLocalDateKey } from "../../shared-kernel/date";
 import { styles } from "./CareModeScreen.styles";
 
 type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedicationForm>["onUpdate"]>;
@@ -69,6 +72,7 @@ function CarePanel({
   canDeleteDose: boolean;
   canManageReports: boolean;
 }) {
+  const { language } = useLanguage();
   const [editingDoseId, setEditingDoseId] = useState<string | null>(null);
   const [addCardOpen, setAddCardOpen] = useState(false);
   const [schedulesExpanded, setSchedulesExpanded] = useState(false);
@@ -79,7 +83,7 @@ function CarePanel({
 
   return (
     <>
-      {!canManageCare ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" /> : null}
+      {!canManageCare ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" tone="info" /> : null}
 
       {careStatus === "error" ? (
         <>
@@ -120,16 +124,22 @@ function CarePanel({
       <SurfaceCard>
         <View style={styles.scheduleCard}>
           <Text style={styles.sectionTitle}>{t("care.scheduleSummaryTitle")}</Text>
-          {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t("care.scheduleSummaryCopy")}</Text> : null}
+          {/* Loading/failed setup must not read as "nothing registered" (C3). */}
+          {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t(careStatus === "ready" ? "care.scheduleSummaryCopy" : careStatus === "loading" ? "diary.listLoading" : "care.loadFailed")}</Text> : null}
           {visibleSchedules.map((schedule) => {
-            const badge = schedulePeriodBadge(schedule);
+            const badge = schedulePeriodBadge(schedule, language);
+            // A schedule outside its window (or off its recurrence day) still
+            // lists for reference, but offering "use today" on it would create
+            // a dose the plan never asked for today.
+            const appliesToday = scheduleAppliesOnDate(schedule, getLocalDateKey());
+            const usable = canManageCare && appliesToday;
             return (
               <Pressable
                 key={schedule.id}
                 accessibilityRole="button"
                 accessibilityLabel={`${schedule.localTime.slice(0, 5)}, ${schedule.medicationName}, ${schedule.dosageLabel}${badge ? `, ${badge}` : ""}`}
-                accessibilityState={{ disabled: !canManageCare }}
-                disabled={!canManageCare}
+                accessibilityState={{ disabled: !usable }}
+                disabled={!usable}
                 style={styles.scheduleRow}
                 onPress={() => onUseSchedule(schedule)}
               >
@@ -138,7 +148,8 @@ function CarePanel({
                   <Text style={styles.medTitle}>{schedule.localTime.slice(0, 5)} · {schedule.medicationName}</Text>
                   <Text style={styles.medMeta}>{schedule.dosageLabel}{badge ? ` · ${badge}` : ""}</Text>
                 </View>
-                {canManageCare ? <Text style={styles.useText}>{t("care.useToday")}</Text> : null}
+                {usable ? <Text style={styles.useText}>{t("care.useToday")}</Text> : null}
+                {canManageCare && !appliesToday ? <Text style={styles.medMeta}>{t("care.scheduleNotToday")}</Text> : null}
               </Pressable>
             );
           })}
@@ -157,16 +168,27 @@ function CarePanel({
         <Text style={styles.sectionTitle}>{t("care.conditionFromDiaryTitle")}</Text>
         <Text style={styles.reportCopy}>{conditionScore ? `${t("care.latestCondition")} ${conditionScore}/5` : t("care.conditionFromDiaryCopy")}</Text>
       </SurfaceCard>
-      <VetReportReadinessCard doses={doses} conditionScore={conditionScore} careSetup={careSetup} />
+      {/* The readiness checklist asserts "0/3 · missing" from data that has
+          not loaded; hold it back until the sources are ready (C3). */}
+      {careStatus === "ready" ? <VetReportReadinessCard doses={doses} conditionScore={conditionScore} careSetup={careSetup} /> : null}
       {canManageReports
         ? <PrimaryButton label={t("care.generateVetReport")} icon="report" onPress={onGenerateReport} />
-        : <NoticeBanner text={t("permission.reportCareTeamOnly")} icon="shield" />}
+        : <NoticeBanner text={t("permission.reportCareTeamOnly")} icon="shield" tone="info" />}
     </>
   );
 }
 
 function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped" | "partial") => void }) {
   const visual = row.status === "completed" ? { accent: colors.mint, icon: colors.mintDeep, label: t("care.status.completed") } : row.status === "skipped" ? { accent: colors.inactive, icon: colors.textSoft, label: t("care.status.skipped") } : row.status === "partial" ? { accent: colors.memo, icon: colors.orangeDeep, label: t("care.status.partial") } : { accent: colors.salmon, icon: colors.salmon, label: t("care.status.pending") };
+  // The first tap creates the dose row; a second tap before it lands creates a
+  // duplicate that the unique constraint rejects, so the user sees "save
+  // failed" for a dose that was in fact saved.
+  const [saving, setSaving] = useState(false);
+  const submitStatus = (status: "completed" | "skipped" | "partial") => {
+    if (saving) return;
+    setSaving(true);
+    void Promise.resolve(onStatusChange(status)).finally(() => setSaving(false));
+  };
 
   return (
     <View style={styles.agendaRow}>
@@ -185,7 +207,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityState={{ selected: row.status === "completed" }}
             aria-pressed={row.status === "completed"}
             style={[styles.givenButton, row.status === "completed" && styles.agendaActionSelected]}
-            onPress={() => onStatusChange("completed")}
+            disabled={saving}
+            onPress={() => submitStatus("completed")}
           >
             <Text numberOfLines={1} style={styles.givenButtonText}>{careStatusActionLabel("completed")}</Text>
           </Pressable>
@@ -195,7 +218,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityState={{ selected: row.status === "partial" }}
             aria-pressed={row.status === "partial"}
             style={[styles.partialButton, row.status === "partial" && styles.agendaActionSelected]}
-            onPress={() => onStatusChange("partial")}
+            disabled={saving}
+            onPress={() => submitStatus("partial")}
           >
             <Text numberOfLines={1} style={styles.partialButtonText}>{careStatusActionLabel("partial")}</Text>
           </Pressable>
@@ -205,7 +229,8 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
             accessibilityState={{ selected: row.status === "skipped" }}
             aria-pressed={row.status === "skipped"}
             style={[styles.skipButton, row.status === "skipped" && styles.agendaActionSelected]}
-            onPress={() => onStatusChange("skipped")}
+            disabled={saving}
+            onPress={() => submitStatus("skipped")}
           >
             <Text numberOfLines={1} style={styles.skipButtonText}>{careStatusActionLabel("skipped")}</Text>
           </Pressable>

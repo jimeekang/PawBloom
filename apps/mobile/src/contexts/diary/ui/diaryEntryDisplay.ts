@@ -1,11 +1,16 @@
 import type { DiaryDetailInput, DiaryEntry } from "../domain/diaryEntry";
 import { t, type TranslationKey } from "../../../i18n/translations";
+import { isDefaultDiarySummary } from "../application/diarySummary";
 
-// 표시용 요약은 현재 언어로 detail에서 재구성한다. detail이 없는 기록(메모·레거시)은 저장된 summary를 그대로 쓴다.
-export function getDiaryEntryDisplaySummary(entry: Pick<DiaryEntry, "summary" | "detail" | "memo" | "category">): string {
-  if (entry.category === "photo") return t("category.photo");
-  if (!entry.detail) return entry.summary;
-  return [formatDiaryDetailSummary(entry.detail), entry.memo?.trim()].filter(Boolean).join(" · ") || entry.summary;
+// 표시용 요약은 현재 언어로 detail에서 재구성한다. detail이 없는 기록 중 사용자가 쓴 메모는 그대로,
+// 내용 없이 저장된 기록의 자리표시 문구는 카테고리 라벨로 현재 언어에 맞춰 다시 그린다.
+// Fields are optional so the vet report's timeline items (same shape, looser
+// types) can reuse this without the report context importing diary internals.
+export function getDiaryEntryDisplaySummary(entry: Partial<Pick<DiaryEntry, "summary" | "detail" | "memo" | "category">>): string {
+  const category = entry.category ?? "memo";
+  if (category === "photo") return t("category.photo");
+  if (!entry.detail) return isDefaultDiarySummary(entry.summary) ? t(`category.${category}` as TranslationKey) : entry.summary ?? "";
+  return [formatDiaryDetailSummary(entry.detail), entry.memo?.trim()].filter(Boolean).join(" · ") || (entry.summary ?? "");
 }
 
 export function formatDiaryDetailSummary(detail: DiaryDetailInput): string {

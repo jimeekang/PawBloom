@@ -25,9 +25,11 @@ export function AiBriefCard({
 }) {
   const { language } = useLanguage();
   const [range, setRange] = useState<RangeValue>("7");
-  const { brief, generating, failed, generate } = useAiBrief(databaseMode ? petId : null, language);
-  const shownBrief = databaseMode ? brief : buildSampleBrief(petId, language);
-  const emptyState = databaseMode && !hasRecords && !shownBrief;
+  const { brief, generating, failed, generate, reset } = useAiBrief(databaseMode ? petId : null, language);
+  // The sample brief describes records, so showing it for a pet with none
+  // contradicts the empty timeline directly below it on the same screen.
+  const shownBrief = databaseMode ? brief : hasRecords ? buildSampleBrief(petId, language) : null;
+  const emptyState = !hasRecords && !shownBrief;
 
   return (
     <SurfaceCard>
@@ -52,7 +54,7 @@ export function AiBriefCard({
                 { label: t("briefing.range14"), value: "14" },
               ]}
               value={range}
-              onChange={setRange}
+              onChange={(next) => { setRange(next); reset(); }}
             />
             <PrimaryButton
               label={t(generating ? "briefing.generating" : "briefing.generate")}

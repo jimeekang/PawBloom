@@ -30,11 +30,11 @@ edit_policy: exclusive
 - Latest commit: `88c88d5 feat: complete functional QA and atomic persistence` (브랜치는 현재 작업 워크트리 기준)
 - Required verification: `npm run verify`
 - Expo dev URL: `http://localhost:8081/` 또는 `http://localhost:3200/` (실행 명령에 따라 다름)
-- **진행 상태:** Week 1 완료 · Week 2 Day 8~12 구현 커밋 확인(세부 검증은 Day 14 checkpoint에서 일괄) · Day 13~14 잔여 · Week 3 기간 진입.
+- **진행 상태:** Week 1 완료 · Week 2 Day 8~13 완료(Day 13은 2026-07-23 실측) · Day 14 checkpoint 잔여 · Week 3 기간 진입.
 
 ## ▶ 다음 즉시 작업
 
-**앱스토어 출시 2주 실행계획 [0005](./0005-appstore-launch-2week-plan.md)** (2026-07-19 사용자 우선 지시 — 근거: [감사 05](../../analysis/05-app-store-readiness.md)). 0004 알림 슬라이스는 구현 커밋 반영 확인, 잔여 실기기 QA는 0005 Task 8에 흡수. 0005 완료 후 Week 2 잔여 Day 13(가족 초대 skeleton) → Day 14 checkpoint 순으로 복귀.
+**앱스토어 출시 2주 실행계획 [0005](./0005-appstore-launch-2week-plan.md)** (2026-07-19 사용자 우선 지시 — 근거: [감사 05](../../analysis/05-app-store-readiness.md)). 0004 알림 슬라이스는 구현 커밋 반영 확인, 잔여 실기기 QA는 0005 Task 8에 흡수. 0005 완료 후 Week 2 잔여 Day 14 checkpoint로 복귀(Day 13 가족 초대 skeleton은 2026-07-23 완료 실측).
 
 ---
 

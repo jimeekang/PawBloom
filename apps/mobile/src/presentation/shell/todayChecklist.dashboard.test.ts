@@ -7,7 +7,12 @@ import type { ChecklistKey } from "./todayChecklist";
 
 const previewChecklist = createChecklistFromRecords(buildSampleDiaryEntries("pet-1"), buildSampleDoses("pet-1"));
 if (previewChecklist.walk) throw new Error("preview checklist must keep walk incomplete when no walk record exists (a pre-completed walk blocks recording)");
-if (!previewChecklist.medication) throw new Error("preview checklist must reflect the completed sample dose");
+// The sample data has one completed and one pending dose. The tile used to
+// show "recorded" beside a hero saying "1 left to check" (0007 D3): the tile
+// is done only when nothing is still pending.
+if (previewChecklist.medication) throw new Error("the medication tile must stay incomplete while a dose is still pending");
+const clearedChecklist = createChecklistFromRecords(buildSampleDiaryEntries("pet-1"), buildSampleDoses("pet-1").map((dose) => ({ ...dose, status: "completed" as const })));
+if (!clearedChecklist.medication) throw new Error("the medication tile must complete once every dose is recorded");
 if (!previewChecklist.food || !previewChecklist.water || !previewChecklist.stool) throw new Error("preview checklist must match the sample diary records");
 
 const checklist: Record<ChecklistKey, boolean> = {

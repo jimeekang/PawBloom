@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import type { DiaryEntry, DiaryPhotoInput } from "../domain/diaryEntry";
-import { t } from "../../../i18n/translations";
+import { t, type TranslationKey } from "../../../i18n/translations";
+import type { NoticeTone } from "../../../design-system/components";
 import { DiaryPhotoPicker } from "./DiaryPhotoPicker";
 import { styles } from "./DiaryEntryScreen.styles";
 import { colors, radius, spacing } from "../../../design-system/tokens";
@@ -10,7 +11,7 @@ type Props = {
   savedPhotoCount: number;
   photos: DiaryPhotoInput[];
   onChange: (photos: DiaryPhotoInput[]) => void;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: TranslationKey, tone?: NoticeTone) => void;
 };
 
 export function DiaryPhotoSection({ editingEntry, savedPhotoCount, photos, onChange, onNotice }: Props) {
