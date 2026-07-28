@@ -91,6 +91,12 @@ export function isCareSetupDraftEmpty(draft: CareSetupFormDraft) {
   return !draft.conditionName.trim() && !draft.planTitle.trim() && !draft.medicationName.trim();
 }
 
+// The medications table requires dosage_label, so a medication without one
+// only fails server-side as an opaque "save failed" that never clears (B4).
+export function isCareSetupMedicationMissingDosage(draft: Pick<CareSetupFormDraft, "medicationName" | "dosageLabel">): boolean {
+  return Boolean(draft.medicationName.trim()) && !draft.dosageLabel.trim();
+}
+
 export function careSetupDraftKey(setup: ActiveCareSetup, petId?: string) {
   return JSON.stringify({
     petId: petId ?? null,

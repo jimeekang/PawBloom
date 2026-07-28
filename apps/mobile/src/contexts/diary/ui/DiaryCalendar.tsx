@@ -14,6 +14,9 @@ type CalendarDay = {
   dayLabel: string;
   inMonth: boolean;
   isToday: boolean;
+  // Diary records describe what already happened; future dates are not
+  // selectable, or a record could be saved for a day that has not occurred.
+  isFuture: boolean;
 };
 
 export function DiaryCalendar({
@@ -33,6 +36,9 @@ export function DiaryCalendar({
   const weeks = createMonthWeeks(selectedDate);
   const [expanded, setExpanded] = useState(false);
   const selectedDateLabel = formatSelectedDate(selectedDate, locale);
+  // The next-month arrow also moves the selected date, so stepping into a
+  // month that has not started yet would select a future day.
+  const nextMonthDisabled = monthOffsetKey(selectedDate, 1) > toDateKey(new Date());
 
   return (
     <SurfaceCard>
@@ -68,10 +74,12 @@ export function DiaryCalendar({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("diary.nextMonth")}
+              accessibilityState={{ disabled: nextMonthDisabled }}
+              disabled={nextMonthDisabled}
               style={styles.monthButton}
               onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}
             >
-              <Text style={styles.monthButtonText}>{t("diary.nextMonth")}</Text>
+              <Text style={[styles.monthButtonText, nextMonthDisabled && styles.dayMuted]}>{t("diary.nextMonth")}</Text>
             </Pressable>
           </View>
 
@@ -90,14 +98,15 @@ export function DiaryCalendar({
                       key={day.dateKey}
                       accessibilityRole="button"
                       accessibilityLabel={formatDayA11yLabel(day.dateKey, locale)}
-                      accessibilityState={{ selected }}
+                      accessibilityState={{ selected, disabled: day.isFuture }}
+                      disabled={day.isFuture}
                       style={[styles.day, selected && styles.daySelected, day.isToday && styles.dayToday]}
                       onPress={() => {
                         onSelectDate(day.dateKey);
                         setExpanded(false);
                       }}
                     >
-                      <Text style={[styles.dayText, !day.inMonth && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
+                      <Text style={[styles.dayText, (!day.inMonth || day.isFuture) && styles.dayMuted, selected && styles.dayTextSelected]}>{day.dayLabel}</Text>
                     </Pressable>
                   );
                 })}
@@ -140,6 +149,7 @@ function createMonthDays(date: Date): CalendarDay[] {
       dayLabel: String(current.getDate()),
       inMonth: current.getMonth() === date.getMonth(),
       isToday: dateKey === todayKey,
+      isFuture: dateKey > todayKey,
     };
   });
 }

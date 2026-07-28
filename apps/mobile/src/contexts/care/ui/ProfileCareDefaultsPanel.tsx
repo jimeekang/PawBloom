@@ -14,6 +14,7 @@ import {
   getCareMedicationGroups,
   getInitialCareMedicationSelection,
   isCareSetupDraftEmpty,
+  isCareSetupMedicationMissingDosage,
   isCareSetupPeriodInvalid,
   resolveCareMedicationSelection,
   type CareMedicationSelection,
@@ -59,6 +60,10 @@ export function ProfileCareDefaultsPanel({ petId, setup, onSave, medicationRemin
     }
     if (isCareSetupPeriodInvalid(draft)) {
       setError(t("care.shortTermPeriodInvalid"));
+      return;
+    }
+    if (isCareSetupMedicationMissingDosage(draft)) {
+      setError(t("care.dosageRequired"));
       return;
     }
 

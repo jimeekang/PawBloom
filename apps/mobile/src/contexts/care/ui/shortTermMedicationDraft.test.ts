@@ -10,7 +10,9 @@ if (draft.endsOn !== addDaysToDateKey("2026-07-14", SHORT_TERM_DEFAULT_DURATION_
 if (draft.times.length !== 1 || draft.times[0] !== "08:00") throw new Error("short-term draft must start with one 08:00 dose time");
 
 if (shortTermDraftErrorKey(draft) !== "care.quickDoseMedicationRequired") throw new Error("empty medication name must be rejected");
-const named = { ...draft, medicationName: "Amoxicillin" };
+// dosage_label is NOT NULL server-side, so the form must catch it before save (0007 B4).
+if (shortTermDraftErrorKey({ ...draft, medicationName: "Amoxicillin" }) !== "care.dosageRequired") throw new Error("missing dosage must be rejected before the server can");
+const named = { ...draft, medicationName: "Amoxicillin", dosageLabel: "1정" };
 if (shortTermDraftErrorKey(named) !== null) throw new Error("valid draft must pass validation");
 if (shortTermDraftErrorKey({ ...named, endsOn: "2026-07-13" }) !== "care.shortTermPeriodInvalid") throw new Error("end date before start must be rejected");
 if (shortTermDraftErrorKey({ ...named, endsOn: named.startsOn }) !== null) throw new Error("single-day course must be allowed");
