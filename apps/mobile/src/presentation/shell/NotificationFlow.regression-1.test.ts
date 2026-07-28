@@ -21,7 +21,10 @@ function occurrences(source: string, needle: string) {
 const shell = read("presentation/PawBloomShell.tsx");
 const mealReminders = read("contexts/routine/application/mealReminderNotifications.ts");
 
-if (occurrences(shell, 'if (!databaseMode || !userId || Platform.OS === "web")') < 2) {
+// The care path also gates on the reminder preference; the toggle itself moved
+// to useMedicationReminderToggle with the same guard.
+if (!shell.includes('if (!databaseMode || !userId || Platform.OS === "web" || !medicationRemindersEnabled) return savedSetup;')
+  || occurrences(shell, 'if (!databaseMode || !userId || Platform.OS === "web")') < 1) {
   throw new Error("both care and routine save paths must skip reminder notices in preview/web mode (B5)");
 }
 
