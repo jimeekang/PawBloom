@@ -81,7 +81,7 @@ function CarePanel({
 
   return (
     <>
-      {!canManageCare ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" /> : null}
+      {!canManageCare ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" tone="info" /> : null}
 
       {careStatus === "error" ? (
         <>
@@ -122,7 +122,8 @@ function CarePanel({
       <SurfaceCard>
         <View style={styles.scheduleCard}>
           <Text style={styles.sectionTitle}>{t("care.scheduleSummaryTitle")}</Text>
-          {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t("care.scheduleSummaryCopy")}</Text> : null}
+          {/* Loading/failed setup must not read as "nothing registered" (C3). */}
+          {careSetup.schedules.length === 0 ? <Text style={styles.reportCopy}>{t(careStatus === "ready" ? "care.scheduleSummaryCopy" : careStatus === "loading" ? "diary.listLoading" : "care.loadFailed")}</Text> : null}
           {visibleSchedules.map((schedule) => {
             const badge = schedulePeriodBadge(schedule);
             // A schedule outside its window (or off its recurrence day) still
@@ -165,10 +166,12 @@ function CarePanel({
         <Text style={styles.sectionTitle}>{t("care.conditionFromDiaryTitle")}</Text>
         <Text style={styles.reportCopy}>{conditionScore ? `${t("care.latestCondition")} ${conditionScore}/5` : t("care.conditionFromDiaryCopy")}</Text>
       </SurfaceCard>
-      <VetReportReadinessCard doses={doses} conditionScore={conditionScore} careSetup={careSetup} />
+      {/* The readiness checklist asserts "0/3 · missing" from data that has
+          not loaded; hold it back until the sources are ready (C3). */}
+      {careStatus === "ready" ? <VetReportReadinessCard doses={doses} conditionScore={conditionScore} careSetup={careSetup} /> : null}
       {canManageReports
         ? <PrimaryButton label={t("care.generateVetReport")} icon="report" onPress={onGenerateReport} />
-        : <NoticeBanner text={t("permission.reportCareTeamOnly")} icon="shield" />}
+        : <NoticeBanner text={t("permission.reportCareTeamOnly")} icon="shield" tone="info" />}
     </>
   );
 }

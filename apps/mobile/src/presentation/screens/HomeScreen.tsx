@@ -62,11 +62,13 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
         <View style={styles.heroSummary}>
           <View style={styles.heroSummaryItem}>
             <Text style={styles.heroSummaryLabel}>{t("today.dashboardCompletion")}</Text>
-            <Text style={styles.heroSummaryValue}>{dashboard.completedCount}/{dashboard.totalCount}</Text>
+            {/* While records are loading or failed, "0/7" would read as a
+                confirmed count of nothing; show a placeholder instead (C3). */}
+            <Text style={styles.heroSummaryValue}>{todayStatus === "ready" ? `${dashboard.completedCount}/${dashboard.totalCount}` : "–"}</Text>
           </View>
           {showMedicationSummary ? <View style={styles.heroSummaryItem}>
             <Text style={styles.heroSummaryLabel}>{t("today.dashboardMedicationPending")}</Text>
-            <Text style={styles.heroSummaryValue}>{dashboard.pendingMedicationCount}</Text>
+            <Text style={styles.heroSummaryValue}>{todayStatus === "ready" ? dashboard.pendingMedicationCount : "–"}</Text>
           </View> : null}
         </View>
       </View>

@@ -53,8 +53,8 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
 
   return (
     <View style={styles.screen}>
-      <NoticeBanner text={t(stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} />
-      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("permission.reportOwnerConfirmation")} icon="shield" /> : null}
+      <NoticeBanner text={t(stageContent.noticeKey)} icon={stage === "shared" ? "share" : "shield"} tone="info" />
+      {report?.status === "draft" && !canConfirm ? <NoticeBanner text={t("permission.reportOwnerConfirmation")} icon="shield" tone="info" /> : null}
       {visibleError ? <NoticeBanner text={t(workflowErrorKey[visibleError])} icon="close" tone="error" /> : null}
       {visibleError === "load" && onRetryLoad ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryLoad} /> : null}
 
@@ -66,7 +66,9 @@ export function ReportsScreen({ report, reportSummary, canGenerate, canConfirm, 
             <Text style={styles.caption}>{t("reports.rangeLabel")}</Text>
           </View>
         </View>
-        <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t("reports.emptyCopy")}</Text>
+        {/* While the 7-day sources are loading or failed, "add records to
+            build a preview" would assert an empty week that is not known (C3). */}
+        <Text style={styles.summary}>{hasDisplayedRecords ? buildReportSummaryCopy(displayedSummary) : t(reportSummary.sourceStatus === "loading" ? "diary.listLoading" : reportSummary.sourceStatus === "error" ? "reports.loadFailed" : "reports.emptyCopy")}</Text>
         <View style={styles.notice}>
           <AppIcon name="shield" size={iconSize.sm} color={colors.orangeDeep} />
           <Text style={styles.noticeText}>{t("briefing.disclaimer")}</Text>

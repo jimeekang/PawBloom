@@ -170,7 +170,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
           <SecondaryButton label={t("care.quickDoseCancelEdit")} onPress={isSaving ? undefined : onCancelEdit} disabled={isSaving} />
           {canDelete ? (
             <DangerButton label={t("care.quickDoseDelete")} onPress={deleteDose} disabled={isSaving} />
-          ) : <NoticeBanner text={t("permission.medicationDeleteOwnerOnly")} icon="shield" />}
+          ) : <NoticeBanner text={t("permission.medicationDeleteOwnerOnly")} icon="shield" tone="info" />}
         </View>
       ) : null}
     </View>

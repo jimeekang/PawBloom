@@ -150,12 +150,12 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
       <Text style={styles.title}>{t(mode === "manage" ? "pet.manageTitle" : "pet.onboardingTitle")}</Text>
       <Text style={styles.copy}>{t(mode === "manage" ? "pet.manageCopy" : "pet.onboardingCopy")}</Text>
 
-      {!user ? <NoticeBanner text={t("pet.loginRequired")} icon="shield" /> : null}
-      {entitlementLoading ? <NoticeBanner text={t("pet.planLoading")} icon="lock" /> : null}
+      {!user ? <NoticeBanner text={t("pet.loginRequired")} icon="shield" tone="info" /> : null}
+      {entitlementLoading ? <NoticeBanner text={t("pet.planLoading")} icon="lock" tone="progress" /> : null}
       {entitlementFailed ? <NoticeBanner text={t("pet.planLoadFailed")} icon="close" tone="error" /> : null}
       {entitlementFailed ? <SecondaryButton label={t("diary.listRetry")} onPress={() => void entitlementQuery.refetch()} /> : null}
       {hasPets && !showCreateForm && petCreationAllowed ? <SecondaryButton label={t("pet.create")} icon="add" onPress={onAddAnother} /> : null}
-      {hasPets && !showCreateForm && entitlement && !petCreationAllowed ? <NoticeBanner text={t("pet.planLimitReached").replace("{limit}", `${entitlement.maxPets}`)} icon="lock" /> : null}
+      {hasPets && !showCreateForm && entitlement && !petCreationAllowed ? <NoticeBanner text={t("pet.planLimitReached").replace("{limit}", `${entitlement.maxPets}`)} icon="lock" tone="info" /> : null}
 
       {shouldShowPetSelector ? <PetSelector pets={pets} activePetId={activePet?.id} onSelect={selectPet} /> : null}
 
@@ -194,11 +194,11 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
         </SurfaceCard>
       ) : null}
 
-      {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("permission.petOwnerOnly")} icon="shield" /> : null}
+      {activePet && !showCreateForm && !canManageActivePet ? <NoticeBanner text={t("permission.petOwnerOnly")} icon="shield" tone="info" /> : null}
 
       {activePet && !showCreateForm && canManageCareDefaults && routine && onSaveRoutine ? <RoutineSettingsPanel routine={routine} onSave={onSaveRoutine} /> : null}
       {activePet && !showCreateForm && canManageCareDefaults && careSetup && onSaveCareSetup ? <ProfileCareDefaultsPanel petId={activePet.id} setup={careSetup} onSave={onSaveCareSetup} medicationRemindersEnabled={medicationRemindersEnabled} onToggleMedicationReminders={onToggleMedicationReminders} /> : null}
-      {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" /> : null}
+      {activePet && !showCreateForm && !canManageCareDefaults ? <NoticeBanner text={t("permission.careTeamOnly")} icon="shield" tone="info" /> : null}
 
       {showCreateForm && petCreationAllowed ? (
         <SurfaceCard>
@@ -238,8 +238,8 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
       {(error ?? authMessage) ? (
         <NoticeBanner
           text={t((error ?? authMessage)!)}
-          icon={error ? "close" : authMessage === "pet.photoPartial" ? "shield" : "check"}
-          tone={error ? "error" : authMessage === "pet.photoPartial" ? "progress" : "success"}
+          icon={error ? "close" : authMessage === "pet.photoPartial" ? "close" : "check"}
+          tone={error ? "error" : authMessage === "pet.photoPartial" ? "error" : "success"}
         />
       ) : null}
 

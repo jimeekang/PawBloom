@@ -18,13 +18,13 @@ type Props = {
 export function DiaryEntryActions({ editing, isSaving, saveBlockedByRole, canDelete, onSave, onCancel, onDelete }: Props) {
   return (
     <View style={styles.actionStack}>
-      {saveBlockedByRole ? <NoticeBanner text={t("permission.diaryUpdateCareTeamOnly")} icon="shield" /> : null}
+      {saveBlockedByRole ? <NoticeBanner text={t("permission.diaryUpdateCareTeamOnly")} icon="shield" tone="info" /> : null}
       <PrimaryButton label={editing ? t("diary.update") : t("diary.save")} onPress={onSave} disabled={isSaving || saveBlockedByRole} />
       {editing ? <SecondaryButton label={t("diary.cancelEdit")} onPress={onCancel} disabled={isSaving} /> : null}
       {editing && canDelete ? (
         <DangerButton label={t("diary.delete")} icon="close" onPress={onDelete} disabled={isSaving} />
       ) : null}
-      {editing && !canDelete ? <NoticeBanner text={t("permission.diaryDeleteOwnerOnly")} icon="shield" /> : null}
+      {editing && !canDelete ? <NoticeBanner text={t("permission.diaryDeleteOwnerOnly")} icon="shield" tone="info" /> : null}
     </View>
   );
 }

@@ -47,7 +47,7 @@ export function PasswordRecoveryScreen() {
       <SafeAreaView style={styles.safe}>
         <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>{t("auth.newPasswordTitle")}</Text>
-          <NoticeBanner text={t("auth.resetDone")} icon="check" />
+          <NoticeBanner text={t("auth.resetDone")} icon="check" tone="success" />
           <PrimaryButton label={t("auth.resetContinue")} onPress={cancelPasswordRecovery} />
         </ScrollView>
       </SafeAreaView>

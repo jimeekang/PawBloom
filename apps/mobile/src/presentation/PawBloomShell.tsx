@@ -60,14 +60,6 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
 
   const [activeTab, setActiveTabState] = useState<MainTab>("today");
   const scrollRef = useRef<ScrollView>(null);
-  // The ScrollView used to remount per tab (key) to reset scroll; that also
-  // unmounted the diary form and wiped unsaved drafts. Reset scroll manually.
-  const setActiveTab = useCallback((tab: MainTab) => {
-    setActiveTabState((current) => {
-      if (current !== tab) scrollRef.current?.scrollTo({ y: 0, animated: false });
-      return tab;
-    });
-  }, []);
   const [showPetSettings, setShowPetSettings] = useState(false);
   const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: databaseMode ? t("today.databaseNotice") : t("today.previewNotice"), tone: "success" });
   const setNotice = useCallback((text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone }), []);
@@ -79,6 +71,17 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   useEffect(() => {
     setNotice(databaseMode ? t("today.databaseNotice") : t("today.previewNotice"));
   }, [databaseMode, language, setNotice]);
+
+  // Tab change: reset scroll (the ScrollView no longer remounts per tab — that
+  // wiped the diary draft, B9) and drop the notice, so an error raised on one
+  // screen does not follow the user across unrelated tabs (C5).
+  const setActiveTab = useCallback((tab: MainTab) => {
+    if (tab !== activeTab) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      setNotice(databaseMode ? t("today.databaseNotice") : t("today.previewNotice"));
+    }
+    setActiveTabState(tab);
+  }, [activeTab, databaseMode, setNotice]);
 
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
   const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
