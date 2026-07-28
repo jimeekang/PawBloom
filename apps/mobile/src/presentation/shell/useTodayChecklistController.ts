@@ -40,7 +40,7 @@ type Params = {
 export function useTodayChecklistController({ databaseMode, activePetId, canDeleteDiary, canManageCare, canDeleteDose, localChecklist, setLocalChecklist, activeEntries, activeDoses, localEntries, localDoses, replaceLocalEntries, replaceLocalDoses, medicationAgenda, saveMedicationAgendaStatus, createDiaryEntryRemote, createMedicationDoseRemote, deleteDiaryEntryRemote, deleteMedicationDoseRemote, updateMedicationDoseStatusRemote, setNotice, showSaveFeedback }: Params) {
   const pendingChecklistKeys = useRef<ChecklistKey[]>([]);
   const medicationUndoRef = useRef<MedicationChecklistUndo | null>(null);
-  const checklist = useMemo(() => (databaseMode ? createChecklistFromRecords(activeEntries, activeDoses) : localChecklist), [activeDoses, activeEntries, databaseMode, localChecklist]);
+  const checklist = useMemo(() => (databaseMode ? createChecklistFromRecords(activeEntries, activeDoses, medicationAgenda) : localChecklist), [activeDoses, activeEntries, databaseMode, localChecklist, medicationAgenda]);
   useEffect(() => {
     pendingChecklistKeys.current = [];
     medicationUndoRef.current = null;

@@ -2,6 +2,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { env } from "../../../shared-kernel/config";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { VetReportRangeDays } from "../domain/vetReport";
+import { getReportCalendarRange } from "./reportDraftRecords";
 import {
   buildVetReportShareUrl,
   parseAuthenticatedVetReportStateResponse,
@@ -12,8 +13,12 @@ import {
 
 export async function generateVetReport({ petId, rangeDays = 7 }: { petId: string; rangeDays?: VetReportRangeDays }): Promise<GeneratedVetReport> {
   const client = requireSupabaseClient();
+  // Send the device-local calendar window so the generated report covers the
+  // same days as the draft the user just reviewed. The edge function's rolling
+  // now()-N*24h fallback (older clients) can disagree around day boundaries.
+  const range = getReportCalendarRange(rangeDays);
   const { data, error } = await client.functions.invoke<unknown>("generate-vet-report", {
-    body: { petId, rangeDays },
+    body: { petId, rangeDays, fromDateKey: range.fromDateKey, toDateKey: range.toDateKey },
   });
 
   if (error) throw new Error(await edgeFunctionErrorMessage(error));

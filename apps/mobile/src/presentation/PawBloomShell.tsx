@@ -110,9 +110,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     onNotice: setNotice,
     onSaved: () => showSaveFeedback("diary"),
     onLocalEntrySaved: (entry) => setLocalChecklist((current) => ({ ...current, ...(entry.category in current ? { [entry.category]: true } : {}) })),
-    onLocalEntriesChanged: (nextEntries) => setLocalChecklist(createChecklistFromRecords(getTodayEntriesForPet(nextEntries, activePet.id), medication.activeDoses)),
+    onLocalEntriesChanged: (nextEntries) => setLocalChecklist(createChecklistFromRecords(getTodayEntriesForPet(nextEntries, activePet.id), medication.activeDoses, medication.medicationAgenda)),
   });
-  useEffect(() => { if (!databaseMode) setLocalChecklist(createChecklistFromRecords(diary.activeEntries, medication.activeDoses)); }, [databaseMode, diary.activeEntries, medication.activeDoses]);
+  useEffect(() => { if (!databaseMode) setLocalChecklist(createChecklistFromRecords(diary.activeEntries, medication.activeDoses, medication.medicationAgenda)); }, [databaseMode, diary.activeEntries, medication.activeDoses, medication.medicationAgenda]);
   const reportSummary = useReportDraftSummary({ activePetId: activePet.id, databaseMode, livePetId, userId, entries: diary.entries, doses: medication.doses });
   const reportWorkflow = useVetReportWorkflow({
     petId: livePetId,
@@ -229,7 +229,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
         <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <OfflineConflictNotice key={userId ?? "signed-out"} userId={userId} />
           {activeTab !== "today" && nonHomeNotice ? <NoticeBanner text={nonHomeNotice} icon={notice.tone === "error" ? "close" : "check"} tone={notice.tone} /> : null}
-          {activeTab === "today" ? <HomeScreen pet={activePet} userId={userId} checklist={checklist} entries={diary.activeEntries} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} walkEnabled={routine.activeRoutine.walk.enabled !== false} includeMedication showMedicationSummary={hasCareRecords} notice={homeNotice} noticeTone={notice.tone} todayStatus={diary.todayDiaryStatus === "error" || medication.todayDosesStatus === "error" ? "error" : diary.todayDiaryStatus === "loading" || medication.todayDosesStatus === "loading" ? "loading" : "ready"} onRetryToday={() => { diary.refetchTodayDiary(); medication.refetchTodayDoses(); }} onChecklistToggle={toggleChecklist} onViewTimelineAll={() => { diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day"); setActiveTab("diary"); }} onTimelineEntryPress={openTimelineEntry} /> : null}
+          {activeTab === "today" ? <HomeScreen pet={activePet} userId={userId} checklist={checklist} entries={diary.activeEntries} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} walkEnabled={routine.activeRoutine.walk.enabled !== false} includeMedication showMedicationSummary={hasCareRecords} notice={homeNotice} noticeTone={notice.tone} briefHasRecords={reportSummary.hasRecords || diary.activeEntries.length > 0 || medication.activeDoses.length > 0} todayStatus={diary.todayDiaryStatus === "error" || medication.todayDosesStatus === "error" ? "error" : diary.todayDiaryStatus === "loading" || medication.todayDosesStatus === "loading" ? "loading" : "ready"} onRetryToday={() => { diary.refetchTodayDiary(); medication.refetchTodayDoses(); }} onChecklistToggle={toggleChecklist} onViewTimelineAll={() => { diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day"); setActiveTab("diary"); }} onTimelineEntryPress={openTimelineEntry} /> : null}
           {/* The diary form holds an unsaved draft (memo, photos, detail); it
               stays mounted and hides so switching tabs does not wipe it (B9). */}
           <View style={activeTab === "diary" ? null : styles.hiddenTab}>

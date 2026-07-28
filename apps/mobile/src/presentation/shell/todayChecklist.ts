@@ -5,7 +5,12 @@ import { t, type TranslationKey } from "../../i18n/translations";
 
 export type ChecklistKey = Exclude<DiaryCategory, "photo"> | "medication";
 
-export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRecord[]): Record<ChecklistKey, boolean> {
+export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRecord[], medicationAgenda: Pick<TodayMedicationAgendaRow, "status">[] = []): Record<ChecklistKey, boolean> {
+  // The tile and the hero counter must agree (0007 D3): with scheduled doses
+  // still pending, one recorded dose used to mark the tile "recorded" while
+  // the hero said "N left to check" beside it. The tile is done only when
+  // something was recorded and nothing on today's agenda is still pending.
+  const medicationRows = medicationAgenda.length > 0 ? medicationAgenda : doses;
   return {
     food: entries.some((entry) => entry.category === "food"),
     water: entries.some((entry) => entry.category === "water"),
@@ -13,7 +18,7 @@ export function createChecklistFromRecords(entries: DiaryEntry[], doses: DoseRec
     stool: entries.some((entry) => entry.category === "stool"),
     condition: entries.some((entry) => entry.category === "condition"),
     memo: entries.some((entry) => entry.category === "memo"),
-    medication: doses.some((dose) => dose.status !== "pending"),
+    medication: medicationRows.some((row) => row.status !== "pending") && !medicationRows.some((row) => row.status === "pending"),
   };
 }
 

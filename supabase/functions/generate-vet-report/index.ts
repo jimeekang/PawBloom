@@ -5,7 +5,15 @@ import { buildNormalizedVetReportPayload, vetReportDisclaimer } from "../_shared
 type RequestBody = {
   petId: string;
   rangeDays: 3 | 7 | 14;
+  // Device-local calendar window (YYYY-MM-DD, inclusive). The client counts
+  // "last N days" against entry_date/dose_date on its own calendar; the old
+  // rolling now()-N*24h window over occurred_at could disagree with the draft
+  // the user just reviewed. Optional for older clients.
+  fromDateKey?: string;
+  toDateKey?: string;
 };
+
+const dateKeyPattern = /^\d{4}-\d{2}-\d{2}$/;
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
@@ -21,13 +29,20 @@ Deno.serve(async (request) => {
     }
     await requirePetMember(supabase, body.petId, user.id, ["owner"]);
 
+    const useCalendarWindow = Boolean(body.fromDateKey && body.toDateKey && dateKeyPattern.test(body.fromDateKey) && dateKeyPattern.test(body.toDateKey) && body.fromDateKey <= body.toDateKey);
     const untilDate = new Date();
     const until = untilDate.toISOString();
     const since = new Date(untilDate.getTime() - body.rangeDays * 24 * 60 * 60 * 1000).toISOString();
+    const entriesQuery = supabase.from("diary_entries").select("category,summary,occurred_at,condition_score").eq("pet_id", body.petId).is("superseded_by", null);
+    const dosesQuery = supabase.from("medication_doses").select("medication_name,status,scheduled_at,reaction_note").eq("pet_id", body.petId);
     const [petResult, entriesResult, dosesResult] = await Promise.all([
       supabase.from("pets").select("name,species,breed,weight_kg").eq("id", body.petId).single(),
-      supabase.from("diary_entries").select("category,summary,occurred_at,condition_score").eq("pet_id", body.petId).is("superseded_by", null).gte("occurred_at", since).lte("occurred_at", until),
-      supabase.from("medication_doses").select("medication_name,status,scheduled_at,reaction_note").eq("pet_id", body.petId).gte("scheduled_at", since).lte("scheduled_at", until),
+      useCalendarWindow
+        ? entriesQuery.gte("entry_date", body.fromDateKey!).lte("entry_date", body.toDateKey!)
+        : entriesQuery.gte("occurred_at", since).lte("occurred_at", until),
+      useCalendarWindow
+        ? dosesQuery.gte("dose_date", body.fromDateKey!).lte("dose_date", body.toDateKey!)
+        : dosesQuery.gte("scheduled_at", since).lte("scheduled_at", until),
     ]);
     if (petResult.error) throw petResult.error;
     if (entriesResult.error) throw entriesResult.error;

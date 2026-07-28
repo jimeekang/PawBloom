@@ -70,15 +70,26 @@ function createTimelineItems(payload: VetReportPayload): ReportTimelineItem[] {
     },
   }));
 
+  // Same cap as the draft's "timeline highlights": the two views describe the
+  // same records and must not disagree on how many they show (0007 D4).
   return [...entries, ...doses]
     .sort((left, right) => right.sortKey.localeCompare(left.sortKey))
+    .slice(0, 5)
     .map(({ item }) => item);
 }
 
+// The stored timestamps are UTC ISO strings. Slicing them textually displayed
+// UTC dates/times while the draft shows device-local ones, so generating the
+// report visibly shifted every record's date and time (0007 D4). Convert to
+// the device calendar like every other screen.
 function splitIsoDateTime(value: string): { dateKey?: string; time: string } {
-  const match = value.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
-  if (match && match[1] && match[2]) return { dateKey: match[1], time: match[2] };
-  return { time: value };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { time: value };
+  const pad = (part: number) => `${part}`.padStart(2, "0");
+  return {
+    dateKey: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  };
 }
 
 function formatPetDetails(payload: VetReportPayload) {

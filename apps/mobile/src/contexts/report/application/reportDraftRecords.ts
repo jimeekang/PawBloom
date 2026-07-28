@@ -4,10 +4,9 @@ import { useDiaryEntriesByDateRange } from "../../diary/application/diaryRecords
 import { useMedicationDosesByDateRange } from "../../medication/application/medicationDoseRecords";
 import type { DoseRecord, DoseStatus } from "../../medication/domain/medication";
 
-export type ReportDateRange = {
-  fromDateKey: string;
-  toDateKey: string;
-};
+import { getLast7DayReportRange } from "./reportDateRange";
+
+export { getLast7DayReportRange, getReportCalendarRange, type ReportDateRange } from "./reportDateRange";
 
 export type ConditionTrendDirection = "none" | "stable" | "improving" | "declining";
 
@@ -93,17 +92,6 @@ export function useReportDraftSummary({
   };
 
   return { ...summary, sourceStatus, refetchSources };
-}
-
-export function getLast7DayReportRange(anchorDate = new Date()): ReportDateRange {
-  const toDate = new Date(anchorDate);
-  toDate.setHours(0, 0, 0, 0);
-  const fromDate = addDays(toDate, -6);
-
-  return {
-    fromDateKey: getLocalDateKey(fromDate),
-    toDateKey: getLocalDateKey(toDate),
-  };
 }
 
 export function createReportDraftSummary(entries: DiaryEntry[], doses: DoseRecord[]): ReportDraftSummary {
@@ -250,8 +238,3 @@ function getLocalDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
-}
