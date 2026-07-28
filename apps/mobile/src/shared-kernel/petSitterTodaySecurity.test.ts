@@ -6,22 +6,34 @@ const { readFileSync, readdirSync } = require("node:fs") as {
   readdirSync(path: string): string[];
 };
 const migrationDirectory = `${process.cwd()}/supabase/migrations`;
-const diaryMigrationName = readdirSync(migrationDirectory).find((name) => name.endsWith("_enforce_one_structured_diary_per_day.sql"));
-const doseMigrationName = readdirSync(migrationDirectory).find((name) => name.endsWith("_restrict_pet_sitter_records_to_today.sql"));
+const migrationNames = readdirSync(migrationDirectory);
+const diaryMigrationName = migrationNames.find((name) => name.endsWith("_enforce_one_structured_diary_per_day.sql"));
+const doseMigrationName = migrationNames.find((name) => name.endsWith("_restrict_pet_sitter_records_to_today.sql"));
+const relaxMigrationName = migrationNames.filter((name) => name.endsWith("_relax_record_dates_to_device_local.sql")).sort().pop();
 if (!diaryMigrationName || !doseMigrationName) throw new Error("pet-sitter today-only migrations must exist");
+if (!relaxMigrationName) throw new Error("the device-local date relaxation migration must exist");
 
-const diaryMigration = readFileSync(`${migrationDirectory}/${diaryMigrationName}`, "utf8").toLowerCase();
-const doseMigration = readFileSync(`${migrationDirectory}/${doseMigrationName}`, "utf8").toLowerCase();
-for (const source of [diaryMigration, doseMigration]) {
-  if (!source.includes("array['pet_sitter']::public.pet_member_role[]")
-    || !source.includes("timezone('australia/sydney', pg_catalog.now()))::date")) {
-    throw new Error("pet-sitter writes must be restricted to the Sydney-local current day");
-  }
+// The relax migration is the current authority: it replaced the fixed
+// Australia/Sydney date derivation (which rejected evening saves from UTC+
+// zones) with a window covering every real UTC offset. The pet-sitter
+// restriction must survive that relaxation in windowed form.
+const relaxMigration = readFileSync(`${migrationDirectory}/${relaxMigrationName}`, "utf8").toLowerCase();
+for (const required of [
+  "create or replace function app_private.matches_local_entry_date",
+  "interval '14 hours'",
+  "interval '12 hours'",
+  'alter policy "diary_entries care team insert"',
+  'alter policy "diary_entries care team update"',
+  'alter policy "medication_doses care team insert"',
+  'alter policy "medication_doses care team update"',
+  "app_private.matches_local_entry_date(occurred_at, entry_date)",
+  "app_private.matches_local_entry_date(scheduled_at, dose_date)",
+]) {
+  if (!relaxMigration.includes(required)) throw new Error(`device-local date migration is missing: ${required}`);
 }
-if (!diaryMigration.includes("category <> 'photo'") || !diaryMigration.includes("occurred_at))::date = entry_date")) {
-  throw new Error("direct diary writes must preserve the atomic photo boundary and date/time consistency");
+if ((relaxMigration.match(/matches_local_entry_date\(pg_catalog\.now\(\)/g) ?? []).length < 4) {
+  throw new Error("pet-sitter writes must stay restricted to a date that can currently be 'today' on a real device");
 }
-if (!doseMigration.includes("scheduled_at))::date = dose_date")
-  || !doseMigration.includes('alter policy "medication_doses care team update"')) {
-  throw new Error("medication insert and update policies must preserve dose date/time consistency");
+if (!relaxMigration.includes("array['pet_sitter']::public.pet_member_role[]")) {
+  throw new Error("the relaxed policies must keep the pet-sitter role branch");
 }
