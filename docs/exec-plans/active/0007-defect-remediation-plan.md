@@ -7,7 +7,7 @@ edit_policy: exclusive
 # 0007. 결함 정정 실행 계획 (2026-07-27)
 
 - 근거: [docs/analysis/08-uiux-defect-audit-2026-07-27.md](../../analysis/08-uiux-defect-audit-2026-07-27.md) (확정 109건 → 고유 93건: P1 6 + P2 33 + P3 54).
-- 선행 관계: 0006은 코드가 전부 `[x]`이나 §4의 표기 오류가 확인됐다. 이 계획이 그 잔여와 신규 결함을 승계한다. **0006은 이 계획 확정 시 archive로 이동한다.**
+- 선행 관계: 0006은 코드가 전부 `[x]`이나 §4의 표기 오류가 확인됐다. 이 계획이 그 잔여와 신규 결함을 승계한다. **0006은 2026-07-28 archive로 이동 완료.**
 - 원칙: 태스크 단위 구현 → `npm run verify` 전체 통과 후 다음 태스크. 커밋은 태스크 단위. **완료 표기는 코드 실검증 후에만 한다** — 0006의 실패 원인이 미검증 `[x]`였다.
 - 가드 준수: 파일 260줄, application→i18n import 금지(CodedError+errorNoticeText), i18n en/ko 대칭, verify-presentation-state 불변식, md 300줄.
 

@@ -10,7 +10,7 @@ edit_policy: exclusive
 - 판정: **확정 72건, 중복 병합 후 고유 60건 (P1 2 + P2 24 + P3 34)**. 모든 확정 건은 file:line 근거 재확인 완료.
 - 배경: 2026-07-18 감사(06) 이후 UI/UX 리파인(0005 Phase A~D), 앱스토어 준비, 계정삭제 하드닝이 머지됨. 이번 감사는 ① 0005 백로그 전 항목의 코드 실검증 재판정 + ② 신규 결함 발굴의 2축.
 - 기준: `docs/product/PRODUCT_SPEC.md`, `docs/design/DESIGN_QA.md`(390x844), `docs/analysis/06-uiux-full-audit-2026-07-18.md`, `docs/exec-plans/active/0005-uiux-refinement-plan.md`.
-- 실행 계획: [docs/exec-plans/active/0006-uiux-alignment-plan.md](../exec-plans/active/0006-uiux-alignment-plan.md)
+- 실행 계획: [docs/exec-plans/archive/0006-uiux-alignment-plan.md](../exec-plans/archive/0006-uiux-alignment-plan.md) (2026-07-28 archive — 잔여는 [0007](../exec-plans/active/0007-defect-remediation-plan.md)이 승계)
 
 ## 1. 0005 백로그 이행 판정 (코드 실검증)
 
@@ -71,7 +71,7 @@ edit_policy: exclusive
 - **비밀번호 재설정 부재** (§2 승격 후보 참조).
 
 **i18n·현지화 (EN 모드 한국어/영문 혼입)**
-- **application 계층 한국어 하드코딩 에러 클러스터**: diaryRecords.ts(:89~:189 raw Postgres 포함) + mediaUpload.ts:33~77·authContextQueries.ts:141~225 + medicationDoseRecords.ts 9곳·carePlanRecords.ts:38·useCareSetupState.ts:40-42 — 전부 사용자 배너에 원문 노출. D6 완료 표기와 모순, E6 미이행.
+- **application 계층 한국어 하드코딩 에러 클러스터**: diaryRecords.ts(:89~:189 raw Postgres 포함) + mediaUpload.ts:33~77 + medicationDoseRecords.ts 9곳·carePlanRecords.ts:38·useCareSetupState.ts:40-42 — 사용자 배너에 원문 노출. D6 완료 표기와 모순, E6 미이행. (정정 2026-07-28: authContextQueries.ts:141~225는 petMutationError가 코드→키 매핑하므로 원문 노출 아님 — 08 감사에서 오판 확인.)
 - **리포트 미리보기 영문 하드코딩 + 정렬 결함**(F1): 누락기록·타임라인·수의사질문이 KO 모드에서도 영문, sortKey `medication ...` 접두 문자열 정렬로 투약이 항상 다이어리 위 (reportDraftRecords.ts:108-155).
 - **리포트 생성 후 'breed: null' 디버그 포맷**(F2): snake_case 영문 + null 리터럴 노출, 생성 전/후 타임라인 포맷 상이 (reportArtifactSnapshot.ts:66-73).
 - **disclaimer 언어 뒤바뀜**: 생성 전 한국어 → 생성 후 영문 상수 (ReportsScreen.tsx:66, vetReportContract.ts:4).

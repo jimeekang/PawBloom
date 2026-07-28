@@ -30,6 +30,7 @@ const doses: DoseRecord[] = [
     id: "dose-pending",
     petId: "pet-1",
     medicationName: "Cerenia",
+    doseDate: "2026-06-27",
     scheduledAt: "08:30",
     status: "pending",
   },
@@ -37,6 +38,7 @@ const doses: DoseRecord[] = [
     id: "dose-partial",
     petId: "pet-1",
     medicationName: "Cerenia",
+    doseDate: "2026-06-27",
     scheduledAt: "12:30",
     status: "partial",
     recordedAt: "2026-06-28T08:35:00.000Z",
@@ -45,6 +47,7 @@ const doses: DoseRecord[] = [
     id: "dose-skipped",
     petId: "pet-1",
     medicationName: "Cerenia",
+    doseDate: "2026-06-27",
     scheduledAt: "18:30",
     status: "skipped",
     recordedAt: "2026-06-28T18:35:00.000Z",
@@ -53,6 +56,7 @@ const doses: DoseRecord[] = [
     id: "dose-completed",
     petId: "pet-1",
     medicationName: "Cerenia",
+    doseDate: "2026-06-27",
     scheduledAt: "20:30",
     status: "completed",
     recordedAt: "2026-06-28T20:35:00.000Z",
@@ -88,7 +92,12 @@ if (!summary.timelineHighlights.some((item) => item.kind === "medication" && ite
 }
 
 if (summary.timelineHighlights[0]?.kind !== "diary" || summary.timelineHighlights[0]?.summary !== "More alert") {
-  throw new Error("Timeline must sort by actual date/time — dated diary entries outrank undated doses instead of medication always pinning to the top.");
+  throw new Error("Timeline must sort by actual date/time — the newest record leads regardless of kind.");
+}
+// Fixtures carry dose_date like real rows (NOT NULL in the schema); the old
+// undated fixtures froze the broken always-last dose ordering as expected.
+if (summary.timelineHighlights[1]?.kind !== "medication" || summary.timelineHighlights[1]?.time !== "20:30") {
+  throw new Error("Timeline must interleave doses by their dose date and time, newest first.");
 }
 
 if (!summary.missingRecords.includes("noFood")) {

@@ -66,14 +66,12 @@ DDD bounded context 구조를 유지하고, 각 기능은 자기 context 안에�
 - Free/Plus/Family 잠금 UI gate 구현 완료(SubscriptionPlanCard + entitlement 조회, 베타 수동 플랜 지정). 인앱 결제 연동은 미구현.
 - 투약·식사 알림은 표시 계층(포그라운드 핸들러, expo-notifications 플러그인)·식사 시간 설정·On/Off 토글까지 구현 완료 — [0004](../archive/0004-reminder-notifications-plan.md) 완료·아카이브(2026-07-24).
 
-### 미구현
+### 미구현 (2026-07-28 현행화)
 
-- 계정 필수 login/signup, Supabase Auth session의 Expo SecureStore adapter, profile 생성/수정 UI.
-- Supabase 연결 pet CRUD, 가족/caregiver 초대와 role 관리, Supabase 연결 diary CRUD.
-- 건강 관찰형 산책 record 저장, 사진/영상 private Storage upload.
-- 질병/상태 등록과 care plan workflow, medication schedule과 dose status 저장.
-- vet report 생성·sanitized share link는 구현 완료(0006 기준). AI briefing은 UI 연결 완료(홈 카드), 하이라이트 서버 로컬라이즈(0006 C7)와 PDF/출력 export는 잔여.
+- 인앱 결제(플랜 구매) 연동 — 베타는 수동 플랜 지정.
+- vet report PDF/출력 export, 사진 오프라인 업로드 큐(0006 보류 항목 승계).
 - React Native e2e smoke test, Android/iOS device preview build, TestFlight·Google Play internal testing 준비.
+- ※ 이전 목록의 계정/Auth·pet CRUD·가족/케어기버 초대·diary CRUD·산책 기록·사진 Storage 업로드·care plan·medication schedule/dose 저장은 0005~0007 기간에 구현 완료됐다(감사 07·08로 실측). 엣지 함수 2종(generate-ai-brief 로컬라이즈, generate-vet-report 달력 창)은 코드 완료·재배포 잔여.
 
 ## 우선순위
 
