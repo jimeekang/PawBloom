@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
@@ -7,6 +8,7 @@ import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAccountDeletion } from "../application/useAccountDeletion";
+import { ChangePasswordForm } from "./ChangePasswordForm";
 
 function openExternalUrl(url: string) {
   void Linking.openURL(url).catch(() => undefined);
@@ -25,6 +27,7 @@ export function SettingsScreen({
 }) {
   const { language, setLanguage } = useLanguage();
   const accountDeletion = useAccountDeletion();
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
   const deleting = accountDeletion.status === "deleting";
 
   const confirmDeleteAccount = () => {
@@ -54,7 +57,14 @@ export function SettingsScreen({
           </View>
           <Text style={styles.copy}>{email || t("settings.previewAccount")}</Text>
           {configured
-            ? <SecondaryButton label={t("auth.signOut")} onPress={onSignOut} />
+            ? <>
+                <SecondaryButton
+                  label={t(showPasswordChange ? "settings.changePasswordCancel" : "settings.changePassword")}
+                  onPress={() => setShowPasswordChange((current) => !current)}
+                />
+                {showPasswordChange ? <ChangePasswordForm /> : null}
+                <SecondaryButton label={t("auth.signOut")} onPress={onSignOut} />
+              </>
             : <Text style={styles.copy}>{t("settings.previewCopy")}</Text>}
           {configured ? (
             <DangerButton

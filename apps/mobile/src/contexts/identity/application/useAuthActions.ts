@@ -5,10 +5,12 @@ import { supabase } from "../infrastructure/supabaseClient";
 import { ensureProfileRow } from "./authContextQueries";
 import { authErrorTranslationKey } from "./authErrorMessages";
 import { authSignUpOutcome } from "./authSignUpPolicy";
+import { changeAuthenticatedPassword } from "./changeAuthenticatedPassword";
 import { getPasswordResetRedirectUrl } from "./passwordRecoveryLink";
 import type { IdentityMessageKey } from "./identityMessage";
 
 type AuthActionState = {
+  currentEmail: string | null;
   clearMessages: () => void;
   onSignedOut: () => void;
   onSignOutStarted: () => void;
@@ -23,6 +25,7 @@ type AuthActionState = {
 };
 
 export function useAuthActions({
+  currentEmail,
   clearMessages,
   onSignedOut,
   onSignOutStarted,
@@ -164,6 +167,38 @@ export function useAuthActions({
     }
   }, [clearMessages, setAuthMessage, setError, setLoading]);
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const client = supabase;
+    if (!client) return "auth.clientMissing" as const;
+    if (!currentEmail) return "auth.error.generic" as const;
+    if (actionInFlight.current) return "auth.wait" as const;
+
+    actionInFlight.current = true;
+    setLoading(true);
+    clearMessages();
+    try {
+      const error = await changeAuthenticatedPassword({
+        reauthenticate: async () => {
+          const result = await client.auth.signInWithPassword({
+            email: currentEmail.trim().toLowerCase(),
+            password: currentPassword,
+          });
+          return { error: result.error };
+        },
+        updatePassword: async () => {
+          const result = await client.auth.updateUser({ password: newPassword });
+          return { error: result.error };
+        },
+      });
+      return error ? authErrorTranslationKey(error) : null;
+    } catch (rawError) {
+      return authErrorTranslationKey(rawError);
+    } finally {
+      actionInFlight.current = false;
+      setLoading(false);
+    }
+  }, [clearMessages, currentEmail, setLoading]);
+
   const signOut = useCallback(async () => {
     if (!supabase || actionInFlight.current) return;
 
@@ -196,5 +231,5 @@ export function useAuthActions({
     }
   }, [clearMessages, onSignedOut, onSignOutAborted, onSignOutStarted, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
 
-  return { signIn, signUp, signOut, requestPasswordReset, updatePassword };
+  return { signIn, signUp, signOut, requestPasswordReset, updatePassword, changePassword };
 }

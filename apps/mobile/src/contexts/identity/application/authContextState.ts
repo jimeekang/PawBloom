@@ -155,7 +155,8 @@ export function useAuthState() {
   const endPasswordRecovery = useCallback(() => setPasswordRecoveryActive(false), []);
   usePasswordRecoveryLink({ activate: beginPasswordRecovery, setError });
 
-  const { signIn, signUp, signOut, requestPasswordReset, updatePassword } = useAuthActions({
+  const { signIn, signUp, signOut, requestPasswordReset, updatePassword, changePassword } = useAuthActions({
+    currentEmail: user?.email ?? null,
     clearMessages,
     onSignedOut: handleSignedOut,
     onSignOutStarted: beginExplicitSignOut,
@@ -214,6 +215,7 @@ export function useAuthState() {
     signOut,
     requestPasswordReset,
     updatePassword,
+    changePassword,
     cancelPasswordRecovery: endPasswordRecovery,
     createPet,
     updatePet,

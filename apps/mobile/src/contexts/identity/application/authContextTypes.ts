@@ -25,6 +25,7 @@ export type AppAuthState = {
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<IdentityMessageKey | null>;
   updatePassword: (password: string) => Promise<IdentityMessageKey | null>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<IdentityMessageKey | null>;
   cancelPasswordRecovery: () => void;
   createPet: (input: CreatePetInput) => Promise<IdentityMessageKey | null>;
   updatePet: (input: UpdatePetInput) => Promise<IdentityMessageKey | null>;

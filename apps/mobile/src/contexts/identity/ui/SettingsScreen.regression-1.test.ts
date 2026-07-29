@@ -14,7 +14,7 @@ const source = readFileSync(
   "utf8",
 );
 
-if (!source.includes("configured\n            ? <SecondaryButton")) {
+if (!source.includes("configured\n            ? <>") || !source.includes('<SecondaryButton label={t("auth.signOut")}')) {
   throw new Error("sign-out must be rendered only for a configured account");
 }
 
