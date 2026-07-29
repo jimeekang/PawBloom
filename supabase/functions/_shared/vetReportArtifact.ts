@@ -1,4 +1,11 @@
 export const vetReportDisclaimer = "This is a record-based summary, not a diagnosis. Contact a veterinarian for medical decisions.";
+const defaultMedicationNames = new Set(["pawbloom:medication:unspecified", "Medication", "투약"]);
+const legacyDefaultDiarySummaries = new Set([
+  "식사가 기록되었습니다.", "물 섭취가 기록되었습니다.", "산책이 기록되었습니다.", "배변이 기록되었습니다.", "컨디션 체크가 기록되었습니다.", "메모가 기록되었습니다.", "사진이 기록되었습니다.",
+  "잘 먹음", "물 섭취 기록", "산책 완료", "배변 기록", "컨디션 확인", "메모 추가", "사진 추가",
+  "Food checklist recorded.", "Water checklist recorded.", "Walk checklist recorded.", "Stool checklist recorded.", "Condition checklist recorded.", "Memo checklist recorded.",
+  "식사 체크리스트가 기록되었습니다.", "물 섭취 체크리스트가 기록되었습니다.", "산책 체크리스트가 기록되었습니다.", "배변 체크리스트가 기록되었습니다.", "컨디션 체크리스트가 기록되었습니다.", "메모 체크리스트가 기록되었습니다.",
+]);
 
 export type VetReportDisplayField = { label: string; value: string };
 
@@ -62,7 +69,7 @@ export function sanitizeStoredVetReportPayload(value: unknown) {
     medicationDoses: array(payload.medicationDoses).map((doseValue) => {
       const dose = asRecord(doseValue);
       return {
-        medicationName: safeDisplayText(dose.medicationName) || "Medication",
+        medicationName: normalizedMedicationName(dose.medicationName),
         status: doseStatus(dose.status),
         scheduledAt: text(dose.scheduledAt),
         conditionName: nullableSafeDisplayText(dose.conditionName),
@@ -93,7 +100,7 @@ export function normalizeMedicationDose(value: unknown): NormalizedVetReportDose
   const row = asRecord(value);
   const careNote = decodeMedicationCareNote(nullableText(row.reaction_note));
   return {
-    medicationName: text(row.medication_name) || "Medication",
+    medicationName: normalizedMedicationName(row.medication_name),
     status: doseStatus(row.status),
     scheduledAt: text(row.scheduled_at),
     conditionName: careNote.conditionName,
@@ -117,7 +124,8 @@ function normalizePet(value: unknown) {
 function decodeDiarySummary(rawSummary: string, category: NormalizedVetReportEntry["category"]) {
   const parsed = parseRecord(rawSummary);
   if (!parsed || parsed.version !== 1 || !asOptionalRecord(parsed.detail)) {
-    const safeSummary = parsed ? `${categoryLabel(category)} record` : rawSummary.trim() || `${categoryLabel(category)} record`;
+    const storedSummary = rawSummary.trim();
+    const safeSummary = parsed || !storedSummary || legacyDefaultDiarySummaries.has(storedSummary) ? `${categoryLabel(category)} record` : storedSummary;
     return { summary: safeSummary, memo: null, details: [] as VetReportDisplayField[] };
   }
   const detail = asRecord(parsed.detail);
@@ -181,6 +189,7 @@ function diaryCategory(value: unknown): NormalizedVetReportEntry["category"] {
   return value === "food" || value === "water" || value === "walk" || value === "stool" || value === "condition" || value === "photo" ? value : "memo";
 }
 function doseStatus(value: unknown): NormalizedVetReportDose["status"] { return value === "completed" || value === "partial" || value === "skipped" ? value : "pending"; }
+function normalizedMedicationName(value: unknown) { const name = text(value).trim(); return defaultMedicationNames.has(name) || !name ? "Medication" : name; }
 function conditionScore(value: unknown) { const score = finiteNumber(value); return score !== null && score >= 1 && score <= 5 ? score : null; }
 function categoryLabel(value: string) { return titleCase(value); }
 function field(label: string, value: string): VetReportDisplayField { return { label, value }; }

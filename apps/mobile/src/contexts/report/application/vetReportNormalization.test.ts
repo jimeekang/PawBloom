@@ -4,7 +4,7 @@ const { buildNormalizedVetReportPayload, sanitizeStoredVetReportPayload } = requ
   buildNormalizedVetReportPayload(pet: unknown, entries: unknown[], doses: unknown[]): {
     version: 1;
     entries: Array<{ summary: string; memo: string | null; details: Array<{ label: string; value: string }> }>;
-    medicationDoses: Array<{ conditionName: string | null; dosageLabel: string | null; administeredAmount: string | null; reactionNote: string | null }>;
+    medicationDoses: Array<{ medicationName: string; conditionName: string | null; dosageLabel: string | null; administeredAmount: string | null; reactionNote: string | null }>;
   };
   sanitizeStoredVetReportPayload(value: unknown): Record<string, unknown> & { entries: Array<Record<string, unknown>> };
 };
@@ -48,4 +48,13 @@ const publicPayload = sanitizeStoredVetReportPayload({
 const publicEntry = publicPayload.entries[0];
 if (!publicEntry || "internalOwnerId" in publicPayload || "rawRow" in publicEntry || publicEntry.memo !== null) {
   throw new Error("public report payload sanitization must whitelist fields and drop encoded internal objects");
+}
+
+const legacyDefaults = buildNormalizedVetReportPayload(
+  null,
+  [{ category: "food", summary: "식사 체크리스트가 기록되었습니다.", occurred_at: "2026-07-12T08:00:00.000Z", condition_score: null }],
+  [{ medication_name: "pawbloom:medication:unspecified", status: "completed", scheduled_at: "2026-07-12T09:00:00.000Z", reaction_note: null }],
+);
+if (legacyDefaults.entries[0]?.summary !== "Food record" || legacyDefaults.medicationDoses[0]?.medicationName !== "Medication") {
+  throw new Error("English report normalization must absorb legacy diary copy and neutral medication identifiers");
 }

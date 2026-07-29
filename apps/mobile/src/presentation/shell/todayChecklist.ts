@@ -1,7 +1,7 @@
 import type { DiaryCategory, DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
 import type { TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
-import { t, type TranslationKey } from "../../i18n/translations";
+import { t } from "../../i18n/translations";
 
 export type ChecklistKey = Exclude<DiaryCategory, "photo"> | "medication";
 
@@ -48,19 +48,6 @@ export function createDashboardSummary(checklist: Record<ChecklistKey, boolean>,
     pendingMedicationCount,
     attentionSignals,
   };
-}
-
-export function checklistSummary(key: ChecklistKey) {
-  const summaryKeys: Record<ChecklistKey, TranslationKey> = {
-    food: "checklist.summary.food",
-    water: "checklist.summary.water",
-    walk: "checklist.summary.walk",
-    stool: "checklist.summary.stool",
-    condition: "checklist.summary.condition",
-    memo: "checklist.summary.memo",
-    medication: "checklist.summary.medication",
-  };
-  return t(summaryKeys[key]);
 }
 
 export function getTodayChecklistOrder({ walkEnabled, includeMedication = true }: { walkEnabled: boolean; includeMedication?: boolean }): ChecklistKey[] {

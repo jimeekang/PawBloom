@@ -1,4 +1,4 @@
-import type { CreateDiaryEntryInput, DiaryCategory, DiaryDetailInput } from "../domain/diaryEntry";
+import type { DiaryCategory, DiaryDetailInput } from "../domain/diaryEntry";
 
 export function encodeDiarySummary(input: { category: DiaryCategory; memo?: string; detail?: DiaryDetailInput }) {
   const memo = input.memo?.trim() ?? "";
@@ -14,19 +14,21 @@ export function decodeDiarySummary(value: string, fallbackCategory: DiaryCategor
   }
 }
 
-// Written to the DB when an entry carries neither detail nor memo, so the row
-// keeps a non-empty summary. It is placeholder text, not content: the category
-// is the only information in it, and the ui layer re-renders it in the reader's
-// language via isDefaultDiarySummary rather than replaying the writer's.
-const DEFAULT_SUMMARIES: Record<CreateDiaryEntryInput["category"], string> = { food: "식사가 기록되었습니다.", water: "물 섭취가 기록되었습니다.", walk: "산책이 기록되었습니다.", stool: "배변이 기록되었습니다.", condition: "컨디션 체크가 기록되었습니다.", memo: "메모가 기록되었습니다.", photo: "사진이 기록되었습니다." };
-const DEFAULT_SUMMARY_VALUES = new Set(Object.values(DEFAULT_SUMMARIES));
+// New empty records store no language-bearing copy. These are legacy values
+// from older clients; readers translate them from the row category instead.
+const LEGACY_DEFAULT_SUMMARIES = new Set([
+  "식사가 기록되었습니다.", "물 섭취가 기록되었습니다.", "산책이 기록되었습니다.", "배변이 기록되었습니다.", "컨디션 체크가 기록되었습니다.", "메모가 기록되었습니다.", "사진이 기록되었습니다.",
+  "잘 먹음", "물 섭취 기록", "산책 완료", "배변 기록", "컨디션 확인", "메모 추가", "사진 추가",
+  "Food checklist recorded.", "Water checklist recorded.", "Walk checklist recorded.", "Stool checklist recorded.", "Condition checklist recorded.", "Memo checklist recorded.",
+  "식사 체크리스트가 기록되었습니다.", "물 섭취 체크리스트가 기록되었습니다.", "산책 체크리스트가 기록되었습니다.", "배변 체크리스트가 기록되었습니다.", "컨디션 체크리스트가 기록되었습니다.", "메모 체크리스트가 기록되었습니다.",
+]);
 
-export function defaultDiarySummary(category: CreateDiaryEntryInput["category"]) {
-  return DEFAULT_SUMMARIES[category];
+export function defaultDiarySummary(_category: DiaryCategory) {
+  return "";
 }
 
 export function isDefaultDiarySummary(value: string | undefined) {
-  return Boolean(value && DEFAULT_SUMMARY_VALUES.has(value.trim()));
+  return !value?.trim() || LEGACY_DEFAULT_SUMMARIES.has(value.trim());
 }
 
 function buildDetailSummary(detail: DiaryDetailInput, memo?: string) {

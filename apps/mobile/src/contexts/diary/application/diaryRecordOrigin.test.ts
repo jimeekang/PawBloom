@@ -8,6 +8,10 @@ if (inferDiaryRecordOrigin({ summary: "식사 체크리스트가 기록되었습
   throw new Error("checklist origin must be inferred while the live database lacks record_origin");
 }
 
+if (inferDiaryRecordOrigin({ summary: "Food checklist recorded." }) !== "checklist") {
+  throw new Error("legacy English checklist summaries must still infer checklist origin");
+}
+
 if (inferDiaryRecordOrigin({ summary: "아침 80g/100g" }) !== "diary") {
   throw new Error("normal diary summaries must remain diary origin");
 }

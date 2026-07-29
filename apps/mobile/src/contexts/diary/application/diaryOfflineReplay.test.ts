@@ -46,3 +46,7 @@ const fallbackPayload = buildDiaryReplayInsertPayload({
 if (fallbackPayload.category !== "memo") {
   throw new Error("diary replay must fall back to the memo category for unknown categories");
 }
+
+if (fallbackPayload.summary !== "") {
+  throw new Error("offline replay must keep empty diary placeholders language-neutral");
+}

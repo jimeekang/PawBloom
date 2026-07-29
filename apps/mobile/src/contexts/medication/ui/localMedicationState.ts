@@ -1,7 +1,8 @@
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
 import type { DoseRecord } from "../domain/medication";
+import { normalizeMedicationNameForStorage } from "../../../shared-kernel/recordSentinels";
 
-export function createLocalDoseRecord(petId: string, input: QuickMedicationDoseInput, fallbackName: string): DoseRecord {
+export function createLocalDoseRecord(petId: string, input: QuickMedicationDoseInput): DoseRecord {
   const status = input.status ?? "pending";
 
   return {
@@ -9,7 +10,7 @@ export function createLocalDoseRecord(petId: string, input: QuickMedicationDoseI
     petId,
     scheduleId: input.scheduleId,
     doseDate: input.doseDate,
-    medicationName: input.medicationName.trim() || fallbackName,
+    medicationName: normalizeMedicationNameForStorage(input.medicationName),
     conditionName: input.conditionName?.trim() || undefined,
     dosageLabel: input.dosageLabel?.trim() || undefined,
     administeredAmount: input.administeredAmount?.trim() || undefined,
@@ -26,7 +27,7 @@ export function updateLocalDoseRecord(current: DoseRecord, input: QuickMedicatio
 
   return {
     ...current,
-    medicationName: input.medicationName.trim() || current.medicationName,
+    medicationName: normalizeMedicationNameForStorage(input.medicationName || current.medicationName),
     conditionName: input.conditionName?.trim() || undefined,
     dosageLabel: input.dosageLabel?.trim() || undefined,
     administeredAmount: input.administeredAmount?.trim() || undefined,

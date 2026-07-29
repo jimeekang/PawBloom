@@ -1,6 +1,7 @@
 import type { DoseRecord, DoseStatus } from "../../contexts/medication/domain/medication";
 import type { TodayMedicationAgendaRow } from "../../contexts/medication/ui/todayMedicationAgenda";
 import { t, type TranslationKey } from "../../i18n/translations";
+import { localizedMedicationName } from "../../i18n/recordDisplay";
 
 export type CareSummaryDoseRow = {
   id: string;
@@ -20,7 +21,7 @@ const statusLabelKeys: Record<DoseStatus, TranslationKey> = {
 export function createCareSummaryDoseRows(doses: DoseRecord[]): CareSummaryDoseRow[] {
   return doses.map((dose) => ({
     id: dose.id,
-    title: dose.medicationName,
+    title: localizedMedicationName(dose.medicationName),
     statusLabel: t(statusLabelKeys[dose.status]),
     timeLabel: dose.scheduledAt,
     details: [
@@ -56,7 +57,7 @@ export function createCareSummaryRows(doses: DoseRecord[], agenda: AgendaSummary
   const rows = agenda.length > 0
     ? agenda.map((row) => row.doseId && doseRowsById.get(row.doseId) || ({
       id: `schedule-${row.scheduleId ?? "none"}-${row.doseDate}-${row.scheduledTime}`,
-      title: row.medicationName,
+      title: localizedMedicationName(row.medicationName),
       statusLabel: t(statusLabelKeys[row.status]),
       timeLabel: row.scheduledTime,
       details: [

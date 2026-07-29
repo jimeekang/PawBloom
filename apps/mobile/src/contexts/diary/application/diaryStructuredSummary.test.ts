@@ -1,5 +1,6 @@
 import type { DiaryDetailInput } from "../domain/diaryEntry";
 import { decodeDiarySummary, encodeDiarySummary, mapDiaryRow } from "./diaryRecords";
+import { defaultDiarySummary, isDefaultDiarySummary } from "./diarySummary";
 
 const foodDetail: DiaryDetailInput = {
   category: "food",
@@ -69,6 +70,10 @@ const legacyChecklistMapped = mapDiaryRow({
 
 if (legacyChecklistMapped.origin !== "checklist") {
   throw new Error("diary row mapping must infer checklist origin while the live database lacks record_origin");
+}
+
+if (defaultDiarySummary("photo") !== "" || !isDefaultDiarySummary("") || !isDefaultDiarySummary("Food checklist recorded.")) {
+  throw new Error("empty and legacy diary placeholders must render from their category in the current language");
 }
 
 void displaySummary;

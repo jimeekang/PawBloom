@@ -10,6 +10,7 @@ import { findMedicationDoseInCachedLists, removeMedicationDoseFromCachedLists, r
 import { enqueueMedicationDoseInsert, enqueueMedicationDoseUpdate } from "./medicationDoseOfflineQueue";
 import { deleteMedicationDoseWithRetry } from "./medicationDoseDeletion";
 import { CodedError } from "../../../shared-kernel/appError";
+import { normalizeMedicationNameForStorage } from "../../../shared-kernel/recordSentinels";
 export { buildDoseRecordedAt, buildMedicationDoseInsertPayload, decodeMedicationDoseCareNote, encodeMedicationDoseCareNote } from "./medicationDosePayload";
 export { removeMedicationDoseFromList, replaceMedicationDoseInList } from "./medicationDoseCache";
 type DoseRow = Database["public"]["Tables"]["medication_doses"]["Row"];
@@ -35,7 +36,7 @@ export function shouldCountDoseAsMedicationRecorded(status: DoseStatus) {
 }
 export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInput, clientMutationId?: string): DoseUpdate {
   const scheduledAt = buildScheduledAtForTime(input.scheduledTime);
-  const payload: DoseUpdate = { medication_name: input.medicationName.trim() || "투약", reaction_note: encodeMedicationDoseCareNote(input), updated_at: new Date().toISOString() };
+  const payload: DoseUpdate = { medication_name: normalizeMedicationNameForStorage(input.medicationName), reaction_note: encodeMedicationDoseCareNote(input), updated_at: new Date().toISOString() };
 
   if (clientMutationId) payload.client_mutation_id = clientMutationId;
   if (scheduledAt) payload.scheduled_at = scheduledAt;
@@ -97,7 +98,7 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
       const status = input.status ?? "pending";
       const optimisticId = `dose-optimistic-${Date.now()}`;
       const scheduledAt = buildScheduledAtForDateTime(input.doseDate, input.scheduledTime, new Date());
-      const dose: DoseRecord = { id: optimisticId, petId: petId ?? "pending-pet", scheduleId: input.scheduleId, doseDate: input.doseDate ?? localDateKey(scheduledAt), medicationName: input.medicationName.trim() || "투약", conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), scheduledAt: formatTime(scheduledAt.toISOString()), status, recordedAt: buildDoseRecordedAt(status) ?? undefined, reactionNote: cleanOptional(input.reactionNote) };
+      const dose: DoseRecord = { id: optimisticId, petId: petId ?? "pending-pet", scheduleId: input.scheduleId, doseDate: input.doseDate ?? localDateKey(scheduledAt), medicationName: normalizeMedicationNameForStorage(input.medicationName), conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), scheduledAt: formatTime(scheduledAt.toISOString()), status, recordedAt: buildDoseRecordedAt(status) ?? undefined, reactionNote: cleanOptional(input.reactionNote) };
       queryClient.setQueryData<DoseRecord[]>(todayKey, (current) => mergeSavedDoseIntoList(current ?? [], dose));
       return { previousToday, optimisticId };
     },

@@ -11,3 +11,6 @@ const payload = buildDiaryUpdatePayload({
 });
 
 if (payload.record_origin !== "diary") throw new Error("diary update payload must promote detailed edits to diary origin");
+
+const emptyPayload = buildDiaryUpdatePayload({ category: "photo", summary: "", id: "entry-empty" });
+if (emptyPayload.summary !== "") throw new Error("empty diary records must not persist localized placeholder copy");

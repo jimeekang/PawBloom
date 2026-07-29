@@ -1,4 +1,5 @@
 import type { DoseRecord, DoseStatus } from "../domain/medication";
+import { normalizeMedicationNameForStorage } from "../../../shared-kernel/recordSentinels";
 
 type MedicationDoseCareNote = { version: 1; conditionName?: string; dosageLabel?: string; administeredAmount?: string; reactionNote?: string };
 
@@ -40,7 +41,7 @@ export function buildMedicationDoseInsertPayload(input: MedicationDosePayloadInp
     created_by: input.userId ?? "",
     schedule_id: input.scheduleId ?? null,
     dose_date: input.doseDate ?? localDateKey(scheduledAt),
-    medication_name: input.medicationName.trim() || "투약",
+    medication_name: normalizeMedicationNameForStorage(input.medicationName),
     scheduled_at: scheduledAt.toISOString(),
     status,
     recorded_at: buildDoseRecordedAt(status, now),

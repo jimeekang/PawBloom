@@ -6,6 +6,7 @@ import { NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../..
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
+import { localizedMedicationName } from "../../i18n/recordDisplay";
 import { useLanguage } from "../../i18n/languageContext";
 import { QuickMedicationForm, type QuickMedicationSaveHandler } from "../../contexts/medication/ui/CareMedicationPanel";
 import { careStatusActionLabel } from "../../contexts/medication/ui/careMedicationPanelState";
@@ -179,6 +180,7 @@ function CarePanel({
 }
 
 function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedicationAgendaRow; onEdit?: () => void; onStatusChange: (status: "completed" | "skipped" | "partial") => void }) {
+  const medicationName = localizedMedicationName(row.medicationName);
   const visual = row.status === "completed" ? { accent: colors.mint, icon: colors.mintDeep, label: t("care.status.completed") } : row.status === "skipped" ? { accent: colors.inactive, icon: colors.textSoft, label: t("care.status.skipped") } : row.status === "partial" ? { accent: colors.memo, icon: colors.orangeDeep, label: t("care.status.partial") } : { accent: colors.salmon, icon: colors.salmon, label: t("care.status.pending") };
   // The first tap creates the dose row; a second tap before it lands creates a
   // duplicate that the unique constraint rejects, so the user sees "save
@@ -195,7 +197,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
       <View style={[styles.medAccent, { backgroundColor: visual.accent }]} />
       <AppIcon name="medication" size={iconSize.lg} color={visual.icon} />
       <View style={styles.agendaBody}>
-        <Text style={styles.medTitle}>{row.medicationName}</Text>
+        <Text style={styles.medTitle}>{medicationName}</Text>
         <Text style={styles.sourceLabel}>{t(medicationAgendaSourceLabelKey(row))}</Text>
         <Text style={styles.medDetail}>{row.scheduledTime} · {visual.label}</Text>
         {row.conditionName ? <Text style={styles.medMeta}>{t("care.conditionLabel")}: {row.conditionName}</Text> : null}
@@ -203,7 +205,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
         <View style={styles.actionButtons}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${row.medicationName}: ${t("care.status.completed")}`}
+            accessibilityLabel={`${medicationName}: ${t("care.status.completed")}`}
             accessibilityState={{ selected: row.status === "completed" }}
             aria-pressed={row.status === "completed"}
             style={[styles.givenButton, row.status === "completed" && styles.agendaActionSelected]}
@@ -214,7 +216,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${row.medicationName}: ${t("care.status.partial")}`}
+            accessibilityLabel={`${medicationName}: ${t("care.status.partial")}`}
             accessibilityState={{ selected: row.status === "partial" }}
             aria-pressed={row.status === "partial"}
             style={[styles.partialButton, row.status === "partial" && styles.agendaActionSelected]}
@@ -225,7 +227,7 @@ function MedicationAgendaRow({ row, onEdit, onStatusChange }: { row: TodayMedica
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${row.medicationName}: ${t("care.status.skipped")}`}
+            accessibilityLabel={`${medicationName}: ${t("care.status.skipped")}`}
             accessibilityState={{ selected: row.status === "skipped" }}
             aria-pressed={row.status === "skipped"}
             style={[styles.skipButton, row.status === "skipped" && styles.agendaActionSelected]}

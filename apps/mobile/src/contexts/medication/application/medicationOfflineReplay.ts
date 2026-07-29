@@ -4,6 +4,7 @@ import type { OfflineMutation } from "../../sync/domain/offlineMutation";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import type { DoseStatus } from "../domain/medication";
 import { buildDoseRecordedAt, buildMedicationDoseInsertPayload, encodeMedicationDoseCareNote, type MedicationDoseInsertPayload } from "./medicationDosePayload";
+import { DEFAULT_MEDICATION_NAME, normalizeMedicationNameForStorage } from "../../../shared-kernel/recordSentinels";
 
 export type MedicationDoseReplayDecision = "apply" | "already_applied" | "conflict" | "missing";
 
@@ -34,7 +35,7 @@ export function buildMedicationDoseReplayUpdatePayload(input: { clientMutationId
   const storedPayload = toRecord(input.storedPayload);
   if (stringValue(storedPayload.medication_name)) {
     const storedUpdate: MedicationDoseUpdate = {
-      medication_name: stringValue(storedPayload.medication_name),
+      medication_name: normalizeMedicationNameForStorage(stringValue(storedPayload.medication_name)),
       client_mutation_id: input.clientMutationId,
       updated_at: stringValue(storedPayload.updated_at) ?? new Date().toISOString(),
     };
@@ -47,7 +48,7 @@ export function buildMedicationDoseReplayUpdatePayload(input: { clientMutationId
   }
   const status = normalizeDoseStatus(input.input.status);
   const payload: MedicationDoseUpdate = {
-    medication_name: stringValue(input.input.medicationName)?.trim() || "투약",
+    medication_name: normalizeMedicationNameForStorage(stringValue(input.input.medicationName)),
     reaction_note: encodeMedicationDoseCareNote(input.input),
     client_mutation_id: input.clientMutationId,
     updated_at: new Date().toISOString(),
@@ -69,7 +70,7 @@ export function buildMedicationDoseReplayInsertPayload(input: { petId: string; u
       created_by: input.userId,
       schedule_id: stringValue(storedPayload.schedule_id) ?? null,
       dose_date: requireString(storedPayload.dose_date, "stored medication dose date"),
-      medication_name: stringValue(storedPayload.medication_name)?.trim() || "투약",
+      medication_name: normalizeMedicationNameForStorage(stringValue(storedPayload.medication_name)),
       scheduled_at: requireString(storedPayload.scheduled_at, "stored medication scheduled time"),
       status: normalizeDoseStatus(storedPayload.status) ?? "pending",
       recorded_at: storedPayload.recorded_at === null ? null : stringValue(storedPayload.recorded_at) ?? null,
@@ -85,7 +86,7 @@ export function buildMedicationDoseReplayInsertPayload(input: { petId: string; u
     scheduleId: stringValue(input.input.scheduleId),
     doseDate: stringValue(input.input.doseDate),
     scheduledTime: stringValue(input.input.scheduledTime),
-    medicationName: stringValue(input.input.medicationName) ?? "투약",
+    medicationName: stringValue(input.input.medicationName) ?? DEFAULT_MEDICATION_NAME,
     conditionName: stringValue(input.input.conditionName),
     dosageLabel: stringValue(input.input.dosageLabel),
     administeredAmount: stringValue(input.input.administeredAmount),

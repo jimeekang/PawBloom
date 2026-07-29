@@ -1,9 +1,10 @@
 import type { DiaryCategory, DiaryEntry } from "../../contexts/diary/domain/diaryEntry";
 import type { DoseRecord } from "../../contexts/medication/domain/medication";
-import { checklistSummary, createChecklistFromRecords, type ChecklistKey } from "./todayChecklist";
+import { createChecklistFromRecords, type ChecklistKey } from "./todayChecklist";
 import { createLocalDoseRecord } from "../../contexts/medication/ui/localMedicationState";
 import { createLocalDiaryEntry } from "../../contexts/diary/ui/localDiaryState";
 import { createDeleteMedicationUndo, createRestoreMedicationUndo, type MedicationChecklistUndo } from "./checklistUndo";
+import { DEFAULT_MEDICATION_NAME } from "../../shared-kernel/recordSentinels";
 
 export function checklistKeyToDiaryCategory(key: ChecklistKey): DiaryCategory | null {
   if (key === "medication") return null;
@@ -45,7 +46,6 @@ export function createLocalChecklistRecord({
   doses,
   activeDoses,
   checklist,
-  quickMedicationName,
 }: {
   key: ChecklistKey;
   entryDate: string;
@@ -54,7 +54,6 @@ export function createLocalChecklistRecord({
   doses: DoseRecord[];
   activeDoses: DoseRecord[];
   checklist: Record<ChecklistKey, boolean>;
-  quickMedicationName: string;
 }) {
   if (key === "medication") {
     const pendingDose = activeDoses.find((dose) => dose.status === "pending");
@@ -63,13 +62,13 @@ export function createLocalChecklistRecord({
       const nextDoses = doses.map((dose) => (dose.id === pendingDose.id ? completedDose : dose));
       return { nextDoses, nextChecklist: { ...checklist, medication: true }, noticeKey: "today.medicationUpdated" as const, feedbackKind: "medicationStatus" as const, medicationUndo: createRestoreMedicationUndo(completedDose) };
     }
-    const completedDose = createLocalDoseRecord(activePetId, { medicationName: quickMedicationName, status: "completed" }, quickMedicationName);
+    const completedDose = createLocalDoseRecord(activePetId, { medicationName: DEFAULT_MEDICATION_NAME, status: "completed" });
     return { nextDoses: [completedDose, ...doses], nextChecklist: { ...checklist, medication: true }, noticeKey: "today.medicationUpdated" as const, feedbackKind: "medicationStatus" as const, medicationUndo: createDeleteMedicationUndo(completedDose) };
   }
 
   const category = checklistKeyToDiaryCategory(key);
   if (!category) return null;
-  const nextEntry = createLocalDiaryEntry(activePetId, { category, summary: checklistSummary(key), entryDate, occurredAt: formatChecklistTime(), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
+  const nextEntry = createLocalDiaryEntry(activePetId, { category, summary: "", entryDate, occurredAt: formatChecklistTime(), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
   const nextEntries = [nextEntry, ...entries];
   return { nextEntries, nextChecklist: createChecklistFromRecords(nextEntries.filter((entry) => entry.petId === activePetId && entry.entryDate === entryDate), activeDoses), noticeKey: "today.diarySaved" as const, feedbackKind: "checklist" as const };
 }
@@ -77,14 +76,12 @@ export function createLocalChecklistRecord({
 export async function recordRemoteChecklistItem({
   key,
   activeDoses,
-  quickMedicationName,
   createDiaryEntry,
   createMedicationDose,
   updateMedicationDoseStatus,
 }: {
   key: ChecklistKey;
   activeDoses: DoseRecord[];
-  quickMedicationName: string;
   createDiaryEntry: (input: { category: DiaryCategory; summary: string; origin?: "diary" | "checklist"; conditionScore?: 1 | 2 | 3 | 4 | 5 }) => Promise<unknown>;
   createMedicationDose: (input: { medicationName: string; status: "completed" }) => Promise<{ dose?: DoseRecord; queued?: boolean }>;
   updateMedicationDoseStatus: (input: { id: string; status: "completed" }) => Promise<unknown>;
@@ -98,14 +95,14 @@ export async function recordRemoteChecklistItem({
         medicationUndo: createRestoreMedicationUndo({ ...pendingDose, status: "completed", recordedAt: new Date().toISOString() }),
       };
     }
-    const result = await createMedicationDose({ medicationName: quickMedicationName, status: "completed" });
+    const result = await createMedicationDose({ medicationName: DEFAULT_MEDICATION_NAME, status: "completed" });
     const medicationUndo: MedicationChecklistUndo | undefined = !result.queued && result.dose ? createDeleteMedicationUndo(result.dose) : undefined;
     return { feedbackKind: "medicationStatus" as const, medicationUndo };
   }
 
   const category = checklistKeyToDiaryCategory(key);
   if (!category) return { feedbackKind: "checklist" as const };
-  await createDiaryEntry({ category, summary: checklistSummary(key), conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
+  await createDiaryEntry({ category, summary: "", conditionScore: category === "condition" ? 3 : undefined, origin: "checklist" });
   return { feedbackKind: "checklist" as const };
 }
 

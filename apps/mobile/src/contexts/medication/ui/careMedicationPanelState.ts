@@ -2,6 +2,7 @@ import type { QuickMedicationDoseInput } from "../application/medicationDoseReco
 import type { DoseRecord, DoseStatus } from "../domain/medication";
 import type { TranslationKey } from "../../../i18n/translations";
 import { t } from "../../../i18n/translations";
+import { localizedMedicationName } from "../../../i18n/recordDisplay";
 
 export type QuickMedicationFormState = Required<QuickMedicationDoseInput> & {
   scheduledTime: string;
@@ -26,7 +27,7 @@ export function createQuickMedicationEditState(dose: DoseRecord): QuickMedicatio
     scheduleId: dose.scheduleId ?? "",
     doseDate: dose.doseDate ?? "",
     conditionName: dose.conditionName ?? "",
-    medicationName: dose.medicationName,
+    medicationName: localizedMedicationName(dose.medicationName),
     dosageLabel: dose.dosageLabel ?? "",
     administeredAmount: dose.administeredAmount ?? "",
     reactionNote: dose.reactionNote ?? "",

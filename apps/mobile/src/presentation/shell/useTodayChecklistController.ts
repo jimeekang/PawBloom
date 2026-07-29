@@ -111,7 +111,7 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
   }
 
   function recordLocalChecklistItem(key: ChecklistKey, entryDate: string) {
-    const result = createLocalChecklistRecord({ key, entryDate, activePetId, entries: localEntries, doses: localDoses, activeDoses, checklist, quickMedicationName: t("care.quickMedicationName") });
+    const result = createLocalChecklistRecord({ key, entryDate, activePetId, entries: localEntries, doses: localDoses, activeDoses, checklist });
     if (!result) return;
     if (result.nextEntries) replaceLocalEntries(result.nextEntries);
     if (result.nextDoses) replaceLocalDoses(result.nextDoses);
@@ -122,7 +122,7 @@ export function useTodayChecklistController({ databaseMode, activePetId, canDele
   }
 
   async function recordChecklistItem(key: ChecklistKey) {
-    const result = await recordRemoteChecklistItem({ key, activeDoses, quickMedicationName: t("care.quickMedicationName"), createDiaryEntry: createDiaryEntryRemote, createMedicationDose: createMedicationDoseRemote, updateMedicationDoseStatus: updateMedicationDoseStatusRemote });
+    const result = await recordRemoteChecklistItem({ key, activeDoses, createDiaryEntry: createDiaryEntryRemote, createMedicationDose: createMedicationDoseRemote, updateMedicationDoseStatus: updateMedicationDoseStatusRemote });
     if (key === "medication") medicationUndoRef.current = result.medicationUndo ?? null;
     setNotice(getChecklistSuccessHomeNotice());
     showSaveFeedback(result.feedbackKind);

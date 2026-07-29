@@ -71,9 +71,26 @@ const checklistResult = createLocalChecklistRecord({
   doses: [],
   activeDoses: [],
   checklist: emptyChecklist,
-  quickMedicationName: "Medication",
 });
 
 if (checklistResult?.nextEntries?.[0]?.origin !== "checklist") {
   throw new Error("checklist-created diary timeline records must carry checklist origin");
+}
+
+if (checklistResult?.nextEntries?.[0]?.summary !== "") {
+  throw new Error("checklist diary records must store no language-bearing summary");
+}
+
+const medicationResult = createLocalChecklistRecord({
+  key: "medication",
+  entryDate: "2026-07-01",
+  activePetId: "pet-1",
+  entries: [],
+  doses: [],
+  activeDoses: [],
+  checklist: emptyChecklist,
+});
+
+if (medicationResult?.nextDoses?.[0]?.medicationName !== "pawbloom:medication:unspecified") {
+  throw new Error("quick checklist medication must store a language-neutral identifier");
 }

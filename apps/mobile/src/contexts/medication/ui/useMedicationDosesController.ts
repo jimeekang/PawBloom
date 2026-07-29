@@ -47,7 +47,7 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
 
   async function addMedicationDose(input: QuickMedicationDoseInput) {
     if (!databaseMode) {
-      setDoses((current) => [createLocalDoseRecord(activePetId, input, t("care.quickMedicationName")), ...current]);
+      setDoses((current) => [createLocalDoseRecord(activePetId, input), ...current]);
       onLocalDoseSaved(input);
       onNotice(t("care.medicationAdded"));
       onSaved("medication");
