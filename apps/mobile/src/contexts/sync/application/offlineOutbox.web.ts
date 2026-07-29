@@ -1,4 +1,5 @@
 import { supabase } from "../../../shared-kernel/supabase/client";
+import type { StoredOfflineConflict } from "../domain/offlineConflict";
 import type { OfflineMutation } from "../domain/offlineMutation";
 import { cloneOutboxValue, isOfflineMutation, withoutQueuedOwner } from "./offlineOutboxSerialization";
 
@@ -23,7 +24,6 @@ export class WebOutboxLockUnavailableError extends Error {
     this.name = "WebOutboxLockUnavailableError";
   }
 }
-
 type WebOutboxOptions = {
   storageProvider?: () => WebStorageLike | null;
   userIdProvider?: () => Promise<string | null>;
@@ -74,7 +74,13 @@ export function createWebOutboxStore({
     if (!userId) return 0;
     return await withUserLock(userId, () => readRows(userId).filter((row) => row.status === "conflict").length) ?? 0;
   }
-
+  async function listConflictedMutations(): Promise<StoredOfflineConflict[]> {
+    const userId = await resolveUserId();
+    if (!userId) return [];
+    return await withUserLock(userId, () => readRows(userId).filter((row) => row.status === "conflict").map((row) => (
+      { id: row.mutation.id, createdAt: row.mutation.createdAt, mutation: cloneOutboxValue({ ...row.mutation, attempts: row.attempts, queuedByUserId: userId }) }
+    ))) ?? [];
+  }
   async function clearConflictedMutations(expectedUserId?: string) {
     await mutateCurrentRows((rows) => rows.filter((row) => row.status !== "conflict"), expectedUserId);
   }
@@ -194,21 +200,15 @@ export function createWebOutboxStore({
     return readMemoryRows(userId);
   }
 
-  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
+  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
 }
 
 const webOutbox = createWebOutboxStore();
-export const initializeOutbox = webOutbox.initializeOutbox;
-export const enqueueOfflineMutation = webOutbox.enqueueOfflineMutation;
-export const listPendingMutations = webOutbox.listPendingMutations;
-export const countConflictedMutations = webOutbox.countConflictedMutations;
-export const clearConflictedMutations = webOutbox.clearConflictedMutations;
-export const markMutationApplied = webOutbox.markMutationApplied;
-export const markMutationConflict = webOutbox.markMutationConflict;
-export const markMutationRetry = webOutbox.markMutationRetry;
+export const { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry } = webOutbox;
 export const offlineOutboxStore = {
   listPendingMutations,
   countConflictedMutations,
+  listConflictedMutations,
   clearConflictedMutations,
   markMutationApplied,
   markMutationConflict,

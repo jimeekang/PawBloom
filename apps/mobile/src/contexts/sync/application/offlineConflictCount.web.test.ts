@@ -24,9 +24,11 @@ async function runWebConflictCountTests() {
   await store.enqueueOfflineMutation(mutation);
   await store.markMutationConflict(mutation.id, "changed elsewhere");
   if (await store.countConflictedMutations() !== 1) throw new Error("web conflict count must include the signed-in user's parked rows");
+  if ((await store.listConflictedMutations())[0]?.mutation?.id !== mutation.id) throw new Error("web conflict reads must expose the current user's parked mutation");
   await store.enqueueOfflineMutation({ ...mutation, id: "offline-pending", clientMutationId: "pending" });
   userId = "user-b";
   if (await store.countConflictedMutations() !== 0) throw new Error("web conflict count must not expose another account's rows");
+  if ((await store.listConflictedMutations()).length !== 0) throw new Error("web conflict details must not expose another account's rows");
   await store.clearConflictedMutations();
   userId = "user-a";
   if (await store.countConflictedMutations() !== 1) throw new Error("another web account must not clear the owner's conflicts");

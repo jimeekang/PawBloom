@@ -89,8 +89,9 @@ async function verifyConflictAndRetrySemantics() {
   await store.markMutationConflict(row.id, "changed elsewhere");
   await store.markMutationRetry(row.id, "still offline");
   assert((await store.listPendingMutations()).length === 0, "retry must not revive a conflicted mutation");
+  const conflicts = await store.listConflictedMutations();
+  assert(conflicts[0]?.mutation?.id === row.id && conflicts[0]?.mutation?.queuedByUserId === "user-a", "web conflict details must retain mutation metadata and an account lease");
 }
-
 async function verifyMalformedStorageRecovery() {
   const fixture = createMemoryStorage();
   const key = webOutboxStorageKey("user-a");
@@ -219,7 +220,6 @@ async function verifySafeFallbacks() {
   assert((await blockedStore.listPendingMutations())[0]?.id === row.id,
     "storage write failures must retain rows in this tab's memory fallback");
 }
-
 function fixedUserStore(storage: WebStorageLike) {
   return createWebOutboxStore({ storageProvider: () => storage, userIdProvider: async () => "user-a", lockProvider: immediateLock });
 }

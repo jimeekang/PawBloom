@@ -1,6 +1,6 @@
 import type { OfflineMutation } from "../domain/offlineMutation";
 import { registerOfflineReplayHandler } from "./offlineReplayPolicy";
-import { replayPendingOfflineMutations } from "./offlineReplayQueue";
+import { offlineConflictMetadata, replayPendingOfflineMutations } from "./offlineReplayQueue";
 
 function buildMutation(id: string, aggregate: string): OfflineMutation {
   return {
@@ -17,6 +17,23 @@ function buildMutation(id: string, aggregate: string): OfflineMutation {
 export default runReplayQueueTests();
 
 async function runReplayQueueTests() {
+  const diaryConflict = offlineConflictMetadata({
+    id: "offline-diary",
+    createdAt: "2026-07-04T23:00:00.000Z",
+    mutation: { ...buildMutation("offline-diary", "diary"), payload: { petId: "pet-1", input: { category: "water", entryDate: "2026-07-05" } } },
+  });
+  if (diaryConflict.petId !== "pet-1" || diaryConflict.category !== "water" || diaryConflict.recordDate !== "2026-07-05") {
+    throw new Error("diary conflict metadata must identify its pet, category, and record date");
+  }
+  const medicationConflict = offlineConflictMetadata({
+    id: "offline-medication",
+    createdAt: "2026-07-06T01:00:00.000Z",
+    mutation: { ...buildMutation("offline-medication", "medication"), payload: { petId: "pet-2", insertPayload: { dose_date: "2026-07-07" } } },
+  });
+  if (medicationConflict.petId !== "pet-2" || medicationConflict.category !== "medication" || medicationConflict.recordDate !== "2026-07-07") {
+    throw new Error("medication conflict metadata must expose its stored dose date");
+  }
+
   registerOfflineReplayHandler("queue-applied", "insert", async () => ({ status: "applied", reason: "queue test applied" }));
   registerOfflineReplayHandler("queue-conflict", "insert", async () => ({ status: "conflict", reason: "queue test conflict" }));
   registerOfflineReplayHandler("queue-network", "insert", async () => {

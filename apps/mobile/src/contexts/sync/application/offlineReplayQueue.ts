@@ -1,4 +1,6 @@
 import type { OfflineMutation } from "../domain/offlineMutation";
+import type { OfflineConflictMetadata, StoredOfflineConflict } from "../domain/offlineConflict";
+import { stringValue, toRecord } from "./offlineMutationPayload";
 import { replayOfflineMutation } from "./offlineReplayPolicy";
 
 export type OfflineReplayStore = {
@@ -15,6 +17,20 @@ export type OfflineReplaySummary = {
   retried: number;
   unsupported: number;
 };
+
+export function offlineConflictMetadata(conflict: StoredOfflineConflict): OfflineConflictMetadata {
+  const mutation = conflict.mutation;
+  const payload = toRecord(mutation?.payload);
+  const input = toRecord(payload.input);
+  const insertPayload = toRecord(payload.insertPayload);
+  const category = mutation?.aggregate === "medication" ? "medication" : stringValue(input.category) ?? mutation?.aggregate ?? null;
+  return {
+    id: conflict.id,
+    petId: stringValue(payload.petId) ?? null,
+    category,
+    recordDate: dateKey(input.entryDate) ?? dateKey(input.doseDate) ?? dateKey(insertPayload.dose_date) ?? dateKey(conflict.createdAt) ?? "—",
+  };
+}
 
 export async function replayPendingOfflineMutations(input: { store: OfflineReplayStore }): Promise<OfflineReplaySummary> {
   const summary: OfflineReplaySummary = { applied: 0, conflicted: 0, retried: 0, unsupported: 0 };
@@ -48,4 +64,9 @@ export async function replayPendingOfflineMutations(input: { store: OfflineRepla
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Offline replay failed.";
+}
+
+function dateKey(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  return value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
 }

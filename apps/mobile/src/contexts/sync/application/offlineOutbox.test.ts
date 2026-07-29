@@ -57,8 +57,11 @@ async function runNativeOutboxTests() {
   await store.markMutationRetry(row.id, "still offline", row.queuedByUserId);
   assert((await store.listPendingMutations()).length === 0, "retry must not revive a conflicted row");
   assert(await store.countConflictedMutations() === 1, "native conflict count must include only the signed-in user's parked rows");
+  const conflicts = await store.listConflictedMutations();
+  assert(conflicts[0]?.mutation?.id === row.id && conflicts[0]?.mutation?.queuedByUserId === "user-a", "native conflict details must retain mutation metadata and an account lease");
   userId = "user-b";
   assert(await store.countConflictedMutations() === 0, "native conflict count must not expose another account's rows");
+  assert((await store.listConflictedMutations()).length === 0, "native conflict details must not expose another account's rows");
   await store.clearConflictedMutations();
   assert((await store.listPendingMutations()).length === 1, "clearing conflicts must preserve the current account's pending work");
   userId = "user-a";
@@ -77,6 +80,7 @@ async function runNativeOutboxTests() {
   });
   assert((await store.listPendingMutations()).length === 0, "malformed native rows must never be replayed");
   assert(database.rows.find((item) => item.id === "malformed")?.status === "conflict", "malformed rows must be quarantined");
+  assert((await store.listConflictedMutations()).some((item) => item.id === "malformed" && item.mutation === null), "malformed conflicts must remain visible as unknown review items");
 
   await createNativeOutboxStore({ databaseProvider: () => database, userIdProvider: async () => userId })
     .enqueueOfflineMutation(mutation("auth-race"));
@@ -129,13 +133,14 @@ class FakeDatabase {
       this.afterNextRead = undefined;
       return [{ count } as T];
     }
+    const status = sql.includes("status = 'conflict'") ? "conflict" : "pending";
     const rows = this.rows
-      .filter((row) => row.user_id === userId && row.status === "pending" && (!id || row.id === id))
+      .filter((row) => row.user_id === userId && row.status === status && (!id || row.id === id))
       .sort((left, right) => left.created_at.localeCompare(right.created_at));
     this.afterNextRead?.();
     this.afterNextRead = undefined;
     if (sql.startsWith("select id from")) return rows.map((row) => ({ id: row.id }) as T);
-    return rows.map((row) => ({ id: row.id, user_id: row.user_id, payload: row.payload, attempts: row.attempts }) as T);
+    return rows.map((row) => ({ id: row.id, user_id: row.user_id, payload: row.payload, created_at: row.created_at, attempts: row.attempts }) as T);
   }
 
   private updatePending(userId: string, id: string, reason: string, conflict: boolean) {

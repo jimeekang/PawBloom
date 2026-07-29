@@ -1,5 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import { supabase } from "../../../shared-kernel/supabase/client";
+import type { StoredOfflineConflict } from "../domain/offlineConflict";
 import type { OfflineMutation } from "../domain/offlineMutation";
 import { parseStoredOfflineMutation, withoutQueuedOwner } from "./offlineOutboxSerialization";
 
@@ -10,6 +11,7 @@ type OutboxRow = {
   id: string;
   user_id: string;
   payload: string;
+  created_at: string;
   attempts: number;
 };
 
@@ -119,6 +121,22 @@ export function createNativeOutboxStore({
     return await userStillCurrent(userId) ? rows[0]?.count ?? 0 : 0;
   }
 
+  async function listConflictedMutations(): Promise<StoredOfflineConflict[]> {
+    const userId = await resolveUserId();
+    if (!userId) return [];
+    await initializeOutbox();
+    const rows = await databaseProvider().getAllAsync<OutboxRow>(
+      `select id, user_id, payload, created_at, attempts from ${NATIVE_OUTBOX_TABLE}
+       where user_id = ? and status = 'conflict' order by created_at asc`,
+      userId,
+    );
+    if (!await userStillCurrent(userId)) return [];
+    return rows.map((row) => {
+      const mutation = parseStoredOfflineMutation(row.payload);
+      return { id: row.id, createdAt: mutation?.createdAt ?? row.created_at, mutation: mutation ? { ...mutation, attempts: row.attempts, queuedByUserId: row.user_id } : null };
+    });
+  }
+
   async function clearConflictedMutations(expectedUserId?: string) {
     await mutateOwnedRow(expectedUserId, async (userId) => {
       await databaseProvider().runAsync(
@@ -217,31 +235,15 @@ export function createNativeOutboxStore({
     }
   }
 
-  return {
-    initializeOutbox,
-    enqueueOfflineMutation,
-    listPendingMutations,
-    countConflictedMutations,
-    clearConflictedMutations,
-    markMutationApplied,
-    markMutationConflict,
-    markMutationRetry,
-    ownsMutationForCurrentUser,
-  };
+  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
 }
 
 const nativeOutbox = createNativeOutboxStore();
-export const initializeOutbox = nativeOutbox.initializeOutbox;
-export const enqueueOfflineMutation = nativeOutbox.enqueueOfflineMutation;
-export const listPendingMutations = nativeOutbox.listPendingMutations;
-export const countConflictedMutations = nativeOutbox.countConflictedMutations;
-export const clearConflictedMutations = nativeOutbox.clearConflictedMutations;
-export const markMutationApplied = nativeOutbox.markMutationApplied;
-export const markMutationConflict = nativeOutbox.markMutationConflict;
-export const markMutationRetry = nativeOutbox.markMutationRetry;
+export const { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry } = nativeOutbox;
 export const offlineOutboxStore = {
   listPendingMutations,
   countConflictedMutations,
+  listConflictedMutations,
   clearConflictedMutations,
   markMutationApplied,
   markMutationConflict,

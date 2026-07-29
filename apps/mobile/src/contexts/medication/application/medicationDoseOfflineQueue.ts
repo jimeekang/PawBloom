@@ -30,7 +30,12 @@ export async function enqueueMedicationDoseUpdate(input: {
 }) {
   await enqueueOfflineMutation(buildMedicationDoseUpdateOfflineMutation({
     petId: input.petId,
-    input: input.formInput,
+    input: {
+      doseDate: input.currentDose.doseDate,
+      medicationName: input.currentDose.medicationName,
+      scheduledTime: input.currentDose.scheduledAt,
+      ...input.formInput,
+    },
     updatePayload: input.updatePayload,
     clientMutationId: input.clientMutationId,
   }));

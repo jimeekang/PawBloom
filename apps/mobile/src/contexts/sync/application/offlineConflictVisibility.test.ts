@@ -23,6 +23,7 @@ const replayService = readFileSync(join(root, "apps/mobile/src/contexts/sync/app
 const resolution = readFileSync(join(root, "apps/mobile/src/contexts/sync/application/offlineConflictResolution.ts"), "utf8");
 const hook = readFileSync(join(root, "apps/mobile/src/contexts/sync/ui/useOfflineConflictCount.ts"), "utf8");
 const notice = readFileSync(join(root, "apps/mobile/src/contexts/sync/ui/OfflineConflictNotice.tsx"), "utf8");
+const replayQueue = readFileSync(join(root, "apps/mobile/src/contexts/sync/application/offlineReplayQueue.ts"), "utf8");
 const shell = readFileSync(join(root, "apps/mobile/src/presentation/PawBloomShell.tsx"), "utf8");
 const translations = readFileSync(join(root, "apps/mobile/src/i18n/translations.ts"), "utf8");
 
@@ -31,6 +32,9 @@ if (!replayService.includes("publishOfflineConflictChange")) {
 }
 if (!hook.includes("snapshot.userId === userId") || !hook.includes("request === latestRequest")) {
   throw new Error("the conflict UI must reject stale results after an account or request change");
+}
+if (!hook.includes("listConflictedMutations") || !replayQueue.includes("offlineConflictMetadata") || !notice.includes("conflicts.map")) {
+  throw new Error("the conflict notice must identify each parked mutation from queue metadata");
 }
 if (!resolution.includes("clearConflictedMutations(userId)") || !resolution.includes("publishOfflineConflictChange")) {
   throw new Error("clearing reviewed conflicts must refresh the account-scoped visible count");
@@ -43,4 +47,7 @@ if (!shell.includes("OfflineConflictNotice") || !shell.includes('key={userId ?? 
 }
 if (!translations.includes("newer synced server record") || !translations.includes("only parked local retry data")) {
   throw new Error("conflict resolution copy must explain server preservation and the local-only clear boundary");
+}
+if (!translations.includes("cannot be undone") || !translations.includes("되돌릴 수 없습니다")) {
+  throw new Error("conflict deletion confirmation must warn that local data deletion is permanent");
 }
