@@ -1,5 +1,5 @@
 import type { CreateDiaryEntryInput } from "../domain/diaryEntry";
-import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, resolveRemoteDiarySaveOutcome, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getDiarySavedNoticeKey, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, resolveRemoteDiarySaveOutcome, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
 
 if (isDiaryDetailPanelOpenAfterSave(true) !== false) {
@@ -72,6 +72,10 @@ if (findEditableDailyStructuredEntry([existingChecklistFood], "food", "2026-07-0
 
 if (getDiaryEntryDateForSave("2026-06-28", { entryDate: "2026-06-24" }) !== "2026-06-24") {
   throw new Error("diary edit mode must preserve the edited entry date");
+}
+
+if (getDiarySavedNoticeKey("2000-01-01", false) !== "diary.savedForDate") {
+  throw new Error("saving a past diary date must not claim the entry appears in today's timeline");
 }
 
 const categoriesWithoutWalk = ["food", "water", "stool", "condition", "memo", "photo"] as const;
