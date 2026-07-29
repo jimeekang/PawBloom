@@ -1,4 +1,4 @@
-import { createSaveFeedback } from "./saveFeedback";
+import { createSaveFeedback, shouldShowShellNotice } from "./saveFeedback";
 import type { SaveFeedbackKind } from "./saveFeedback";
 
 const expectedCategoryFeedback: Record<"diary" | "medication" | "routine" | "petProfile", { titleKey: string; messageKey: string }> = {
@@ -26,4 +26,16 @@ if (createSaveFeedback("diary").tone !== "success") {
 
 if (createSaveFeedback("routine").tone !== "settings") {
   throw new Error("routine saves must use the stronger settings feedback tone");
+}
+
+if (shouldShowShellNotice("error", { hasInlineError: true })) {
+  throw new Error("an error rendered by its source screen must not also appear in the shell");
+}
+
+if (!shouldShowShellNotice("error", { hasInlineError: false })) {
+  throw new Error("an error without inline feedback must remain visible in the shell");
+}
+
+if (!shouldShowShellNotice("success", { hasInlineError: true })) {
+  throw new Error("inline error ownership must not suppress successful shell notices");
 }

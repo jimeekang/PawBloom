@@ -10,7 +10,7 @@ type Params = {
   databaseMode: boolean;
   livePetId: string | null;
   userId: string | null;
-  onNotice: (notice: string, tone?: NoticeTone) => void;
+  onNotice: (notice: string, tone?: NoticeTone, source?: { hasInlineError?: boolean }) => void;
   onSaved: () => void;
 };
 
@@ -44,7 +44,7 @@ export function useCareSetupState({ databaseMode, livePetId, userId, onNotice, o
       return savedSetup;
     } catch (error) {
       const message = errorNoticeText(error, "care.setupSaveFailed");
-      onNotice(message, "error");
+      onNotice(message, "error", { hasInlineError: true });
       throw error instanceof Error ? error : new Error(message);
     }
   }

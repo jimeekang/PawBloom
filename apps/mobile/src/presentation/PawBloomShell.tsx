@@ -30,7 +30,7 @@ import { SettingsHubScreen } from "./screens/SettingsHubScreen";
 import { BottomNav, type MainTab } from "./ui/BottomNav";
 import { CareHeader, DiaryHeader, HomeHeader, PetSettingsHeader, ReportsHeader, SettingsHeader } from "./shell/ShellHeaders";
 import { SaveFeedbackBar } from "./shell/SaveFeedbackBar";
-import { createSaveFeedback, type SaveFeedback, type SaveFeedbackKind } from "./shell/saveFeedback";
+import { createSaveFeedback, shouldShowShellNotice, type SaveFeedback, type SaveFeedbackKind, type ShellNoticeSource } from "./shell/saveFeedback";
 import { createChecklistFromRecords } from "./shell/todayChecklist";
 import { refreshMealReminders, refreshMedicationReminders, useReminderAutoRefresh } from "./shell/reminderScheduling";
 import { useMedicationReminderToggle } from "./shell/useMedicationReminderToggle";
@@ -63,7 +63,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   const scrollRef = useRef<ScrollView>(null);
   const [showPetSettings, setShowPetSettings] = useState(false);
   const [notice, setNoticeState] = useState<{ text: string; tone: NoticeTone }>({ text: databaseMode ? t("today.databaseNotice") : t("today.previewNotice"), tone: "success" });
-  const setNotice = useCallback((text: string, tone: NoticeTone = "success") => setNoticeState({ text, tone }), []);
+  const setNotice = useCallback((text: string, tone: NoticeTone = "success", source?: ShellNoticeSource) => { if (shouldShowShellNotice(tone, source)) setNoticeState({ text, tone }); }, []);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
   const [localChecklist, setLocalChecklist] = useState(() => createChecklistFromRecords(buildSampleDiaryEntries(previewPets[0].id), buildSampleDoses(previewPets[0].id)));
   const showSaveFeedback = useCallback((kind: SaveFeedbackKind) => setSaveFeedback(createSaveFeedback(kind)), []);

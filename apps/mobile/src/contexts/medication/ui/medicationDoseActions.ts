@@ -19,7 +19,7 @@ type MedicationDoseActionArgs = {
   doses: DoseRecord[];
   setDoses: Dispatch<SetStateAction<DoseRecord[]>>;
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => void;
-  setNotice: (notice: string, tone?: "success" | "error") => void;
+  setNotice: (notice: string, tone?: "success" | "error", source?: { hasInlineError?: boolean }) => void;
   onSaved: (kind: MedicationSaveFeedbackKind) => void;
 };
 
@@ -41,7 +41,7 @@ export async function saveMedicationDoseEdit({
       args.setNotice("");
       args.onSaved("medication");
     } catch (error) {
-      args.setNotice(t("care.quickDoseUpdateFailed"), "error");
+      args.setNotice(t("care.quickDoseUpdateFailed"), "error", { hasInlineError: true });
       throw error;
     }
     return;

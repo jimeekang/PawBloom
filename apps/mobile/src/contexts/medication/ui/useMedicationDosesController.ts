@@ -19,7 +19,7 @@ type Params = {
   fallbackPetId: string;
   language: Language;
   schedules: MedicationSchedule[];
-  onNotice: (notice: string, tone?: "success" | "error") => void;
+  onNotice: (notice: string, tone?: "success" | "error", source?: { hasInlineError?: boolean }) => void;
   onSaved: (kind: MedicationSaveFeedbackKind) => void;
   onLocalDoseSaved: (input: QuickMedicationDoseInput) => void;
   onLocalDosesChanged: (nextDoses: DoseRecord[]) => void;
@@ -60,7 +60,7 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
       onSaved("medication");
     } catch (error) {
       const message = t(isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
-      onNotice(message, "error");
+      onNotice(message, "error", { hasInlineError: true });
       throw new Error(message);
     }
   }

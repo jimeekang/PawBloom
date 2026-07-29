@@ -6,7 +6,6 @@ import { colors, iconSize, radius, spacing, type } from "../../../design-system/
 import { t } from "../../../i18n/translations";
 import { useLanguage } from "../../../i18n/languageContext";
 import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
-import { useAuth } from "../application/authContext";
 import { useAccountDeletion } from "../application/useAccountDeletion";
 
 function openExternalUrl(url: string) {
@@ -25,7 +24,6 @@ export function SettingsScreen({
   onSignOut: () => void;
 }) {
   const { language, setLanguage } = useLanguage();
-  const { error: identityError } = useAuth();
   const accountDeletion = useAccountDeletion();
   const deleting = accountDeletion.status === "deleting";
 
@@ -67,7 +65,6 @@ export function SettingsScreen({
             />
           ) : null}
           {configured && accountDeletion.status === "error" ? <NoticeBanner text={t("settings.deleteAccountError")} icon="close" tone="error" /> : null}
-          {identityError ? <NoticeBanner text={t(identityError)} icon="close" tone="error" /> : null}
         </View>
       </SurfaceCard>
 

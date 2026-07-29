@@ -19,7 +19,7 @@ type Params = {
   userId: string | null;
   fallbackPetId: string;
   language: Language;
-  onNotice: (notice: string, tone?: "success" | "error") => void;
+  onNotice: (notice: string, tone?: "success" | "error", source?: { hasInlineError?: boolean }) => void;
   onSaved: () => void;
   onLocalEntrySaved: (entry: DiaryEntry) => void;
   onLocalEntriesChanged: (nextEntries: DiaryEntry[]) => void;
@@ -87,7 +87,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
           onSaved();
           return outcome;
         })
-        .catch((error: Error) => { onNotice(errorNoticeText(error, "diary.saveFailed"), "error"); throw error; });
+        .catch((error: Error) => { onNotice(errorNoticeText(error, "diary.saveFailed"), "error", { hasInlineError: true }); throw error; });
     }
     const nextEntry = createLocalDiaryEntry(activePetId, draft);
     setEntries((current) => [nextEntry, ...current]);
@@ -103,7 +103,7 @@ export function useDiaryEntriesController({ activePetId, databaseMode, livePetId
         await updateDiaryEntry.mutateAsync({ id: draft.id, category: draft.category, summary: draft.summary, detail: draft.detail, entryDate: draft.entryDate, occurredTime: draft.occurredTime, origin: draft.origin, conditionScore: draft.conditionScore, photos: draft.photos, clientMutationId: draft.clientMutationId });
         onNotice(""); onSaved();
       } catch (error) {
-        onNotice(errorNoticeText(error, "diary.updateFailed"), "error"); throw error;
+        onNotice(errorNoticeText(error, "diary.updateFailed"), "error", { hasInlineError: true }); throw error;
       }
       return;
     }

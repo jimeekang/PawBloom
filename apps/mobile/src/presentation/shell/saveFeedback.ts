@@ -3,6 +3,7 @@ import type { TranslationKey } from "../../i18n/translations";
 
 export type SaveFeedbackKind = "diary" | "medication" | "medicationStatus" | "routine" | "careSetup" | "petProfile" | "checklist";
 export type SaveFeedbackTone = "success" | "settings";
+export type ShellNoticeSource = { hasInlineError?: boolean };
 
 export type SaveFeedback = {
   kind: SaveFeedbackKind;
@@ -25,4 +26,8 @@ const feedbackByKind: Record<SaveFeedbackKind, Omit<SaveFeedback, "kind" | "id">
 
 export function createSaveFeedback(kind: SaveFeedbackKind, id = Date.now()): SaveFeedback {
   return { kind, id, ...feedbackByKind[kind] };
+}
+
+export function shouldShowShellNotice(tone: "success" | "error" | "progress" | "info", source?: ShellNoticeSource) {
+  return tone !== "error" || !source?.hasInlineError;
 }

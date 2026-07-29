@@ -12,7 +12,7 @@ type Params = {
   livePetId: string | null;
   userId: string | null;
   fallbackPet: { id: string; species: Species };
-  onNotice: (notice: string, tone?: NoticeTone) => void;
+  onNotice: (notice: string, tone?: NoticeTone, source?: { hasInlineError?: boolean }) => void;
   onSaved: () => void;
 };
 
@@ -34,7 +34,7 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
 
   async function saveRoutine(input: PetRoutineInput) {
     if (!routineLoaded) {
-      onNotice(t("routine.saveBlockedUntilLoaded"), "error");
+      onNotice(t("routine.saveBlockedUntilLoaded"), "error", { hasInlineError: true });
       throw new Error("routine.saveBlockedUntilLoaded");
     }
     if (!databaseMode) {
@@ -48,7 +48,7 @@ export function useRoutineDefaults({ activePetId, activePetSpecies, databaseMode
       onNotice(t("routine.saved"));
       onSaved();
     } catch (error) {
-      onNotice(t("routine.saveFailed"), "error");
+      onNotice(t("routine.saveFailed"), "error", { hasInlineError: true });
       throw error;
     }
   }

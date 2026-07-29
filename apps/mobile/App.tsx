@@ -12,7 +12,7 @@ import { configureNetworkSync } from "./src/contexts/sync/application/syncStatus
 import { colors, type as typeStyle } from "./src/design-system/tokens";
 import { LanguageProvider, useLanguage } from "./src/i18n/languageContext";
 import { t } from "./src/i18n/translations";
-import { NoticeBanner, PrimaryButton, SecondaryButton } from "./src/design-system/components";
+import { PrimaryButton, SecondaryButton } from "./src/design-system/components";
 import { confirmAndSignOut } from "./src/contexts/identity/ui/signOutConfirm";
 import { resolveAppGate } from "./src/presentation/appGate";
 import { configureLocalNotificationPresentation } from "./src/shared-kernel/notifications/localNotificationBootstrap";
@@ -54,7 +54,7 @@ export default function App() {
 }
 
 function AppBody() {
-  const { initialized, configured, user, activePet, petLoadStatus, passwordRecoveryActive, retryPetLoad, signOut, error } = useAuth();
+  const { initialized, configured, user, activePet, petLoadStatus, passwordRecoveryActive, retryPetLoad, signOut } = useAuth();
   const { initialized: languageInitialized } = useLanguage();
   const gate = resolveAppGate({
     authInitialized: initialized,
@@ -86,7 +86,6 @@ function AppBody() {
         <View style={styles.loadingWrap}>
           <AppIcon name="close" size={40} color={colors.coral} />
           <Text style={styles.loadingText}>{t("pet.loadFailed")}</Text>
-          {error ? <NoticeBanner text={t(error)} icon="close" tone="error" /> : null}
           <View style={styles.retryActions}>
             <PrimaryButton label={t("pet.retryLoad")} onPress={retryPetLoad} />
             <SecondaryButton label={t("auth.signOut")} onPress={() => void confirmAndSignOut(signOut)} />
