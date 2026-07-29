@@ -51,9 +51,10 @@ export function createCareSummaryAgendaCounts(doses: DoseRecord[], agenda: Agend
 }
 
 export function createCareSummaryRows(doses: DoseRecord[], agenda: AgendaSummaryRow[]): CareSummaryDoseRow[] {
-  const scheduledRows = agenda
-    .filter((row) => !row.doseId)
-    .map((row) => ({
+  const doseRows = createCareSummaryDoseRows(doses);
+  const doseRowsById = new Map(doseRows.map((row) => [row.id, row]));
+  const rows = agenda.length > 0
+    ? agenda.map((row) => row.doseId && doseRowsById.get(row.doseId) || ({
       id: `schedule-${row.scheduleId ?? "none"}-${row.doseDate}-${row.scheduledTime}`,
       title: row.medicationName,
       statusLabel: t(statusLabelKeys[row.status]),
@@ -62,6 +63,7 @@ export function createCareSummaryRows(doses: DoseRecord[], agenda: AgendaSummary
         formatDetail(t("care.conditionLabel"), row.conditionName),
         formatDetail(t("care.dosageLabel"), row.dosageLabel),
       ].filter((detail): detail is string => Boolean(detail)),
-    }));
-  return [...scheduledRows, ...createCareSummaryDoseRows(doses)];
+    }))
+    : doseRows;
+  return rows.sort((a, b) => a.timeLabel.localeCompare(b.timeLabel));
 }

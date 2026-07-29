@@ -48,3 +48,41 @@ const agendaRows = createCareSummaryRows([], [pendingScheduleRow]);
 if (agendaRows.length !== 1 || agendaRows[0]?.title !== "Amoxi" || agendaRows[0]?.timeLabel !== "08:00") {
   throw new Error("scheduled pending medication must appear in the expanded care summary list");
 }
+
+const orderedRows = createCareSummaryRows([
+  {
+    id: "dose-evening",
+    petId: "pet-1",
+    medicationName: "Evening dose",
+    scheduledAt: "20:00",
+    status: "completed",
+  },
+], [
+  {
+    ...pendingScheduleRow,
+    scheduleId: "schedule-afternoon",
+    medicationName: "Afternoon dose",
+    scheduledTime: "13:00",
+  },
+  {
+    ...pendingScheduleRow,
+    doseId: "dose-evening",
+    scheduleId: "schedule-evening",
+    medicationName: "Evening dose",
+    scheduledTime: "20:00",
+  },
+  {
+    ...pendingScheduleRow,
+    scheduleId: "schedule-morning",
+    medicationName: "Morning dose",
+    scheduledTime: "08:00",
+  },
+]);
+
+if (orderedRows.map((row) => row.timeLabel).join(",") !== "08:00,13:00,20:00") {
+  throw new Error("home care summary must follow the care screen's ascending local-time order");
+}
+
+if (orderedRows[2]?.id !== "dose-evening") {
+  throw new Error("time ordering must preserve the saved dose details for recorded agenda rows");
+}
