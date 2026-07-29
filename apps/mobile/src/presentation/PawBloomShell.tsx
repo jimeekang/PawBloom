@@ -200,6 +200,13 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
     diary.setTimelineEditEntry(entry); diary.setSelectedDiaryDate(entry.entryDate); diary.setDiaryFilter("day"); setActiveTab("diary");
   }
   function handleSignOut() { void confirmAndSignOut(signOut); }
+  function openPetSettings() {
+    if (!databaseMode) {
+      setNotice(t("pet.loginRequired"), "info");
+      return;
+    }
+    setShowPetSettings(true);
+  }
   const homeNotice = notice.text === t("today.databaseNotice") ? "" : notice.text;
   const nonHomeNotice = notice.text === t("today.databaseNotice") || notice.text === t("today.previewNotice") ? "" : notice.text;
 
@@ -238,9 +245,9 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
           <View style={activeTab === "diary" ? null : styles.hiddenTab}>
             <DiaryEntryScreen entries={diary.selectedDiaryEntries} selectedDateKey={diary.selectedDiaryDate} filter={diary.diaryFilter} onDateChange={diary.setSelectedDiaryDate} onFilterChange={diary.setDiaryFilter} onSave={diary.saveDiaryEntry} onUpdate={diary.updateDiaryRecord} onDelete={diary.deleteDiaryRecord} routine={routine.activeRoutine} petSpecies={activePet.species} initialEditingEntry={diary.timelineEditEntry} onInitialEditingEntryConsumed={() => diary.setTimelineEditEntry(null)} canCreate={canCreateDiary} canUpdate={canUpdateDiary} canDelete={canDeleteDiary} listStatus={diary.selectedDiaryStatus} onRetryList={diary.refetchSelectedDiary} />
           </View>
-          {activeTab === "care" ? <CareModeScreen petId={activePet.id} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} onAgendaStatusChange={medication.saveAgendaStatus} onAddDose={medication.addMedicationDose} onUpdateDose={medication.updateDoseRecord} onDeleteDose={medication.deleteDoseRecord} onSaveCareSetup={saveCareSetupAndRefreshReminders} onUseSchedule={useCareSchedule} onOpenProfileCare={() => setShowPetSettings(true)} onGenerateReport={() => setActiveTab("reports")} conditionScore={diary.latestConditionScore} careSetup={care.activeCareSetup} careStatus={medication.todayDosesStatus === "error" || care.careSetupStatus === "error" ? "error" : medication.todayDosesStatus === "loading" || care.careSetupStatus === "loading" ? "loading" : "ready"} onRetryCare={() => { medication.refetchTodayDoses(); care.refetchCareSetup(); }} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canGenerateReport || canShareReport} /> : null}
+          {activeTab === "care" ? <CareModeScreen petId={activePet.id} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} onAgendaStatusChange={medication.saveAgendaStatus} onAddDose={medication.addMedicationDose} onUpdateDose={medication.updateDoseRecord} onDeleteDose={medication.deleteDoseRecord} onSaveCareSetup={saveCareSetupAndRefreshReminders} onUseSchedule={useCareSchedule} onOpenProfileCare={openPetSettings} onGenerateReport={() => setActiveTab("reports")} conditionScore={diary.latestConditionScore} careSetup={care.activeCareSetup} careStatus={medication.todayDosesStatus === "error" || care.careSetupStatus === "error" ? "error" : medication.todayDosesStatus === "loading" || care.careSetupStatus === "loading" ? "loading" : "ready"} onRetryCare={() => { medication.refetchTodayDoses(); care.refetchCareSetup(); }} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canGenerateReport || canShareReport} /> : null}
           {activeTab === "reports" ? <ReportsScreen report={reportWorkflow.report} reportSummary={reportSummary} canGenerate={reportWorkflow.canGenerate} canConfirm={reportWorkflow.canConfirm} canShare={reportWorkflow.canShare} blockedReason={reportWorkflow.blockedReason} error={reportWorkflow.error} pendingAction={reportWorkflow.pendingAction} isBusy={reportWorkflow.isBusy} onGenerate={() => void reportWorkflow.generate()} onConfirm={() => void reportWorkflow.confirm()} onShare={() => void reportWorkflow.share()} onRevoke={() => reportWorkflow.revoke()} onReset={reportWorkflow.reset} onNewDiary={() => setActiveTab("diary")} onRetryLoad={reportWorkflow.retryLoad} formatDiarySummary={getDiaryEntryDisplaySummary} /> : null}
-          {activeTab === "settings" ? <SettingsHubScreen email={user?.email} configured={configured} userId={userId} activePet={activePet} ownedPetCount={ownedPetCount} onOpenPetProfiles={() => setShowPetSettings(true)} onSignOut={handleSignOut} /> : null}
+          {activeTab === "settings" ? <SettingsHubScreen email={user?.email} configured={configured} userId={userId} activePet={activePet} ownedPetCount={ownedPetCount} onOpenPetProfiles={openPetSettings} onSignOut={handleSignOut} /> : null}
         </ScrollView>
 
         <BottomNav activeTab={activeTab} onChange={setActiveTab} />

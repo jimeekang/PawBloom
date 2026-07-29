@@ -10,16 +10,20 @@ export function SubscriptionPlanCard({
   ownedPetCount,
   loading,
   failed,
+  preview = false,
   onRetry,
 }: {
   entitlement: Entitlement | null;
   ownedPetCount: number;
   loading: boolean;
   failed: boolean;
+  preview?: boolean;
   onRetry?: () => void;
 }) {
   const planLabel = entitlement ? t(`settings.plan.${entitlement.plan}` as const) : null;
-  const statusLabel = loading
+  const statusLabel = preview
+    ? t("settings.planPreview")
+    : loading
     ? t("settings.planLoading")
     : failed || !planLabel
       ? t("settings.planLoadFailed")
@@ -35,7 +39,7 @@ export function SubscriptionPlanCard({
           </View>
         </View>
         {failed && onRetry ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetry} /> : null}
-        {entitlement ? (
+        {!preview && entitlement ? (
           <>
             <PlanLine text={t("settings.planPets").replace("{count}", `${ownedPetCount}`).replace("{limit}", `${entitlement.maxPets}`)} enabled={ownedPetCount <= entitlement.maxPets} />
             <PlanLine text={t(entitlement.familySharingEnabled ? "settings.planFamilyEnabled" : "settings.planFamilyLocked")} enabled={entitlement.familySharingEnabled} />
