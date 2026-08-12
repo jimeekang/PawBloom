@@ -22,12 +22,12 @@ npm.cmd run verify
 
 - TypeScript typecheck
 - Architecture boundary check
-- i18n key parity
-- Presentation state logic test
+- i18n key parity + 미사용 key 0건
+- Presentation state/회귀 동작 test
 - AI safety wording check
 - Secret hard-code check
 - Supabase RLS/GRANT check
-- Offline outbox contract check
+- Offline outbox 실행 모드·계정 격리·충돌 contract check
 - Docs governance check (`verify:docs` — md 300줄 제한 + owner_model 배타 소유 frontmatter)
 
 ## 리뷰 루프
@@ -37,6 +37,8 @@ npm.cmd run verify
 3. 전체 검증을 실행한다.
 4. 동작이 바뀌면 문서를 업데이트한다.
 5. 제품, 법률, 의료, 릴리스 승인 결정만 escalate한다.
+
+`npm run verify`는 정적·자동화 게이트다. 실제 iOS/Android 알림 센터, 권한, 키보드, VoiceOver/TalkBack, 기기 시간대와 실계정 owner/caregiver 교차 역할은 development build/TestFlight의 별도 실기 QA로 확인한다.
 
 ## Merge 기준
 

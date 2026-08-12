@@ -6,6 +6,8 @@ edit_policy: exclusive
 
 # 0008. 잔여 구현 인수인계 — Codex 실행 명세 (2026-07-28)
 
+> **상태 (2026-08-12): Codex 구현·자동 검증 완료.** 남은 항목은 0007 소유 모델이 판단할 실제 기기·실계정 QA뿐이다. 0007이 이 문서를 active 상대경로로 참조하므로 링크를 깨지 않기 위해 아직 archive로 이동하지 않는다. 0007의 상태·링크를 함께 정리할 때 두 계획을 archive한다.
+
 - 배경: 0007 결함 정정(고유 93건) 중 25개 태스크가 구현·검증·푸시 완료됐다
   ([0007 계획](0007-defect-remediation-plan.md), 감사 근거
   [08 감사 리포트](../../analysis/08-uiux-defect-audit-2026-07-27.md)).
@@ -167,8 +169,8 @@ supabase functions deploy generate-vet-report --project-ref xgvbtabedbocrebqilsh
 | §6 흐름 | 재인증 기반 비밀번호 변경, 충돌별 펫·카테고리·날짜와 영구 삭제 경고 (`ac34d79`, `5cac818`) | 호출 순서·저장소 격리·UI 계약 테스트 통과 | 로그인 계정 실기 미확인 |
 | §7 알림 | OFF 계정 전체 취소, ON 전 펫 복원 동작 테스트 (`dfb50fe`) | expo-notifications 목·변이 검증·전체 verify 통과 | 실제 알림 센터 미확인 |
 
-- 최종 `npm run verify`: 통과 (333 source files, 131 presentation tests, 593 i18n keys,
-  18 public tables, 49 markdown files).
+- 2026-07-29 당시 최종 `npm run verify`: 통과 (333 source files, 131 presentation tests,
+  593 i18n keys, 18 public tables, 49 markdown files).
 - 웹 실기를 위해 Expo 웹 번들까지 성공했으나 gstack headless Chromium이 세 차례 `exit 137`로 종료되어
   브라우저 검증은 완료하지 못했다. 이 문서의 `[x]` 완료 규칙에 따라 실기 항목을 완료로 과대 표기하지 않는다.
 - `0007-defect-remediation-plan.md`는 `claude-opus-4.8-extra` 배타 소유이므로 Codex가 수정하지 않았다.

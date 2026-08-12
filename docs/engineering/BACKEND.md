@@ -36,21 +36,35 @@ Supabase Edge Functions는 서버에서만 처리해야 하는 workflow를 담�
 - 브라우저 요청에는 정돈된 안전한 텍스트 문서를 기본 반환하고, 앱의 명시적 검증 요청(`format=json`)에만 계약 검증된 JSON을 반환한다. Supabase Edge Function은 HTML 응답을 plain text로 강제하므로 HTML 태그를 반환하지 않는다.
 - 만료되거나 폐기된 token, 아직 공유 상태가 아닌 report는 거부하며 모든 응답을 캐시 금지한다.
 
+### `manage-pet-members`
+
+- **책임**: owner가 반려동물 구성원을 조회하고 caregiver를 초대·제거하는 명령을 처리한다.
+- 호출자 JWT와 `pets.owner_id`를 모두 확인한다. 초대는 활성 Family entitlement가 있을 때만 허용하고, owner membership은 제거할 수 없다.
+- 초대 대상 이메일 조회와 Auth 초대는 service role을 가진 함수 내부에서만 수행한다. 성공한 초대·제거는 `audit_events`에 남긴다.
+
+### `delete-account`
+
+- **책임**: 인앱 계정 삭제 요청을 처리한다. 호출자 JWT를 확인한 뒤 사용자가 소유한 모든 pet의 `pet-media` 객체를 재귀 삭제하고 Auth user를 삭제한다.
+- 사용자가 소유한 pet과 하위 데이터는 cascade 삭제한다. 다른 owner의 pet에 남긴 기록은 유지하되 `created_by`가 `ON DELETE SET NULL`로 익명화된다.
+- 앱은 성공 후 해당 계정의 로컬 식사·투약 알림을 취소하고 세션을 종료한다.
+
 ## 서버측 인가 계약 (Authorization Contract)
 
-모든 Edge Function은 아래 계약을 지킨다. 이 항목들은 보안 경계를 정의하므로 임의로 완화하지 않는다.
+인증된 앱 함수와 공개 report viewer는 아래 계약을 지킨다. 이 항목들은 보안 경계를 정의하므로 임의로 완화하지 않는다.
 
 - **Service role key는 서버 환경에서만 사용한다.** 클라이언트 번들에는 절대 포함하지 않는다.
-- **Service role 접근을 사용하기 전에 사용자 JWT를 검증한다.** 검증되지 않은 요청은 어떤 데이터도 읽지 않는다.
+- **인증된 함수는 service role 접근 전에 사용자 JWT를 검증한다.** 공개 `get-vet-report`만 예외이며, 이 함수는 만료·폐기 상태를 확인한 share token으로 sanitized report 한 건만 읽는다.
 - **권한 판단에 `user_metadata`를 신뢰하지 않는다.** `user_metadata`는 클라이언트가 변경할 수 있으므로 인가 결정의 근거로 쓰지 않는다.
 - **반려동물 데이터를 읽기 전에 `pet_members` membership을 확인한다.** 요청 사용자가 해당 pet의 멤버인지 서버에서 조회해 확인한 뒤에만 접근을 허용한다.
+- **owner 전용 명령은 membership role만 믿지 않는다.** 구성원 관리처럼 소유권이 필요한 명령은 `pets.owner_id`가 호출자와 같은지 확인한다.
 - **인증된 앱 API 응답은 구조화된 JSON만 반환한다.** 공개 텍스트 문서는 동일한 정규화 report payload에서만 렌더링한다.
 - **생성되는 모든 AI summary와 report에는 AI 안전 고지문을 포함한다.** (고지 문구 원문은 [AI 안전 정책](../product/AI_SAFETY.md) 참조.)
 
 ## Request/Response Contract 보호
 
-- Edge Function의 request/response contract는 **typed wrapper**와 **contract test**로 보호한다.
-- typed wrapper는 입출력 shape를 코드 레벨에서 강제하고, contract test는 함수와 클라이언트 사이의 계약이 깨지면 CI에서 실패하게 만든다.
+- 앱의 Edge Function 호출은 각 context의 application 경계에 둔다. presentation에서 provider를 직접 호출하지 않는다.
+- 응답 데이터는 `unknown`으로 받은 뒤 runtime parser로 검증한다. 여러 필드를 받는 함수는 request parser·response parser·contract test를 함께 둔다.
+- `delete-account`처럼 body가 없고 성공 여부만 필요한 명령은 응답 payload를 앱 상태로 사용하지 않고 HTTP 성공/실패만 처리한다.
 
 ## AI 출력 원칙
 

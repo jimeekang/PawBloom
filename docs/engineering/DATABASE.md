@@ -16,6 +16,7 @@ Supabase는 Australia-first 출시를 위해 `ap-southeast-2` Sydney region에 �
 - 권한 대상은 `TO authenticated`를 사용한다. deprecated된 `auth.role()` 기반 검사는 사용하지 않는다.
 - Storage bucket은 private으로 유지한다.
 - Storage policy는 object path에서 pet membership을 검증해야 한다.
+- 다이어리 `entry_date`와 투약 `dose_date`는 기기 로컬 달력이 정한 값이 권위다. 서버는 Sydney 날짜를 다시 유도하지 않고 `app_private.matches_local_entry_date`로 timestamp와 날짜가 실제 UTC offset 범위(UTC−12~UTC+14)에서 가능한 조합인지만 검증한다.
 - 사진 다이어리 수정은 `update_photo_diary_entry` RPC만 사용한다. RPC는 owner/caregiver 권한, 기존 기록 소속, Storage object 소유권, 해당 반려동물의 같은 로컬 날짜에 저장된 전체 사진과 신규 사진을 합친 5장 제한을 한 트랜잭션에서 검증하고 mutation-scoped `storage_path`로 재시도를 멱등 처리한다.
 - `memo`와 `photo`는 같은 날짜에도 여러 `diary_entries` 행을 저장할 수 있다. 일일 유일성은 구조화 카테고리(`food`, `water`, `walk`, `stool`, `condition`)에만 적용한다.
 - 현재 사진 한도는 플랜과 무관하게 반려동물별 로컬 날짜당 5장이다. 향후 유료 플랜은 무제한 사진을 지원할 예정이지만, entitlement 기반 한도 분기는 아직 구현하지 않으며 무료 5장 제한을 유지한다.
@@ -24,6 +25,7 @@ Supabase는 Australia-first 출시를 위해 `ap-southeast-2` Sydney region에 �
 - `pets.owner_id`가 단일 owner 원본이다. owner membership은 이 값과 일치해야 하고 pet마다 하나만 존재한다.
 - `profiles.email`은 초대 대상 식별에 쓰이는 Auth identity 속성이다. client insert/update를 허용하지 않고 `auth.users` trigger만 동기화한다.
 - `pet_members`와 `subscription_entitlements` mutation은 authenticated client에 열지 않는다. caregiver 관리 Edge Function과 신뢰된 service role 경로만 변경할 수 있다.
+- 계정 삭제 시 사용자가 소유한 pet은 하위 데이터와 함께 삭제한다. 다른 owner의 pet에 기여한 행은 보존하고 nullable `created_by` FK의 `ON DELETE SET NULL`로 작성자 연결만 제거한다.
 - View는 `security_invoker`를 사용하거나 노출 schema 밖에 둔다.
 - Mobile app에는 Supabase publishable key만 포함한다.
 - `service_role`은 Edge Function 서버 환경에서만 사용한다.

@@ -31,7 +31,7 @@ PawBloom 신규 개발자를 위한 로컬 개발 환경 구축 문서. 0002 MVP
 
 | 항목 | 목적 | 설정 | 확인 |
 | --- | --- | --- | --- |
-| Node.js 22.11+ / npm 10+ | Expo, TypeScript, script 실행 | Node 공식 installer 사용 | `node -v`, `npm -v` |
+| Node.js 22+ / npm 10+ | Expo, TypeScript, script 실행 | Node 공식 installer 사용 | `node -v`, `npm -v` |
 | Git | branch, worktree, PR workflow | Git 공식 installer 사용 | `git --version` |
 | VS Code 또는 동급 editor | TypeScript 탐색과 터미널 작업 | TypeScript/ESLint extension 권장 | workspace 정상 열림 |
 | Docker Desktop | Supabase local stack | Windows에서는 WSL2 backend 권장 | `docker --version` |
@@ -134,19 +134,19 @@ npm.cmd run verify
 
 관련 config/파일: `supabase/config.toml`, `supabase/migrations/**`.
 
-### 5. EAS setup
+### 5. EAS build 확인
+
+이 저장소는 `apps/mobile/eas.json`과 app identifier 구성이 끝난 상태다. 기존 프로젝트에서 `eas init`이나 `eas build:configure`를 다시 실행하지 않는다.
 
 ```powershell
 npm.cmd install --global eas-cli
 eas login
-eas init
-eas build:configure
+eas whoami
 eas build --platform android --profile preview
 eas build --platform ios --profile preview
 ```
 
-- `eas init` / `eas build:configure`: 프로젝트 연결과 `eas.json` 초기화
-- `preview` profile: simulator/APK preview build용 (profile 정의는
+- `preview` profile: Android APK와 등록된 iOS 기기의 내부 배포 build용 (profile 정의는
   [RELEASE.md](./RELEASE.md)의 EAS Profile 참고)
 
 ## Merge gate
@@ -162,8 +162,7 @@ merge gate 규칙은 [QUALITY.md](./QUALITY.md)와 중복되므로 그 문서를
   포함한다.
 - Mobile UI 변경은 사용자 문구를 `apps/mobile/src/i18n/translations.ts`에 둔다.
 - Cross-context 동작은 application use case 또는 domain event로 연결한다.
-- Product Architecture Lead는 auth, role, RLS, AI safety, privacy, release
-  변경을 승인한다.
+- auth, role, RLS, AI safety, privacy, release 변경은 `AGENTS.md`의 강한 리뷰 경로와 배포 전 명시적 승인을 따른다.
 
 세부 항목과 리뷰 루프는 [QUALITY.md](./QUALITY.md)를 따른다.
 

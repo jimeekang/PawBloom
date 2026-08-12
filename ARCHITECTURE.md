@@ -19,19 +19,21 @@ PawBloom는 DDD 방식과 bounded context 구조를 사용한다. 각 업무 도
 
 ## Bounded Context
 
-- `identity`: Auth profile, 언어, 계정 설정
+- `identity`: Auth profile, 언어, 계정 설정, 비밀번호 복구·재인증 변경, 계정 삭제
 - `pet`: 반려동물 프로필, 종, 품종, 나이, 체중
 - `routine`: 반려동물별 기본 식사량·식사 시간, 식사 알림, 물, 산책, 배변, 컨디션 기준값
 - `diary`: 식사, 물, 산책, 배변, 컨디션, 메모, 사진. 컨디션 점수의 원천
 - `care`: 질병/상태, care plan, 프로필 기반 케어 기본값
 - `medication`: 약 일정, 투약 기간, 반복 간격, 로컬 알림, 오늘 투약 체크, 임시 투약, 누락, 부분 투약, 완료
-- `briefing`: AI 요약, 누락 기록, 변화 패턴
+- `briefing`: 기록 기반 브리핑, 누락 기록, 변화 패턴
 - `report`: 병원 리포트, 공유 token, 사용자 확인
-- `media`: 사진/영상과 Supabase Storage metadata
+- `media`: 사진과 Supabase Storage metadata
 - `subscription`: Free, Plus, Family entitlement gate
-- `sync`: 오프라인 outbox와 idempotent replay
+- `sync`: 계정별 오프라인 outbox, idempotent replay, 충돌 격리·검토 후 폐기
 
 로컬 알림 표시 부트스트랩은 기능별 context가 아니라 `shared-kernel/notifications/localNotificationBootstrap.ts`가 소유한다. 앱 시작 시 한 번 실행해 포그라운드 배너/리스트 표시와 Android 기본 알림 채널을 설정하며, 알림 예약 규칙 자체는 `medication`과 `routine` application 계층이 각각 소유한다.
+
+DB에 저장되는 기본 문구는 현재 UI 언어를 포함하지 않는다. 기본 투약명은 `shared-kernel/recordSentinels.ts`의 언어 중립 sentinel을 사용하고, 내용이 없는 다이어리 기록은 빈 요약을 저장한다. 현재 언어 번역과 과거 한·영 기본 문구 호환은 i18n/UI 경계에서 렌더링할 때 처리한다.
 
 프로필 화면은 `pet`, `routine`, `care`, `medication` use case를 조합할 수 있지만, 병명/상태와 약 일정의 데이터 소유권은 `care`와 `medication` context에 둔다.
 
@@ -53,17 +55,17 @@ apps/mobile/src/contexts/<context>/
 - `application`은 자기 `domain`, 자기 `infrastructure` 인터페이스, `shared-kernel`을 import한다. 다른 context와 협력해야 하면 상대 context의 `application` use case나 `domain` 타입만 명시적으로 import한다.
 - `infrastructure`는 자기 `domain`, 생성된 Supabase type, provider client를 import한다.
 - `ui`는 자기 `application`, 자기 `domain`, 공유 UI primitive를 import한다.
-- `apps/mobile/src/App.tsx`는 앱 wiring 역할이며 context를 조합할 수 있다.
+- `apps/mobile/App.tsx`는 앱 wiring 역할이며 context를 조합할 수 있다.
 
 ## 강제 검증
 
 리포지터리는 에이전트가 읽고 수정하기 쉬운 상태를 유지하기 위해 custom script를 사용한다.
 
 - `scripts/verify-architecture.mjs`: context 경계와 파일 크기 점검
-- `scripts/verify-i18n.mjs`: 영어/한국어 번역 key 일치 점검
+- `scripts/verify-i18n.mjs`: 영어/한국어 번역 key 일치와 미사용 key 0건 점검
 - `scripts/verify-presentation-state.mjs`: presentation 로직 테스트 실행
 - `scripts/verify-ai-safety.mjs`: 앱과 Edge Function 출력에서 위험한 의료 문구 차단
 - `scripts/verify-secrets.mjs`: secret hard-code 차단
 - `scripts/verify-supabase.mjs`: migration의 GRANT와 RLS 적용 범위 점검
-- `scripts/verify-offline-sync.mjs`: outbox contract 검증
+- `scripts/verify-offline-sync.mjs`: outbox와 오프라인 실행 모드 contract 검증
 - `scripts/verify-docs.mjs`: 문서 300줄 제한과 모델 배타 소유 frontmatter 강제 (AGENTS.md 라우팅 계약)

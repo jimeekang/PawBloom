@@ -19,8 +19,8 @@ edit_policy: exclusive
 ## 필수 구현 규칙
 
 - **디자인 token 우선**: 전역 디자인 token, icon, spacing, typography, layout rule을 우선 사용한다. 화면별 임의 스타일 추가는 금지한다. 새 스타일이 필요하면 design system(`src/design-system`)에 먼저 반영한 뒤 사용한다.
-- **i18n**: 사용자에게 보이는 모든 문구는 `src/i18n/translations.ts`에 둔다. 화면에 리터럴 문자열을 하드코딩하지 않는다.
-- **Edge Function 호출**: typed request/response wrapper 없이 직접 호출하지 않는다. 모든 Edge Function 호출은 typed wrapper를 통한다.
+- **i18n**: 사용자에게 보이는 모든 문구는 `src/i18n/translations.ts`에 둔다. 화면에 리터럴 문자열을 하드코딩하지 않는다. DB에는 번역된 기본 문구를 저장하지 않고 언어 중립 값·구조화 데이터를 저장한 뒤 현재 언어로 렌더링한다.
+- **Edge Function 호출**: 각 context의 application 경계에서만 호출한다. 응답은 `unknown`으로 받고 runtime parser로 검증하며, presentation에서 provider를 직접 호출하지 않는다.
 - **Supabase secret**: 앱 코드에 hard-code하지 않는다.
 
 ## 로컬 알림 공통 계약
@@ -33,6 +33,7 @@ edit_policy: exclusive
 - 식사: `meal:${userId}:${petId}:${slot}`
 - 식사 알림은 `routine/application/mealReminderNotifications.ts`가 소유하고, `HH:mm` 유효 시간만 `DAILY` 트리거로 예약한다. 펫당 슬롯 최대 4개이며 시간 미설정 또는 토글 off인 슬롯은 예약하지 않는다.
 - 계정 전환·로그아웃 시 `authContextState.ts`가 이전 계정의 `medication:`과 `meal:` 예약을 각각 취소한다. 한 기능이 다른 기능의 prefix를 조회·취소하지 않는다.
+- 투약 알림 토글을 끄면 현재 계정의 모든 펫 예약을 취소한다. 다시 켜면 활성 펫만이 아니라 일정이 있는 모든 펫의 예약을 복원한다.
 - 예약 저장 흐름에서만 권한을 요청하고, 앱 시작·포그라운드 복귀·펫 전환 재예약은 현재 권한을 확인하기만 한다. 웹의 예약·취소는 조용한 no-op이다.
 - iOS 전역 pending 안전 예산은 투약 예약이 60개로 관리한다. 식사 알림은 슬롯당 DAILY 1개(펫당 최대 4개)이므로 별도 전역 예산을 만들지 않고, 투약 예약이 다른 pending 알림을 포함해 남은 용량을 계산한다.
 
@@ -50,6 +51,18 @@ edit_policy: exclusive
 ### 스케줄 시간별 분리 저장
 
 하루 여러 번 복용하는 약은 UI에서는 같은 약 아래 여러 복용 시간으로 보여주되, 저장은 **시간별 개별 일정**(`CareMedicationSchedule`, 각각 고유 `id`/`localTime`)으로 분리한다. 알림 예약도 이 분리된 시간별 일정 단위로 이뤄진다.
+
+## 계정 보안 UI 계약
+
+- 로그인 사용자는 Settings 계정 카드에서 비밀번호를 변경할 수 있다. 현재 비밀번호로 재인증에 성공한 뒤에만 새 비밀번호를 저장한다.
+- 인증 실패 문구는 `authErrorMessages.ts`의 코드→번역 key 매핑을 사용하고 provider 원문을 그대로 노출하지 않는다.
+- 이메일 비밀번호 재설정 흐름과 인앱 변경 흐름은 별개로 유지한다.
+
+## 오프라인 충돌 계약
+
+- native(SQLite)와 web(localStorage) outbox는 mutation의 `queuedByUserId`로 계정을 격리한다. 다른 계정의 pending/conflict 행을 표시·재생·삭제하지 않는다.
+- 재시도 불가능한 mutation은 conflict 상태로 보존한다. 배너에는 가능한 범위에서 펫 이름(없으면 id), 카테고리, 기록 날짜를 표시한다.
+- conflict 삭제는 확인 절차를 거친 뒤 현재 계정의 outbox 행만 영구 삭제한다. 이미 서버에 저장된 기록은 삭제하지 않으며 이 동작은 실행 취소할 수 없다.
 
 ## 타임라인 탭 라우팅 UI 계약
 

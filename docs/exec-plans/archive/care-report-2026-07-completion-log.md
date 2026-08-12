@@ -6,11 +6,12 @@ edit_policy: exclusive
 
 # Care & Report 완료 구현 기록 (2026-07)
 
-2026-07-01 ~ 07-04 사이 완료된 대형 TDD 계획 3개(checklist/diary record boundary,
+2026-07-01 ~ 07-05 사이 완료된 대형 TDD 계획 3개(checklist/diary record boundary,
 care profile defaults simplification, clinic report value proof)를 하나로 통합한
 완료 기록. 원본 계획의 inline 코드/QA 스텝은 이미 코드에 흡수되어 제거하고,
-살아있는 계약(규칙·시그니처·마이그레이션·경로)만 남긴다. 상세 규칙은 아래 링크된
-현행 문서로 흡수되었다.
+당시 결정과 마이그레이션 근거를 남긴다. 아래 세부 파일 경로·함수명은 구현 당시
+스냅샷이며 이후 리팩터링으로 이동·삭제될 수 있다. 현재 계약은 아래 링크된 현행
+문서를 단일 기준으로 사용한다.
 
 - 대응 commit: `4c91b91` (diary/care entry flow 단순화), `8cca48a` (care medication scheduling 단순화)
 - 현행 규칙 문서: [PRODUCT_SPEC](../../product/PRODUCT_SPEC.md) · [FRONTEND](../../engineering/FRONTEND.md) · [DATABASE](../../engineering/DATABASE.md) · [ARCHITECTURE](../../../ARCHITECTURE.md)
@@ -79,11 +80,9 @@ care profile defaults simplification, clinic report value proof)를 하나로 �
 - **핵심 결정 — 직접 액션 & reminder:**
   - `careStatusActionLabel(status)`: `completed → "먹였어요"`, `skipped → "못 먹였어요"`.
     cyclic status 탭 대신 두 버튼 직접 액션. (구 `nextDoseStatus`/`cycleDoseStatus` primary 경로 제거.)
-  - `buildMedicationReminderRequests({ petName, schedules, fromDate, daysAhead })`:
-    `fromDate`부터 `daysAhead`일 각각에 `scheduleAppliesOnDate`로 필터해 요청 생성.
-    identifier `medication:{scheduleId}:{dateKey}`, title에 petName, body에 medicationName,
-    `triggerDate`는 localTime 기반. `rescheduleMedicationReminders`가 기존 `medication:*` 취소
-    후 30일치 재등록(권한 거부 시 앱 유지 + non-blocking notice).
+  - 이후 알림 계약은 계정 스코프 identifier, 무기한 DAILY/기간형 rolling 예약, iOS 60개
+    안전 예산, off 시 계정 전체 취소·on 시 전 펫 복원으로 확장됐다. 현재 규칙은
+    [FRONTEND](../../engineering/FRONTEND.md)를 따른다.
   - `ProfileCareDefaultsPanel` props 계약: `{ setup: ActiveCareSetup; onSave: (input: CareSetupInput) => void }`.
     condition/medication + local time마다 schedule row 1개를 저장. profile에서 렌더.
   - domain 확장: `ActiveCareSetup.conditions[]`(최신 우선, 단일 `condition`은 `conditions[0]`),
@@ -141,11 +140,12 @@ care profile defaults simplification, clinic report value proof)를 하나로 �
     `screens/AuthScreen.tsx`(pre-signup 7일 vet report/family care log/safe summary 프리뷰),
     `screens/HomeScreen.tsx`(Today hero 대비 강화), `ui/SummaryCard.tsx`(관찰형 유지 + 전체 disclaimer),
     `sampleData.ts`(disclaimer 정합), `i18n/translations.ts`.
-- **문서 결함 메모:** 원본 clinic-report plan의 File Structure가 SummaryCard 경로를
-  `apps/mobile/src/presentation/components/SummaryCard.tsx`로 오기했으나, 실제 파일은
-  **`apps/mobile/src/presentation/ui/SummaryCard.tsx`**다. 위 링크·본 기록은 실제 경로 기준.
-- **남은 후속 항목:** confirmed/shared 상태는 실제 share token 도입 전까지 mock/preview로 명시
-  유지. report/care copy는 진단·처방·"수의사 불필요" 암시 금지(AI safety gate 대상).
+- **문서 결함 메모:** 원본 clinic-report plan은 당시 SummaryCard 경로를
+  `apps/mobile/src/presentation/components/SummaryCard.tsx`로 오기했다. 당시 실제 경로는
+  `apps/mobile/src/presentation/ui/SummaryCard.tsx`였고, 해당 컴포넌트는 후속 리팩터링에서 삭제됐다.
+- **후속 구현 상태:** confirmed/shared 상태와 만료·폐기 가능한 share token은 이후 실제
+  Edge Function 흐름으로 구현됐다. report/care copy의 진단·처방·"수의사 불필요" 암시 금지는
+  계속 [AI 안전 정책](../../product/AI_SAFETY.md)과 자동 gate의 대상이다.
 
 ---
 
