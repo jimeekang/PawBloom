@@ -6,7 +6,7 @@ edit_policy: exclusive
 
 # 0008. 잔여 구현 인수인계 — Codex 실행 명세 (2026-07-28)
 
-> **상태 (2026-08-12): Codex 구현·자동 검증·iOS Simulator 미리보기 QA 완료.** 남은 항목은 0007 소유 모델이 판단할 실제 기기·실계정 QA뿐이다. 0007이 이 문서를 active 상대경로로 참조하므로 링크를 깨지 않기 위해 아직 archive로 이동하지 않는다. 0007의 상태·링크를 함께 정리할 때 두 계획을 archive한다.
+> **상태 (2026-08-12): Codex 구현·자동 검증·iOS Simulator 미리보기 및 원격 실계정 QA 완료.** 남은 항목은 물리 iPhone에서만 증명할 수 있는 알림·백그라운드·23:30 시간대 실측과 0007 소유 모델의 최종 QA 판단이다. 0007이 이 문서를 active 상대경로로 참조하므로 링크를 깨지 않기 위해 아직 archive로 이동하지 않는다. 0007의 상태·링크를 함께 정리할 때 두 계획을 archive한다.
 
 - 배경: 0007 결함 정정(고유 93건) 중 25개 태스크가 구현·검증·푸시 완료됐다
   ([0007 계획](0007-defect-remediation-plan.md), 감사 근거
@@ -40,8 +40,11 @@ supabase functions deploy generate-vet-report --project-ref xgvbtabedbocrebqilsh
 
 - 적용 후 확인: 기기 시간대를 서울로 두고 23:30에 다이어리·투약 저장 성공, EN 모드 브리핑이 영어로 생성,
   리포트 기간이 앱 표시와 일치. 완료되면 0007의 A1·D5를 `[x]`로 갱신한다.
-- 원격 확인: `20260728100000` 로컬·원격 일치, `generate-ai-brief` v7 ACTIVE,
-  `generate-vet-report` v4 ACTIVE. 위 기기 실측은 수행하지 못했으므로 0007 A1·D5는 미완료 유지한다.
+- 원격 확인: `20260728100000` 로컬·원격 일치는 2026-07-29에 확인했다. 2026-08-12에는 배포 함수
+  `generate-ai-brief` v7, `generate-vet-report` v4, `get-vet-report` v3,
+  `get-vet-report-state` v1, `manage-pet-members` v3가 모두 ACTIVE임을 재확인했다.
+- 원격 호출: 실계정 JWT로 KO/EN 브리핑과 7일 리포트 생성을 성공시켰고, 앱 표시 기간·언어·비진단
+  고지를 확인했다. 물리 기기가 연결되지 않아 23:30 시간대 실측만 미완료다.
 
 ## 2. E2 잔여 — 프리뷰 정합
 
@@ -192,6 +195,22 @@ supabase functions deploy generate-vet-report --project-ref xgvbtabedbocrebqilsh
   재빌드는 diagnostic 0건으로 성공했고, 잘못된 SplashScreen image runtime 경고가 사라졌다.
 - 최종 `npm run verify`: 통과 (336 source files, 133 presentation tests, 593 i18n keys,
   18 public tables, 48 markdown files).
-- 남은 실기: 실제 기기의 알림 센터·백그라운드 수신, 실계정 비밀번호 변경/owner-caregiver 권한,
-  23:30 기기 시간대 저장, 배포 Edge Function의 실제 AI 브리핑·리포트 창은 Simulator 미리보기로
-  증명할 수 없다. 이 항목은 0007 소유 모델의 최종 QA 대상이다.
+- 남은 실기: 실제 기기의 알림 센터·백그라운드 수신과 23:30 기기 시간대 저장은 Simulator로
+  증명할 수 없다. 이 항목과 최종 완료 판단은 0007 소유 모델의 QA 대상이다.
+
+## 12. iOS Simulator 원격 실계정 QA (2026-08-12)
+
+- 환경: iPhone 17 Pro / iOS 26.5 Debug 앱을 실제 호스팅 Supabase 프로젝트에 연결했다. 연결된 물리
+  iPhone은 없었고, EAS CLI·배포 토큰도 구성되지 않아 TestFlight/실기기 빌드는 수행하지 않았다.
+- owner 앱 흐름: 임시 계정으로 로그인해 원격 반려동물·사진·다이어리·투약·리포트를 불러왔고,
+  정량 투약 완료 저장을 확인했다. 비밀번호 변경은 잘못된 현재 비밀번호 실패와 올바른 현재 비밀번호
+  성공을 모두 확인했으며, 변경된 비밀번호로 다시 로그인했다.
+- AI/리포트: 배포된 `generate-ai-brief`를 KO/EN 각각 실계정 JWT로 호출해 언어와 비진단 고지를
+  확인했다. `generate-vet-report`가 생성한 7일 리포트의 다이어리·투약 집계, 앱 표시 기간,
+  KO/EN 미리보기를 확인했다.
+- caregiver 권한: 활성 caregiver 멤버십으로 원격 읽기와 다이어리 생성을 성공시켰다. 반려동물
+  owner 전용 수정, 다이어리 삭제, 리포트 생성은 RLS/RPC/Edge Function 경계에서 모두 거부됐다.
+- 원격 상태: 함수 5개의 ACTIVE 버전을 확인했다. 당일 migration 재조회는 pooler timeout과 DNS
+  실패로 완료하지 못했지만, 기존 원격 migration 일치 기록과 실제 테이블·RLS·함수 호출을 검증했다.
+- 정리: 테스트가 만든 owner/caregiver 계정, 데이터, 리포트, Storage 객체를 삭제하고 잔존 계정·펫이
+  없음을 재확인했다. 기존 Simulator 사용자 데이터는 수정하지 않았지만 세션은 로그아웃 상태다.
