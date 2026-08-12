@@ -43,6 +43,7 @@ export const icon = {
   share: { family: "ion", name: "share-outline" },
   lock: { family: "ion", name: "lock-closed-outline" },
   pet: { family: "fa5", name: "dog" },
+  cat: { family: "fa5", name: "cat" },
   close: { family: "ion", name: "close" },
   eye: { family: "ion", name: "eye-outline" },
   eyeOff: { family: "ion", name: "eye-off-outline" },

@@ -15,6 +15,7 @@ import { AiBriefCard } from "../../contexts/briefing/ui/AiBriefCard";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
+import { resolveHomeHeroKind } from "./HomeHero.logic";
 
 const mochiHero = require("../../../assets/mochi-hero.png");
 
@@ -44,22 +45,30 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
   const { language } = useLanguage();
   const timeline = [...entries].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)).slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
-  const heroSource = profilePhoto.data ? { uri: profilePhoto.data } : mochiHero;
+  const heroKind = resolveHomeHeroKind({ petId: pet.id, species: pet.species, userId, photoUrl: profilePhoto.data });
+  const heroSource = heroKind === "photo" ? { uri: profilePhoto.data! } : heroKind === "mochi" ? mochiHero : null;
+  const heroIcon = heroKind === "cat" ? "cat" : heroKind === "dog" ? "pet" : "logo";
   const checklistOrder = getTodayChecklistOrder({ walkEnabled, includeMedication });
   const dashboard = createDashboardSummary(checklist, entries, doses, checklistOrder, medicationAgenda);
   const heroMeta = formatPetMetaLine(pet, language);
   // Skipped/partial doses count as "recorded" for the tile, but the check mark
   // shows coral so a skip is not mistaken for a completed dose (0006 E3).
   const medicationAttention = (medicationAgenda.length > 0 ? medicationAgenda : doses).some((row) => row.status === "partial" || row.status === "skipped");
+  const heroCopy = <View style={styles.heroOverlay}>
+    <Text style={styles.heroName}>{pet.name}</Text>
+    {heroMeta ? <Text style={styles.heroMeta}>{heroMeta}</Text> : null}
+  </View>;
 
   return (
     <View>
-      <ImageBackground source={heroSource} resizeMode="cover" imageStyle={styles.heroImage} style={styles.heroCard}>
-        <View style={styles.heroOverlay}>
-          <Text style={styles.heroName}>{pet.name}</Text>
-          {heroMeta ? <Text style={styles.heroMeta}>{heroMeta}</Text> : null}
+      {heroSource ? (
+        <ImageBackground source={heroSource} resizeMode="cover" imageStyle={styles.heroImage} style={styles.heroCard}>{heroCopy}</ImageBackground>
+      ) : (
+        <View style={[styles.heroCard, styles.heroPlaceholder]}>
+          <View style={styles.heroPlaceholderIcon}><AppIcon name={heroIcon} size={112} color={colors.white} /></View>
+          {heroCopy}
         </View>
-      </ImageBackground>
+      )}
 
       <View style={styles.heroInfo}>
         <View style={styles.heroSummary}>
@@ -181,6 +190,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   heroImage: { borderRadius: radius.xl },
+  heroPlaceholder: { backgroundColor: colors.orange },
+  heroPlaceholderIcon: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center", opacity: 0.48 },
   heroOverlay: { flex: 1, justifyContent: "flex-end", padding: spacing.xxl, backgroundColor: colors.heroScrim },
   heroName: { ...type.heroTitle, textShadowColor: colors.heroScrim, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
   heroMeta: { ...type.sectionTitle, color: colors.white, marginTop: spacing.xs, textShadowColor: colors.heroScrim, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },

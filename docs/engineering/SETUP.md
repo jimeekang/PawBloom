@@ -98,6 +98,23 @@ Expo Go는 `expo-notifications`의 모든 네이티브 기능과 동일한 실�
 예약 수신, 백그라운드 동작의 최종 검증은 development build 또는 TestFlight에서
 수행한다.
 
+### 2-1. Xcode/development build 재생성
+
+`apps/mobile/ios/`는 Git에서 제외된 생성 산출물이다. Expo SDK·native module·
+`app.json` plugin 설정이 바뀌었거나 Xcode가 예전 `node_modules` 경로 또는 잘못된
+SplashScreen asset을 참조하면, 기존 Xcode project를 직접 고치지 말고 현재 설정으로
+다시 생성한다.
+
+```powershell
+cd apps/mobile
+npx expo prebuild --platform ios
+npx expo run:ios
+```
+
+Xcode에서 직접 실행할 때는 prebuild와 CocoaPods 동기화가 끝난 뒤
+`ios/PawBloom.xcworkspace`를 연다. 네이티브 알림·launch screen·development build
+동작을 확인할 때만 이 경로를 사용하고, 일반 UI 개발은 위 Expo Go 경로를 따른다.
+
 ### 3. Emulator 없이 web preview 확인
 
 ```powershell

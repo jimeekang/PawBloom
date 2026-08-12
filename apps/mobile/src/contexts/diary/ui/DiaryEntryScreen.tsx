@@ -22,24 +22,12 @@ import { DiaryEntryActions } from "./DiaryEntryActions";
 import { DiaryPhotoSection } from "./DiaryPhotoSection";
 import { countSavedDiaryPhotosForDate, MAX_DIARY_PHOTOS } from "./DiaryPhotoPicker.logic";
 export function DiaryEntryScreen({
-  entries,
-  selectedDateKey,
-  filter,
-  onDateChange,
-  onFilterChange,
-  onSave,
-  onUpdate,
-  onDelete,
-  routine,
-  petSpecies,
-  initialEditingEntry,
-  onInitialEditingEntryConsumed,
-  canCreate = true,
-  canUpdate = true,
-  canDelete = true,
-  listStatus = "ready",
-  onRetryList,
+  petId, entries, selectedDateKey, filter, onDateChange, onFilterChange,
+  onSave, onUpdate, onDelete, routine, petSpecies, initialEditingEntry,
+  onInitialEditingEntryConsumed, canCreate = true, canUpdate = true, canDelete = true,
+  listStatus = "ready", onRetryList,
 }: {
+  petId: string;
   entries: DiaryEntry[];
   selectedDateKey: string;
   filter: DiaryFilter;
@@ -67,12 +55,13 @@ export function DiaryEntryScreen({
   const [timeDirty, setTimeDirty] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [lastAppliedInitialEditingEntryId, setLastAppliedInitialEditingEntryId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ text: string; tone: NoticeTone }>({ text: t("diary.localDraft"), tone: "success" });
+  const [notice, setNotice] = useState<{ key: TranslationKey; tone: NoticeTone }>({ key: "diary.localDraft", tone: "success" });
   const [isDetailPanelOpen, setDetailPanelOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const pendingSaveMutation = useRef<{ fingerprint: string; id: string } | null>(null);
   const categories = useMemo(() => getDiaryCategoriesForSpecies(petSpecies, routine?.walk.enabled) as DiaryCategory[], [petSpecies, routine?.walk.enabled]);
+  const activePetRef = useRef(petId);
   const formState = getDiaryCategoryFormState(selected);
   const existingStructuredEntry = editingEntry ? null : findEditableDailyStructuredEntry(entries, selected, selectedDateKey);
   const photoDateKey = editingEntry?.entryDate ?? selectedDateKey;
@@ -85,10 +74,18 @@ export function DiaryEntryScreen({
     if (!editingEntry) setDetail(createDetailForCategory(selected, routine));
   }, [editingEntry, routine, selected]);
   useEffect(() => {
+    if (activePetRef.current === petId) return;
+    activePetRef.current = petId;
+    setEditingEntry(null); setLastAppliedInitialEditingEntryId(null); setSelected(categories[0]); setConditionScore(3);
+    setDetail(createDetailForCategory(categories[0], routine)); setMemo(""); setPhotos([]); setOccurredTime(formatDiaryTime()); setTimeDirty(false);
+    pendingSaveMutation.current = null; setDetailPanelOpen(true); showNotice("diary.localDraft"); onInitialEditingEntryConsumed?.();
+  }, [categories, onInitialEditingEntryConsumed, petId, routine]);
+  useEffect(() => {
     if (!initialEditingEntry) {
       setLastAppliedInitialEditingEntryId(null);
       return;
     }
+    if (initialEditingEntry.petId !== petId) { onInitialEditingEntryConsumed?.(); return; }
     if (!canUpdate) {
       showNotice("permission.diaryUpdateCareTeamOnly", "error");
       onInitialEditingEntryConsumed?.();
@@ -98,9 +95,9 @@ export function DiaryEntryScreen({
     loadEditingEntry(initialEditingEntry);
     setLastAppliedInitialEditingEntryId(initialEditingEntry.id);
     onInitialEditingEntryConsumed?.();
-  }, [canUpdate, editingEntry?.id, initialEditingEntry, lastAppliedInitialEditingEntryId, onInitialEditingEntryConsumed, routine]);
+  }, [canUpdate, editingEntry?.id, initialEditingEntry, lastAppliedInitialEditingEntryId, onInitialEditingEntryConsumed, petId, routine]);
   function showNotice(key: TranslationKey, tone: NoticeTone = "success") {
-    setNotice({ text: t(key), tone });
+    setNotice({ key, tone });
   }
   function savedNoticeKey(savedDate: string | undefined, editing: boolean) {
     return getDiarySavedNoticeKey(savedDate ?? selectedDateKey, editing);
@@ -214,7 +211,7 @@ export function DiaryEntryScreen({
   return (
     <View style={styles.screen}>
       <DiaryCalendar selectedDateKey={selectedDateKey} filter={filter} onSelectDate={onDateChange} onFilterChange={onFilterChange} />
-      <NoticeBanner text={notice.text} icon={notice.tone === "error" ? "close" : "check"} tone={notice.tone} />
+      <NoticeBanner text={t(notice.key)} icon={notice.tone === "error" ? "close" : "check"} tone={notice.tone} />
 
       <Text style={styles.sectionTitle}>{t("diary.category")}</Text>
       <DiaryCategoryPicker categories={categories} selected={selected} disabled={Boolean(editingEntry)} onSelect={selectCategory} />

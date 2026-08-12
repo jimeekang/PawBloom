@@ -6,7 +6,7 @@ edit_policy: exclusive
 
 # 0008. 잔여 구현 인수인계 — Codex 실행 명세 (2026-07-28)
 
-> **상태 (2026-08-12): Codex 구현·자동 검증 완료.** 남은 항목은 0007 소유 모델이 판단할 실제 기기·실계정 QA뿐이다. 0007이 이 문서를 active 상대경로로 참조하므로 링크를 깨지 않기 위해 아직 archive로 이동하지 않는다. 0007의 상태·링크를 함께 정리할 때 두 계획을 archive한다.
+> **상태 (2026-08-12): Codex 구현·자동 검증·iOS Simulator 미리보기 QA 완료.** 남은 항목은 0007 소유 모델이 판단할 실제 기기·실계정 QA뿐이다. 0007이 이 문서를 active 상대경로로 참조하므로 링크를 깨지 않기 위해 아직 archive로 이동하지 않는다. 0007의 상태·링크를 함께 정리할 때 두 계획을 archive한다.
 
 - 배경: 0007 결함 정정(고유 93건) 중 25개 태스크가 구현·검증·푸시 완료됐다
   ([0007 계획](0007-defect-remediation-plan.md), 감사 근거
@@ -175,3 +175,23 @@ supabase functions deploy generate-vet-report --project-ref xgvbtabedbocrebqilsh
   브라우저 검증은 완료하지 못했다. 이 문서의 `[x]` 완료 규칙에 따라 실기 항목을 완료로 과대 표기하지 않는다.
 - `0007-defect-remediation-plan.md`는 `claude-opus-4.8-extra` 배타 소유이므로 Codex가 수정하지 않았다.
   소유 모델이 기기 실측 후 A1·D5·E2·E3·E4·E6·E7·F1 상태를 갱신해야 한다.
+
+## 11. iOS Simulator 미리보기 실측 (2026-08-12)
+
+- 환경: Xcode native Debug build, iPhone 17 Pro / iOS 26.5, Supabase 환경변수를 끈 로컬 미리보기.
+- 화면: Today·Diary·Care·Reports·Settings의 주요 동작, KO/EN 전환, 반려동물 전환,
+  다이어리 날짜·주간 보기·구조화 식사 저장/편집, 체크리스트 기록/취소, 투약 상태 변경,
+  프리뷰 계정 필요 안내를 확인했다.
+- 수정: Mochi 기록 편집 중 Luna로 전환할 때 편집 초안이 다른 반려동물에 남던 상태 누수를 차단하고,
+  다이어리 notice가 문자열 대신 번역 key를 보관하도록 바꿔 언어 전환 시 즉시 재번역되게 했다.
+- 수정: 사진이 없는 Luna와 실계정 반려동물이 Mochi의 개 사진을 공유하지 않도록, Mochi 전용 bundled
+  image와 species별 중립 hero placeholder를 분리했다.
+- 회귀 검증: Mochi 편집 → Luna 전환 후 빈 Luna 초안과 현재 언어 notice를 확인했고, Luna hero가 고양이
+  placeholder로 표시되는 것을 화면·접근성 snapshot으로 확인했다.
+- 네이티브 정리: Git 제외 대상 `apps/mobile/ios/`를 현재 Expo 설정으로 재생성하고 Pods를 동기화했다.
+  재빌드는 diagnostic 0건으로 성공했고, 잘못된 SplashScreen image runtime 경고가 사라졌다.
+- 최종 `npm run verify`: 통과 (336 source files, 133 presentation tests, 593 i18n keys,
+  18 public tables, 48 markdown files).
+- 남은 실기: 실제 기기의 알림 센터·백그라운드 수신, 실계정 비밀번호 변경/owner-caregiver 권한,
+  23:30 기기 시간대 저장, 배포 Edge Function의 실제 AI 브리핑·리포트 창은 Simulator 미리보기로
+  증명할 수 없다. 이 항목은 0007 소유 모델의 최종 QA 대상이다.
