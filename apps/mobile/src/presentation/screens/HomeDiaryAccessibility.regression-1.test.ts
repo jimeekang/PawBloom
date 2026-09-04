@@ -22,6 +22,10 @@ if (!home.includes('accessibilityRole="checkbox"') || !home.includes("aria-check
   throw new Error("Home checklist actions must expose their recorded state and an explicit label");
 }
 
+if (!home.includes('numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9}')) {
+  throw new Error("Home checklist labels must not orphan the last letters of longer English categories");
+}
+
 if (!home.includes("accessibilityLabel={`${entry.occurredAt}")) {
   throw new Error("Home timeline actions must announce time, category, and summary");
 }

@@ -128,7 +128,7 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
               <View style={styles.checkMark}>
                 <AppIcon name={done ? "check" : "circle"} size={iconSize.xs} color={done ? (key === "medication" && medicationAttention ? colors.coral : colors.mintDeep) : colors.textSoft} />
               </View>
-              <Text style={styles.checkLabel} numberOfLines={2}>{label}</Text>
+              <Text style={styles.checkLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9}>{label}</Text>
             </Pressable>
           );
         })}
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginBottom: spacing.lg,
   },
-  checkItem: { width: 56, alignItems: "center", position: "relative" },
+  checkItem: { width: 64, alignItems: "center", position: "relative" },
   checkItemDisabled: { opacity: 0.5 },
   statusText: { ...type.caption, color: colors.textMuted, textAlign: "center" },
   checkMark: { position: "absolute", top: 38, right: 5, width: 18, height: 18, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
