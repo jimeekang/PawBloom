@@ -1,6 +1,6 @@
 import type { CreateDiaryEntryInput } from "../domain/diaryEntry";
 import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getDiarySavedNoticeKey, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, isStructuredDailyDiaryCategory, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, resolveRemoteDiarySaveOutcome, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
-import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
+import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave, hasRequiredDiaryContent } from "./DiaryEntryScreen.formRules";
 
 if (isDiaryDetailPanelOpenAfterSave(true) !== false) {
   throw new Error("diary detail panel must close after saving an entry");
@@ -190,6 +190,14 @@ if (getDiarySummaryForSave("water", "extra note") !== "") {
 
 if (getDiarySummaryForSave("memo", "  slept well  ") !== "slept well") {
   throw new Error("memo diary category must save trimmed memo text");
+}
+
+if (hasRequiredDiaryContent("memo", "   ") || !hasRequiredDiaryContent("memo", " slept well ")) {
+  throw new Error("memo diary records must require non-whitespace content");
+}
+
+if (!hasRequiredDiaryContent("food", "")) {
+  throw new Error("structured diary records must not depend on the memo-only requirement");
 }
 
 if (getDiarySummaryForSave("photo", "hidden memo from another category") !== "") {

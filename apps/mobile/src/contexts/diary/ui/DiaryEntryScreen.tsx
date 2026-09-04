@@ -12,7 +12,7 @@ import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
 import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
 import { DiaryEntryList } from "./DiaryEntryList";
 import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getDiarySavedNoticeKey, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
-import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave } from "./DiaryEntryScreen.formRules";
+import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave, hasRequiredDiaryContent } from "./DiaryEntryScreen.formRules";
 import { styles } from "./DiaryEntryScreen.styles";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { createUuid } from "../../../shared-kernel/uuid";
@@ -109,6 +109,7 @@ export function DiaryEntryScreen({
     if (savingRef.current) return;
     if (editingEntry && !canUpdate) { showNotice("permission.diaryUpdateCareTeamOnly", "error"); return; }
     if (!editingEntry && !canCreate) { showNotice("permission.diaryUpdateCareTeamOnly", "error"); return; }
+    if (!hasRequiredDiaryContent(selected, memo)) { showNotice("diary.memoRequired", "error"); return; }
     if (selected === "photo" && savedPhotoCount + photos.length > MAX_DIARY_PHOTOS) { showNotice("diary.photoLimitNotice", "error"); return; }
     if (!editingEntry && selected === "photo" && savedPhotoCount >= MAX_DIARY_PHOTOS) { showNotice("diary.photoLimitNotice", "error"); return; }
     if (!editingEntry && selected === "photo" && photos.length === 0) { showNotice("diary.photoRequired", "error"); return; }

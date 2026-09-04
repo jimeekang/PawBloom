@@ -18,6 +18,10 @@ export function getDiarySummaryForSave(category: DiaryCategory, memo: string) {
   return category === "memo" ? memo.trim() : "";
 }
 
+export function hasRequiredDiaryContent(category: DiaryCategory, memo: string) {
+  return category !== "memo" || memo.trim().length > 0;
+}
+
 export function getDiaryPhotosForSave(category: DiaryCategory, photos: DiaryPhotoInput[], isEditing: boolean) {
   return category === "photo" && (!isEditing || photos.length > 0) ? photos : undefined;
 }
