@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
@@ -33,12 +33,15 @@ export function DiaryCalendar({
   const { language } = useLanguage();
   const locale = language === "ko" ? "ko-KR" : "en-AU";
   const selectedDate = parseDateKey(selectedDateKey);
-  const weeks = createMonthWeeks(selectedDate);
   const [expanded, setExpanded] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(selectedDate));
+  const weeks = createMonthWeeks(visibleMonth);
   const selectedDateLabel = formatSelectedDate(selectedDate, locale);
-  // The next-month arrow also moves the selected date, so stepping into a
-  // month that has not started yet would select a future day.
-  const nextMonthDisabled = monthOffsetKey(selectedDate, 1) > toDateKey(new Date());
+  const nextMonthDisabled = toDateKey(offsetMonth(visibleMonth, 1)) > toDateKey(new Date());
+
+  useEffect(() => {
+    setVisibleMonth(startOfMonth(selectedDate));
+  }, [selectedDateKey]);
 
   return (
     <SurfaceCard>
@@ -48,7 +51,10 @@ export function DiaryCalendar({
         accessibilityState={{ expanded }}
         aria-expanded={expanded}
         style={({ pressed }) => [styles.selectedDateButton, pressed && styles.selectedDateButtonPressed]}
-        onPress={() => setExpanded((current) => !current)}
+        onPress={() => setExpanded((current) => {
+          if (!current) setVisibleMonth(startOfMonth(selectedDate));
+          return !current;
+        })}
       >
         <View style={styles.selectedDateBody}>
           <AppIcon name="calendar" size={iconSize.md} color={colors.orangeDeep} />
@@ -66,18 +72,18 @@ export function DiaryCalendar({
               accessibilityRole="button"
               accessibilityLabel={t("diary.prevMonth")}
               style={styles.monthButton}
-              onPress={() => onSelectDate(monthOffsetKey(selectedDate, -1))}
+              onPress={() => setVisibleMonth((current) => offsetMonth(current, -1))}
             >
               <Text style={styles.monthButtonText}>{t("diary.prevMonth")}</Text>
             </Pressable>
-            <Text style={styles.monthTitle} accessibilityRole="header">{formatMonth(selectedDate, locale)}</Text>
+            <Text style={styles.monthTitle} accessibilityRole="header">{formatMonth(visibleMonth, locale)}</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("diary.nextMonth")}
               accessibilityState={{ disabled: nextMonthDisabled }}
               disabled={nextMonthDisabled}
               style={styles.monthButton}
-              onPress={() => onSelectDate(monthOffsetKey(selectedDate, 1))}
+              onPress={() => setVisibleMonth((current) => offsetMonth(current, 1))}
             >
               <Text style={[styles.monthButtonText, nextMonthDisabled && styles.dayMuted]}>{t("diary.nextMonth")}</Text>
             </Pressable>
@@ -154,8 +160,12 @@ function createMonthDays(date: Date): CalendarDay[] {
   });
 }
 
-function monthOffsetKey(date: Date, offset: number) {
-  return toDateKey(new Date(date.getFullYear(), date.getMonth() + offset, 1));
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function offsetMonth(date: Date, offset: number) {
+  return new Date(date.getFullYear(), date.getMonth() + offset, 1);
 }
 
 function formatMonth(date: Date, locale: string) {

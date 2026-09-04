@@ -25,3 +25,7 @@ if (!source.includes("accessibilityState={{ expanded }}") || !source.includes("a
 if (!source.includes("setExpanded(false)")) {
   throw new Error("selecting a date must collapse the calendar and return focus to the diary task");
 }
+
+if (!source.includes("setVisibleMonth") || source.includes("onSelectDate(monthOffsetKey")) {
+  throw new Error("changing the visible calendar month must not change the selected diary date");
+}
