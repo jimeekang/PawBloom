@@ -214,3 +214,27 @@ supabase functions deploy generate-vet-report --project-ref xgvbtabedbocrebqilsh
   실패로 완료하지 못했지만, 기존 원격 migration 일치 기록과 실제 테이블·RLS·함수 호출을 검증했다.
 - 정리: 테스트가 만든 owner/caregiver 계정, 데이터, 리포트, Storage 객체를 삭제하고 잔존 계정·펫이
   없음을 재확인했다. 기존 Simulator 사용자 데이터는 수정하지 않았지만 세션은 로그아웃 상태다.
+
+## 13. iOS Simulator UI 회귀 점검·수정 (2026-09-04)
+
+- 작업 브랜치: `codex/ios-simulator-qa-fixes`. 로그인·계정 생성·비밀번호 찾기부터 Today, Diary, Care,
+  Reports, Settings까지 iPhone 17 Pro / iOS 26.5 Release 빌드에서 EN/KO·반려동물 전환·앱 재시작을
+  포함해 다시 실측했다. 연결 빌드의 인증 실패 처리와 환경변수를 끈 프리뷰 빌드를 모두 확인했다.
+- 다이어리 달력: 이전·다음 달을 탐색할 때 선택 날짜까지 해당 월 1일로 바뀌던 결함을
+  `visibleMonth`와 `selectedDate` 상태 분리로 수정했다 (`3071346`). 월 탐색 후 헤더·기록 날짜가 유지된다.
+- 다이어리 메모: 빈 문자열·공백만으로 의미 없는 메모가 저장되던 경로를 차단하고 EN/KO 필수 입력
+  안내와 회귀 테스트를 추가했다 (`72c63b5`). 사진 기록의 기존 필수 조건은 그대로 유지한다.
+- 케어 입력: 오늘만 투약 저장 후 입력 카드와 과거 상태 안내가 남던 문제를 저장 성공 콜백으로 닫도록
+  수정했다 (`784d6e3`). 단기 투약은 이름·복용량 검증, 저장 후 일정·오늘 체크·준비도 반영을 확인했다.
+- 정보 구조·카피: 홈 목록이 투약을 포함한 타임라인처럼 보이지만 실제로는 다이어리만 표시하던 모순을
+  다이어리 기록 명칭으로 통일하고, 투약·체크리스트 피드백을 실제 갱신 대상과 맞췄다 (`097d5da`).
+- 레이아웃: 영문 체크리스트의 `Medication` 마지막 글자가 단독 줄바꿈되던 문제를 고정 폭과 한 줄
+  축소 허용으로 수정해 4+3 그리드 균형을 유지했다 (`e8daed9`).
+- 추가 실측: 단기 투약 저장 후 카드 닫힘, 매일 투약의 프로필 유도, 미로그인 프리뷰의 로그인 필요
+  안내, 날짜 유지, 메모 검증, 투약 상태·삭제, 보고서 반영을 확인했다. 앱은 프리뷰 초기 홈으로 되돌렸다.
+- 런타임: 앱 JS 예외·fatal·crash는 0건이다. `ExpoAppDelegate`가 공통 제공하는 background fetch/remote
+  notification 콜백 경고는 앱이 해당 태스크를 사용하지 않는 상태에서 발생하는 SDK 로그라서,
+  불필요한 `UIBackgroundModes` 권한은 추가하지 않았다. iOS 26.5 Simulator의 WebKit 접근성 클래스
+  중복 경고도 앱 코드 결함이 아니다.
+- 최종 `npm run verify`: 통과 (337 source files, 134 presentation tests, 594 i18n keys,
+  18 public tables, 48 markdown files). QA 테스트 스크린샷은 저장소 작업 폴더에서 모두 제거했다.
