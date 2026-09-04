@@ -36,7 +36,7 @@ export function CareMedicationAddCard({
             { label: t("care.addScope.daily"), value: "daily" },
           ]}
         />
-        {scope === "today" ? <QuickMedicationForm onSave={onAddDose} /> : null}
+        {scope === "today" ? <QuickMedicationForm onSave={onAddDose} onSaved={onSaved} /> : null}
         {scope === "short" ? <ShortTermMedicationForm key={petId} onSave={onSaveCareSetup} onSaved={onSaved} /> : null}
         {scope === "daily" ? (
           <View style={styles.dailyBox}>

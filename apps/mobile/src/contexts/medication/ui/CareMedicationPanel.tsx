@@ -15,10 +15,11 @@ export type QuickMedicationFormProps = {
   onUpdate?: (input: QuickMedicationDoseInput & { id: string; scheduledTime?: string }) => void | Promise<void>;
   onDelete?: (dose: DoseRecord) => void | Promise<boolean | void>;
   onCancelEdit?: () => void;
+  onSaved?: () => void;
   canDelete?: boolean;
 };
 
-export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDelete, onCancelEdit, canDelete = true }: QuickMedicationFormProps) {
+export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDelete, onCancelEdit, onSaved, canDelete = true }: QuickMedicationFormProps) {
   const [conditionName, setConditionName] = useState("");
   const [medicationName, setMedicationName] = useState("");
   const [dosageLabel, setDosageLabel] = useState("");
@@ -82,6 +83,9 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
       } else {
         await onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status });
         resetForm();
+        setNotice(t(quickDoseSavedNoticeKey(status)));
+        onSaved?.();
+        return;
       }
       setNotice(t(quickDoseSavedNoticeKey(status)));
     } catch (error) {
