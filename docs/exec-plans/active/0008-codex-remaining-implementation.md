@@ -6,7 +6,7 @@ edit_policy: exclusive
 
 # 0008. 잔여 구현 인수인계 — Codex 실행 명세 (2026-07-28)
 
-> **상태 (2026-08-12): Codex 구현·자동 검증·iOS Simulator 미리보기 및 원격 실계정 QA 완료.** 남은 항목은 물리 iPhone에서만 증명할 수 있는 알림·백그라운드·23:30 시간대 실측과 0007 소유 모델의 최종 QA 판단이다. 0007이 이 문서를 active 상대경로로 참조하므로 링크를 깨지 않기 위해 아직 archive로 이동하지 않는다. 0007의 상태·링크를 함께 정리할 때 두 계획을 archive한다.
+> **상태 (2026-09-05): 후속 결함 3건과 외부 링크 실패 처리를 구현하고 자동·iOS 프리뷰 검증했다.** 결과와 검증 한계는 [앱 수정사항 구현 명세 §9](../../engineering/APP_FIX_IMPLEMENTATION_2026-09-05.md#9-구현-결과-2026-09-05)를 따른다. 제품 결정, 실계정·물리 기기 추가 검증과 0007 소유 모델의 최종 QA 판단은 남아 있다. 0007의 상대경로 참조를 유지하기 위해 아직 archive로 이동하지 않는다.
 
 - 배경: 0007 결함 정정(고유 93건) 중 25개 태스크가 구현·검증·푸시 완료됐다
   ([0007 계획](0007-defect-remediation-plan.md), 감사 근거
@@ -238,3 +238,11 @@ supabase functions deploy generate-vet-report --project-ref xgvbtabedbocrebqilsh
   중복 경고도 앱 코드 결함이 아니다.
 - 최종 `npm run verify`: 통과 (337 source files, 134 presentation tests, 594 i18n keys,
   18 public tables, 48 markdown files). QA 테스트 스크린샷은 저장소 작업 폴더에서 모두 제거했다.
+
+## 14. 후속 수정 구현 명세 (2026-09-05)
+
+- [앱 수정사항 구현 명세](../../engineering/APP_FIX_IMPLEMENTATION_2026-09-05.md)에 다이어리 상세 보존,
+  투약 오류 단일 표출, 프리뷰 반려동물별 케어 분리 및 외부 링크 실패 처리를 구현·검증했다.
+- 실제 훅·화면 핸들러 회귀 테스트 4개를 추가했다. 기준 소스로 대체하면 모두 실패하고 수정 후 통과한다.
+- iPhone 17 Pro / iOS 26.5 Release 프리뷰에서 저장값 유지·펫별 일정 분리·링크 오류 KO/EN을 확인했다.
+- 전체 자동 게이트 통과. 이번 실계정·물리 기기 전수 검증은 미완료이며 원격 변경은 수행하지 않았다.
