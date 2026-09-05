@@ -8,7 +8,7 @@ import { t } from "../../../i18n/translations";
 import { TimePickerField } from "../../../design-system/TimePickerField";
 import { createEmptyQuickMedicationState, createQuickMedicationEditState, doseStatusUpdateForEdit, isValidDoseTime, quickDoseSavedNoticeKey, shouldCloseMedicationEditAfterDelete } from "./careMedicationPanelState";
 
-export type QuickMedicationSaveHandler = (input: QuickMedicationDoseInput) => void | Promise<void>;
+export type QuickMedicationSaveHandler = (input: QuickMedicationDoseInput, source?: { hasInlineError?: boolean }) => void | Promise<void>;
 export type QuickMedicationFormProps = {
   onSave: QuickMedicationSaveHandler;
   editingDose?: DoseRecord | null;
@@ -81,7 +81,7 @@ export function QuickMedicationForm({ onSave, editingDose = null, onUpdate, onDe
         await onUpdate({ id: editingDose.id, conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status: doseStatusUpdateForEdit(editingDose.status, status), scheduledTime });
         onCancelEdit?.();
       } else {
-        await onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status });
+        await onSave({ conditionName, medicationName, dosageLabel, administeredAmount, reactionNote, status }, { hasInlineError: true });
         resetForm();
         setNotice(t(quickDoseSavedNoticeKey(status)));
         onSaved?.();

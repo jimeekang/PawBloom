@@ -45,7 +45,7 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
     if (!databaseMode) setDoses((current) => relocalizeSampleDoses(current, language));
   }, [databaseMode, language]);
 
-  async function addMedicationDose(input: QuickMedicationDoseInput) {
+  async function addMedicationDose(input: QuickMedicationDoseInput, source?: { hasInlineError?: boolean }) {
     if (!databaseMode) {
       setDoses((current) => [createLocalDoseRecord(activePetId, input), ...current]);
       onLocalDoseSaved(input);
@@ -60,7 +60,7 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
       onSaved("medication");
     } catch (error) {
       const message = t(isDuplicateMedicationDoseError(error) ? "care.quickDoseDuplicate" : "care.quickDoseSaveFailed");
-      onNotice(message, "error", { hasInlineError: true });
+      onNotice(message, "error", source);
       throw new Error(message);
     }
   }
