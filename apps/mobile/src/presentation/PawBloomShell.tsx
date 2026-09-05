@@ -87,7 +87,7 @@ export function PawBloomShell({ activePet: externalActivePet, pets: externalPets
   useAndroidBackNavigation({ activeTab, showPetSettings, setActiveTab, closePetSettings: () => setShowPetSettings(false) });
 
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: setNotice, onSaved: () => showSaveFeedback("routine") });
-  const care = useCareSetupState({ databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
+  const care = useCareSetupState({ activePetId: activePet.id, databaseMode, livePetId, userId, onNotice: setNotice, onSaved: () => showSaveFeedback("careSetup") });
   const { medicationRemindersEnabled, toggleMedicationReminders } = useMedicationReminderToggle({ databaseMode, userId, activePet, pets: authPets, activePetSchedules: care.activeCareSetup.schedules, setNotice });
   useReminderAutoRefresh({ databaseMode, userId, petId: activePet.id, petName: activePet.name, language, schedules: care.activeCareSetup.schedules, activeRoutine: routine.activeRoutine, medicationRemindersEnabled, routineLoaded: routine.routineLoaded });
   const medication = useMedicationDosesController({
