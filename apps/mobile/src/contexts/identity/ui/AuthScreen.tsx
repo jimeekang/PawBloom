@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FieldLabel, NoticeBanner, PrimaryButton, SegmentedControl } from "../../../design-system/components";
 import { AppIcon, type AppIconName } from "../../../design-system/iconography";
@@ -12,13 +12,12 @@ import { authFormValidationKey, canSubmitAuth, createAuthModeTransition, type Au
 import { PasswordField } from "./PasswordField";
 import { styles } from "./AuthScreen.styles";
 
-function openExternalUrl(url: string) {
-  void Linking.openURL(url).catch(() => undefined);
-}
+import { usePolicyLinks } from "./usePolicyLinks";
 
 export function AuthScreen() {
   const { signIn, signUp, requestPasswordReset, error, authMessage, loading, resetMessage } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const { failedUrl, openExternalUrl } = usePolicyLinks();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -210,6 +209,7 @@ export function AuthScreen() {
                 <Text style={styles.policyLinkText}>{t("settings.support")}</Text>
               </Pressable>
             </View>
+            {failedUrl ? <NoticeBanner text={t("settings.linkOpenFailed").replace("{url}", failedUrl)} icon="close" tone="error" /> : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

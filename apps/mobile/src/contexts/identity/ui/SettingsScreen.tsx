@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SegmentedControl, SurfaceCard } from "../../../design-system/components";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
@@ -10,9 +10,7 @@ import { PRIVACY_POLICY_URL, SUPPORT_URL } from "../../../shared-kernel/config";
 import { useAccountDeletion } from "../application/useAccountDeletion";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 
-function openExternalUrl(url: string) {
-  void Linking.openURL(url).catch(() => undefined);
-}
+import { usePolicyLinks } from "./usePolicyLinks";
 
 export function SettingsScreen({
   email,
@@ -26,6 +24,7 @@ export function SettingsScreen({
   onSignOut: () => void;
 }) {
   const { language, setLanguage } = useLanguage();
+  const { failedUrl, openExternalUrl } = usePolicyLinks();
   const accountDeletion = useAccountDeletion();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const deleting = accountDeletion.status === "deleting";
@@ -133,6 +132,7 @@ export function SettingsScreen({
           <Text style={styles.policyLinkText}>{t("settings.support")}</Text>
         </Pressable>
       </View>
+      {failedUrl ? <NoticeBanner text={t("settings.linkOpenFailed").replace("{url}", failedUrl)} icon="close" tone="error" /> : null}
     </View>
   );
 }
