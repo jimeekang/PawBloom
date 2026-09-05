@@ -221,6 +221,6 @@ declare const require: (moduleName: string) => unknown;
 declare const process: { cwd(): string };
 const { readFileSync } = require("node:fs") as { readFileSync(path: string, encoding: "utf8"): string };
 const diaryScreenSource = readFileSync(`${process.cwd()}/apps/mobile/src/contexts/diary/ui/DiaryEntryScreen.tsx`, "utf8");
-if (!diaryScreenSource.includes("if (!editingEntry)") || !diaryScreenSource.includes("disabled={Boolean(editingEntry)}")) {
+if (!diaryScreenSource.includes("disabled={Boolean(editingEntry)}")) {
   throw new Error("diary edit mode must keep category immutable until an atomic conversion workflow exists");
 }

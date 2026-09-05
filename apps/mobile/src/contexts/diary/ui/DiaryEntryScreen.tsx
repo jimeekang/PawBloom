@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import type { DiaryCategory, DiaryDetailInput, DiaryEntry, DiaryPhotoInput } from "../domain/diaryEntry";
-import { buildRoutineDiaryDetail, getDiaryCategoriesForSpecies } from "./diaryFormDefaults";
+import type { DiaryCategory, DiaryEntry } from "../domain/diaryEntry";
+import { getDiaryCategoriesForSpecies } from "./diaryFormDefaults";
 import type { Species } from "../../pet/domain/pet";
 import type { PetRoutine } from "../../routine/domain/petRoutine";
 import { NoticeBanner, type NoticeTone } from "../../../design-system/components";
@@ -9,9 +9,10 @@ import { colors } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
 import type { DraftDiaryEntry } from "./draftDiaryEntry";
 import { DiaryCalendar, type DiaryFilter } from "./DiaryCalendar";
-import { createDefaultDiaryDetail, DiaryDetailPanel } from "./DiaryDetailPanel";
+import { DiaryDetailPanel } from "./DiaryDetailPanel";
+import { createDetailForCategory, useDiaryEntryForm } from "./useDiaryEntryForm";
 import { DiaryEntryList } from "./DiaryEntryList";
-import { findEditableDailyStructuredEntry, formatDiaryTime, getDiaryEntryDateForSave, getDiarySavedNoticeKey, getEditableDiaryMemo, isDiaryDetailPanelOpenAfterSave, normalizeDiaryTimeInput, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
+import { findEditableDailyStructuredEntry, getDiaryEntryDateForSave, getDiarySavedNoticeKey, resolveDiarySaveTime, resolvePendingDiaryCreateMutation, shouldApplyInitialEditingEntry, shouldResetDiaryCategorySelection } from "./DiaryEntryScreen.logic";
 import { getDiaryCategoryFormState, getDiaryDetailForSave, getDiaryPhotosForSave, getDiarySummaryForSave, hasRequiredDiaryContent } from "./DiaryEntryScreen.formRules";
 import { styles } from "./DiaryEntryScreen.styles";
 import { TimePickerField } from "../../../design-system/TimePickerField";
@@ -46,24 +47,19 @@ export function DiaryEntryScreen({
   listStatus?: "ready" | "loading" | "error";
   onRetryList?: () => void;
 }) {
-  const [selected, setSelected] = useState<DiaryCategory>("food");
-  const [conditionScore, setConditionScore] = useState<1 | 2 | 3 | 4 | 5>(3);
-  const [detail, setDetail] = useState<DiaryDetailInput>(createDefaultDiaryDetail("food"));
-  const [memo, setMemo] = useState("");
-  const [photos, setPhotos] = useState<DiaryPhotoInput[]>([]);
-  const [occurredTime, setOccurredTime] = useState(formatDiaryTime());
-  const [timeDirty, setTimeDirty] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+  const form = useDiaryEntryForm({ petId, selectedDateKey, entries, routine });
+  const { selected, setSelected, conditionScore, setConditionScore, detail, setDetail, memo, setMemo, photos, setPhotos,
+    occurredTime, setOccurredTime, editingEntry, isDetailPanelOpen, selectCategory } = form;
   const [lastAppliedInitialEditingEntryId, setLastAppliedInitialEditingEntryId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ key: TranslationKey; tone: NoticeTone }>({ key: "diary.localDraft", tone: "success" });
-  const [isDetailPanelOpen, setDetailPanelOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
-  const pendingSaveMutation = useRef<{ fingerprint: string; id: string } | null>(null);
+  const pendingSaveMutation = useRef<{ fingerprint: string; id: string; time?: string } | null>(null);
   const categories = useMemo(() => getDiaryCategoriesForSpecies(petSpecies, routine?.walk.enabled) as DiaryCategory[], [petSpecies, routine?.walk.enabled]);
   const activePetRef = useRef(petId);
   const formState = getDiaryCategoryFormState(selected);
-  const existingStructuredEntry = editingEntry ? null : findEditableDailyStructuredEntry(entries, selected, selectedDateKey);
+  const petEntries = entries.filter((entry) => entry.petId === petId);
+  const existingStructuredEntry = editingEntry ? null : findEditableDailyStructuredEntry(petEntries, selected, selectedDateKey);
   const photoDateKey = editingEntry?.entryDate ?? selectedDateKey;
   const savedPhotoCount = useMemo(() => countSavedDiaryPhotosForDate(entries, photoDateKey, editingEntry), [editingEntry, entries, photoDateKey]);
   const saveBlockedByRole = editingEntry ? !canUpdate : existingStructuredEntry ? !canUpdate : !canCreate;
@@ -71,14 +67,10 @@ export function DiaryEntryScreen({
     if (shouldResetDiaryCategorySelection({ categories, selected, isEditing: Boolean(editingEntry) })) setSelected(categories[0]);
   }, [categories, editingEntry, selected]);
   useEffect(() => {
-    if (!editingEntry) setDetail(createDetailForCategory(selected, routine));
-  }, [editingEntry, routine, selected]);
-  useEffect(() => {
     if (activePetRef.current === petId) return;
     activePetRef.current = petId;
-    setEditingEntry(null); setLastAppliedInitialEditingEntryId(null); setSelected(categories[0]); setConditionScore(3);
-    setDetail(createDetailForCategory(categories[0], routine)); setMemo(""); setPhotos([]); setOccurredTime(formatDiaryTime()); setTimeDirty(false);
-    pendingSaveMutation.current = null; setDetailPanelOpen(true); showNotice("diary.localDraft"); onInitialEditingEntryConsumed?.();
+    setLastAppliedInitialEditingEntryId(null);
+    pendingSaveMutation.current = null; showNotice("diary.localDraft"); onInitialEditingEntryConsumed?.();
   }, [categories, onInitialEditingEntryConsumed, petId, routine]);
   useEffect(() => {
     if (!initialEditingEntry) {
@@ -102,21 +94,18 @@ export function DiaryEntryScreen({
   function savedNoticeKey(savedDate: string | undefined, editing: boolean) {
     return getDiarySavedNoticeKey(savedDate ?? selectedDateKey, editing);
   }
-  function selectCategory(category: DiaryCategory) {
-    if (!editingEntry) { setSelected(category); setDetail(createDetailForCategory(category, routine)); setDetailPanelOpen(true); }
-  }
   async function saveEntry() {
-    if (savingRef.current) return;
-    if (editingEntry && !canUpdate) { showNotice("permission.diaryUpdateCareTeamOnly", "error"); return; }
-    if (!editingEntry && !canCreate) { showNotice("permission.diaryUpdateCareTeamOnly", "error"); return; }
+    if (savingRef.current || form.saveBlockedByState || listStatus !== "ready") return;
+    if (saveBlockedByRole) { showNotice("permission.diaryUpdateCareTeamOnly", "error"); return; }
     if (!hasRequiredDiaryContent(selected, memo)) { showNotice("diary.memoRequired", "error"); return; }
     if (selected === "photo" && savedPhotoCount + photos.length > MAX_DIARY_PHOTOS) { showNotice("diary.photoLimitNotice", "error"); return; }
     if (!editingEntry && selected === "photo" && savedPhotoCount >= MAX_DIARY_PHOTOS) { showNotice("diary.photoLimitNotice", "error"); return; }
     if (!editingEntry && selected === "photo" && photos.length === 0) { showNotice("diary.photoRequired", "error"); return; }
     const activeDetail = detail.category === selected ? detail : createDetailForCategory(selected, routine);
-    const saveTime = resolveDiarySaveTime(occurredTime, Boolean(editingEntry) || timeDirty);
+    const draftFingerprint = JSON.stringify({ selected, memo, activeDetail, selectedDateKey, occurredTime, preservesTime: form.preservesTime, conditionScore, photos: photos.map((photo) => [photo.uri, photo.fileName, photo.mimeType]) });
+    const saveTime = pendingSaveMutation.current?.fingerprint === draftFingerprint
+      ? pendingSaveMutation.current.time : resolveDiarySaveTime(occurredTime, form.preservesTime);
     if (!saveTime) { showNotice("diary.invalidTime", "error"); return; }
-    const draftFingerprint = JSON.stringify({ selected, memo, activeDetail, selectedDateKey, saveTime, conditionScore, photos: photos.map((photo) => [photo.uri, photo.fileName, photo.mimeType]) });
     const nextSaveMutation = !editingEntry || selected === "photo" ? resolvePendingDiaryCreateMutation(pendingSaveMutation.current, draftFingerprint, createUuid) : null;
     const clientMutationId = nextSaveMutation?.id;
     const draft = {
@@ -130,29 +119,32 @@ export function DiaryEntryScreen({
       photos: getDiaryPhotosForSave(selected, photos, Boolean(editingEntry)),
       clientMutationId,
     };
-    if (nextSaveMutation) pendingSaveMutation.current = nextSaveMutation;
+    if (nextSaveMutation) pendingSaveMutation.current = { ...nextSaveMutation, time: saveTime };
     savingRef.current = true;
     setIsSaving(true);
     try {
       if (editingEntry) {
         await onUpdate({ id: editingEntry.id, ...draft, occurredTime: saveTime });
-        setEditingEntry(null);
+        if (!form.isCurrentScope()) return;
         showNotice(savedNoticeKey(draft.entryDate, true));
       } else {
-        const existingDailyEntry = findEditableDailyStructuredEntry(entries, selected, draft.entryDate ?? selectedDateKey);
+        const existingDailyEntry = findEditableDailyStructuredEntry(petEntries, selected, draft.entryDate ?? selectedDateKey);
         if (existingDailyEntry) {
           if (!canUpdate) {
             showNotice("permission.diaryUpdateCareTeamOnly", "error");
             return;
           }
           await onUpdate({ id: existingDailyEntry.id, ...draft, occurredTime: saveTime });
+          if (!form.isCurrentScope()) return;
           showNotice(savedNoticeKey(draft.entryDate, true));
         } else {
           const outcome = await onSave(draft);
+          if (!form.isCurrentScope()) return;
           showNotice(outcome === "queued" ? "diary.queuedForSync" : savedNoticeKey(draft.entryDate, false));
         }
       }
     } catch {
+      if (!form.isCurrentScope()) return;
       showNotice(editingEntry ? "diary.updateFailed" : "diary.saveFailed", "error");
       return;
     } finally {
@@ -160,23 +152,10 @@ export function DiaryEntryScreen({
       setIsSaving(false);
     }
     pendingSaveMutation.current = null;
-    setMemo("");
-    setDetail(createDetailForCategory(selected, routine));
-    setPhotos([]);
-    setOccurredTime(formatDiaryTime());
-    setTimeDirty(false);
-    setDetailPanelOpen(isDiaryDetailPanelOpenAfterSave(isDetailPanelOpen));
+    form.markSaved(saveTime);
   }
   function loadEditingEntry(entry: DiaryEntry) {
-    setEditingEntry(entry);
-    setSelected(entry.category);
-    setDetail(entry.detail ?? createDetailForCategory(entry.category, routine));
-    setMemo(getEditableDiaryMemo(entry));
-    setConditionScore(entry.conditionScore ?? 3);
-    setPhotos([]);
-    setOccurredTime(normalizeDiaryTimeInput(entry.occurredAt) ?? formatDiaryTime());
-    setTimeDirty(false);
-    setDetailPanelOpen(true);
+    form.loadEditingEntry(entry);
     showNotice("diary.editingNotice");
   }
 
@@ -189,13 +168,7 @@ export function DiaryEntryScreen({
   }
 
   function cancelEdit() {
-    setEditingEntry(null);
-    setMemo("");
-    setPhotos([]);
-    setOccurredTime(formatDiaryTime());
-    setTimeDirty(false);
-    setDetail(createDetailForCategory(selected, routine));
-    setDetailPanelOpen(false);
+    form.cancelEdit();
     showNotice("diary.localDraft");
   }
 
@@ -243,14 +216,10 @@ export function DiaryEntryScreen({
       ) : null}
 
       <Text style={styles.sectionTitle}>{t("diary.timeLabel")}</Text>
-      <TimePickerField accessibilityLabel={t("diary.timeLabel")} value={occurredTime} onChange={(value) => { setTimeDirty(true); setOccurredTime(value); }} />
+      <TimePickerField accessibilityLabel={t("diary.timeLabel")} value={occurredTime} onChange={setOccurredTime} />
 
-      <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
+      <DiaryEntryActions editing={Boolean(editingEntry)} isSaving={isSaving} saveBlockedByRole={saveBlockedByRole} saveBlockedByState={form.saveBlockedByState || listStatus !== "ready"} canDelete={canDelete} onSave={() => void saveEntry()} onCancel={cancelEdit} onDelete={() => void deleteEditingEntry()} />
       <DiaryEntryList entries={entries} title={filter === "day" ? t("diary.selectedDateEntries") : t("diary.selectedWeekEntries")} onEntryPress={canUpdate ? editEntry : undefined} showEntryDate={filter === "week"} status={listStatus} onRetry={onRetryList} />
     </View>
   );
-}
-function createDetailForCategory(category: DiaryCategory, routine?: PetRoutine): DiaryDetailInput {
-  if (routine && category !== "memo" && category !== "photo") return buildRoutineDiaryDetail(category, routine);
-  return createDefaultDiaryDetail(category);
 }

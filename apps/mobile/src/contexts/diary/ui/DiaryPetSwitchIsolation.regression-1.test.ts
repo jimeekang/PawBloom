@@ -8,7 +8,7 @@ const shell = readFileSync(`${root}/apps/mobile/src/presentation/PawBloomShell.t
 
 for (const contract of [
   "activePetRef.current === petId",
-  "setEditingEntry(null)",
+  "useDiaryEntryForm({ petId, selectedDateKey, entries, routine })",
   "setLastAppliedInitialEditingEntryId(null)",
   "pendingSaveMutation.current = null",
   "initialEditingEntry.petId !== petId",
