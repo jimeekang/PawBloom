@@ -4,6 +4,7 @@ const authenticated = {
   authInitialized: true,
   languageInitialized: true,
   configured: true,
+  allowUnconfiguredPreview: false,
   userPresent: true,
   passwordRecoveryActive: false,
   activePetPresent: false,
@@ -26,4 +27,10 @@ if (resolveAppGate({ ...authenticated, passwordRecoveryActive: true, petLoadStat
 }
 if (resolveAppGate({ ...authenticated, userPresent: false, passwordRecoveryActive: true, petLoadStatus: "idle" }) !== "auth") {
   throw new Error("password recovery without a session must fall back to the auth screen");
+}
+if (resolveAppGate({ ...authenticated, configured: false, allowUnconfiguredPreview: true, petLoadStatus: "ready" }) !== "preview") {
+  throw new Error("development and explicit preview builds may keep the local UI preview");
+}
+if (resolveAppGate({ ...authenticated, configured: false, allowUnconfiguredPreview: false, petLoadStatus: "ready" }) !== "configuration-error") {
+  throw new Error("a release build must block when the account service configuration is missing or malformed");
 }

@@ -1,107 +1,71 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: lead
 domain: planning
 edit_policy: exclusive
 ---
 
-# 0002 PawBloom 1개월 MVP 로드맵 (PM)
+# 0002 PawBloom 아바타·실제 케어·공동 추억 로드맵
 
-> 에이전트 작업자 지침: `superpowers:subagent-driven-development` 또는 `superpowers:executing-plans` 방식으로 작은 vertical slice 단위로 진행하고 checkbox로 상태를 추적한다.
-> 상세 일정(주차별 Day-by-Day, Task 단위, 하루 리듬)은 [0003](./0003-weekly-execution-checklist.md)로 위임한다. 이 문서는 PM 로드맵 서술(방향/우선순위/마일스톤 개요)만 유지한다.
+- 갱신: 2026-10-18. 기존 30일 일정과 Today-first 우선순위를 이 로드맵으로 대체한다.
+- 목표: 사진 기반 캐릭터가 함께 있는 우리 집에서 아이별 케어·가족 추억으로 이어지는 첫 버전.
+- 정본: [제품](../../product/PRODUCT_SPEC.md), [포지셔닝](../../product/POSITIONING_STRATEGY.md).
+- 상태: [0003 체크리스트](0003-weekly-execution-checklist.md); 파일·데이터·검증: [0009](0009-avatar-care-memories-implementation.md).
+- 이번 갱신은 문서 작업이다. 새 기능 구현·DB 적용·배포·실제 화면 검증은 수행하지 않았다.
 
-## 목표
+## 유지할 기반
 
-30일 안에 테스트 가능한 PawBloom MVP를 만든다.
+Auth·다중 pet·루틴·diary·medication·membership·private media·기록 요약·report·offline을 재사용한다.
+캐릭터는 기존 pet에 붙이며 pet을 중복 생성하지 않는다. 원본 기록·날짜·대상·작성자는 보존한다.
+이전 완료·결함 수정 근거는 [0008](0008-codex-remaining-implementation.md)과
+[APP_FIX 결과](../../engineering/APP_FIX_IMPLEMENTATION_2026-09-05.md)에 남긴다.
+기존 미커밋 Auth·계정 삭제·offline·release 작업을 새 기능으로 덮어쓰지 않는다.
 
-MVP 범위: 계정 필수 login/signup, 다중 반려동물 profile, Today 중심 일상 기록, 건강 관찰형 강아지 산책 기록, Care Mode, 투약 schedule과 dose status, AI briefing, 병원 방문 report와 만료형 공유 link, 가족/caregiver 공동 기록, 오프라인 임시 저장과 재동기화, iOS/Android preview build.
+## 마일스톤
 
-## 제품 방향과 차별화 포지셔닝
+날짜·2주/30일 완료를 약속하지 않는다. 선행 검증을 통과한 뒤 다음 단계로 진행한다.
 
-PawBloom는 단순 반려동물 기록 앱이 아니다. 핵심 포지션:
+| 순서 | 마일스톤 | 완료 증거 |
+| --- | --- | --- |
+| M0 | 기준선·캐릭터 자산 검증 | 현재 게이트, 개·고양이 닮음·동작·비용·보관 조건 실측 |
+| M1 | 데이터·권한 | avatar job/asset·추억 모델, 복수 아이 권한·삭제·기존 데이터 보존 테스트 |
+| M2 | 사진 → 캐릭터 | 생성·확인·재시도·적용·기본 캐릭터, 중복/지연 응답 방어 |
+| M3 | 여러 아이 홈·탐색 | 네 메뉴·드래그·배회·요약창·개인 배치·목록 대안 |
+| M4 | 전체 케어·아이 상세 | 모든 아이 일정·정확한 대상 저장·알림·브리핑·리포트 |
+| M5 | 공동 추억 | 작성자·복수 태그·온라인 저장·초안·전체/아이별 조회 |
+| M6 | 통합·베타 준비 | 권한·삭제·offline 회귀·iOS/Android 실측·정책/스토어 정합 |
 
-> 가족이 함께 남긴 일상/케어 기록을 병원용 briefing으로 정리해주는 앱
+M0 → M1 → M2 → M3 → M4/M5 → M6 순서다. M4/M5의 공유 파일 변경은 충돌 없이 순차 적용한다.
+M0 자산 검증이 실패하면 placeholder만으로 사진 캐릭터 기능을 완료 처리하지 않는다.
 
-- MVP는 `Care/Vet Report 중심`으로 구현한다. 실제 기록이 쌓인 뒤 AI briefing과 vet report의 가치가 커진다.
-- **가족 공동 기록은 MVP에 포함**한다. PawBloom 차별화의 핵심이 owner/family 공동 기록이다.
-- pet sitter 기간 제한 초대는 beta 후반 또는 V2로 미룬다.
-- **건강 관찰형 산책**은 강아지용 차별화 기록으로, vet report source가 되도록 설계한다.
+## 첫 버전
 
-## 아키텍처 원칙
+- 강아지·고양이 2D 스타일 하나, 사진/앨범·생성 확인·재시도, 기타 동물 기본 캐릭터.
+- 여러 아이 공간·짧게 누르기/길게 끌기·작은 반응/배회·위치 고정/움직임 줄이기.
+- 우리 집 / 오늘 케어 / 추억 / 더보기와 아이별 케어 / 추억 / 프로필.
+- 기존 기록·투약·루틴·알림·offline·가족 권한·브리핑·리포트 유지.
+- 가족 작성 사진·이야기와 동일 공유 구성원 아이의 복수 태그.
+- 초안·실패·권한 변경·사진 정리·계정 삭제·복구를 기능과 함께 구현.
 
-DDD bounded context 구조를 유지하고, 각 기능은 자기 context 안에서 구현한다. 다른 context 연결은 application use case 또는 domain event를 통한다. Supabase row shape은 infrastructure boundary에서 domain model로 변환한다.
+## 미완료 항목 승계
 
-- Mobile app은 service role key와 OpenAI API key를 절대 포함하지 않는다. AI 호출은 Supabase Edge Function에서만 수행한다.
-- 사용자 문구는 `apps/mobile/src/i18n/translations.ts`에 둔다.
-- 스타일은 `apps/mobile/src/design-system`의 token, icon, typography, spacing, component를 기준으로 한다.
+| 기존 항목 | 새 계획 처리 |
+| --- | --- |
+| 0007/0008 실계정·기기·시간대·역할 | M0/M6에서 재검증; 과거 실측을 새 완료로 재사용하지 않음 |
+| 0005 브랜드·식별자·지원 URL·계정·심사 | M6 공개 출시 선결 조건으로 유지 |
+| APP_FIX T5-a 아이 맥락 | M3/M4 대상 이름·사진·저장 경계로 확정 |
+| APP_FIX T5-b 플랜·초대 | 공개 베타 전 정책 결정, 임의 entitlement 해제 금지 |
+| 사진 오프라인 자동 업로드·PDF export | 후속 backlog 유지; 온라인 사진·기존 report는 회귀 검증 |
+| APP_FIX T6 접근성·실계정·기기 | 새 메뉴·캐릭터·추억까지 포함해 M6 승계 |
 
-모델 라우팅 정책은 재서술하지 않는다 — [`AGENTS.md`](../../../AGENTS.md)를 단일 출처로 참조한다.
+## 제외·승인 경계
 
-## 완료된 계획 흡수
+3D·상점·재화·랭킹·교배·미니게임·가구 꾸미기·실시간 공동 이동·성격 챗봇·새 LLM·신규 결제·GPS·보험·예약·공개 커뮤니티는 범위 밖이다.
+생성 서비스·외부 사진 처리·비용 한도·무료 체험 정책은 해당 의존 작업 전에 확정한다.
+원격 적용·배포·게시·커밋·푸시는 이번 문서 갱신의 승인이 아니다.
+아키텍처·RLS·개인정보는 강한 리뷰 대상이며 배포 전 명시적 승인을 받는다.
 
-### Week 0 부트스트랩 (구 0001, 완료)
+## 완료 증거
 
-- **완료일**: 부트스트랩 단계 완료.
-- **목표**: 초기 리포지터리 하네스, Expo 앱 shell, Supabase schema, Edge Function skeleton, 검증 script 구축.
-- **핵심 결정**: DDD 구조 채택, 역할별 수정 범위와 품질 gate 정의, AI/report Edge Function은 안전한 stub으로 선구축.
-- **산출**: `AGENTS.md`(역할·문서 진입점), `ARCHITECTURE.md`(DDD 구조·import 규칙), `apps/mobile` Expo shell, `supabase/migrations` 초기 schema(GRANT·RLS 포함), `supabase/functions` skeleton(`generate-ai-brief`/`generate-vet-report`/`get-vet-report`), `verify` script 통과.
-- **후속**: schema/함수 skeleton을 실제 구현으로 채우는 작업은 아래 우선순위 P0~P3로 이관됨.
-
-## 현재 구현 상태
-
-### 완료됨
-
-- 에이전트/제품/AI 안전/frontend/backend/database/품질/릴리스 문서 (`AGENTS.md`, `ARCHITECTURE.md`, `docs/product/PRODUCT_SPEC.md`, `docs/product/AI_SAFETY.md` 등).
-- Expo mobile app 구조와 context folder: `identity`, `pet`, `diary`, `care`, `medication`, `briefing`, `report`, `media`, `subscription`, `sync`.
-- 전역 design token/iconography/category visual/공통 UI component.
-- Today, Diary, Care, Reports, bottom navigation UI shell + UI/UX 우선 mock state 연결.
-- 반려동물 전환 UI, Today checklist toggle, Diary 입력·사진 placeholder·저장 후 timeline 반영, Care dose status cycle, Report 단계 흐름(empty→draft→confirmed→shared).
-- i18n key parity 검증 script, AI safety 검증 script, Supabase 초기 schema migration, Edge Function skeleton, emulator 없이 확인하는 web export/preview script, 포지셔닝·기능 전략 문서.
-
-### 부분 구현됨
-
-- Supabase schema는 있으나 remote project 연결, migration 적용, generated DB type 최신화 필요.
-- Edge Function skeleton은 있으나 실제 prompt, contract test, secret 설정 필요.
-- Offline sync contract는 있으나 SQLite persistence와 Supabase replay 구현 필요.
-- EAS 흐름 문서는 있으나 production-ready `eas.json`, credentials 정책, store metadata checklist 필요.
-- Free/Plus/Family 잠금 UI gate 구현 완료(SubscriptionPlanCard + entitlement 조회, 베타 수동 플랜 지정). 인앱 결제 연동은 미구현.
-- 투약·식사 알림은 표시 계층(포그라운드 핸들러, expo-notifications 플러그인)·식사 시간 설정·On/Off 토글까지 구현 완료 — [0004](../archive/0004-reminder-notifications-plan.md) 완료·아카이브(2026-07-24).
-
-### 미구현 (2026-07-28 현행화)
-
-- 인앱 결제(플랜 구매) 연동 — 베타는 수동 플랜 지정.
-- vet report PDF/출력 export, 사진 오프라인 업로드 큐(0006 보류 항목 승계).
-- React Native e2e smoke test, Android/iOS device preview build, TestFlight·Google Play internal testing 준비.
-- ※ 이전 목록의 계정/Auth·pet CRUD·가족/케어기버 초대·diary CRUD·산책 기록·사진 Storage 업로드·care plan·medication schedule/dose 저장은 0005~0007 기간에 구현 완료됐다(감사 07·08로 실측). 엣지 함수 2종(generate-ai-brief 로컬라이즈, generate-vet-report 달력 창)은 코드 완료·재배포 잔여.
-
-## 우선순위
-
-| 우선순위 | 영역 | 먼저 해야 하는 이유 | 완료 기준 |
-| --- | --- | --- | --- |
-| P0 | 개발 환경, Harness, 문서, 검증 | 기반이 흔들리면 이후 구현이 계속 불안정하다. | `verify` 통과, web preview 확인 가능 |
-| P0 | Supabase Auth와 generated DB type | 모든 사용자 데이터 기능의 기준이다. | session 유지, profile 생성, 최신 DB type |
-| P1 | Pet profile과 membership | diary, care, medication, media, report의 기준이 pet이다. | owner가 pet 생성/선택, membership 기반 조회 |
-| P1 | Family/caregiver role | PawBloom 차별화의 핵심인 공동 기록에 필요하다. | owner/family 권한 분리 |
-| P1 | Diary와 timeline | 평상시 사용 가치의 핵심이다. | 기록 저장, 조회, timeline 표시 |
-| P1 | 건강 관찰형 산책 | 강아지용 차별화 기록이다. | 산책 시간, 거리, 배변/소변, 증상 관찰 저장 |
-| P1 | Care Mode와 medication | 아플 때 사용하는 핵심 기능이다. | condition, medication schedule, dose status 저장 |
-| P2 | AI briefing과 vet report | 충분한 실제 기록 이후 가치가 커진다. | 안전한 record-based summary와 report 생성 |
-| P2 | Report share link | 병원 공유 경험의 핵심이다. | 원본 table 없이 sanitized report만 조회 |
-| P2 | Media upload | 증상 사진과 diary 품질을 높인다. | private Storage upload/download |
-| P3 | Subscription gate | 실제 결제 전 구조만 필요하다. | Free/Plus/Family locked state |
-| P3 | Store readiness | 기능 smoke test 이후 packaging 단계다. | preview build, metadata, privacy wording |
-
-## 주차별 마일스톤 개요
-
-상세 Day-by-Day 일정, 담당 role, 산출물, Task 단위 파일 목록은 [0003](./0003-weekly-execution-checklist.md)에 있다.
-
-- **Week 1 — 기반 설정과 실제 Auth**: Supabase project 생성/연결, migration 적용, DB type 생성. Supabase Auth client + SecureStore session adapter + login/signup + profile 생성. Pet create/select/edit와 owner membership. Auth/RLS cross-review 후 Week 1 안정화 build.
-- **Week 2 — Diary, 산책, Care, Medication, Offline**: Diary command/query(food/water/stool/condition/memo), 건강 관찰형 walk record, 실제 data 기반 timeline·Today checklist, Care condition과 care plan, medication schedule과 dose status(completed/skipped/partial), offline outbox SQLite persistence와 idempotent replay. Week 2 integration review.
-- **Week 3 — AI, Report, 공유, Media**: AI briefing request/response contract, `generate-ai-brief` prompt와 안전 output(record-based summary), vet report generation(영어 병원용), report confirmation UI와 share token, `get-vet-report` sanitized viewer(만료 link), private media upload와 Storage policy. AI safety/RLS/report privacy cross-review.
-- **삽입 슬라이스 — 투약·식사 시간 로컬 알림 (2026-07-12 사용자 지시)**: Week 3 기간에 우선 병행. 식사 시간 설정과 식사 알림(routine context 소유), 알림 표시 부트스트랩(포그라운드/Android). 상세: [0004](./0004-reminder-notifications-plan.md), 설계: [스펙](../../superpowers/specs/2026-07-12-reminder-notifications-design.md).
-- **Week 4 — Entitlement, QA, Build, Beta 준비**: Free/Plus/Family locked state UI, 가족/caregiver role UI polish, 반응형·web preview polish, login~report e2e smoke test, `eas.json`·app identifier·build profile, Android preview build(Galaxy 설치), iOS preview/TestFlight build, store metadata·screenshot·privacy·medical wording review, 최종 regression과 beta go/no-go 판단(30일 MVP checkpoint).
-
-## 이관된 내용 (링크만 유지)
-
-- 설치·계정·EAS·Supabase CLI·로컬 실행 명령·필요한 다운로드/설정·참고 링크: [`docs/engineering/SETUP.md`](../../engineering/SETUP.md).
-- Merge gate(verify 통과, RLS/GRANT/generated type/RLS matrix, Edge Function contract·AI safety wording, i18n 문구 위치, cross-context use case/event 연결, store-facing medical wording 회피, Product Architecture Lead 승인 범위): [`docs/engineering/QUALITY.md`](../../engineering/QUALITY.md).
-- 모델 라우팅 정책: [`AGENTS.md`](../../../AGENTS.md).
+상태는 [0003](0003-weekly-execution-checklist.md)에 기록한다. 코드·동작 테스트·verify·실제 화면을 구분한다.
+기술 계약은 [아키텍처](../../../ARCHITECTURE.md), [프론트엔드](../../engineering/FRONTEND.md),
+[백엔드](../../engineering/BACKEND.md), [DB](../../engineering/DATABASE.md), [품질](../../engineering/QUALITY.md)를 따른다.

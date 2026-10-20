@@ -1,18 +1,25 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: lead
 domain: planning
 edit_policy: exclusive
 ---
 
 # 0005 앱스토어 출시 2주 실행계획
 
-> **에이전트 워커(codex-high):** REQUIRED SUB-SKILL — `superpowers:subagent-driven-development`(권장) 또는 `superpowers:executing-plans`로 task-by-task 구현. 단계는 `- [ ]` 체크박스로 추적한다.
+> **2026-10-18 우선순위 갱신:** 과거 D1~D14 일정은 현재 출시 약속이 아니다.
+> [0009](0009-avatar-care-memories-implementation.md)의 아바타·케어·공동 추억 M0~M6를 먼저 완료하고,
+> 이 문서는 브랜드·계정·지원·개인정보·기기 검증·심사 준비 backlog로 유지한다.
+> 새 화면/스토어 범위는 [제품 명세](../../product/PRODUCT_SPEC.md)를 따른다. 과거 다섯 탭 screenshot은 교체 대상이다.
+> 실제 제공자·비용·개인정보 조건과 무료/Family 정책을 확정하기 전 미출시 기능을 공개 기능으로 표시하지 않는다.
+> 아래 위임·배포·커밋 절차는 해당 구현/출시 요청의 승인 범위 안에서만 실행한다.
+
+> **에이전트 워커(codex):** REQUIRED SUB-SKILL — `superpowers:subagent-driven-development`(권장) 또는 `superpowers:executing-plans`로 task-by-task 구현. 단계는 `- [ ]` 체크박스로 추적한다.
 
 **Goal:** 2주(D1~D14) 안에 [감사 05](../../analysis/05-app-store-readiness.md)의 블로커 3건·필수 6건을 해소하고 App Store 첫 심사 제출을 완료한다.
 
 **전제:** iOS 우선(Play는 P2 후속). Supabase 프로덕션 프로젝트 가동 중. Apple Developer 미등록 상태에서 시작.
 
-**역할:** `[코드]`=codex-high(apps/mobile·supabase), `[문서/판정]`=claude-opus-4.8-extra, `[운영]`=사용자 직접 액션(결제·계정·콘솔 입력). 계정 삭제는 Auth·개인정보를 건드리므로 AGENTS.md 에스컬레이션 규칙에 따라 **강한 리뷰 경로**(구현 후 claude 최종 승인) 대상이다.
+**역할:** `[코드]`=codex(apps/mobile·supabase, UI 표현은 ui), `[문서/판정]`=lead(문서)·integrator(최종 승인), `[운영]`=사용자 직접 액션(결제·계정·콘솔 입력). 계정 삭제는 Auth·개인정보를 건드리므로 AGENTS.md 에스컬레이션 규칙에 따라 **강한 리뷰 경로**(구현 후 integrator 최종 승인) 대상이다.
 
 ## Global Constraints (모든 Task 적용)
 

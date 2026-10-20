@@ -11,7 +11,6 @@ import { colors, font, iconSize, layout, radius, spacing, type } from "../../des
 import { t } from "../../i18n/translations";
 import { useLanguage } from "../../i18n/languageContext";
 import { getDiaryEntryDisplaySummary } from "../../contexts/diary/ui/diaryEntryDisplay";
-import { AiBriefCard } from "../../contexts/briefing/ui/AiBriefCard";
 import { createDashboardSummary, getTodayChecklistOrder } from "../shell/todayChecklist";
 import type { ChecklistKey } from "../shell/todayChecklist";
 import { AttentionStrip, CareSummaryCard } from "./HomeDashboardPanel";
@@ -31,9 +30,6 @@ type Props = {
   showMedicationSummary?: boolean;
   notice: string;
   noticeTone?: NoticeTone;
-  // The brief covers 3/7/14 days; gating it on today's records alone locked
-  // it for anyone who last recorded yesterday (0007 D6).
-  briefHasRecords?: boolean;
   todayStatus?: "ready" | "loading" | "error";
   onRetryToday?: () => void;
   onChecklistToggle: (key: ChecklistKey) => void;
@@ -41,7 +37,7 @@ type Props = {
   onTimelineEntryPress?: (entry: DiaryEntry) => void;
 };
 
-export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", briefHasRecords, todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
+export function HomeScreen({ pet, userId = null, checklist, entries, doses, medicationAgenda = [], walkEnabled, includeMedication = true, showMedicationSummary = includeMedication, notice, noticeTone = "success", todayStatus = "ready", onRetryToday, onChecklistToggle, onViewTimelineAll, onTimelineEntryPress }: Props) {
   const { language } = useLanguage();
   const timeline = [...entries].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)).slice(0, 4);
   const profilePhoto = usePetProfilePhotoUrl(pet.id, userId);
@@ -136,10 +132,6 @@ export function HomeScreen({ pet, userId = null, checklist, entries, doses, medi
 
       {showMedicationSummary ? <CareSummaryCard dashboard={dashboard} doses={doses} medicationAgenda={medicationAgenda} /> : null}
 
-      <View style={styles.briefCard}>
-        <AiBriefCard petId={pet.id} databaseMode={userId != null} hasRecords={briefHasRecords ?? (entries.length > 0 || doses.length > 0)} />
-      </View>
-
       <View style={styles.timelineCard}>
         <SurfaceCard>
           <SectionHeader title={t("today.timeline.full")} action={t("today.seeAll")} onActionPress={onViewTimelineAll} />
@@ -212,7 +204,6 @@ const styles = StyleSheet.create({
   statusText: { ...type.caption, color: colors.textMuted, textAlign: "center" },
   checkMark: { position: "absolute", top: 38, right: 5, width: 18, height: 18, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
   checkLabel: { ...type.tiny, color: colors.text, textAlign: "center", marginTop: spacing.xs },
-  briefCard: { marginTop: spacing.md },
   timelineCard: { marginTop: spacing.md },
   timeline: { gap: spacing.md },
   timelineRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.md },

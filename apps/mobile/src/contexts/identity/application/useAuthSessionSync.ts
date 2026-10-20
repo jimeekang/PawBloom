@@ -4,11 +4,13 @@ import { isSupabaseConfigured as configuredFromEnv } from "../../../shared-kerne
 import { supabase } from "../infrastructure/supabaseClient";
 import { ensureProfileRow } from "./authContextQueries";
 import { authErrorTranslationKey } from "./authErrorMessages";
+import { excludeLocallyDeletedSession } from "./authAccountBoundary";
 import type { IdentityMessageKey } from "./identityMessage";
 import type { AppAuthState } from "./authContextTypes";
 
 type Params = {
   activeUserIdRef: MutableRefObject<string | null>;
+  locallyDeletedUserIdsRef: MutableRefObject<Set<string>>;
   explicitSignOutRef: MutableRefObject<boolean>;
   loadPets: (userId: string, blocking?: boolean) => Promise<void>;
   updateAccountBoundary: (nextUserId: string | null) => boolean;
@@ -20,7 +22,7 @@ type Params = {
   setAuthMessage: Dispatch<SetStateAction<IdentityMessageKey | null>>;
 };
 
-export function useAuthSessionSync({ activeUserIdRef, explicitSignOutRef, loadPets, updateAccountBoundary, setSession, setUser, setInitialized, setPetLoadStatus, setError, setAuthMessage }: Params) {
+export function useAuthSessionSync({ activeUserIdRef, locallyDeletedUserIdsRef, explicitSignOutRef, loadPets, updateAccountBoundary, setSession, setUser, setInitialized, setPetLoadStatus, setError, setAuthMessage }: Params) {
   useEffect(() => {
     if (!configuredFromEnv || !supabase) {
       setInitialized(true);
@@ -56,7 +58,7 @@ export function useAuthSessionSync({ activeUserIdRef, explicitSignOutRef, loadPe
           return;
         }
         if (sessionError) setError(authErrorTranslationKey(sessionError));
-        const currentSession = data.session;
+        const currentSession = excludeLocallyDeletedSession(data.session, locallyDeletedUserIdsRef.current);
         const accountChanged = updateAccountBoundary(currentSession?.user.id ?? null);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -81,17 +83,24 @@ export function useAuthSessionSync({ activeUserIdRef, explicitSignOutRef, loadPe
     const { data: listener } = client.auth.onAuthStateChange((event, nextSession) => {
       authRevision += 1;
       const revision = authRevision;
+      const acceptedSession = excludeLocallyDeletedSession(nextSession, locallyDeletedUserIdsRef.current);
+      // A delayed event for a deleted account is stale, not a sign-out of a
+      // different account that may now be active.
+      if (nextSession && !acceptedSession) {
+        setInitialized(true);
+        return;
+      }
       const hadUser = Boolean(activeUserIdRef.current);
-      const accountChanged = updateAccountBoundary(nextSession?.user.id ?? null);
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
+      const accountChanged = updateAccountBoundary(acceptedSession?.user.id ?? null);
+      setSession(acceptedSession);
+      setUser(acceptedSession?.user ?? null);
       setInitialized(true);
-      if (!nextSession?.user) {
+      if (!acceptedSession?.user) {
         if (hadUser && !explicitSignOutRef.current) setAuthMessage("auth.sessionExpired");
         explicitSignOutRef.current = false;
       }
-      if (nextSession?.user && (accountChanged || event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "USER_UPDATED")) {
-        scheduleUserSynchronization(nextSession.user, revision, accountChanged || event === "INITIAL_SESSION");
+      if (acceptedSession?.user && (accountChanged || event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "USER_UPDATED")) {
+        scheduleUserSynchronization(acceptedSession.user, revision, accountChanged || event === "INITIAL_SESSION");
       }
     });
 

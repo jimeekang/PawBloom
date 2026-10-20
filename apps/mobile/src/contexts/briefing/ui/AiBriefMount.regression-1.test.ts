@@ -5,9 +5,8 @@ const { readFileSync } = require("node:fs") as {
   readFileSync(path: string, encoding: "utf8"): string;
 };
 
-// Regression: 0006 A4 — the AI brief must stay wired end to end: the home
-// screen mounts the card, the card calls the generate-ai-brief hook, and the
-// localized not-a-diagnosis disclaimer renders with the content.
+// Free v1 excludes the AI brief entrypoint. Keep the unshipped component's
+// safety contract checked without exposing it in the release home screen.
 
 function read(path: string) {
   return readFileSync(`${process.cwd()}/apps/mobile/src/${path}`, "utf8");
@@ -22,8 +21,8 @@ const briefCard = read("contexts/briefing/ui/AiBriefCard.tsx");
 const briefHook = read("contexts/briefing/application/useAiBrief.ts");
 const translations = read("i18n/translations.ts");
 
-if (!homeScreen.includes("AiBriefCard")) {
-  throw new Error("HomeScreen must mount AiBriefCard (PRODUCT_SPEC home AI summary card)");
+if (homeScreen.includes("AiBriefCard")) {
+  throw new Error("Free v1 must not expose the unshipped AI brief on HomeScreen");
 }
 
 if (!briefCard.includes("useAiBrief") || !briefCard.includes("briefing.disclaimer") || !briefCard.includes("briefing.notDiagnosis")) {

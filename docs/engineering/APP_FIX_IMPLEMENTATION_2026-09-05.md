@@ -1,10 +1,15 @@
 ---
-owner_model: codex-high
+owner_role: codex
 domain: implementation
 edit_policy: exclusive
 ---
 
 # 앱 수정사항 구현 명세 — 2026-09-05
+
+> **2026-10-18 후속:** 현재 기능 구현 계획은 [0009](../exec-plans/active/0009-avatar-care-memories-implementation.md)다.
+> 이 문서의 T1~T4 결과는 과거 증거로 보존한다. T5-a 아이 맥락은 네 메뉴·아이별 상세·대상 고정으로 구체화됐다.
+> T5-b 무료/Family 정책과 T5-c 지원 URL 결정은 남아 있고, T6 실계정·기기·접근성은 0009 M0/M6로 승계한다.
+> 아래 미완료 항목을 이번 문서 수정만으로 완료 표시하거나 새 기능 검증으로 재사용하지 않는다.
 
 ## 1. 현재 상태와 작업 범위
 

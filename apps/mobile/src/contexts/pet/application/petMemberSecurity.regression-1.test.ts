@@ -1,8 +1,9 @@
 declare const require: (moduleName: string) => unknown;
 declare const process: { cwd(): string };
 
-const { readFileSync } = require("node:fs") as {
+const { readFileSync, readdirSync } = require("node:fs") as {
   readFileSync(path: string, encoding: "utf8"): string;
+  readdirSync(path: string): string[];
 };
 const { PetMemberRequestError, parsePetMemberRequest } = require(
   "../../../../../../supabase/functions/manage-pet-members/contract.ts",
@@ -35,6 +36,13 @@ const exactEmailLookupMigration = readFileSync(
   `${root}/supabase/migrations/20260723090000_exact_profile_email_lookup.sql`,
   "utf8",
 ).toLowerCase();
+const auditWriteMigration = readFileSync(
+  `${root}/supabase/migrations/20260913042218_revoke_authenticated_audit_inserts.sql`,
+  "utf8",
+).toLowerCase();
+const migrationFiles = readdirSync(`${root}/supabase/migrations`)
+  .filter((file) => file.endsWith(".sql"))
+  .sort();
 const functionSource = readFileSync(`${root}/supabase/functions/manage-pet-members/index.ts`, "utf8");
 const memberClient = readFileSync(`${root}/apps/mobile/src/contexts/pet/application/petMembers.ts`, "utf8");
 const config = readFileSync(`${root}/supabase/config.toml`, "utf8");
@@ -114,11 +122,57 @@ for (const required of [
   }
 }
 
+for (const required of [
+  "revoke insert on table public.audit_events from anon, authenticated",
+  'drop policy if exists "audit own insert" on public.audit_events',
+]) {
+  if (!auditWriteMigration.includes(required)) {
+    throw new Error(`direct client audit-write guard is missing: ${required}`);
+  }
+}
+if (!migration.includes("grant select, insert on public.audit_events to service_role")) {
+  throw new Error("the trusted member-management function must retain service-role audit writes");
+}
+const auditHardeningIndex = migrationFiles.indexOf(
+  "20260913042218_revoke_authenticated_audit_inserts.sql",
+);
+if (auditHardeningIndex < 0) {
+  throw new Error("the audit-write hardening migration must remain in migration order");
+}
+const laterAuditStatements = migrationFiles
+  .slice(auditHardeningIndex + 1)
+  .flatMap((file) => readFileSync(`${root}/supabase/migrations/${file}`, "utf8")
+    .toLowerCase()
+    .split(";")
+    .map((statement) => ({ file, statement: statement.replace(/\s+/g, " ").trim() })))
+  .filter(({ statement }) => statement.includes("public.audit_events"));
+for (const { file, statement } of laterAuditStatements) {
+  const grantsClientInsert = /^grant\b/.test(statement)
+    && /\b(?:insert|all)(?:\s*\([^)]*\))?\b/.test(statement)
+    && /\bto\b[^;]*\b(?:anon|authenticated)\b/.test(statement);
+  const createsWritePolicy = /^create policy\b/.test(statement)
+    && (!/\bfor\s+(?:select|insert|update|delete|all)\b/.test(statement)
+      || /\bfor\s+(?:insert|all)\b/.test(statement));
+  const revokesAuthenticatedRead = /^revoke\b/.test(statement)
+    && /\b(?:select|all)\b/.test(statement)
+    && /\bfrom\b[^;]*\bauthenticated\b/.test(statement);
+  const revokesServiceAccess = /^revoke\b/.test(statement)
+    && /\b(?:select|insert|all)\b/.test(statement)
+    && /\bfrom\b[^;]*\bservice_role\b/.test(statement);
+  const dropsReadPolicy = /^drop policy\b/.test(statement)
+    && /["']audit own pet select["']/.test(statement);
+
+  if (grantsClientInsert || createsWritePolicy || revokesAuthenticatedRead
+    || revokesServiceAccess || dropsReadPolicy) {
+    throw new Error(`later migration ${file} contradicts the final audit_events ACL`);
+  }
+}
+
 if (!config.includes("[functions.manage-pet-members]") || !config.includes("verify_jwt = true")) {
   throw new Error("caregiver management must require a verified user JWT");
 }
-if (!settings.includes("<PetMembersCard") || !settings.includes("<SubscriptionPlanCard")) {
-  throw new Error("Settings must expose care-team management and the current entitlement state");
+if (!settings.includes("<PetMembersCard") || settings.includes("<SubscriptionPlanCard")) {
+  throw new Error("free v1 Settings must retain shared-access management without unavailable subscription plans");
 }
 if (!onboarding.includes("canCreatePet(entitlement, ownedPetCount)") || !onboarding.includes("countOwnedPets(pets)")) {
   throw new Error("pet creation UI must count only owned pets when applying the database plan limit");

@@ -1,5 +1,5 @@
 ---
-owner_model: codex-high
+owner_role: codex
 domain: database
 edit_policy: exclusive
 ---
@@ -49,3 +49,57 @@ Supabase는 Australia-first 출시를 위해 `ap-southeast-2` Sydney region에 �
 - 가족/보호자는 owner 권한 없이 기록을 추가할 수 있지만 반려동물 삭제나 멤버 삭제는 할 수 없다.
 - 병원 리포트 viewer는 원본 table에 직접 접근하지 않는다.
 - 공유 link는 만료, 취소 상태, sanitized payload version을 관리해야 한다.
+
+## 아바타·공동 추억 목표 모델 (2026-10-18, 미적용)
+
+구현 정본은 [0009](../exec-plans/active/0009-avatar-care-memories-implementation.md)다.
+이하는 신규 migration 설계이며 현재 테이블/정책이 존재한다고 뜻하지 않는다.
+
+| 예정 테이블 | 필수 데이터·무결성 |
+| --- | --- |
+| `pet_avatar_jobs` | pet_id, requester_id, client_mutation_id, source path, consent/policy version, provider job ID, status·오류·시각; 요청자+mutation unique |
+| `pet_avatars` | pet_id, job_id, style/manifest version, private asset metadata·적용 상태; pet당 적용본 최대 하나 |
+| `memories` | nullable created_by, 내용, 발생 로컬 날짜/시각, draft/published, revision, client mutation; 최초 요청자 기준 멱등 key는 익명화 후에도 유지 |
+| `memory_pets` | memory_id+pet_id unique, published에는 최소 한 태그; 직접 client 변경 금지 |
+| `memory_media` | memory_id, object path, MIME·크기·순서·mutation; path unique·미참조 정리 상태 |
+
+기존 pets/diary/medication/media ID와 데이터는 유지한다. 강제 복제·일괄 삭제·기존 clinical source 변환을 하지 않는다.
+신규 public table은 explicit GRANT·RLS, join/filter index, generated DB type, 역할 matrix 테스트를 함께 추가한다.
+관계 역방향 index도 검토한다. `pet_id→memory_id`, `memory_id→pet_id` 조회와 권한 검사가 전체 scan이 되지 않게 한다.
+
+### 원자 쓰기와 조회 인가
+
+- 아바타 생성·적용은 `pets.owner_id` 확인을 포함한다. 일반 클라이언트는 job 완료·asset 검증 상태를 조작하지 못한다.
+- 새 추억 생성자는 모든 태그 pet의 현재 owner/caregiver여야 한다.
+- 복수 태그 생성/변경 시 **활성 owner/caregiver 사용자 집합의 완전 일치**를 확인한다. UI 검사는 보조다.
+- 멤버 변경·추억 명령은 같은 pet을 정렬 순서로 잠그고, 잠금 획득 후 membership을 재조회한다.
+- `prepare-memory` 원자 명령으로 draft·태그·파일 예약을 생성한다. draft는 작성자에게만 보인다.
+- `publish-memory`는 모든 권한·객체·한도를 다시 확인하고 하나의 트랜잭션으로 공개 상태를 전환한다.
+- published 조회는 모든 태그 pet에 현재 owner/caregiver 접근이 있어야 한다. 일부 pet 접근만으로 본문·태그·사진을 읽지 못한다.
+- 편집/삭제는 작성자이면서 모든 pet 접근권이 있거나, 모든 대상 pet의 owner인 경우다. revision 충돌을 감지한다.
+- parent SELECT 외에 junction/media 직접 조회·변경·Storage도 보호한다. 반복 RLS 참조가 재귀하지 않게 private helper/명령을 설계한다.
+- helper는 최소 권한과 고정 search_path를 사용하고 무분별한 public SECURITY DEFINER/EXECUTE를 추가하지 않는다.
+- vet_report_viewer·기존 기간 제한 sitter에 새 전체 추억 권한을 부여하지 않는다.
+
+### 사진 한도·Storage
+
+- 기존 아이별 로컬 날짜당 5장 한도를 legacy diary photo와 published memory photo의 합으로 적용한다.
+- 복수 태그 사진은 각 pet에 한 번씩 계산한다. 태그/날짜 변경·동시 업로드·재시도에도 같은 검사를 한다.
+- legacy 사진의 생성/추가/수정 RPC·trigger와 새 publish가 공통 pet/date 잠금·계수를 사용하도록 갱신한다.
+- draft 파일 예약·보관에도 M0에서 정한 크기/개수/기간 예산을 적용해 unpublished 경로의 무제한 적재를 막는다.
+- 신규 private bucket: `pet-avatars`, `memory-media`. 기존 `pet-media`의 단일 pet 정책을 공동 사진에 재사용하지 않는다.
+- 예시 path는 avatar=`petId/jobId/assetId`, memory=`memoryId/mutationId/assetId`다. path만 믿지 않고 DB 관계·권한을 검사한다.
+- 서명 URL/provider URL은 영구 식별자가 아니다. 저장은 검증된 bucket/path이며 서명 발급 때 현재 권한을 확인한다.
+- 이미 발급한 URL의 TTL 잔여는 즉시 회수가 아니다. 새 사진은 짧은 TTL과 캐시 정리를 설계·검증한다.
+
+### 삭제·호환성
+
+- pet 삭제 시 해당 avatar/job을 종료하고 그 pet이 포함된 추억 전체를 삭제 대상으로 처리한다.
+- 공동 추억의 pet FK를 단순 cascade해 태그만 줄이지 않는다. 삭제 전 영향 안내와 전체 객체 정리가 필요하다.
+- 계정 삭제는 소유 pet 삭제를 따르고 타 owner pet에 남긴 단독 기여는 작성자를 익명화한다.
+- 삭제 대상 객체 경로를 durable cleanup에 먼저 기록하고 DB/Storage 실패를 재시도한다. callback이 삭제한 데이터를 복원하지 못하게 한다.
+- 기존 열람 경로·날짜·유일성·report source와 구버전 앱은 additive 전환으로 보존한다. rollback 때 신규 데이터를 DROP하지 않는다.
+
+공식 기준: [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security),
+[Storage 접근 제어](https://supabase.com/docs/guides/storage/security/access-control).
+구체적인 SQL·SDK는 구현 시점 문서/설치 버전과 실제 역할 테스트로 다시 확인한다.

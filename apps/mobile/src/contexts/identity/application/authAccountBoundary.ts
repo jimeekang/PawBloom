@@ -14,3 +14,10 @@ export function isCurrentAccountWork(
 ) {
   return Boolean(requestUserId && activeUserId === requestUserId && currentEpoch === requestEpoch);
 }
+
+export function excludeLocallyDeletedSession<T extends { user: { id: string } }>(
+  session: T | null,
+  locallyDeletedUserIds: ReadonlySet<string>,
+) {
+  return session && !locallyDeletedUserIds.has(session.user.id) ? session : null;
+}

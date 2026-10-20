@@ -25,6 +25,7 @@ async function runNativeOutboxTests() {
   assert(database.schema.includes("sync_outbox_v2"), "native outbox must use a new account-scoped table");
   assert(database.schema.includes("primary key (user_id, id)"), "native row identity must include its owner");
   assert(database.schema.includes("unique (user_id, client_mutation_id)"), "idempotency must be scoped by owner");
+  assert(database.schema.includes("sync_deleted_accounts_v1"), "native account deletion tombstones must survive app restarts");
   assert(database.legacyDropped, "unowned legacy rows must be discarded rather than replayed");
 
   const original = mutation("shared", { nested: { value: "original" } });
@@ -91,30 +92,87 @@ async function runNativeOutboxTests() {
   userId = "user-a";
   database.afterNextRead = () => { userId = "user-b"; };
   assert(await raceStore.countConflictedMutations() === 0, "a conflict count read must be discarded when the account changes");
+
+  const purgeDatabase = new FakeDatabase();
+  let purgeCurrentUser: string | null = "user-a";
+  const purgeStore = createNativeOutboxStore({
+    databaseProvider: () => purgeDatabase,
+    userIdProvider: async () => purgeCurrentUser,
+  });
+  const pendingToPurge = mutation("purge-pending");
+  const conflictToPurge = mutation("purge-conflict");
+  await purgeStore.enqueueOfflineMutation(pendingToPurge);
+  await purgeStore.enqueueOfflineMutation(conflictToPurge);
+  await purgeStore.markMutationConflict(conflictToPurge.id, "reviewed", "user-a");
+  purgeCurrentUser = "user-b";
+  await purgeStore.enqueueOfflineMutation(mutation("purge-other-user"));
+  purgeCurrentUser = null;
+  assert(purgeDatabase.rows.filter((item) => item.user_id === "user-a").length === 2,
+    "ordinary sign-out must retain the account's pending and conflicted native rows");
+  purgeDatabase.failAccountDeletesRemaining = 1;
+  await purgeStore.purgeOfflineMutationsForAccount("user-a");
+  assert(purgeDatabase.accountDeleteAttempts === 2,
+    "authoritative account deletion must retry and verify a transient native purge failure");
+  assert(purgeDatabase.tombstones.has("user-a"),
+    "authoritative account deletion must durably tombstone the explicit account before removing rows");
+  assert(!purgeDatabase.rows.some((item) => item.user_id === "user-a"),
+    "authoritative account deletion must purge every native status for the explicit account");
+  assert(purgeDatabase.rows.some((item) => item.user_id === "user-b" && item.id === "offline-purge-other-user"),
+    "authoritative account deletion must preserve every other account's native rows");
+  purgeCurrentUser = "user-a";
+  await purgeStore.enqueueOfflineMutation(mutation("deleted-account-enqueue"));
+  assert((await purgeStore.listPendingMutations()).length === 0,
+    "a tombstoned native account must never enqueue or replay offline mutations");
+  purgeDatabase.rows.push({
+    user_id: "user-a", id: "interrupted-purge", client_mutation_id: "interrupted-purge",
+    payload: JSON.stringify(mutation("interrupted-purge")), created_at: "2026-07-12T00:00:00.000Z",
+    attempts: 0, status: "pending",
+  });
+  await createNativeOutboxStore({ databaseProvider: () => purgeDatabase, userIdProvider: async () => "user-a" }).initializeOutbox();
+  assert(!purgeDatabase.rows.some((item) => item.user_id === "user-a"),
+    "native initialization must retry physical cleanup for a durable deletion tombstone");
 }
 
 class FakeDatabase {
   rows: Row[] = [];
+  tombstones = new Set<string>();
   schema = "";
   legacyDropped = false;
+  failAccountDeletesRemaining = 0;
+  accountDeleteAttempts = 0;
   afterNextRead?: () => void;
 
   async execAsync(sql: string) {
     this.schema += sql;
     if (sql.includes("drop table if exists sync_outbox;")) this.legacyDropped = true;
+    if (sql.includes("where user_id in (select user_id from sync_deleted_accounts_v1)")) {
+      this.rows = this.rows.filter((row) => !this.tombstones.has(row.user_id));
+    }
   }
 
   async runAsync(sql: string, ...params: unknown[]) {
-    if (sql.includes("insert or ignore")) {
+    if (sql.includes("insert or ignore into sync_deleted_accounts_v1")) {
+      this.tombstones.add(params[0] as string);
+    } else if (sql.includes("insert or ignore")) {
       const [userId, id, clientMutationId, payload, createdAt, attempts] = params as [string, string, string, string, string, number];
-      if (!this.rows.some((row) => row.user_id === userId && (row.id === id || row.client_mutation_id === clientMutationId))) {
+      if (!this.tombstones.has(userId)
+        && !this.rows.some((row) => row.user_id === userId && (row.id === id || row.client_mutation_id === clientMutationId))) {
         this.rows.push({ user_id: userId, id, client_mutation_id: clientMutationId, payload, created_at: createdAt, attempts, status: "pending" });
       }
     } else if (sql.includes("delete from")) {
       const [userId, id] = params as [string, string?];
+      if (params.length === 1) {
+        this.accountDeleteAttempts += 1;
+        if (this.failAccountDeletesRemaining > 0) {
+          this.failAccountDeletesRemaining -= 1;
+          throw new Error("transient delete failure");
+        }
+      }
       this.rows = sql.includes("status = 'conflict'")
         ? this.rows.filter((row) => row.user_id !== userId || row.status !== "conflict")
-        : this.rows.filter((row) => row.user_id !== userId || row.id !== id);
+        : params.length === 1
+          ? this.rows.filter((row) => row.user_id !== userId)
+          : this.rows.filter((row) => row.user_id !== userId || row.id !== id);
     } else if (sql.includes("Malformed offline mutation payload")) {
       const [, userId, id] = params as [string, string, string];
       this.updatePending(userId, id, "Malformed offline mutation payload", true);
@@ -127,15 +185,22 @@ class FakeDatabase {
 
   async getAllAsync<T>(sql: string, ...params: unknown[]): Promise<T[]> {
     const [userId, id] = params as [string, string?];
+    if (sql.includes("select 1 as present from sync_deleted_accounts_v1")) {
+      return this.tombstones.has(userId) ? [{ present: 1 } as T] : [];
+    }
     if (sql.includes("count(*)")) {
-      const count = this.rows.filter((row) => row.user_id === userId && row.status === "conflict").length;
+      const count = sql.includes("status = 'conflict'")
+        ? this.rows.filter((row) => row.user_id === userId && row.status === "conflict").length
+        : this.rows.filter((row) => row.user_id === userId).length;
       this.afterNextRead?.();
       this.afterNextRead = undefined;
       return [{ count } as T];
     }
     const status = sql.includes("status = 'conflict'") ? "conflict" : "pending";
+    if (sql.includes("not exists") && this.tombstones.has(userId)) return [];
+    const expectedId = sql.includes("and id = ?") ? id : undefined;
     const rows = this.rows
-      .filter((row) => row.user_id === userId && row.status === status && (!id || row.id === id))
+      .filter((row) => row.user_id === userId && row.status === status && (!expectedId || row.id === expectedId))
       .sort((left, right) => left.created_at.localeCompare(right.created_at));
     this.afterNextRead?.();
     this.afterNextRead = undefined;

@@ -1,5 +1,5 @@
 ---
-owner_model: codex-high
+owner_role: codex
 domain: implementation
 edit_policy: exclusive
 ---
@@ -69,3 +69,28 @@ apps/mobile/src/contexts/<context>/
 - `scripts/verify-supabase.mjs`: migration의 GRANT와 RLS 적용 범위 점검
 - `scripts/verify-offline-sync.mjs`: outbox와 오프라인 실행 모드 contract 검증
 - `scripts/verify-docs.mjs`: 문서 300줄 제한과 모델 배타 소유 frontmatter 강제 (AGENTS.md 라우팅 계약)
+
+## 아바타·공동 추억 목표 구조 (2026-10-18, 미구현)
+
+현재 코드를 설명하는 위 구조에 다음을 추가할 계획이다. 실행 정본은
+[0009](docs/exec-plans/active/0009-avatar-care-memories-implementation.md)이며 목표와 구현 완료를 혼동하지 않는다.
+
+- `avatar` 신규 context: 사진 기반 생성 job·검증된 자산·확인 후 적용. 기존 petId를 참조한다.
+- `memory` 신규 context: 가족 사진/이야기·여러 pet 연결·작성자·공개 범위·전송 대기 초안.
+- `presentation/house` 예정: 여러 캐릭터의 선택·제스처·개인 배치·작은 움직임. 서버 game/room context는 만들지 않는다.
+- presentation은 네 메뉴와 아이 상세를 조합한다. 기존 diary/routine/care/medication/briefing/report use case를 재사용한다.
+- 다중 아이 조회는 user+pet별 cache를 유지한다. activePet을 반복 전환해 전체 데이터를 읽지 않는다.
+- `media`는 private 객체 검증·업로드·정리를 재사용하되 공동 사진 권한을 pet 하나의 경로로 대체하지 않는다.
+- `sync`는 기존 케어 outbox를 유지한다. 새 추억 사진은 계정별 안정적인 초안 파일과 온라인 명시적 재시도로 시작한다.
+- `identity` 삭제 경계에 신규 job/자산/초안/공동 사진 수명주기를 연결한다. 기존 durable cleanup·replay 장벽을 보존한다.
+
+```text
+pet ── avatar job/asset ── presentation 우리 집 ── 아이 요약/상세
+ │                                             ├─ 기존 케어/기록 → 기존 요약/report
+ └─ memory_pets ── memory ── private media       └─ 가족 추억
+```
+
+캐릭터 교체는 pet/기록 교체가 아니다. 공동 추억을 의료 source로 자동 연결하지 않는다.
+복수 태그의 작성·변경은 같은 활성 owner/caregiver 집합을 원자 검증하며 조회는 모든 대상에 현재 권한이 있어야 한다.
+family membership이나 account metadata를 방 전체의 무조건적인 권한으로 사용하지 않는다.
+기존 레이어/import 규칙·계정 경계·번역 경계는 신규 context에도 그대로 적용한다.

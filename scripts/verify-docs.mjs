@@ -2,19 +2,20 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// 문서 거버넌스 규칙 (AGENTS.md 모델 라우팅 계약):
+// 문서 거버넌스 규칙 (AGENTS.md 역할 라우팅 계약):
 // 1. 모든 md 파일은 300줄 이하.
-// 2. 모든 md 파일은 owner_model frontmatter로 단일 모델에 배타 배정된다.
-//    - claude-opus-4.8-extra: 계획/기획/PM/앱디자인(비코드)/QA/분석
-//    - codex-high: 코딩/코드리뷰/DB/보안/git/배포 등 구현 전반
-// 3. domain은 owner_model과 일치하는 집합에 속해야 한다 (교차 소유 금지).
+// 2. 모든 md 파일은 owner_role frontmatter로 단일 역할에 배타 배정된다.
+//    역할→모델·effort 매핑은 AGENTS.md 라우팅 표에만 둔다 (모델 교체 시 frontmatter 불변).
+//    - lead: 계획/기획/PM/앱디자인(비코드)/분석
+//    - integrator: QA·최종 통합 판정
+//    - codex: 코딩/DB/보안/git/배포 등 구현 전반
+// 3. domain은 owner_role과 일치하는 집합에 속해야 한다 (교차 소유 금지).
 
 const MAX_LINES = 300;
-const OPUS_DOMAINS = new Set(["planning", "product-design", "qa", "analysis", "pm"]);
-const CODEX_DOMAINS = new Set(["implementation", "database", "security", "release", "git"]);
 const DOMAINS_BY_OWNER = {
-  "claude-opus-4.8-extra": OPUS_DOMAINS,
-  "codex-high": CODEX_DOMAINS,
+  lead: new Set(["planning", "product-design", "analysis", "pm"]),
+  integrator: new Set(["qa"]),
+  codex: new Set(["implementation", "database", "security", "release", "git"]),
 };
 // README.md는 저장소 공개 첫 화면이라 frontmatter를 면제한다 (소유는 AGENTS.md 라우팅 표로 선언).
 // PRIVACY_POLICY.md는 앱이 링크하는 대외 게시 문서다 — frontmatter가 GitHub에서
@@ -56,9 +57,9 @@ for (const relPath of tracked) {
       .map((match) => [match[1], match[2]])
   );
 
-  const owner = fm.owner_model;
-  if (!owner || !DOMAINS_BY_OWNER[owner]) {
-    errors.push(`${relPath}: owner_model이 없거나 허용값이 아님 (${owner ?? "누락"})`);
+  const owner = fm.owner_role;
+  if (!owner || !Object.hasOwn(DOMAINS_BY_OWNER, owner)) {
+    errors.push(`${relPath}: owner_role이 없거나 허용값이 아님 (${owner ?? "누락"})`);
     continue;
   }
   if (!fm.domain || !DOMAINS_BY_OWNER[owner].has(fm.domain)) {

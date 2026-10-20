@@ -6,7 +6,7 @@ import type { IdentityMessageKey } from "./identityMessage";
 // Result of the in-app account deletion action (Apple Guideline 5.1.1(v)). The
 // deletion is orchestrated by useAccountDeletion.ts, which returns this shape so
 // callers can react to success/failure without inspecting Supabase internals.
-export type AccountDeletionResult = { ok: boolean };
+export type AccountDeletionResult = { ok: boolean; localCleanupPending?: boolean };
 
 export type AppAuthState = {
   configured: boolean;
@@ -23,6 +23,7 @@ export type AppAuthState = {
   signIn: (email: string, password: string) => Promise<IdentityMessageKey | null>;
   signUp: (email: string, password: string) => Promise<IdentityMessageKey | null>;
   signOut: () => Promise<void>;
+  clearDeletedAccountLocalSession: (expectedUserId: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<IdentityMessageKey | null>;
   updatePassword: (password: string) => Promise<IdentityMessageKey | null>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<IdentityMessageKey | null>;
@@ -34,5 +35,6 @@ export type AppAuthState = {
   selectNextPet: () => void;
   retryPetLoad: () => void;
   resetMessage: () => void;
+  forceLocalAuthBoundary: (expectedUserId: string) => boolean;
   announceAccountDeleted: () => void;
 };

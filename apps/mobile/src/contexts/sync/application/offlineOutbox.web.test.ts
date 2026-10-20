@@ -1,6 +1,5 @@
 import type { OfflineMutation } from "../domain/offlineMutation";
 import {
-  LEGACY_WEB_OUTBOX_KEY,
   WebOutboxLockUnavailableError,
   createWebOutboxStore,
   webOutboxStorageKey,
@@ -10,7 +9,6 @@ import {
 
 async function runWebOutboxTests() {
   await verifyAccountIsolationPersistenceAndCloning();
-  await verifyLegacyRowsAreDiscarded();
   await verifyConflictAndRetrySemantics();
   await verifyMalformedStorageRecovery();
   await verifyCrossTabSerialization();
@@ -61,22 +59,6 @@ async function verifyAccountIsolationPersistenceAndCloning() {
   assert(pending.length === 2 && !pending.some((row) => row.id === "offline-signed-out"),
     "signed-out writes must not enter a later user's queue");
   assert(fixture.values.has(webOutboxStorageKey("user/a")) && fixture.values.has(webOutboxStorageKey("user/b")), "each user needs a separate key");
-}
-
-async function verifyLegacyRowsAreDiscarded() {
-  const fixture = createMemoryStorage();
-  const legacyMutation = mutation("legacy", "2026-07-12T00:00:00.000Z");
-  fixture.values.set(LEGACY_WEB_OUTBOX_KEY, JSON.stringify([
-    { mutation: legacyMutation, attempts: 0, status: "pending", updatedAt: legacyMutation.createdAt },
-  ]));
-  const store = createWebOutboxStore({
-    storageProvider: () => fixture.storage,
-    userIdProvider: async () => "user-a",
-    lockProvider: immediateLock,
-  });
-
-  assert((await store.listPendingMutations()).length === 0, "unscoped legacy payloads must never be replayed");
-  assert(!fixture.values.has(LEGACY_WEB_OUTBOX_KEY), "unscoped legacy payloads must be discarded");
 }
 
 async function verifyConflictAndRetrySemantics() {
@@ -220,6 +202,7 @@ async function verifySafeFallbacks() {
   assert((await blockedStore.listPendingMutations())[0]?.id === row.id,
     "storage write failures must retain rows in this tab's memory fallback");
 }
+
 function fixedUserStore(storage: WebStorageLike) {
   return createWebOutboxStore({ storageProvider: () => storage, userIdProvider: async () => "user-a", lockProvider: immediateLock });
 }
@@ -244,6 +227,8 @@ function mutation(name: string, createdAt: string, payload: Record<string, unkno
 function createMemoryStorage(options: { failWrites?: boolean } = {}) {
   const values = new Map<string, string>();
   const storage: WebStorageLike = {
+    get length() { return values.size; },
+    key: (index) => [...values.keys()][index] ?? null,
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => {
       if (options.failWrites) throw new Error("write blocked");

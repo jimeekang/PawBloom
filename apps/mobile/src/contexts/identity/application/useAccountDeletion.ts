@@ -2,7 +2,9 @@ import { useCallback, useReducer } from "react";
 import { supabase } from "../infrastructure/supabaseClient";
 import { cancelMedicationRemindersForAccount } from "../../medication/application/medicationReminderNotifications";
 import { cancelMealRemindersForAccount } from "../../routine/application/mealReminderNotifications";
+import { purgeOfflineMutationsForAccount } from "../../sync/application/offlineOutbox";
 import { useAuth } from "./authContext";
+import { finishAccountDeletionLocalBoundary } from "./accountDeletionLocalBoundary";
 import { accountDeletionReducer, initialAccountDeletionState } from "./accountDeletionState";
 import type { AccountDeletionResult } from "./authContextTypes";
 
@@ -12,7 +14,7 @@ import type { AccountDeletionResult } from "./authContextTypes";
 // auth.admin.deleteUser), then mirrors sign-out cleanup by cancelling this
 // account's locally scheduled reminders before tearing down the session.
 export function useAccountDeletion() {
-  const { user, signOut, announceAccountDeleted } = useAuth();
+  const { clearDeletedAccountLocalSession, forceLocalAuthBoundary, announceAccountDeleted } = useAuth();
   const [state, dispatch] = useReducer(accountDeletionReducer, initialAccountDeletionState);
 
   const requestConfirm = useCallback(() => dispatch({ type: "request" }), []);
@@ -24,25 +26,44 @@ export function useAccountDeletion() {
     // from "deleting".
     dispatch({ type: "start" });
     const client = supabase;
-    const userId = user?.id;
+    let userId: string;
     try {
-      if (!client || !userId) throw new Error("Account service is not configured.");
+      if (!client) throw new Error("Account service is not configured.");
 
-      const { error } = await client.functions.invoke("delete-account", { method: "POST" });
+      // Capture the exact JWT subject sent to the Edge Function. The explicit
+      // header prevents a simultaneous auth refresh/account boundary from
+      // making the local cleanup target differ from the server deletion target.
+      const { data: sessionData, error: sessionError } = await client.auth.getSession();
+      const session = sessionData.session;
+      if (sessionError || !session) throw sessionError ?? new Error("Account session is unavailable.");
+      userId = session.user.id;
+
+      const { error } = await client.functions.invoke("delete-account", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       if (error) throw error;
-
-      await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
-      await cancelMealRemindersForAccount(userId).catch(() => undefined);
-      await signOut().catch(() => undefined);
-      announceAccountDeleted();
-
-      dispatch({ type: "succeed" });
-      return { ok: true };
     } catch {
       dispatch({ type: "fail" });
       return { ok: false };
     }
-  }, [announceAccountDeleted, signOut, user?.id]);
+
+    // The server deletion is authoritative at this point. Close the React and
+    // query-cache account boundary immediately; SDK local-session cleanup is a
+    // secondary best-effort operation and cannot reopen the deleted account.
+    const { localCleanupPending } = await finishAccountDeletionLocalBoundary({
+      userId,
+      forceLocalAuthBoundary,
+      clearDeletedAccountLocalSession,
+      purgeOfflineMutations: () => purgeOfflineMutationsForAccount(userId),
+      cancelMedicationReminders: () => cancelMedicationRemindersForAccount(userId),
+      cancelMealReminders: () => cancelMealRemindersForAccount(userId),
+    });
+    announceAccountDeleted();
+
+    dispatch({ type: "succeed" });
+    return { ok: true, localCleanupPending };
+  }, [announceAccountDeleted, clearDeletedAccountLocalSession, forceLocalAuthBoundary]);
 
   return {
     status: state.status,

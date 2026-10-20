@@ -1,5 +1,5 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: integrator
 domain: qa
 edit_policy: exclusive
 ---
@@ -7,7 +7,7 @@ edit_policy: exclusive
 # 디자인 QA 기록 (DESIGN_QA)
 
 > PawBloom 모바일 UI의 시각 QA 기준·재실행 절차·미해결 회귀 감시 항목을 관리하는 문서.
-> 기준 디자인 자산(`docs/design/`) 옆에 위치한다. `edit_policy: exclusive` — 소유 모델(claude-opus-4.8-extra) 외 수정 금지.
+> 기준 디자인 자산(`docs/design/`) 옆에 위치한다. `edit_policy: exclusive` — 소유 역할(integrator) 외 수정 금지.
 
 ---
 

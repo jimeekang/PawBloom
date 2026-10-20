@@ -16,6 +16,7 @@ import { PrimaryButton, SecondaryButton } from "./src/design-system/components";
 import { confirmAndSignOut } from "./src/contexts/identity/ui/signOutConfirm";
 import { resolveAppGate } from "./src/presentation/appGate";
 import { configureLocalNotificationPresentation } from "./src/shared-kernel/notifications/localNotificationBootstrap";
+import { allowsUnconfiguredPreview, appRuntimeProfile } from "./src/shared-kernel/config";
 
 configureNetworkSync();
 void configureLocalNotificationPresentation();
@@ -60,6 +61,7 @@ function AppBody() {
     authInitialized: initialized,
     languageInitialized,
     configured,
+    allowUnconfiguredPreview: allowsUnconfiguredPreview(appRuntimeProfile),
     userPresent: Boolean(user),
     passwordRecoveryActive,
     petLoadStatus,
@@ -78,6 +80,17 @@ function AppBody() {
   }
 
   if (gate === "preview") return <PawBloomShell />;
+  if (gate === "configuration-error") {
+    return (
+      <SafeAreaView style={styles.loadingArea}>
+        <View style={styles.loadingWrap}>
+          <AppIcon name="shield" size={40} color={colors.coral} />
+          <Text style={styles.loadingText}>{t("app.configurationErrorTitle")}</Text>
+          <Text style={styles.configurationCopy}>{t("app.configurationErrorCopy")}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   if (gate === "auth") return <AuthScreen />;
   if (gate === "password-recovery") return <PasswordRecoveryScreen />;
   if (gate === "pet-load-error") {
@@ -118,6 +131,13 @@ const styles = StyleSheet.create({
   loadingText: {
     ...typeStyle.sectionTitle,
     color: colors.text,
+    textAlign: "center",
+  },
+  configurationCopy: {
+    ...typeStyle.body,
+    width: "80%",
+    maxWidth: 360,
+    color: colors.textMuted,
     textAlign: "center",
   },
   retryActions: {

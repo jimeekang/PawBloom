@@ -1,10 +1,15 @@
 ---
-owner_model: codex-high
+owner_role: codex
 domain: implementation
 edit_policy: exclusive
 ---
 
 # 0008. 잔여 구현 인수인계 — Codex 실행 명세 (2026-07-28)
+
+> **2026-10-18 승계:** 새 기능의 현재 실행 정본은 [0009](0009-avatar-care-memories-implementation.md), 상태는
+> [0003](0003-weekly-execution-checklist.md)다. 아래는 기존 수정·실측 이력이며 새 아바타 기능의 완료 증거가 아니다.
+> 남은 실계정·물리 기기·시간대·권한·접근성 검증은 0009 M0/M6로 승계한다.
+> 과거 배포·커밋 명령을 새 작업의 자동 실행 승인으로 해석하지 않는다.
 
 > **상태 (2026-09-05): 후속 결함 3건과 외부 링크 실패 처리를 구현하고 자동·iOS 프리뷰 검증했다.** 결과와 검증 한계는 [앱 수정사항 구현 명세 §9](../../engineering/APP_FIX_IMPLEMENTATION_2026-09-05.md#9-구현-결과-2026-09-05)를 따른다. 제품 결정, 실계정·물리 기기 추가 검증과 0007 소유 모델의 최종 QA 판단은 남아 있다. 0007의 상대경로 참조를 유지하기 위해 아직 archive로 이동하지 않는다.
 

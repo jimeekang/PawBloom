@@ -1,0 +1,25 @@
+name: iOS Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  verify_release:
+    name: Verify repository release gates
+    environment: production
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Run repository verification
+        run: npm --prefix ../.. run verify
+
+  build_ios:
+    name: Build iOS production artifact
+    needs: [verify_release]
+    environment: production
+    type: build
+    params:
+      platform: ios
+      profile: production

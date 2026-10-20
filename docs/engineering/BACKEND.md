@@ -1,5 +1,5 @@
 ---
-owner_model: codex-high
+owner_role: codex
 domain: implementation
 edit_policy: exclusive
 ---
@@ -69,3 +69,39 @@ Supabase Edge Functions는 서버에서만 처리해야 하는 workflow를 담�
 ## AI 출력 원칙
 
 AI(또는 템플릿) 출력의 허용·금지 범위, 필수 고지 문구, 표현 원칙은 [AI 안전 정책](../product/AI_SAFETY.md)에 단일 원본으로 정의되어 있다. 백엔드는 그 규칙을 준수한다. (중복 서술을 두지 않는다.)
+
+## 아바타·공동 추억 서버 계획 (2026-10-18, 미구현)
+
+다음 계약은 [0009](../exec-plans/active/0009-avatar-care-memories-implementation.md)의 목표다.
+아래 endpoint/RPC 이름은 예정이며 현재 배포된 API 목록이 아니다.
+
+### 아바타 요청·상태·적용
+
+- `generate-pet-avatar`: JWT·실제 owner·source 경로/크기/MIME·이미지 decode·동의 버전·생성 한도를 검증한다.
+- 요청 mutation으로 job을 멱등 생성한다. provider job ID와 실패/불명확 상태를 영속 저장해 앱 종료 뒤에도 조회한다.
+- 길어진 생성은 provider 비동기 처리·상태 조회/검증 callback으로 복구한다. 응답 뒤 실행 보장 없는 작업에 의존하지 않는다.
+- secret·provider 원문·사용자 사진은 앱/일반 로그로 내보내지 않는다. 정확한 SDK 계약은 M0 제공자 선정 시 검증한다.
+- provider URL/redirect·다운로드 파일·manifest·프레임 규격을 검증한 뒤 private asset으로 저장한다.
+- 적용은 명시적 확인 후 owner 전용 원자 명령이다. 다른 pet job·미완료 asset·삭제된 pet·지난 소유자의 결과를 거부한다.
+- timeout 재시도가 추가 비용/중복 asset을 만들지 않게 provider idempotency와 기존 job 조회를 연결한다.
+
+### 공동 추억 명령
+
+- `prepare-memory` / `publish-memory` / 수정·삭제 RPC는 모든 pet 권한·태그·작성자·revision을 검증한다.
+- 준비 단계는 draft·태그·허용 파일을 예약한다. published 전에는 작성자만 조회한다.
+- 생성/태그 변경 시 같은 활성 owner/caregiver 사용자 집합인지 검증한다. 일부 아이만 접근 가능한 요청은 전체 거부한다.
+- 모든 태그 아이에 현재 owner/caregiver 권한이 있는 사람만 published 본문·태그·media를 조회한다.
+- 멤버 변경과 추억 명령은 같은 pet 행을 정렬 순으로 잠그고 잠금 후 재검사해 경쟁을 막는다.
+- publish는 실제 업로드·object 소유·파일 한도·참조를 확인한다. legacy photo와 새 memory가 같은 한도 검사를 사용한다.
+- 클라이언트가 `created_by`, 공개 범위, Storage 소유권을 임의 지정해 권한을 확장하지 못하게 한다.
+- 동일 mutation 중복은 기존 결과를 반환한다. 일부 업로드 실패는 unpublished draft로 남기고 미참조 객체만 정리한다.
+
+### 삭제·기존 함수 회귀
+
+- `delete-account`의 기존 durable cleanup에 새 bucket/job/초안 수명주기를 연결한다. 객체 경로는 행 삭제 전에 영속화한다.
+- pet 삭제는 해당 job/asset과 그 pet을 포함한 공동 추억 전체를 삭제 대상으로 삼는다. 태그만 떼어 공개 범위를 넓히지 않는다.
+- 타인 pet의 단독 기여는 기존 nullable 작성자 익명화 원칙을 유지하고 타인 pet 자체는 삭제하지 않는다.
+- 삭제 중 callback·poll·publish가 데이터를 복원하지 못하게 tombstone/삭제 상태를 재검사한다.
+- `manage-pet-members`의 기존 Family gate는 정책 확정 전 유지한다. UI만 열어 서버 gate를 우회하지 않는다.
+- `generate-ai-brief`/report는 기존 아이별 clinical source를 유지한다. 공동 추억·avatar·연출 문구를 자동 입력으로 넣지 않는다.
+- 새 함수·RPC에는 parser·계약·역할·실패 테스트를 추가한다. 원격 배포 전 RLS/개인정보 강한 리뷰와 승인이 필요하다.

@@ -1,55 +1,55 @@
-import { supabase } from "../../../shared-kernel/supabase/client";
 import type { StoredOfflineConflict } from "../domain/offlineConflict";
 import type { OfflineMutation } from "../domain/offlineMutation";
+import {
+  LEGACY_WEB_OUTBOX_KEY,
+  WebOutboxLockUnavailableError,
+  createWebOutboxAccountBoundary,
+  webOutboxDeletionTombstoneKey,
+  webOutboxStorageKey,
+  type WebOutboxLockProvider,
+  type WebStorageLike,
+} from "./offlineOutboxAccountPurge.web";
 import { cloneOutboxValue, isOfflineMutation, withoutQueuedOwner } from "./offlineOutboxSerialization";
-
-export const LEGACY_WEB_OUTBOX_KEY = "pawbloom.sync_outbox.v1";
-const STORAGE_PREFIX = "pawbloom.sync_outbox.v2";
+import { runWithOfflineReplayLease } from "./offlineReplayBarrier";
+import { browserOutboxLock, browserOutboxStorage, currentWebOutboxUserId } from "./webOfflineOutboxRuntime.web";
 const LOCK_PREFIX = "pawbloom.sync_outbox.lock";
-
+export {
+  LEGACY_WEB_OUTBOX_KEY,
+  WebOutboxLockUnavailableError,
+  webOutboxDeletionTombstoneKey,
+  webOutboxStorageKey,
+  type WebOutboxLockProvider,
+  type WebStorageLike,
+} from "./offlineOutboxAccountPurge.web";
 type OutboxStatus = "pending" | "conflict";
 type PersistedOutboxRow = { mutation: OfflineMutation; attempts: number; status: OutboxStatus; lastError?: string; updatedAt: string };
-
-export type WebStorageLike = {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
-  removeItem: (key: string) => void;
-};
-
-export type WebOutboxLockProvider = <T>(name: string, task: () => T | Promise<T>) => Promise<T>;
-
-export class WebOutboxLockUnavailableError extends Error {
-  constructor() {
-    super("A cross-tab outbox lock is unavailable.");
-    this.name = "WebOutboxLockUnavailableError";
-  }
-}
 type WebOutboxOptions = {
   storageProvider?: () => WebStorageLike | null;
   userIdProvider?: () => Promise<string | null>;
   lockProvider?: WebOutboxLockProvider;
   now?: () => number;
 };
-
-export function webOutboxStorageKey(userId: string) {
-  return `${STORAGE_PREFIX}.${encodeURIComponent(userId)}`;
-}
-
 export function createWebOutboxStore({
-  storageProvider = browserStorage,
-  userIdProvider = currentAuthUserId,
-  lockProvider = browserLock,
+  storageProvider = browserOutboxStorage,
+  userIdProvider = currentWebOutboxUserId,
+  lockProvider = browserOutboxLock,
   now = Date.now,
 }: WebOutboxOptions = {}) {
   const memoryRows = new Map<string, PersistedOutboxRow[]>();
+  const memoryTombstones = new Set<string>();
   let memoryOnly = false;
+  const { isAccountDeletionTombstoned, purgeOfflineMutationsForAccount } = createWebOutboxAccountBoundary({
+    memoryRows,
+    memoryTombstones,
+    storageProvider,
+    lockProvider,
+  });
 
   async function initializeOutbox() {
     const userId = await resolveUserId();
     if (!userId) return;
     await withUserLock(userId, () => writeRows(userId, readRows(userId)));
   }
-
   async function enqueueOfflineMutation(mutation: OfflineMutation) {
     await mutateCurrentRows((rows) => {
       const duplicate = rows.some((row) => row.mutation.id === mutation.id || row.mutation.clientMutationId === mutation.clientMutationId);
@@ -84,7 +84,6 @@ export function createWebOutboxStore({
   async function clearConflictedMutations(expectedUserId?: string) {
     await mutateCurrentRows((rows) => rows.filter((row) => row.status !== "conflict"), expectedUserId);
   }
-
   async function markMutationApplied(id: string, expectedUserId?: string) {
     await mutateCurrentRows((rows) => rows.filter((row) => row.mutation.id !== id), expectedUserId);
   }
@@ -105,6 +104,27 @@ export function createWebOutboxStore({
     return owned === true;
   }
 
+  async function runWithMutationReplayLease<T>(mutation: OfflineMutation, task: () => Promise<T>) {
+    const userId = mutation.queuedByUserId;
+    if (!userId) return { executed: false } as const;
+    let enteredLock = false;
+    const execute = () => {
+      enteredLock = true;
+      return runWithOfflineReplayLease(userId, async () => {
+        if (!await userStillCurrent(userId) || isAccountDeletionTombstoned(userId)) return false;
+        return readRows(userId).some((row) => row.status === "pending" && row.mutation.id === mutation.id);
+      }, task);
+    };
+    if (memoryOnly) return execute();
+    try {
+      return await lockProvider(`${LOCK_PREFIX}.${encodeURIComponent(userId)}`, execute);
+    } catch (error) {
+      if (enteredLock || !(error instanceof WebOutboxLockUnavailableError)) throw error;
+      memoryOnly = true;
+      return execute();
+    }
+  }
+
   async function mutateCurrentRows(update: (rows: PersistedOutboxRow[]) => PersistedOutboxRow[], expectedUserId?: string) {
     const userId = await resolveUserId();
     if (!userId || (expectedUserId && expectedUserId !== userId)) return;
@@ -122,7 +142,7 @@ export function createWebOutboxStore({
   }
 
   async function withUserLock<T>(userId: string, task: () => T): Promise<T | null> {
-    const guardedTask = async () => await userStillCurrent(userId) ? task() : null;
+    const guardedTask = async () => await userStillCurrent(userId) && !isAccountDeletionTombstoned(userId) ? task() : null;
     if (memoryOnly) return guardedTask();
     try {
       return await lockProvider(`${LOCK_PREFIX}.${encodeURIComponent(userId)}`, guardedTask);
@@ -200,20 +220,22 @@ export function createWebOutboxStore({
     return readMemoryRows(userId);
   }
 
-  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
+  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, purgeOfflineMutationsForAccount, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser, runWithMutationReplayLease };
 }
 
 const webOutbox = createWebOutboxStore();
-export const { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry } = webOutbox;
+export const { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, purgeOfflineMutationsForAccount, markMutationApplied, markMutationConflict, markMutationRetry } = webOutbox;
 export const offlineOutboxStore = {
   listPendingMutations,
   countConflictedMutations,
   listConflictedMutations,
   clearConflictedMutations,
+  purgeOfflineMutationsForAccount,
   markMutationApplied,
   markMutationConflict,
   markMutationRetry,
   ownsMutationForCurrentUser: webOutbox.ownsMutationForCurrentUser,
+  runWithMutationReplayLease: webOutbox.runWithMutationReplayLease,
 };
 
 function updateRows(rows: PersistedOutboxRow[], id: string, reason: string, nextStatus?: OutboxStatus) {
@@ -221,28 +243,6 @@ function updateRows(rows: PersistedOutboxRow[], id: string, reason: string, next
   return rows.map((row) => row.mutation.id === id
     ? { ...row, status: nextStatus ?? row.status, attempts: row.attempts + 1, lastError: reason, updatedAt }
     : row);
-}
-
-async function currentAuthUserId() {
-  if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  return error ? null : data.session?.user.id ?? null;
-}
-
-function browserStorage(): WebStorageLike | null {
-  try { return globalThis.localStorage ?? null; } catch { return null; }
-}
-
-async function browserLock<T>(name: string, task: () => T | Promise<T>) {
-  const locks = (globalThis.navigator as typeof globalThis.navigator & { locks?: { request: WebOutboxLockProvider } } | undefined)?.locks;
-  if (!locks?.request) throw new WebOutboxLockUnavailableError();
-  try {
-    return await locks.request(name, task);
-  } catch (error) {
-    if (typeof DOMException !== "undefined" && error instanceof DOMException
-      && (error.name === "NotSupportedError" || error.name === "SecurityError")) throw new WebOutboxLockUnavailableError();
-    throw error;
-  }
 }
 
 function parseRows(value: string): PersistedOutboxRow[] {

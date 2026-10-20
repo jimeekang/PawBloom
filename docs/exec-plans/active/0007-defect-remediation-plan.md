@@ -1,10 +1,14 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: lead
 domain: planning
 edit_policy: exclusive
 ---
 
 # 0007. 결함 정정 실행 계획 (2026-07-27)
+
+> **2026-10-18:** 다음 기능 구현은 [0009](0009-avatar-care-memories-implementation.md)를 따른다.
+> 이 문서의 완료/미완료 이력은 보존하며 잔여 검증은 0009 M0/M6로 승계한다.
+> 아래 과거 배포·태스크별 커밋 지시는 현재 문서 갱신의 실행 승인이 아니다.
 
 - 근거: [docs/analysis/08-uiux-defect-audit-2026-07-27.md](../../analysis/08-uiux-defect-audit-2026-07-27.md) (확정 109건 → 고유 93건: P1 6 + P2 33 + P3 54).
 - 선행 관계: 0006은 코드가 전부 `[x]`이나 §4의 표기 오류가 확인됐다. 이 계획이 그 잔여와 신규 결함을 승계한다. **0006은 2026-07-28 archive로 이동 완료.**

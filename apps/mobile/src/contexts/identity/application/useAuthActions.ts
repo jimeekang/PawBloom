@@ -231,5 +231,18 @@ export function useAuthActions({
     }
   }, [clearMessages, onSignedOut, onSignOutAborted, onSignOutStarted, setActivePetId, setError, setLoading, setPets, setSession, setUser]);
 
-  return { signIn, signUp, signOut, requestPasswordReset, updatePassword, changePassword };
+  const clearDeletedAccountLocalSession = useCallback(async (_expectedUserId: string) => {
+    const client = supabase;
+    if (!client) return;
+    try {
+      // Invoke before yielding so another sign-in cannot enter between the
+      // authoritative React boundary close and this account-local SDK cleanup.
+      await client.auth.signOut({ scope: "local" });
+    } catch {
+      // The forced React/query boundary remains authoritative when auth-js
+      // cannot remove its persisted session.
+    }
+  }, []);
+
+  return { signIn, signUp, signOut, clearDeletedAccountLocalSession, requestPasswordReset, updatePassword, changePassword };
 }

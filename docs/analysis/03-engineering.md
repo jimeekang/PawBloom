@@ -1,5 +1,5 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: lead
 domain: analysis
 edit_policy: exclusive
 ---

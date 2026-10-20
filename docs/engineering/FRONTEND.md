@@ -1,5 +1,5 @@
 ---
-owner_model: codex-high
+owner_role: codex
 domain: implementation
 edit_policy: exclusive
 ---
@@ -94,3 +94,45 @@ Diary 입력 화면은 선택한 카테고리에 따라 노출 필드를 헬퍼�
 - **사진 조회 계약**: 비공개 `pet-media` 객체 경로는 다이어리 조회 시 1시간짜리 서명 URL로 변환한다. 다이어리 목록은 사진 썸네일을 표시하고, 썸네일을 누르면 전체 화면 뷰어를 연다. 원본 `storage_path`를 공개 URL로 직접 노출하지 않는다.
 - **네이티브 권한 설정**: `apps/mobile/app.json`의 `expo-image-picker` plugin에 사진·카메라 사용 문구를 명시하고, 사진 촬영만 지원하므로 microphone 권한은 비활성화한다. 권한 설정 변경은 새 native build에서 검증한다.
 - 관련 계획: [../exec-plans/archive/week1-completion-log.md](../exec-plans/archive/week1-completion-log.md) (완료 기록으로 통합).
+
+## 아바타 첫 버전 목표 계약 (2026-10-18, 미구현)
+
+이하 내용은 구현 예정이며 위 기존 Diary/알림 계약을 폐기하지 않는다.
+화면 정본은 [UX](../design/AVATAR_HOME_UX.md), 파일별 순서는 [0009](../exec-plans/active/0009-avatar-care-memories-implementation.md)다.
+
+### 탐색과 상태
+
+- 하단은 우리 집 / 오늘 케어 / 추억 / 더보기. 아이 상세는 케어 / 추억 / 프로필로 조합한다.
+- `PawBloomShell.tsx`, `BottomNav.tsx`, `ShellHeaders.tsx`, `useShellPetSelection.ts`를 명시적 petId route로 정리한다.
+- 기존 diary·투약·루틴·report 화면을 재사용하고 별도 저장 로직을 복제하지 않는다.
+- 모든 입력·저장·확인·재시도에 대상 이름·사진·날짜를 표시한다. 저장 시작 시 대상 ID를 고정한다.
+- 탭 변경·요약창 열기·A→B 전환 중 초안·선택 날짜·이전 지연 응답이 다른 아이로 넘어가지 않게 한다.
+- 전체 케어는 각 아이의 로딩/오류를 구분하고 user+pet cache와 집계 invalidation을 연결한다.
+
+### 공간·모션·접근성
+
+- `presentation/house/`에서 탭/긴 누름 드래그/배경 좌우 탐색을 구분한다. 드래그 종료 탭은 억제한다.
+- 위치는 계정·기기·pet별 정규화 좌표와 레이아웃 버전으로 저장하고 경계 밖 좌표를 복구한다.
+- 배치·드래그 중 배회 정지, 비활성/백그라운드 모션 정지, OS 동작 줄이기와 위치 고정을 지원한다.
+- 프레임마다 셸 state·query를 갱신하지 않는다. 기존 플랫폼 기능으로 먼저 검증하고 필요한 경우만 의존성을 추가한다.
+- 0/1/3/6마리·그 이상을 확인한다. 검증 수를 새 플랜/등록 한도로 사용하지 않는다.
+- 캐릭터 이름·접근성 이름·목록 선택 대안·큰 글자·닫기 focus 복귀·Android back를 보장한다.
+- 작은 반응·추억 수는 저장 상태와 별개다. queued·실패를 서버 저장 성공으로 표현하지 않는다.
+
+### 캐릭터 생성·추억
+
+- 캐릭터는 생성 전 확인/동의, queued/processing/ready/failed/cancelled, 결과 확인·적용·재시도를 제공한다.
+- 원본·기존 캐릭터는 성공 적용 전까지 유지한다. asset manifest는 runtime parser로 검증한다.
+- `avatar`/`memory` context가 provider/DB를 소유한다. presentation에서 외부 생성 API를 호출하지 않는다.
+- 새 추억은 사진 또는 메모, 날짜, 작성자, pet 태그·공개 범위를 표시한다. 서버가 최종 인가한다.
+- 기존 photo/memo는 source ID를 구분해 합쳐 보여주고 원래 편집기로 보낸다. 새 추억에 강제 복제하지 않는다.
+- 새 사진도 기존 아이별 로컬 날짜당 5장 한도를 합산한다. 복수 태그 사진은 각 아이에 계산한다.
+- picker 임시 URI는 계정별 앱 보관 파일로 옮긴 뒤 초안을 저장한다. 자동 background 업로드는 추가하지 않는다.
+- 부분 실패·취소는 입력/사진/시각/mutation을 보존한다. 업로드 완료와 published 공유 완료를 구분한다.
+- 로그아웃·권한 회수·계정 삭제 시 query·초안·개인 배치·로컬 자산의 노출/재생 경계를 검증한다.
+
+### 알림 진입
+
+기존 예약·namespace·표시 부트스트랩은 유지한다. 응답 listener와 최초 알림 조회는 shell 탐색에 연결한다.
+인증·현재 pet 권한·schedule 소속을 확인한 뒤 아이별 케어를 연다. 로그인 대기·삭제 대상은 안전한 목록으로 복구한다.
+알림 탭 자체는 투약 mutation을 호출하지 않는다. 실제 수신과 cold start는 물리 기기에서 검증한다.

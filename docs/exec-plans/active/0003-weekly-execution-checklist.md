@@ -1,258 +1,96 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: lead
 domain: planning
 edit_policy: exclusive
 ---
 
-# PawBloom Weekly MVP Execution Checklist
+# 0003 PawBloom 아바타 첫 버전 실행 체크리스트
 
-> **에이전트 워커:** REQUIRED SUB-SKILL — `superpowers:subagent-driven-development`(권장) 또는 `superpowers:executing-plans`로 task-by-task 구현. 단계는 `- [ ]` 체크박스로 추적한다.
+- 갱신: 2026-10-18. 과거 주차·브랜치 고정·자동 push 지시를 아래 의존 순서로 대체한다.
+- 정본: [제품 명세](../../product/PRODUCT_SPEC.md), [로드맵](0002-mvp-roadmap.md), [구현 계획 0009](0009-avatar-care-memories-implementation.md).
+- **현재 상태: 계획 문서만 갱신. 아래 구현·검증은 모두 미완료다.**
+- 이전 완료 근거: [0008](0008-codex-remaining-implementation.md), [APP_FIX](../../engineering/APP_FIX_IMPLEMENTATION_2026-09-05.md),
+  [초기 완료 기록](../archive/week1-completion-log.md). 과거 체크를 새 기능 완료로 옮기지 않는다.
 
-**Goal:** 2026-06-26부터 4주 안에 PawBloom Supabase 기반 MVP vertical slice를 병원 리포트 공유까지 실행 가능한 상태로 만든다.
+## 실행 규칙
 
-**Architecture:** React Native + Expo 앱은 DDD bounded context 구조를 유지하고, Supabase row shape은 context application/infrastructure 경계에서 domain model로 변환한다. Mobile 앱에는 Supabase publishable key만 포함, service role key·OpenAI key는 Edge Function 환경에만 둔다. 모든 DB 변경은 RLS, explicit GRANT, generated DB type 갱신, `npm run verify` 통과를 포함한다.
+- 브랜치·미커밋·원격 상태를 확인하고 기존 작업을 보존한다. 관련 문서·호출부·테스트만 읽는다.
+- 0009의 신규 경로는 예정 경로다. 기존 use case·token·검증 도구를 재사용한다.
+- 관련 검증 후 전체 npm run verify. UI는 iOS/Android와 영향받는 폭·상태를 실제 실행한다.
+- migration·권한·type·계약 테스트를 함께 준비한다. 원격 적용·배포·커밋·푸시는 별도 승인 범위다.
+- 완료 근거는 파일·명령·환경·결과·한계로 남긴다. 미검증·외부 의존은 열린 상태로 둔다.
 
-**Tech Stack:** Expo SDK 56, React Native, TanStack Query, Expo SecureStore, Expo SQLite, Supabase Auth/Postgres/Storage/Edge Functions, TypeScript.
+## M0 — 기준선·자산 검증
 
----
+- [ ] 미커밋 Auth·삭제·offline·release와 현재 verify 기준선을 확인한다.
+- [ ] 기존 아이 선택·기록 편집·투약·초안·권한·브리핑 상태를 확인한다.
+- [ ] 대표 개·고양이의 닮음과 idle/walk/sit/반응 자산 외형 일관성을 검증한다.
+- [ ] 스타일·자산 규격·서비스·비용/재시도 한도·시간 실측·보관/학습 조건을 결정한다.
+- [ ] 사진 외부 전송 고지·동의·키 관리·실패 복구를 정한다.
+- [ ] 기존 의존성으로 제스처·모션을 우선 검증하고 실측 필요 시만 새 의존성을 선택한다.
 
-## 운영 규칙
+## M1 — 데이터·권한
 
-- 작업 시작 전 관련 문서만 읽는다: `docs/product/PRODUCT_SPEC.md`, `ARCHITECTURE.md`, 관련 engineering 문서.
-- DB 변경 시 `supabase/migrations/**`에 migration 추가 → remote 적용 → DB type 갱신.
-- **Secret 정책:** Mobile secret에는 publishable key만 사용. service role, OpenAI key, Supabase access token은 앱 코드·git에 절대 넣지 않는다.
-- **i18n 위치:** 사용자 문구는 `apps/mobile/src/i18n/translations.ts`에 둔다.
-- 작업 단위마다 작은 검증을 먼저 실행하고, handoff 전에는 반드시 `npm run verify`를 실행한다.
-- 기능 단위 완료 시 커밋 후 원격 브랜치 `codex/routine-diary-care-defaults`에 push.
+- [ ] avatar job/asset·memories/memory_pets/memory_media migration·index·generated type을 작성한다.
+- [ ] 기존 ID·사진 한도·조회/편집·report source 계약을 보존한다.
+- [ ] 추억 생성·복수 태그·공개 범위는 원자 명령으로 검증하고 재시도를 멱등 처리한다.
+- [ ] 동일 활성 owner/caregiver 집합·역할·작성자·대상 권한을 서버에서 강제한다.
+- [ ] 태그/media 직접 조회·권한 회수·동시 멤버 변경·태그/아이 삭제를 테스트한다.
+- [ ] 비공개 객체·orphan 정리·계정 삭제·계정 경계를 테스트한다.
 
-## 현재 기준 상태 (2026-07-12)
+## M2 — 사진 → 캐릭터
 
-- Latest commit: `88c88d5 feat: complete functional QA and atomic persistence` (브랜치는 현재 작업 워크트리 기준)
-- Required verification: `npm run verify`
-- Expo dev URL: `http://localhost:8081/` 또는 `http://localhost:3200/` (실행 명령에 따라 다름)
-- **진행 상태:** Week 1 완료 · Week 2 Day 8~13 완료(Day 13은 2026-07-23 실측) · Day 14 checkpoint 잔여 · Week 3 기간 진입.
+- [ ] 기존/신규 아이의 촬영·앨범·생성 전 확인/동의를 연결한다.
+- [ ] owner 인가·입력 파일 검증·job 생성/조회·중복 실행 방지를 구현한다.
+- [ ] 처리 중·실패·재시도·기본 캐릭터·결과 적용/거절·기존 캐릭터 유지를 구현한다.
+- [ ] 앱 종료 후 job 조회·늦은 결과·아이 전환·계정 삭제 이후 결과를 검증한다.
+- [ ] 재생성·교체 후 기존 케어·추억 연결을 확인한다.
+- [ ] 실제 생성 서비스 왕복·네이티브 결과를 검증한다. fixture를 실생성 성공으로 기록하지 않는다.
 
-## ▶ 다음 즉시 작업
+## M3 — 우리 집·탐색
 
-**앱스토어 출시 2주 실행계획 [0005](./0005-appstore-launch-2week-plan.md)** (2026-07-19 사용자 우선 지시 — 근거: [감사 05](../../analysis/05-app-store-readiness.md)). 0004 알림 슬라이스는 구현 커밋 반영 확인, 잔여 실기기 QA는 0005 Task 8에 흡수. 0005 완료 후 Week 2 잔여 Day 14 checkpoint로 복귀(Day 13 가족 초대 skeleton은 2026-07-23 완료 실측).
+- [ ] 네 메뉴와 아이 상세 route·명시적 petId 선택을 구현한다.
+- [ ] 요약창에서 케어·추억·프로필·빠른 기록으로 이동한다.
+- [ ] 탭/길게 끌기 구분·좌우 탐색·경계·겹침·목록 대안을 구현한다.
+- [ ] 작은 움직임·배회·고정·계정/기기별 배치·움직임 줄이기를 구현한다.
+- [ ] 0/1/3/6마리·그 이상·긴 이름·작은 화면·큰 글자·KO/EN을 확인한다.
+- [ ] Android back·닫기/포커스 복귀·초안·접근성 선택·비활성 시 모션 정지를 확인한다.
 
----
+## M4 — 실제 케어
 
-## Week 1 — Auth · Pet · Today Data Binding 안정화 (완료)
+- [ ] 전 아이의 오늘 루틴·투약·필터·시간순 정렬을 구현한다.
+- [ ] 저장 대상 고정·지연 응답·A→B 전환·중복 저장을 검증한다.
+- [ ] 날짜별 diary·checklist 승격·투약 상태·루틴·편집/삭제를 연결한다.
+- [ ] 알림에서 아이/일정으로 이동한다. 이동만으로 완료를 기록하지 않는다.
+- [ ] 템플릿 브리핑·리포트 확인/공유/폐기를 아이별 케어에 연결한다.
+- [ ] offline·날짜/시간대·권한·알림 예약 회귀와 실계정 범위를 확인한다.
 
-**기간:** 2026-06-26 ~ 2026-07-02. Day 1~7 및 Day 4A/5A 전부 완료(Auth·Pet CRUD·Diary/Care 실데이터 바인딩·기본 루틴·Reports draft skeleton·Today dashboard·smoke·RLS checkpoint). 상세 파일 목록·체크 항목·commit SHA(`a2cc617`, `f7b43da`, `4d1ce4a`)는 [../archive/week1-checklist-log.md](../archive/week1-checklist-log.md) 참조.
+## M5 — 공동 추억
 
-**남은 후속:** 미기록 개별 커밋 4건(`feat: stabilize quick medication records`, `feat: bind reports draft to records`, `test: complete week 1 smoke fixes`, `chore: harden week 1 auth data checks`)은 후속 커밋에 병합됨 — 아카이브 로그 참조.
+- [ ] 사진·메모·날짜·작성자·아이 태그·공개 범위 입력/조회를 구현한다.
+- [ ] 전체 한 번·아이별 연결·필터·편집/삭제 권한을 구현한다.
+- [ ] 기존 사진·메모의 출처별 조회·원래 편집·사진 한도를 유지한다.
+- [ ] 계정별 전송 대기 초안·안정적인 사진 파일·온라인 재시도·중복 방지를 구현한다.
+- [ ] 부분 업로드·취소·실패 초안 유지·orphan 정리·삭제 재시도를 확인한다.
+- [ ] 가족 기여·작성자 탈퇴/익명화·구성원 변경·복수 태그 접근을 검증한다.
+- [ ] 의료 브리핑/report 집계에 공동 추억이 섞이지 않는지 확인한다.
 
----
+## M6 — 통합·베타
 
-## Week 2 — Care Plan · Medication Schedule · Walk · Offline (진행 중)
+- [ ] 통합 회귀·로컬 DB/Storage 역할 테스트와 npm run verify를 통과한다.
+- [ ] iOS/Android에서 생성→배치→케어→가족 추억→브리핑을 확인한다.
+- [ ] 작은 폰·해당 태블릿 폭·큰 글자·VoiceOver/TalkBack·움직임 줄이기를 확인한다.
+- [ ] 여러 아이 모션·드래그 입력 반응·메모리·백그라운드 정지를 실측한다.
+- [ ] 실계정 역할·기기 알림·23:30 시간대·계정 삭제의 기존 미완료 검증을 승계한다.
+- [ ] 무료/체험·다중 아이·초대 정책 확정 후 서버/UI/스토어를 맞춘다.
+- [ ] 개인정보 고지·지원·브랜드/식별자·배포/복구 절차를 준비한다.
+- [ ] [0005](0005-appstore-launch-2week-plan.md)의 운영 조건을 확인하고 배포 승인 후 진행한다.
 
-**기간:** 2026-07-03 금 ~ 2026-07-09 목. **목표:** Care Mode를 임시 dose 기록에서 care plan 중심 흐름으로 확장하고, 산책/오프라인 저장 MVP 경로를 만든다.
+## 후속과 결과 기록
 
-> 2026-07-12 확인: Day 8~12 산출물은 커밋 이력으로 확인됨(`6432844` care plan, `ea98713` medication schedule, `24ad354` walk, `7a8b0b8` outbox, `077acdc` replay + QA 후속 커밋). 체크박스는 Day 14 checkpoint에서 일괄 검증 후 채운다.
+사진 백그라운드 자동 업로드·PDF export·신규 결제·꾸미기·미니게임·재화는 후속이다.
+0007/0008/APP_FIX 잔여는 M0/M6에서 재확인하고 새 근거가 있어야 상태를 갱신한다.
 
-### Day 8: Care condition과 care plan 생성
-**신규:** `care/application/carePlanRecords.ts`, `care/domain/carePlan.ts`. **수정:** `CareModeScreen.tsx`, `i18n/translations.ts`
-- [ ] condition name, start date, status를 저장하는 care plan domain type
-- [ ] Supabase `conditions`·`care_plans` query/mutation hook
-- [ ] Care 화면에 care plan 생성 UI 추가
-- [ ] active care plan이 있으면 Care Mode가 실제 plan 기준으로 표시
-- [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
-- [ ] commit `feat: add care plan creation flow`
-
-### Day 9: Medication schedule 생성
-**신규:** `medication/domain/medicationSchedule.ts`, `medication/application/medicationScheduleRecords.ts`. **수정:** `CareModeScreen.tsx`, `i18n/translations.ts`
-- [ ] medication name, dosage note, schedule time 입력 domain type
-- [ ] `medications`·`medication_schedules` insert/query hook
-- [ ] schedule에서 오늘 dose를 생성/조회하는 흐름
-- [ ] quick dose와 scheduled dose가 같은 화면에서 혼동되지 않게 label 분리
-- [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
-- [ ] commit `feat: add medication schedule flow`
-
-### Day 10: 건강 관찰형 산책 기록
-**수정:** `diary/domain/diaryEntry.ts`, `diary/application/diaryRecords.ts`, `DiaryEntryScreen.tsx`, `liveUiState.ts`, `i18n/translations.ts`
-- [ ] walk category에 duration, intensity, stool/urine observation, symptom note 추가
-- [ ] 기존 DB schema로 저장 가능한지 확인, 부족하면 migration 추가
-- [ ] Today timeline에서 walk record가 산책 관찰 기록으로 표시
-- [ ] checklist walk 상태가 실제 walk 기록 기준으로 반영
-- [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
-- [ ] commit `feat: add walk observation records`
-
-### Day 11: Offline outbox 저장
-**수정:** `contexts/sync/**`, `diary/application/diaryRecords.ts`, `medication/application/medicationDoseRecords.ts`
-- [ ] Expo SQLite outbox 저장 adapter 구현
-- [ ] diary insert 실패 시 outbox에 idempotent mutation 저장
-- [ ] medication dose update 실패 시 outbox에 idempotent mutation 저장
-- [ ] online 복귀 시 replay할 application API
-- [ ] 같은 `client_mutation_id` 중복 저장 방지 확인
-- [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
-- [ ] commit `feat: persist offline outbox records`
-
-### Day 12: Offline replay와 conflict policy
-**수정:** `contexts/sync/**`, `scripts/verify-offline-sync.mjs`
-- [ ] outbox replay 성공 시 mutation 완료 처리
-- [ ] replay 실패 시 retryable/non-retryable 상태 구분
-- [ ] 동일 record update는 server `updated_at` 기준 last-write 적용
-- [ ] offline sync contract 검증 script가 새 mutation shape 검사
-- [ ] `npm --prefix apps/mobile run typecheck` + `npm run verify`
-- [ ] commit `feat: replay offline mutations`
-
-### Day 13: Family/caregiver 최소 초대 구조 — **완료(2026-07-23 실측)**
-구현은 계획과 다른 경로로 완결됨: `pet/application/petMembers.ts` + `manage-pet-members` 엣지 함수 + `PetMembersCard`(목록/초대/삭제, entitlement 게이팅, 에러코드 i18n 매핑). 아래 원래 체크리스트는 이 구현으로 대체 충족.
-
-### Day 14: Week 2 integration checkpoint
-- [ ] Auth/Pet/Diary/Care/Medication/Offline 경로를 한 계정으로 end-to-end 확인
-- [ ] 다중 pet에서 기록이 섞이지 않는지 확인
-- [ ] RLS smoke test를 owner·caregiver 기준으로 실행
-- [ ] `npm run verify`
-- [ ] Week 2 known issues를 이 파일 하단에 기록
-- [ ] commit `test: complete week 2 integration checkpoint`
-
----
-
-## Week 3 — AI Briefing · Vet Report · Share Link · Media
-
-**기간:** 2026-07-10 금 ~ 2026-07-16 목. **목표:** 실제 기록 기반 AI briefing과 병원용 report를 만들고, 앱 가입 없이 열 수 있는 sanitized share link MVP를 구현한다.
-
-### Day 15: AI briefing contract
-**신규:** `packages/backend/briefingContract.ts`. **수정:** `supabase/functions/generate-ai-brief/index.ts`, `docs/product/AI_SAFETY.md`, `scripts/verify-ai-safety.mjs`
-- [ ] request에는 pet id, date range, user confirmed language만 포함
-- [ ] response에는 summary, missingRecords, trendNotes, vetQuestions만 포함
-- [ ] diagnosis, emergency judgment, dosage recommendation 문구를 contract로 차단
-- [ ] AI safety 검증 script가 금지 문구를 검사
-- [ ] `npm run verify` · commit `feat: define ai briefing contract`
-
-### Day 16: `generate-ai-brief` 구현
-**수정:** `supabase/functions/generate-ai-brief/index.ts`, `packages/backend/**`, `ReportsScreen.tsx`
-- [ ] Edge Function에서 service role로 pet membership 확인
-- [ ] diary/care/medication records를 server side에서 조회
-- [ ] OpenAI 호출은 Edge Function 내부에서만 실행
-- [ ] output을 AI safety contract로 sanitize
-- [ ] Reports 화면에서 briefing draft 요청·표시
-- [ ] `npm run verify` · commit `feat: generate record based ai briefing`
-
-### Day 17: Vet report 생성
-**신규:** `packages/backend/reportContract.ts`. **수정:** `supabase/functions/generate-vet-report/index.ts`, `ReportsScreen.tsx`
-- [ ] report에 pet profile, recent timeline, medication adherence, owner notes, AI briefing summary 포함
-- [ ] report 문구는 영어 병원용 summary 기본 생성
-- [ ] 사용자 확인 전에는 공유 token 미생성
-- [ ] Reports 화면에 confirm 단계 UI 연결
-- [ ] `npm run verify` · commit `feat: generate vet report draft`
-
-### Day 18: Report confirmation과 share token
-**수정(필요 시):** `supabase/migrations/**`. **수정:** `supabase/functions/generate-vet-report/index.ts`, `ReportsScreen.tsx`
-- [ ] user confirmation 후 sanitized payload version 저장
-- [ ] share token은 만료 시간·revoked 상태를 가짐
-- [ ] 원본 diary/care/medication table을 viewer에게 직접 노출 안 함
-- [ ] Reports 화면에서 shared state와 만료 시간 표시
-- [ ] `npm run verify` · commit `feat: confirm and share vet reports`
-
-### Day 19: `get-vet-report` public viewer
-**수정:** `supabase/functions/get-vet-report/index.ts`, `ReportsScreen.tsx`. **신규:** `report/domain/vetReport.ts`
-- [ ] token으로 sanitized report만 조회
-- [ ] expired/revoked token은 안전한 오류 메시지 반환
-- [ ] viewer response에 owner email, internal ids, original records 미포함
-- [ ] 모바일 화면에서 share link preview 확인
-- [ ] `npm run verify` · commit `feat: expose sanitized vet report links`
-
-### Day 20: Private media upload
-**수정(필요 시):** `supabase/migrations/**`. **신규:** `media/application/mediaRecords.ts`. **수정:** `DiaryEntryScreen.tsx`, `i18n/translations.ts`
-- [ ] private Supabase Storage bucket 정책 확인/추가
-- [ ] object path에 pet id·membership 검증 기준 포함
-- [ ] Diary 사진 placeholder를 실제 upload action으로 연결
-- [ ] 업로드된 media metadata를 diary entry와 연결
-- [ ] `npm run verify` · commit `feat: upload private diary media`
-
-### Day 21: Week 3 safety/privacy checkpoint
-- [ ] AI output에 진단·처방·응급 판단 문구 없는지 확인
-- [ ] report share response에 원본 table 데이터·개인정보 없는지 확인
-- [ ] Storage policy가 private이고 membership을 확인하는지 검토
-- [ ] `npm run verify` · Week 3 known issues를 하단에 기록
-- [ ] commit `test: complete week 3 privacy checkpoint`
-
----
-
-## Week 4 — Entitlement · QA · Preview Build · Beta 준비
-
-**기간:** 2026-07-17 금 ~ 2026-07-23 목. **목표:** MVP 기능을 잠금 UI, 반복 가능한 smoke test, preview build, beta 준비 상태로 정리한다.
-
-### Day 22: Free/Plus/Family locked state
-**신규:** `subscription/application/entitlementState.ts`. **수정:** `PawBloomShell.tsx`, `ReportsScreen.tsx`, `i18n/translations.ts`
-- [ ] 결제 없이 local entitlement state 생성
-- [ ] Free 제한은 report share, family member count, media count 등 MVP에서 설명 가능한 항목에만
-- [ ] locked state는 기능 설명 대신 명확한 잠금 상태 + upgrade placeholder만 표시
-- [ ] `npm run verify` · commit `feat: add entitlement locked states`
-
-### Day 23: caregiver UX polish
-**수정:** `PetOnboardingScreen.tsx`, `presentation/shell/ShellHeaders.tsx`, `i18n/translations.ts`
-- [ ] 현재 사용자 role을 pet switcher 또는 pet profile 근처에서 확인 가능
-- [ ] caregiver는 owner-only action을 숨김 또는 disabled로 봄
-- [ ] role 제한 메시지는 짧고 비기술적 문구
-- [ ] `npm run verify` · commit `feat: polish caregiver role states`
-
-### Day 24: 화면 polish와 접근성
-**수정:** `presentation/screens/**`, `design-system/**`
-- [ ] 작은 화면에서 버튼 text overflow 없는지 확인
-- [ ] Today/Diary/Care/Reports의 empty/loading/error state 정리
-- [ ] icon button에 명확한 accessibility label
-- [ ] iOS simulator·web preview에서 주요 화면 확인
-- [ ] `npm run verify` · commit `style: polish mvp screens`
-
-### Day 25: 반복 가능한 smoke test script
-**신규:** `scripts/smoke-mobile-data-flow.mjs`. **수정:** `package.json`, `docs/engineering/QUALITY.md`
-- [ ] publishable key로 login, pet 조회, diary insert/delete, dose insert/update/delete 실행 script
-- [ ] script는 test data를 마지막에 cleanup
-- [ ] `npm run smoke:mobile-data-flow` 명령 추가, 실패 시 실패 단계 출력
-- [ ] `npm run smoke:mobile-data-flow` + `npm run verify`
-- [ ] commit `test: add mobile data flow smoke script`
-
-### Day 26: EAS preview build 설정
-**신규/수정:** `apps/mobile/eas.json`, `apps/mobile/app.json`, `docs/engineering/RELEASE.md`
-- [ ] iOS/Android preview profile 생성, app identifier·slug를 PawBloom 기준 확인
-- [ ] env var는 EAS secret 또는 local ignored env로만 관리
-- [ ] release 문서에 preview build 절차 업데이트
-- [ ] `npm run verify` · commit `chore: configure eas preview builds`
-
-### Day 27: Android preview build
-**수정(빌드 이슈 시만):** `apps/mobile/**`
-- [ ] Android preview build 생성, Galaxy 실기기 설치
-- [ ] login/pet/diary/care/report draft 확인, runtime 오류 수정
-- [ ] `npm run verify` · 수정 있으면 commit `fix: resolve android preview issues`
-
-### Day 28: iOS preview build
-**수정(빌드 이슈 시만):** `apps/mobile/**`
-- [ ] iOS simulator 또는 TestFlight preview build 생성
-- [ ] login/pet/diary/care/report draft 확인, SecureStore session 유지가 iOS에서 동작하는지 확인, runtime 오류 수정
-- [ ] `npm run verify` · 수정 있으면 commit `fix: resolve ios preview issues`
-
-### Day 29: Store/Beta package 준비
-**수정:** `docs/engineering/RELEASE.md`, `docs/product/AI_SAFETY.md`(필요 시)
-- [ ] privacy policy용 데이터 처리 요약 정리, medical safety wording 점검
-- [ ] App Store·Google Play internal testing용 screenshot checklist, known limitations를 beta notes로 정리
-- [ ] `npm run verify` · commit `docs: prepare beta release notes`
-
-### Day 30: MVP go/no-go checkpoint
-**수정:** 이 파일, `docs/engineering/RELEASE.md`(필요 시)
-- [ ] 계정 생성 → report share link까지 한 계정으로 end-to-end 확인
-- [ ] owner/caregiver 역할별 권한 확인, offline 기록 후 online replay 확인
-- [ ] AI briefing·report가 안전 문구 기준 통과 확인, iOS/Android preview build 결과 기록
-- [ ] launch blocker와 post-beta backlog 분리
-- [ ] `npm run verify` · commit `docs: record mvp go no go checkpoint`
-
----
-
-## 실행 순서 메모
-
-- Reports 실데이터 연결: Week 1 Day 5에서 완료(초안 skeleton). 완전한 report generation은 Week 3.
-- Care plan·medication schedule: Week 2에서 quick dose 흐름 위에 확장(Day 8~9).
-- AI briefing: 최소 1주일치 실제 diary/care 데이터 구조 안정화 후 Week 3에서 시작.
-- Store/Beta 준비: MVP smoke test 안정화 후 Week 4에서 시작.
-
-## Known Issues
-
-- [ ] Reports 화면은 아직 완전한 실데이터 report generation이 아니다. Week 3에서 단계적으로 연결(초안은 Day 5 완료).
-- [ ] Quick medication은 아직 실제 schedule 기반 flow가 아니다. Week 2 Day 9에서 schedule 기반으로 확장.
-- [ ] Offline outbox contract는 있으나 실제 SQLite persistence/replay는 Week 2 Day 11-12에서 구현.
-- [ ] Family/caregiver 초대는 membership 기반 skeleton부터(Day 13) 만들고 실제 email delivery는 beta 이후로 분리.
-- [ ] 알림 표시 계층 결손: `setNotificationHandler`·Android 채널·`app.json` expo-notifications 플러그인이 없어 투약 알림이 포그라운드에서 표시되지 않는다. [0004](./0004-reminder-notifications-plan.md) Task 1에서 해결.
+| 단계 | 변경 파일·명령·환경 | 결과·한계 |
+| --- | --- | --- |
+| M0~M6 | 미착수 | 문서만 갱신, 구현·화면·원격 검증 없음 |

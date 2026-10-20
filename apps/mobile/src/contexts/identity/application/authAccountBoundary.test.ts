@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { clearAccountScopedQueryCache, isCurrentAccountWork } from "./authAccountBoundary";
+import { clearAccountScopedQueryCache, excludeLocallyDeletedSession, isCurrentAccountWork } from "./authAccountBoundary";
 
 const queryClient = new QueryClient();
 const ownerId = "owner-a";
@@ -20,3 +20,13 @@ if (isCurrentAccountWork(nextUserId, ownerId, 2, 1) || isCurrentAccountWork(owne
   throw new Error("late work from a previous account or epoch must never update current state");
 }
 if (!isCurrentAccountWork(ownerId, ownerId, 2, 2)) throw new Error("current-account work must remain applicable");
+
+const deletedUsers = new Set([ownerId]);
+const deletedSession = { user: { id: ownerId }, accessToken: "stale" };
+const nextSession = { user: { id: nextUserId }, accessToken: "current" };
+if (excludeLocallyDeletedSession(deletedSession, deletedUsers) !== null) {
+  throw new Error("a stale SDK event must not reopen a locally deleted account after forced cleanup");
+}
+if (excludeLocallyDeletedSession(nextSession, deletedUsers) !== nextSession) {
+  throw new Error("blocking a deleted account must not suppress a different account's session");
+}

@@ -11,13 +11,13 @@ major_version = 17
 [auth]
 enabled = true
 site_url = "pawbloom://auth"
-additional_redirect_urls = ["exp://127.0.0.1:8081", "pawbloom://auth"]
+additional_redirect_urls = ["exp://127.0.0.1:8081", "pawbloom://auth", "pawbloom://reset-password"]
 
 [storage]
 enabled = true
 
 [functions.delete-account]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-ai-brief]
 verify_jwt = true

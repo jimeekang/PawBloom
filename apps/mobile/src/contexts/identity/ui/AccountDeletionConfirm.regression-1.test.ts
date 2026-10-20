@@ -21,6 +21,8 @@ function occurrences(source: string, needle: string) {
 const settingsScreen = read("contexts/identity/ui/SettingsScreen.tsx");
 const translations = read("i18n/translations.ts");
 const accountDeletion = read("contexts/identity/application/useAccountDeletion.ts");
+const deletionBoundary = read("contexts/identity/application/accountDeletionLocalBoundary.ts");
+const deletionFlow = `${accountDeletion}\n${deletionBoundary}`;
 const identityMessage = read("contexts/identity/application/identityMessage.ts");
 
 if (settingsScreen.includes("Alert.alert")) {
@@ -48,4 +50,37 @@ if (!identityMessage.includes('"auth.accountDeleted"')) {
 
 if (!accountDeletion.includes("announceAccountDeleted")) {
   throw new Error("useAccountDeletion must announce deletion success on the auth gate after sign-out");
+}
+
+if (!accountDeletion.includes("purgeOfflineMutationsForAccount(userId)")) {
+  throw new Error("authoritative account deletion must purge the exact account's local offline mutations");
+}
+
+if (!deletionFlow.includes("clearDeletedAccountLocalSession(input.userId)")) {
+  throw new Error("account deletion must clear the local auth session after the server removes the user");
+}
+
+const forceBoundaryIndex = deletionBoundary.indexOf("forceLocalAuthBoundary(input.userId)");
+const localSignOutIndex = deletionBoundary.indexOf("clearDeletedAccountLocalSession(input.userId)");
+if (forceBoundaryIndex < 0 || forceBoundaryIndex > localSignOutIndex) {
+  throw new Error("an authoritative deletion response must force the React/cache boundary before fallible SDK sign-out");
+}
+if (!deletionBoundary.includes("deletedAccountWasCurrent\n    ? startBestEffort")) {
+  throw new Error("account deletion must not sign out a different account selected while the bound request was in flight");
+}
+if (!deletionBoundary.includes("localCleanupPending: outboxCleanup?.status === \"rejected\"")) {
+  throw new Error("account deletion must expose an unverified local outbox purge instead of silently treating it as complete");
+}
+
+const authState = read("contexts/identity/application/authContextState.ts");
+for (const invariant of ["activeUserIdRef.current !== expectedUserId", "updateAccountBoundary(null)", "setSession(null)", "setUser(null)"]) {
+  if (!authState.includes(invariant)) throw new Error(`forced local auth boundary missing: ${invariant}`);
+}
+if (!authState.includes("const locallyDeletedUserIds = new Set<string>()")) {
+  throw new Error("the deleted-account auth deny set must survive an AuthProvider remount in this process");
+}
+
+const authActions = read("contexts/identity/application/useAuthActions.ts");
+if (!authActions.includes('client.auth.signOut({ scope: "local" })')) {
+  throw new Error("deleted-account SDK cleanup must be local-only after authoritative server deletion");
 }

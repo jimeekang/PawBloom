@@ -15,6 +15,7 @@ import { clearAccountScopedQueryCache, isCurrentAccountWork } from "./authAccoun
 import { cancelMedicationRemindersForAccount, setActiveMedicationReminderAccount } from "../../medication/application/medicationReminderNotifications";
 import { cancelMealRemindersForAccount, setActiveMealReminderAccount } from "../../routine/application/mealReminderNotifications";
 import { usePendingMediaCleanupRetry } from "./usePendingMediaCleanupRetry";
+const locallyDeletedUserIds = new Set<string>();
 export function useAuthState() {
   const [initialized, setInitialized] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -28,6 +29,9 @@ export function useAuthState() {
   const [authMessage, setAuthMessage] = useState<IdentityMessageKey | null>(null);
   const [passwordRecoveryActive, setPasswordRecoveryActive] = useState(false);
   const activeUserIdRef = useRef<string | null>(null);
+  // A provider remount must not let a delayed auth-js event reopen an account
+  // that this app process already deleted authoritatively.
+  const locallyDeletedUserIdsRef = useRef(locallyDeletedUserIds);
   const explicitSignOutRef = useRef(false);
   const petLoadRevisionRef = useRef(0);
   const petListReadyRef = useRef(false);
@@ -138,6 +142,7 @@ export function useAuthState() {
 
   useAuthSessionSync({
     activeUserIdRef,
+    locallyDeletedUserIdsRef,
     explicitSignOutRef,
     loadPets,
     updateAccountBoundary,
@@ -148,6 +153,19 @@ export function useAuthState() {
     setError,
     setAuthMessage,
   });
+  const forceLocalAuthBoundary = useCallback((expectedUserId: string) => {
+    locallyDeletedUserIdsRef.current.add(expectedUserId);
+    if (activeUserIdRef.current !== expectedUserId) return false;
+    // Account deletion is already authoritative on the server. Clear the
+    // in-memory identity and account-scoped query cache synchronously even if
+    // auth-js cannot remove its persisted local session afterward.
+    updateAccountBoundary(null);
+    setSession(null);
+    setUser(null);
+    setAuthLoading(false);
+    setPetMutationLoading(false);
+    return true;
+  }, [updateAccountBoundary]);
 
   usePendingMediaCleanupRetry(user?.id ?? null);
 
@@ -155,7 +173,7 @@ export function useAuthState() {
   const endPasswordRecovery = useCallback(() => setPasswordRecoveryActive(false), []);
   usePasswordRecoveryLink({ activate: beginPasswordRecovery, setError });
 
-  const { signIn, signUp, signOut, requestPasswordReset, updatePassword, changePassword } = useAuthActions({
+  const { signIn, signUp, signOut, clearDeletedAccountLocalSession, requestPasswordReset, updatePassword, changePassword } = useAuthActions({
     currentEmail: user?.email ?? null,
     clearMessages,
     onSignedOut: handleSignedOut,
@@ -213,6 +231,7 @@ export function useAuthState() {
     signIn,
     signUp,
     signOut,
+    clearDeletedAccountLocalSession,
     requestPasswordReset,
     updatePassword,
     changePassword,
@@ -224,6 +243,7 @@ export function useAuthState() {
     selectNextPet,
     retryPetLoad,
     resetMessage: clearMessages,
+    forceLocalAuthBoundary,
     announceAccountDeleted,
   } satisfies AppAuthState;
 }

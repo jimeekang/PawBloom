@@ -1,42 +1,28 @@
-import * as SQLite from "expo-sqlite";
-import { supabase } from "../../../shared-kernel/supabase/client";
 import type { StoredOfflineConflict } from "../domain/offlineConflict";
 import type { OfflineMutation } from "../domain/offlineMutation";
+import {
+  NATIVE_DELETED_ACCOUNTS_TABLE,
+  NATIVE_OUTBOX_TABLE,
+  initializeNativeOutboxDatabase,
+  purgeNativeOfflineMutationsForAccount,
+  type NativeOutboxDatabase,
+  type NativeOutboxRow,
+} from "./nativeOfflineOutboxDatabase";
+import { currentNativeOutboxUserId, nativeOutboxDatabase } from "./nativeOfflineOutboxRuntime";
 import { parseStoredOfflineMutation, withoutQueuedOwner } from "./offlineOutboxSerialization";
-
-const NATIVE_OUTBOX_TABLE = "sync_outbox_v2";
-const LEGACY_NATIVE_OUTBOX_TABLE = "sync_outbox";
-
-type OutboxRow = {
-  id: string;
-  user_id: string;
-  payload: string;
-  created_at: string;
-  attempts: number;
-};
-
-export type NativeOutboxDatabase = Pick<SQLite.SQLiteDatabase, "execAsync" | "runAsync" | "getAllAsync">;
-
+import { runWithOfflineReplayLease } from "./offlineReplayBarrier";
+export type { NativeOutboxDatabase } from "./nativeOfflineOutboxDatabase";
 type NativeOutboxOptions = {
   databaseProvider?: () => NativeOutboxDatabase;
   userIdProvider?: () => Promise<string | null>;
   now?: () => string;
 };
-
-let database: SQLite.SQLiteDatabase | null = null;
-
-function db() {
-  database ??= SQLite.openDatabaseSync("pawbloom_outbox.db");
-  return database;
-}
-
 export function createNativeOutboxStore({
-  databaseProvider = db,
-  userIdProvider = currentAuthUserId,
+  databaseProvider = nativeOutboxDatabase,
+  userIdProvider = currentNativeOutboxUserId,
   now = () => new Date().toISOString(),
 }: NativeOutboxOptions = {}) {
   let initialization: Promise<void> | null = null;
-
   function initializeOutbox() {
     initialization ??= initializeDatabase().catch((error) => {
       initialization = null;
@@ -46,27 +32,8 @@ export function createNativeOutboxStore({
   }
 
   async function initializeDatabase() {
-    const database = databaseProvider();
-    await database.execAsync(`
-      create table if not exists ${NATIVE_OUTBOX_TABLE} (
-        user_id text not null,
-        id text not null,
-        client_mutation_id text not null,
-        payload text not null,
-        created_at text not null,
-        attempts integer not null default 0,
-        status text not null default 'pending',
-        last_error text,
-        updated_at text not null default current_timestamp,
-        primary key (user_id, id),
-        unique (user_id, client_mutation_id)
-      );
-      create index if not exists sync_outbox_v2_pending_idx
-        on ${NATIVE_OUTBOX_TABLE} (user_id, status, created_at);
-      drop table if exists ${LEGACY_NATIVE_OUTBOX_TABLE};
-    `);
+    await initializeNativeOutboxDatabase(databaseProvider());
   }
-
   async function enqueueOfflineMutation(mutation: OfflineMutation) {
     const userId = await resolveUserId();
     if (!userId) return;
@@ -76,23 +43,31 @@ export function createNativeOutboxStore({
     await databaseProvider().runAsync(
       `insert or ignore into ${NATIVE_OUTBOX_TABLE}
        (user_id, id, client_mutation_id, payload, created_at, attempts)
-       values (?, ?, ?, ?, ?, ?)`,
+       select ?, ?, ?, ?, ?, ?
+       where not exists (
+         select 1 from ${NATIVE_DELETED_ACCOUNTS_TABLE} where user_id = ?
+       )`,
       userId,
       storedMutation.id,
       storedMutation.clientMutationId,
       JSON.stringify(storedMutation),
       storedMutation.createdAt,
       storedMutation.attempts,
+      userId,
     );
   }
-
   async function listPendingMutations() {
     const userId = await resolveUserId();
     if (!userId) return [];
     await initializeOutbox();
-    const rows = await databaseProvider().getAllAsync<OutboxRow>(
+    const rows = await databaseProvider().getAllAsync<NativeOutboxRow>(
       `select id, user_id, payload, attempts from ${NATIVE_OUTBOX_TABLE}
-       where user_id = ? and status = 'pending' order by created_at asc`,
+       where user_id = ? and status = 'pending'
+         and not exists (
+           select 1 from ${NATIVE_DELETED_ACCOUNTS_TABLE} where user_id = ?
+         )
+       order by created_at asc`,
+      userId,
       userId,
     );
     if (!await userStillCurrent(userId)) return [];
@@ -115,7 +90,11 @@ export function createNativeOutboxStore({
     await initializeOutbox();
     const rows = await databaseProvider().getAllAsync<{ count: number }>(
       `select count(*) as count from ${NATIVE_OUTBOX_TABLE}
-       where user_id = ? and status = 'conflict'`,
+       where user_id = ? and status = 'conflict'
+         and not exists (
+           select 1 from ${NATIVE_DELETED_ACCOUNTS_TABLE} where user_id = ?
+         )`,
+      userId,
       userId,
     );
     return await userStillCurrent(userId) ? rows[0]?.count ?? 0 : 0;
@@ -125,9 +104,14 @@ export function createNativeOutboxStore({
     const userId = await resolveUserId();
     if (!userId) return [];
     await initializeOutbox();
-    const rows = await databaseProvider().getAllAsync<OutboxRow>(
+    const rows = await databaseProvider().getAllAsync<NativeOutboxRow>(
       `select id, user_id, payload, created_at, attempts from ${NATIVE_OUTBOX_TABLE}
-       where user_id = ? and status = 'conflict' order by created_at asc`,
+       where user_id = ? and status = 'conflict'
+         and not exists (
+           select 1 from ${NATIVE_DELETED_ACCOUNTS_TABLE} where user_id = ?
+         )
+       order by created_at asc`,
+      userId,
       userId,
     );
     if (!await userStillCurrent(userId)) return [];
@@ -144,6 +128,10 @@ export function createNativeOutboxStore({
         userId,
       );
     });
+  }
+
+  async function purgeOfflineMutationsForAccount(userId: string) {
+    await purgeNativeOfflineMutationsForAccount(databaseProvider(), initializeOutbox, userId);
   }
 
   async function markMutationApplied(id: string, expectedUserId?: string) {
@@ -190,14 +178,25 @@ export function createNativeOutboxStore({
     await initializeOutbox();
     const rows = await databaseProvider().getAllAsync<{ id: string }>(
       `select id from ${NATIVE_OUTBOX_TABLE}
-       where user_id = ? and id = ? and status = 'pending' limit 1`,
+       where user_id = ? and id = ? and status = 'pending'
+         and not exists (
+           select 1 from ${NATIVE_DELETED_ACCOUNTS_TABLE} where user_id = ?
+         )
+       limit 1`,
       expectedUserId,
       mutation.id,
+      expectedUserId,
     );
     return rows.length === 1 && await userStillCurrent(expectedUserId);
   }
 
-  async function quarantineMalformedRow(row: OutboxRow, expectedUserId: string) {
+  async function runWithMutationReplayLease<T>(mutation: OfflineMutation, task: () => Promise<T>) {
+    const userId = mutation.queuedByUserId;
+    if (!userId) return { executed: false } as const;
+    return runWithOfflineReplayLease(userId, () => ownsMutationForCurrentUser(mutation), task);
+  }
+
+  async function quarantineMalformedRow(row: NativeOutboxRow, expectedUserId: string) {
     if (!await userStillCurrent(expectedUserId)) return;
     await databaseProvider().runAsync(
       `update ${NATIVE_OUTBOX_TABLE}
@@ -235,24 +234,20 @@ export function createNativeOutboxStore({
     }
   }
 
-  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser };
+  return { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, purgeOfflineMutationsForAccount, markMutationApplied, markMutationConflict, markMutationRetry, ownsMutationForCurrentUser, runWithMutationReplayLease };
 }
 
 const nativeOutbox = createNativeOutboxStore();
-export const { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, markMutationApplied, markMutationConflict, markMutationRetry } = nativeOutbox;
+export const { initializeOutbox, enqueueOfflineMutation, listPendingMutations, countConflictedMutations, listConflictedMutations, clearConflictedMutations, purgeOfflineMutationsForAccount, markMutationApplied, markMutationConflict, markMutationRetry } = nativeOutbox;
 export const offlineOutboxStore = {
   listPendingMutations,
   countConflictedMutations,
   listConflictedMutations,
   clearConflictedMutations,
+  purgeOfflineMutationsForAccount,
   markMutationApplied,
   markMutationConflict,
   markMutationRetry,
   ownsMutationForCurrentUser: nativeOutbox.ownsMutationForCurrentUser,
+  runWithMutationReplayLease: nativeOutbox.runWithMutationReplayLease,
 };
-
-async function currentAuthUserId() {
-  if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  return error ? null : data.session?.user.id ?? null;
-}

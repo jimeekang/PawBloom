@@ -28,7 +28,9 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
   const entitlementLoading = Boolean(user && configured && entitlementQuery.isLoading);
   const entitlementFailed = Boolean(user && configured && entitlementQuery.isError);
   const ownedPetCount = countOwnedPets(pets);
-  const petCreationAllowed = Boolean(user && entitlement && canCreatePet(entitlement, ownedPetCount));
+  // Free v1 exposes one owned profile. Keep the server entitlement check and
+  // existing profile access intact while additional-pet purchasing is absent.
+  const petCreationAllowed = Boolean(user && ownedPetCount === 0 && entitlement && canCreatePet(entitlement, ownedPetCount));
 
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
@@ -151,11 +153,10 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
       <Text style={styles.copy}>{t(mode === "manage" ? "pet.manageCopy" : "pet.onboardingCopy")}</Text>
 
       {!user ? <NoticeBanner text={t("pet.loginRequired")} icon="shield" tone="info" /> : null}
-      {entitlementLoading ? <NoticeBanner text={t("pet.planLoading")} icon="lock" tone="progress" /> : null}
-      {entitlementFailed ? <NoticeBanner text={t("pet.planLoadFailed")} icon="close" tone="error" /> : null}
-      {entitlementFailed ? <SecondaryButton label={t("diary.listRetry")} onPress={() => void entitlementQuery.refetch()} /> : null}
+      {ownedPetCount === 0 && entitlementLoading ? <NoticeBanner text={t("pet.planLoading")} icon="pet" tone="progress" /> : null}
+      {ownedPetCount === 0 && entitlementFailed ? <NoticeBanner text={t("pet.planLoadFailed")} icon="close" tone="error" /> : null}
+      {ownedPetCount === 0 && entitlementFailed ? <SecondaryButton label={t("diary.listRetry")} onPress={() => void entitlementQuery.refetch()} /> : null}
       {hasPets && !showCreateForm && petCreationAllowed ? <SecondaryButton label={t("pet.create")} icon="add" onPress={onAddAnother} /> : null}
-      {hasPets && !showCreateForm && entitlement && !petCreationAllowed ? <NoticeBanner text={t("pet.planLimitReached").replace("{limit}", `${entitlement.maxPets}`)} icon="lock" tone="info" /> : null}
 
       {shouldShowPetSelector ? <PetSelector pets={pets} activePetId={activePet?.id} onSelect={selectPet} /> : null}
 

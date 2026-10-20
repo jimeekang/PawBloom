@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../../design-system/components";
+import { StyleSheet, Text, View } from "react-native";
+import { DangerButton, NoticeBanner, SecondaryButton, SurfaceCard } from "../../../design-system/components";
 import { confirmDestructiveAction } from "../../../design-system/confirmAction";
 import { AppIcon } from "../../../design-system/iconography";
-import { colors, iconSize, radius, spacing, type } from "../../../design-system/tokens";
+import { colors, iconSize, spacing, type } from "../../../design-system/tokens";
 import { t, type TranslationKey } from "../../../i18n/translations";
-import type { Entitlement } from "../../subscription/domain/entitlement";
 import type { PetProfile } from "../domain/pet";
 import {
   PetMemberRequestError,
-  useInvitePetMember,
   usePetMembers,
   useRemovePetMember,
   type PetMember,
@@ -20,50 +18,23 @@ export function PetMembersCard({
   pet,
   configured,
   userId,
-  entitlement,
-  entitlementLoading,
-  entitlementFailed,
-  onRetryEntitlement,
 }: {
   pet: PetProfile;
   configured: boolean;
   userId: string | null;
-  entitlement: Entitlement | null;
-  entitlementLoading: boolean;
-  entitlementFailed: boolean;
-  onRetryEntitlement?: () => void;
 }) {
   const owner = pet.role === "owner";
   const membersQuery = usePetMembers(pet.id, userId, configured && owner);
-  const inviteMutation = useInvitePetMember(pet.id, userId);
   const removeMutation = useRemovePetMember(pet.id, userId);
-  const [email, setEmail] = useState("");
   const [noticeKey, setNoticeKey] = useState<TranslationKey | null>(null);
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
-  const previewMembers: PetMember[] = [{
-    membershipId: "preview-owner",
-    email: t("settings.membersPreviewOwner"),
-    role: "owner",
-    status: "active",
-    startsAt: null,
-    endsAt: null,
-    isCurrentUser: true,
-  }];
-  const members = configured ? membersQuery.data ?? [] : previewMembers;
-  const inviteEnabled = configured && Boolean(entitlement?.familySharingEnabled);
-  const busy = inviteMutation.isPending || removeMutation.isPending;
+  const members = membersQuery.data ?? [];
+  const busy = removeMutation.isPending;
+  const hasSharedAccess = members.some((member) => member.role !== "owner" && !member.isCurrentUser);
 
-  async function invite() {
-    setNoticeKey(null);
-    setErrorKey(null);
-    try {
-      await inviteMutation.mutateAsync(email);
-      setEmail("");
-      setNoticeKey("settings.membersInvited");
-    } catch (error) {
-      setErrorKey(memberErrorKey(error));
-    }
-  }
+  // Free v1 has no invitation entrypoint. Owners must still be able to revoke
+  // access granted before this release, including retrying a failed list load.
+  if (!configured || !owner || (!membersQuery.isLoading && !membersQuery.isError && !hasSharedAccess)) return null;
 
   async function remove(member: PetMember) {
     setNoticeKey(null);
@@ -96,34 +67,10 @@ export function PetMembersCard({
           </View>
         </View>
 
-        {!owner ? <NoticeBanner text={t("settings.membersOwnerOnly")} icon="shield" tone="info" /> : null}
-        {owner && membersQuery.isLoading ? <Text style={styles.copy}>{t("settings.membersLoading")}</Text> : null}
-        {owner && membersQuery.isError ? <NoticeBanner text={t("settings.membersListFailed")} icon="close" tone="error" /> : null}
-        {owner ? members.map((member) => <MemberRow key={member.membershipId} member={member} busy={busy} onRemove={remove} />) : null}
-
-        {owner && entitlementLoading ? <NoticeBanner text={t("settings.planLoading")} icon="lock" tone="progress" /> : null}
-        {owner && entitlementFailed ? <NoticeBanner text={t("settings.planLoadFailed")} icon="close" tone="error" /> : null}
-        {owner && entitlementFailed && onRetryEntitlement ? <SecondaryButton label={t("diary.listRetry")} onPress={onRetryEntitlement} /> : null}
-        {owner && entitlement && !entitlement.familySharingEnabled ? <NoticeBanner text={t("settings.membersFamilyLocked")} icon="lock" tone="info" /> : null}
-        {owner && entitlement?.familySharingEnabled && !configured ? <NoticeBanner text={t("settings.membersAccountRequired")} icon="shield" tone="info" /> : null}
-        {owner && entitlement?.familySharingEnabled ? (
-          <View style={styles.inviteBlock}>
-            <Text style={styles.fieldLabel}>{t("settings.membersInviteLabel")}</Text>
-            <TextInput
-              accessibilityLabel={t("settings.membersInviteLabel")}
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder={t("settings.membersInvitePlaceholder")}
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              editable={!busy}
-            />
-            <PrimaryButton label={t("settings.membersInvite")} icon="add" onPress={() => void invite()} disabled={!inviteEnabled || !email.trim() || busy} />
-          </View>
-        ) : null}
+        {membersQuery.isLoading ? <Text style={styles.copy}>{t("settings.membersLoading")}</Text> : null}
+        {membersQuery.isError ? <NoticeBanner text={t("settings.membersListFailed")} icon="close" tone="error" /> : null}
+        {membersQuery.isError ? <SecondaryButton label={t("diary.listRetry")} onPress={() => void membersQuery.refetch()} /> : null}
+        {members.map((member) => <MemberRow key={member.membershipId} member={member} busy={busy} onRemove={remove} />)}
 
         {noticeKey ? <NoticeBanner text={t(noticeKey)} icon="check" tone="success" /> : null}
         {errorKey ? <NoticeBanner text={t(errorKey)} icon="close" tone="error" /> : null}
@@ -156,7 +103,7 @@ function memberErrorKey(error: unknown): TranslationKey {
 const memberErrorKeys: Record<PetMemberErrorCode, TranslationKey> = {
   accountRequired: "settings.membersAccountRequired",
   ownerRequired: "settings.membersOwnerOnly",
-  familyPlanRequired: "settings.membersFamilyLocked",
+  familyPlanRequired: "settings.membersRequestFailed",
   invalidEmail: "settings.membersInvalidEmail",
   cannotInviteSelf: "settings.membersCannotInviteSelf",
   alreadyMember: "settings.membersAlreadyMember",
@@ -176,15 +123,4 @@ const styles = StyleSheet.create({
   memberCopy: { gap: spacing.xxs },
   memberEmail: { ...type.bodyStrong },
   memberMeta: { ...type.caption, color: colors.textMuted },
-  inviteBlock: { gap: spacing.sm },
-  fieldLabel: { ...type.bodyStrong },
-  input: {
-    minHeight: 52,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    ...type.body,
-  },
 });

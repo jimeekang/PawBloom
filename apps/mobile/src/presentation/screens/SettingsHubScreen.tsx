@@ -2,8 +2,6 @@ import { StyleSheet, View } from "react-native";
 import { SettingsScreen } from "../../contexts/identity/ui/SettingsScreen";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { PetMembersCard } from "../../contexts/pet/ui/PetMembersCard";
-import { useSubscriptionEntitlement } from "../../contexts/subscription/application/subscriptionEntitlement";
-import { SubscriptionPlanCard } from "../../contexts/subscription/ui/SubscriptionPlanCard";
 import { spacing } from "../../design-system/tokens";
 
 export function SettingsHubScreen({
@@ -11,7 +9,6 @@ export function SettingsHubScreen({
   configured,
   userId,
   activePet,
-  ownedPetCount,
   onOpenPetProfiles,
   onSignOut,
 }: {
@@ -19,15 +16,9 @@ export function SettingsHubScreen({
   configured: boolean;
   userId: string | null;
   activePet: PetProfile;
-  ownedPetCount: number;
   onOpenPetProfiles: () => void;
   onSignOut: () => void;
 }) {
-  const entitlementQuery = useSubscriptionEntitlement(userId, configured);
-  const entitlement = configured ? entitlementQuery.data ?? null : null;
-  const entitlementLoading = Boolean(configured && userId && entitlementQuery.isLoading);
-  const entitlementFailed = Boolean(configured && userId && entitlementQuery.isError);
-
   return (
     <View style={styles.screen}>
       <SettingsScreen email={email} configured={configured} onOpenPetProfiles={onOpenPetProfiles} onSignOut={onSignOut} />
@@ -35,17 +26,6 @@ export function SettingsHubScreen({
         pet={activePet}
         configured={configured}
         userId={userId}
-        entitlement={entitlement}
-        entitlementLoading={entitlementLoading}
-        entitlementFailed={entitlementFailed}
-        onRetryEntitlement={() => void entitlementQuery.refetch()}
-      />
-      <SubscriptionPlanCard onRetry={() => void entitlementQuery.refetch()}
-        entitlement={entitlement}
-        ownedPetCount={ownedPetCount}
-        loading={entitlementLoading}
-        failed={entitlementFailed}
-        preview={!configured}
       />
     </View>
   );

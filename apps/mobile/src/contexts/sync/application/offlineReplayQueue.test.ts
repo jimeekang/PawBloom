@@ -98,4 +98,22 @@ async function runReplayQueueTests() {
   if (replayedAfterAccountSwitch || switchedSummary.applied + switchedSummary.conflicted + switchedSummary.retried + switchedSummary.unsupported !== 0) {
     throw new Error("replay queue must stop before dispatch when the authenticated account changes");
   }
+
+  let replayedAfterDeletion = false;
+  registerOfflineReplayHandler("queue-deleted-account", "insert", async () => {
+    replayedAfterDeletion = true;
+    return { status: "applied", reason: "must not run" };
+  });
+  const deletedMutation = { ...buildMutation("offline-deleted", "queue-deleted-account"), queuedByUserId: "deleted-user" };
+  const deletedSummary = await replayPendingOfflineMutations({
+    store: {
+      ...store,
+      listPendingMutations: async () => [deletedMutation],
+      ownsMutationForCurrentUser: async () => true,
+      runWithMutationReplayLease: async () => ({ executed: false }),
+    },
+  });
+  if (replayedAfterDeletion || deletedSummary.applied + deletedSummary.conflicted + deletedSummary.retried + deletedSummary.unsupported !== 0) {
+    throw new Error("the queue must dispatch through the atomic replay lease and stop when account deletion blocks it");
+  }
 }

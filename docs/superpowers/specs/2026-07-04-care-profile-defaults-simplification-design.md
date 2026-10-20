@@ -1,5 +1,5 @@
 ---
-owner_model: claude-opus-4.8-extra
+owner_role: lead
 domain: planning
 edit_policy: exclusive
 status: completed
