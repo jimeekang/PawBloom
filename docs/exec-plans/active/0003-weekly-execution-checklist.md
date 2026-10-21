@@ -8,7 +8,7 @@ edit_policy: exclusive
 
 - 갱신: 2026-10-18. 과거 주차·브랜치 고정·자동 push 지시를 아래 의존 순서로 대체한다.
 - 정본: [제품 명세](../../product/PRODUCT_SPEC.md), [로드맵](0002-mvp-roadmap.md), [구현 계획 0009](0009-avatar-care-memories-implementation.md).
-- **현재 상태: 계획 문서만 갱신. 아래 구현·검증은 모두 미완료다.**
+- **현재 상태 (2026-10-21): M1 로컬 완료(원격 미적용), M3·M4 로직 완료, 화면(UI) 진행 중.** 재개 방법은 [0009 §13](0009-avatar-care-memories-implementation.md#13-진행-현황과-재개-2026-10-21).
 - 이전 완료 근거: [0008](0008-codex-remaining-implementation.md), [APP_FIX](../../engineering/APP_FIX_IMPLEMENTATION_2026-09-05.md),
   [초기 완료 기록](../archive/week1-completion-log.md). 과거 체크를 새 기능 완료로 옮기지 않는다.
 
@@ -31,12 +31,13 @@ edit_policy: exclusive
 
 ## M1 — 데이터·권한
 
-- [ ] avatar job/asset·memories/memory_pets/memory_media migration·index·generated type을 작성한다.
+- [x] avatar job/asset·memories/memory_pets/memory_media migration·index·generated type을 작성한다.
 - [ ] 기존 ID·사진 한도·조회/편집·report source 계약을 보존한다.
-- [ ] 추억 생성·복수 태그·공개 범위는 원자 명령으로 검증하고 재시도를 멱등 처리한다.
-- [ ] 동일 활성 owner/caregiver 집합·역할·작성자·대상 권한을 서버에서 강제한다.
-- [ ] 태그/media 직접 조회·권한 회수·동시 멤버 변경·태그/아이 삭제를 테스트한다.
-- [ ] 비공개 객체·orphan 정리·계정 삭제·계정 경계를 테스트한다.
+- [x] 추억 생성·복수 태그·공개 범위는 원자 명령으로 검증하고 재시도를 멱등 처리한다.
+- [x] 동일 활성 owner/caregiver 집합·역할·작성자·대상 권한을 서버에서 강제한다.
+- [x] 태그/media 직접 조회·권한 회수·동시 멤버 변경·태그/아이 삭제를 테스트한다.
+- [x] 비공개 객체·orphan 정리·계정 삭제·계정 경계를 테스트한다.
+- M1 체크는 로컬 Supabase(`npm run test:db`) 기준이다. 원격 적용·실계정 검증은 미완료다.
 
 ## M2 — 사진 → 캐릭터
 
@@ -49,7 +50,7 @@ edit_policy: exclusive
 
 ## M3 — 우리 집·탐색
 
-- [ ] 네 메뉴와 아이 상세 route·명시적 petId 선택을 구현한다.
+- [x] 네 메뉴와 아이 상세 route·명시적 petId 선택을 구현한다.
 - [ ] 요약창에서 케어·추억·프로필·빠른 기록으로 이동한다.
 - [ ] 탭/길게 끌기 구분·좌우 탐색·경계·겹침·목록 대안을 구현한다.
 - [ ] 작은 움직임·배회·고정·계정/기기별 배치·움직임 줄이기를 구현한다.
@@ -59,7 +60,7 @@ edit_policy: exclusive
 ## M4 — 실제 케어
 
 - [ ] 전 아이의 오늘 루틴·투약·필터·시간순 정렬을 구현한다.
-- [ ] 저장 대상 고정·지연 응답·A→B 전환·중복 저장을 검증한다.
+- [x] 저장 대상 고정·지연 응답·A→B 전환·중복 저장을 검증한다. (자동 테스트 기준, 실기기 미확인)
 - [ ] 날짜별 diary·checklist 승격·투약 상태·루틴·편집/삭제를 연결한다.
 - [ ] 알림에서 아이/일정으로 이동한다. 이동만으로 완료를 기록하지 않는다.
 - [ ] 템플릿 브리핑·리포트 확인/공유/폐기를 아이별 케어에 연결한다.
@@ -94,3 +95,4 @@ edit_policy: exclusive
 | 단계 | 변경 파일·명령·환경 | 결과·한계 |
 | --- | --- | --- |
 | M0~M6 | 미착수 | 문서만 갱신, 구현·화면·원격 검증 없음 |
+| M1·M3·M4 (2026-10-21) | `avatar` 브랜치 커밋 후 main 머지. `npm run verify`·`npm run test:db` 통과 | M1 원격 미적용, M3·M4 UI 진행 중, integrator 통합 검토·실기기 미실시. 상세 [0009 §13](0009-avatar-care-memories-implementation.md#13-진행-현황과-재개-2026-10-21) |

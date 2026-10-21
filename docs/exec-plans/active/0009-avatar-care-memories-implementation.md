@@ -7,7 +7,7 @@ edit_policy: exclusive
 # 0009 아바타·실제 케어·공동 추억 구현 계획
 
 - 작성: 2026-10-18. 사용자가 승인한 채팅 방향을 실행 가능한 문서로 반영한다.
-- 상태: **설계·구현 계획, 코드/마이그레이션/원격 적용 미착수**. 단계 상태는 [0003](0003-weekly-execution-checklist.md)만 갱신한다.
+- 상태: **M1 로컬 완료(원격 미적용), M3·M4 로직 완료, 화면 진행 중 (2026-10-21)**. 재개는 §13. 단계 상태는 [0003](0003-weekly-execution-checklist.md)만 갱신한다.
 - 정본: [제품](../../product/PRODUCT_SPEC.md), [화면 UX](../../design/AVATAR_HOME_UX.md), [로드맵](0002-mvp-roadmap.md).
 - 이 문서는 다음 구현의 진입점이다. 0007/0008/APP_FIX의 완료 이력과 남은 안전·출시 검증은 승계한다.
 - 기존 소유 frontmatter(owner_role/domain/edit_policy)를 유지한다. 이번 요청은 해당 문서의 내용 갱신이며 라우팅 정책 변경이 아니다.
@@ -181,3 +181,39 @@ DB/Storage 테스트는 별도 로컬 환경에서 실행하고 기존 verify에
 - `npm run verify` 통과: typecheck, architecture, i18n, presentation 144개 파일, 안전/secret/DB/offline/release/docs.
 - 신규 미추적 문서는 verify:docs의 추적 파일 대상 밖이므로 같은 frontmatter·300줄 제한과 로컬 링크를 별도 검사했다.
 - 생성 서비스·신규 DB/서버/화면은 미구현이다. 이 결과를 M0~M6 기능 완료·기기 QA·원격 적용으로 해석하지 않는다.
+
+## 13. 진행 현황과 재개 (2026-10-21)
+
+`/orchestration`으로 실행했다. 실행 범위는 M1+M3+M4이며 M2(생성)는 제공자 미정이라 보류했다.
+P1(DB)과 P2(셸·로직)는 Codex에서 구현한 뒤 reviewer의 필수 수정 0건으로 끝났고, P3(UI)는 진행 중에 멈췄다.
+
+| 패킷 | 결과 | 남은 일 |
+| --- | --- | --- |
+| P1 DB | migration `20261020090000_avatar_memories_atomic_contract.sql`, `supabase/tests/*`, `npm run test:db`, delete-account cleanup 확장 | 원격 적용, 실계정 역할 확인 |
+| P2 셸·로직 | 네 탭 route(`presentation/navigation`), 전 아이 케어, 저장 대상 고정, 배치·제스처·모션 로직, 알림 라우팅 | 실기기 Android back·알림 cold start |
+| P3 화면 | 우리 집 렌더 컴포넌트(`presentation/house/*.tsx`), 토큰·아이콘, 화면 일부 스타일 | 요약창, 화면 완성, 웹/기기 화면 확인 |
+
+- 검증 결과: `npm run verify` 통과(i18n 646키, presentation 168파일, supabase 23 tables, docs 52). 로컬 `npm run test:db` 통과.
+- 실시하지 않은 것: integrator 통합 검토, 실제 화면 확인, iOS/Android 실기기 확인, 원격 migration 적용과 함수 배포.
+- 배포 순서: migration을 원격에 먼저 적용한 뒤 `delete-account`를 배포한다. 새 함수가 v2 RPC와 `list_pending_resource_cleanup_v1`을 호출하기 때문이다.
+- 결정 대기:
+  - 임시 한도(`app_private.memory_limits`): 추억당 사진 5장, 파일 10MiB, JPEG/PNG/WebP, 미공개 draft 10개, 예약 24시간
+  - 아이 상세에서 back을 누르면 항상 우리 집으로 간다
+  - 알림 식별에 최대 1.5초를 대기한다
+  - `test:db`를 품질 게이트에 연결할지
+- 잠금 설계: 일상 쓰기는 shared gate → 정렬된 pet `FOR UPDATE` → member `FOR SHARE` 순서다. 계정 삭제와 식별자 컬럼 UPDATE만 exclusive gate를 쓴다. integrator가 이 설계를 재검토해야 한다.
+- M5 클라이언트 계약: RPC는 `prepare_memory`·`publish_memory`·`update_memory`·`delete_memory`·`prepare_pet_avatar_job`·`apply_pet_avatar`이며 모두 jsonb를 반환한다.
+  새 5개 테이블은 client SELECT만 허용한다. `pet_avatar_jobs`는 `select *`를 쓰지 않는다. 추억 집계는 memoryId 기준으로 한다.
+
+### 새 worktree에서 재개
+
+```bash
+git worktree add ../PawBloom-avatar-ui -b avatar-ui main
+cd ../PawBloom-avatar-ui && npm --prefix apps/mobile install
+export PATH="$HOME/.docker/bin:$PATH" DOCKER_HOST="unix://$HOME/.docker/run/docker.sock"
+supabase start && npm run test:db && npm run verify
+```
+
+재개는 P3(UI) 완성부터 한다. 진입점은 `presentation/screens/{HouseScreen,TodayCareScreen,MemoriesScreen,PetDetailScreen}.tsx`이고,
+props 계약은 각 파일의 export 타입·JSDoc을 따른다. 그다음 integrator 통합 검토 → 실기기 확인 → M5 순으로 진행한다.
+같은 Supabase project_id를 쓰므로 다른 worktree의 로컬 스택은 먼저 `supabase stop`으로 멈춘다.

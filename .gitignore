@@ -16,3 +16,4 @@ supabase/.temp/
 .gstack/
 .claude/
 .superpowers/
+supabase/.branches/
