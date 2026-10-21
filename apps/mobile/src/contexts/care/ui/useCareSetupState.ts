@@ -20,11 +20,12 @@ export function useCareSetupState({ activePetId, databaseMode, livePetId, userId
   livePetIdRef.current = livePetId;
   const careSetupQuery = useActiveCareSetup(livePetId, userId);
   const createCareSetup = useCreateCareSetup(livePetId, userId);
+  const [emptyCareSetup] = useState(emptyActiveCareSetup);
   const [localCareSetups, setLocalCareSetups] = useState<Record<string, ActiveCareSetup>>({});
   // The ref includes accepted saves before React renders, so consecutive saves cannot lose a plan.
   const acceptedLocalSetups = useRef(localCareSetups);
   const lastLocalTimestamp = useRef(0);
-  const activeCareSetup = databaseMode ? careSetupQuery.data ?? emptyActiveCareSetup() : localCareSetups[activePetId] ?? emptyActiveCareSetup();
+  const activeCareSetup = databaseMode ? careSetupQuery.data ?? emptyCareSetup : localCareSetups[activePetId] ?? emptyCareSetup;
   const careSetupStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : careSetupQuery.isError ? "error" : careSetupQuery.isLoading ? "loading" : "ready";
   function refetchCareSetup() {
     void careSetupQuery.refetch();

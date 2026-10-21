@@ -17,6 +17,7 @@ const PAN_SLOP_PX = 8;
 const SLOT_WIDTH = 120;
 const HEAD_SIZE = 56;
 const MIN_COLUMN_SPACING = 128;
+const ROOM_GROW_TOLERANCE = 0.1;
 const SAFE_MIN = 0.08, SAFE_SPAN = 0.84;
 const CENTER: HousePoint = { x: 0.5, y: 0.5 }, ORIGIN: HousePoint = { x: 0, y: 0 };
 
@@ -46,7 +47,9 @@ export function getHouseSceneGeometry(viewportWidth: number, petCount: number) {
   const width = Math.max(1, Math.round(viewportWidth));
   const height = Math.round(Math.min(380, Math.max(310, width * 0.95)));
   const columns = Math.max(1, Math.ceil(Math.sqrt(petCount)));
-  const contentWidth = Math.max(width, Math.ceil(SLOT_WIDTH + MIN_COLUMN_SPACING * SAFE_SPAN * columns));
+  const needed = Math.ceil(SLOT_WIDTH + MIN_COLUMN_SPACING * SAFE_SPAN * columns);
+  // A sliver of overflow is absorbed by slightly tighter spacing instead of a pannable room.
+  const contentWidth = needed <= width * (1 + ROOM_GROW_TOLERANCE) ? width : needed;
   const floorTop = Math.round(height * 0.38);
   const canvasHeight = defaultCharacterCanvas(HEAD_SIZE, true).height;
   const feetTop = floorTop + 18, feetBottom = height - 34;

@@ -1,4 +1,5 @@
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { DiaryMemoryPetState } from "../../contexts/diary/application/diaryMemories";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { AppIcon, type AppIconName } from "../../design-system/iconography";
@@ -24,6 +25,7 @@ export type PetSummarySheetProps = {
 
 /** Short tap result: who this is, today's facts, recent memories, and the ways in. */
 export function PetSummarySheet({ pet, userId, careState, memoryState, quickRecordLabel, onClose, onOpenSection, onQuickRecord }: PetSummarySheetProps) {
+  const insets = useSafeAreaInsets();
   const meta = [pet.breed, pet.ageLabel !== "--" ? pet.ageLabel : ""].filter(Boolean).join(" · ");
   const memories = memoryState?.status === "ready"
     ? [...memoryState.items].filter((item) => item.entry.petId === pet.id).sort((a, b) => `${b.entry.entryDate} ${b.entry.occurredAt}`.localeCompare(`${a.entry.entryDate} ${a.entry.occurredAt}`)).slice(0, 3)
@@ -34,7 +36,7 @@ export function PetSummarySheet({ pet, userId, careState, memoryState, quickReco
         <Pressable accessibilityRole="button" accessibilityLabel={t("house.summaryClose")} focusable={false} style={StyleSheet.absoluteFill} onPress={onClose} />
         <View accessibilityViewIsModal aria-modal accessibilityLabel={pet.name} style={styles.sheet}>
           <View style={styles.handle} />
-          <ScrollView contentContainerStyle={styles.content} bounces={false}>
+          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: layout.screenPadding + insets.bottom }]} bounces={false}>
             <View style={styles.header}>
               <PetAvatar pet={pet} userId={userId} size={64} />
               <View style={styles.headerText}>
@@ -99,10 +101,10 @@ const styles = StyleSheet.create({
   sectionTitle: { ...type.bodyStrong, marginTop: spacing.xxs },
   muted: { ...type.caption },
   memories: { flexDirection: "row", gap: spacing.sm },
-  memory: { flex: 1, minHeight: 92, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing.xs, gap: spacing.xxs, overflow: "hidden" },
+  memory: { flexGrow: 1, flexBasis: 0, maxWidth: "32%", minHeight: 92, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing.xs, gap: spacing.xxs, overflow: "hidden" },
   memoryPhoto: { width: "100%", aspectRatio: 1, borderRadius: radius.xs, backgroundColor: colors.surfaceWarm },
-  memoryText: { ...type.caption, color: colors.text, flex: 1 },
-  memoryDate: { ...type.tiny },
+  memoryText: { ...type.caption, color: colors.text },
+  memoryDate: { ...type.tiny, marginTop: "auto" },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xs },
   action: { flexGrow: 1, flexBasis: "46%", minHeight: layout.minTouch + 4, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xs, paddingHorizontal: spacing.sm },
   actionPrimary: { backgroundColor: colors.orangePressed, borderColor: colors.orangePressed },

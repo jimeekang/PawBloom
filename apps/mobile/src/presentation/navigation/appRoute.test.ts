@@ -23,3 +23,10 @@ assert(reduceAppRoute(route, { type: "section", section: "care" }, []) === house
 assert(reduceAppRoute(houseRoute, { type: "careView", destination: { view: "reports" } }, ids) === houseRoute, "care subview cannot create an implicit pet");
 assert(reduceAppRoute(route, { type: "recordTarget" }, ids).kind === "record-target", "record requires a target picker");
 assert(reduceAppRoute(route, { type: "petCreate" }, ids).kind === "pet-create", "creation path is explicit");
+
+const recordTarget = reduceAppRoute(houseRoute, { type: "recordTarget" }, ids);
+assert(reduceAppRoute(recordTarget, { type: "back" }, ids) === houseRoute, "cancel record target returns house");
+for (const section of ["care", "memories", "profile"] as const) {
+  const selected = reduceAppRoute(houseRoute, { type: "openPet", petId: "pet-b", section }, ids);
+  assert(selected.kind === "pet" && selected.petId === "pet-b" && selected.section === section, `openPet preserves explicit ${section} for B`);
+}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Platform, Pressable, Text, View, findNodeHandle } from "react-native";
 import type { DiaryMemoryPetState } from "../../contexts/diary/application/diaryMemories";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
-import { NoticeBanner, PrimaryButton } from "../../design-system/components";
+import { NoticeBanner, PrimaryButton, SecondaryButton } from "../../design-system/components";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
@@ -33,9 +33,11 @@ export type HouseScreenProps = {
   onRecordPet: (petId: string) => void;
   /** Preserves existing account and first-owned-pet creation gates. */
   onAddPet: () => void;
+  /** Leaves record-target selection without saving; the cancel button shows only when provided. */
+  onCancelRecordTarget?: () => void;
 };
 
-export function HouseScreen({ pets, userId, recordTargetSelection = false, careStates = [], memoryStates = [], onOpenPet, onRecordPet, onAddPet }: HouseScreenProps) {
+export function HouseScreen({ pets, userId, recordTargetSelection = false, careStates = [], memoryStates = [], onOpenPet, onRecordPet, onAddPet, onCancelRecordTarget }: HouseScreenProps) {
   const house = useHouseLayout(userId, pets.map((pet) => pet.id));
   const [motionPaused, setMotionPaused] = useState(false);
   const [positionsLocked, setPositionsLocked] = useState(false);
@@ -91,6 +93,7 @@ export function HouseScreen({ pets, userId, recordTargetSelection = false, careS
           {recordTarget
             ? <PrimaryButton label={recordTarget.recordLabel} icon="add" onPress={() => onRecordPet(recordTarget.pet.id)} />
             : <PrimaryButton label={t("house.recordChooseFirst")} disabled />}
+          {onCancelRecordTarget ? <SecondaryButton label={t("house.recordCancel")} icon="close" onPress={onCancelRecordTarget} /> : null}
         </View>
       ) : null}
       <HouseScene

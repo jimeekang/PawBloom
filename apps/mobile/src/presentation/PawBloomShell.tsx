@@ -52,7 +52,7 @@ import { HouseScreen } from "./screens/HouseScreen";
 import { TodayCareScreen } from "./screens/TodayCareScreen";
 import { MemoriesScreen } from "./screens/MemoriesScreen";
 import { PetDetailScreen } from "./screens/PetDetailScreen";
-import { houseRoute, reduceAppRoute, resolveAccessibleRoute, type AppRoute, type AppRouteAction, type CareDestination } from "./navigation/appRoute";
+import { houseRoute, reduceAppRoute, resolveAccessibleRoute, type AppRoute, type AppRouteAction, type CareDestination, type PetSection } from "./navigation/appRoute";
 import { useDiaryMemories } from "../contexts/diary/application/diaryMemories";
 import { canOpenDiaryMemory } from "./shell/diaryMemoryNavigation";
 type PawBloomShellProps = { notificationTarget?: NotificationOpenTarget | null; onNotificationConsumed?: () => void; activePet?: PetProfile | null; pets?: PetProfile[]; onPetNext?: () => void; onSelectPet?: (petId: string) => void };
@@ -201,11 +201,11 @@ function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet
     diary.setSelectedDiaryDate(pendingEntry.entryDate); diary.setDiaryFilter("day"); diary.setTimelineEditEntry(pendingEntry);
     setPendingEntry(null);
   }, [pendingEntry, route, activePet.id, accessiblePets]);
-  function openPet(petId: string, destination?: CareDestination) {
+  function openPet(petId: string, destination?: CareDestination, section?: PetSection) {
+    if (section === "profile" && !databaseMode) { setNotice(t("pet.loginRequired"), "info"); return; }
     if (!selectPetId(petId)) { navigate({ type: "tab", tab: "house" }); return; }
     if (destination?.view === "diary" && destination.dateKey) { diary.setSelectedDiaryDate(destination.dateKey); diary.setDiaryFilter("day"); diary.setTimelineEditEntry(null); }
-    navigate({ type: "openPet", petId, destination });
-  }
+    navigate({ type: "openPet", petId, destination, section }); }
   function openTimelineEntry(entry: DiaryEntry) {
     if (getTimelineEntryRoute(entry) === "checklistNotice") { setNotice(t("today.checklistTimelineReadOnly")); return; }
     const pet = accessiblePets.find((item) => item.id === entry.petId);
@@ -237,7 +237,7 @@ function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet
         <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <OfflineConflictNotice key={userId ?? "signed-out"} userId={userId} pets={authPets} />
           {careView !== "default" && nonHomeNotice ? <View style={styles.petSettingsNotice}><NoticeBanner text={nonHomeNotice} icon={notice.tone === "error" ? "close" : "check"} tone={notice.tone} /></View> : null}
-          {route.kind === "main" && route.tab === "house" || route.kind === "record-target" ? <HouseScreen pets={accessiblePets} userId={userId} recordTargetSelection={route.kind === "record-target"} onOpenPet={(petId) => openPet(petId)} onRecordPet={openNewDiary} onAddPet={openAddPet} /> : null}
+          {route.kind === "main" && route.tab === "house" || route.kind === "record-target" ? <HouseScreen pets={accessiblePets} userId={userId} recordTargetSelection={route.kind === "record-target"} careStates={allPetsTodayCare.petStates} memoryStates={memories.petStates} onOpenPet={(petId, section) => openPet(petId, undefined, section)} onCancelRecordTarget={route.kind === "record-target" ? () => navigate({ type: "back" }) : undefined} onRecordPet={openNewDiary} onAddPet={openAddPet} /> : null}
           {route.kind === "main" && route.tab === "care" ? <TodayCareScreen dateKey={allPetsTodayCare.dateKey} pets={accessiblePets} status={allPetsTodayCare.status} petStates={allPetsTodayCare.petStates} onOpenPet={openPet} onRetryPet={allPetsTodayCare.retryPet} /> : null}
           {route.kind === "main" && route.tab === "memories" ? <MemoriesScreen pets={accessiblePets} petStates={memories.petStates} onOpenDiaryEntry={openTimelineEntry} onRetryPet={memories.retryPet} /> : null}
           {detailReady && route.kind === "pet" ? <PetDetailScreen pet={activePet} route={route} onSectionChange={(section) => section === "profile" ? openPetSettings() : navigate({ type: "section", section })} onCareViewChange={(destination) => navigate({ type: "careView", destination })} /> : null}

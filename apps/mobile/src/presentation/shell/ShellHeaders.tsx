@@ -62,11 +62,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
+  // Tab names stay whole; on narrow or enlarged text the actions wrap below instead.
   tabTitle: {
     ...type.brand,
-    flexShrink: 1,
+    flexShrink: 0,
+    maxWidth: "100%",
   },
   detailTitle: {
     ...type.screenTitle,
@@ -80,6 +83,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     flexShrink: 0,
+    marginLeft: "auto",
   },
   action: {
     minHeight: layout.minTouch,

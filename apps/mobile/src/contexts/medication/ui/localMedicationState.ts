@@ -1,4 +1,5 @@
 import type { QuickMedicationDoseInput } from "../application/medicationDoseRecords";
+import { getLocalDateKey } from "../../../shared-kernel/date";
 import type { DoseRecord } from "../domain/medication";
 import { normalizeMedicationNameForStorage } from "../../../shared-kernel/recordSentinels";
 
@@ -9,7 +10,7 @@ export function createLocalDoseRecord(petId: string, input: QuickMedicationDoseI
     id: `dose-local-${Date.now()}`,
     petId,
     scheduleId: input.scheduleId,
-    doseDate: input.doseDate,
+    doseDate: input.doseDate ?? getLocalDateKey(),
     medicationName: normalizeMedicationNameForStorage(input.medicationName),
     conditionName: input.conditionName?.trim() || undefined,
     dosageLabel: input.dosageLabel?.trim() || undefined,

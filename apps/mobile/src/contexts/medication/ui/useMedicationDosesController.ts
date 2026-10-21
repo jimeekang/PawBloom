@@ -33,12 +33,12 @@ export function useMedicationDosesController({ activePetId, databaseMode, livePe
   const updateMedicationDoseStatus = useUpdateMedicationDoseStatus(livePetId, userId);
   const [doses, setDoses] = useState<DoseRecord[]>(() => buildSampleDoses(fallbackPetId, language));
 
-  const activeDoses = useMemo(() => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId)), [activePetId, databaseMode, doses, dosesQuery.data]);
+  const todayDoseDate = getLocalDateKey();
+  const activeDoses = useMemo(() => (databaseMode ? dosesQuery.data ?? [] : doses.filter((dose) => dose.petId === activePetId && dose.doseDate === todayDoseDate)), [activePetId, databaseMode, doses, dosesQuery.data, todayDoseDate]);
   const todayDosesStatus: "ready" | "loading" | "error" = !databaseMode ? "ready" : dosesQuery.isError ? "error" : dosesQuery.isLoading ? "loading" : "ready";
   function refetchTodayDoses() {
     void dosesQuery.refetch();
   }
-  const todayDoseDate = getLocalDateKey();
   const medicationAgenda = useMemo(() => createTodayMedicationAgendaRows({ schedules, doses: activeDoses, doseDate: todayDoseDate }), [activeDoses, schedules, todayDoseDate]);
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+import { getLocalDateKey } from "../../../shared-kernel/date";
 import type { DoseRecord } from "../domain/medication";
 import type { Language } from "../../../shared-kernel/types";
 
@@ -8,9 +9,10 @@ const doseCopy: Record<Language, { probiotic: string; prevention: string; note: 
 
 export function buildSampleDoses(petId: string, language: Language = "ko"): DoseRecord[] {
   const copy = doseCopy[language];
+  const doseDate = getLocalDateKey();
   return [
-    { id: "dose-ui-1", petId, medicationName: copy.probiotic, scheduledAt: "08:10", status: "completed", recordedAt: "08:34", reactionNote: copy.note },
-    { id: "dose-ui-2", petId, medicationName: copy.prevention, scheduledAt: "20:00", status: "pending" },
+    { id: "dose-ui-1", petId, doseDate, medicationName: copy.probiotic, scheduledAt: "08:10", status: "completed", recordedAt: "08:34", reactionNote: copy.note },
+    { id: "dose-ui-2", petId, doseDate, medicationName: copy.prevention, scheduledAt: "20:00", status: "pending" },
   ];
 }
 
