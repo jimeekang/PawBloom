@@ -2,8 +2,10 @@ import { corsHeaders, errorResponse, jsonResponse } from "../_shared/http.ts";
 import { requireUser, serviceClient, type ServiceClient } from "../_shared/supabase.ts";
 import {
   beginAccountDeletion,
+  drainResourceCleanup,
   claimAccountDeletionOperation,
   clearDeletingUserOwnership,
+  clearMemoryOwnership,
   completeAccountDeletion,
   getAccountDeletionJob,
   listPendingAccountDeletionJobs,
@@ -114,6 +116,7 @@ async function prepareAuthDeletion(
   userId: string,
   job: AccountDeletionJob,
 ) {
+  await clearMemoryOwnership(supabase, userId, job.job_id);
   await clearDeletingUserOwnership(supabase, userId, job.job_id);
   const state = await readAccountDeletionStorageState(supabase, userId);
   if (state.registered_user_owned_count !== 0 || state.temporary_object_count !== 0) {
@@ -152,6 +155,7 @@ async function finishStorageCleanup(
     || state.temporary_object_count !== 0) {
     throw new Error("Account deletion Storage cleanup is incomplete.");
   }
+  await drainResourceCleanup(supabase);
   await completeAccountDeletion(supabase, userId);
 }
 
@@ -207,7 +211,8 @@ async function drainDeletionJobs(
       if (acquired) await releaseAccountDeletionOperation(storageClient, pendingJob.user_id, operationId);
     }
   }
-  return jsonResponse({ ok: true, completed, restored, failed });
+  const resources = await drainResourceCleanup(storageClient);
+  return jsonResponse({ ok: true, completed, restored, failed, resources });
 }
 
 async function recordFailureSafely(

@@ -780,6 +780,250 @@ export type Database = {
           },
         ]
       }
+      memories: {
+        Row: {
+          client_mutation_id: string
+          content: string
+          created_at: string
+          created_by: string | null
+          draft_expires_at: string
+          entry_date: string
+          id: string
+          occurred_at: string
+          revision: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_mutation_id: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          draft_expires_at: string
+          entry_date: string
+          id?: string
+          occurred_at: string
+          revision?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_mutation_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          draft_expires_at?: string
+          entry_date?: string
+          id?: string
+          occurred_at?: string
+          revision?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      memory_pets: {
+        Row: {
+          memory_id: string
+          pet_id: string
+        }
+        Insert: {
+          memory_id: string
+          pet_id: string
+        }
+        Update: {
+          memory_id?: string
+          pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_pets_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_pets_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_media: {
+        Row: {
+          byte_size: number
+          cleanup_status: string
+          client_mutation_id: string
+          content_type: string
+          created_at: string
+          id: string
+          memory_id: string
+          position: number
+          storage_path: string
+        }
+        Insert: {
+          byte_size: number
+          cleanup_status?: string
+          client_mutation_id: string
+          content_type: string
+          created_at?: string
+          id: string
+          memory_id: string
+          position: number
+          storage_path: string
+        }
+        Update: {
+          byte_size?: number
+          cleanup_status?: string
+          client_mutation_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          memory_id?: string
+          position?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_media_memory_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_avatar_jobs: {
+        Row: {
+          client_mutation_id: string
+          completed_at: string | null
+          consent_version: string
+          created_at: string
+          error_code: string | null
+          id: string
+          pet_id: string
+          policy_version: string
+          provider_error: string | null
+          provider_job_id: string | null
+          provider_raw: Json | null
+          requester_id: string | null
+          source_byte_size: number
+          source_content_type: string
+          source_path: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_mutation_id: string
+          completed_at?: string | null
+          consent_version: string
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          pet_id: string
+          policy_version: string
+          provider_error?: string | null
+          provider_job_id?: string | null
+          provider_raw?: Json | null
+          requester_id?: string | null
+          source_byte_size: number
+          source_content_type: string
+          source_path: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_mutation_id?: string
+          completed_at?: string | null
+          consent_version?: string
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          pet_id?: string
+          policy_version?: string
+          provider_error?: string | null
+          provider_job_id?: string | null
+          provider_raw?: Json | null
+          requester_id?: string | null
+          source_byte_size?: number
+          source_content_type?: string
+          source_path?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_avatar_jobs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_avatars: {
+        Row: {
+          byte_size: number
+          content_type: string
+          created_at: string
+          id: string
+          is_applied: boolean
+          job_id: string
+          manifest: Json
+          manifest_version: string
+          pet_id: string
+          storage_path: string
+          style_version: string
+          validation_status: string
+        }
+        Insert: {
+          byte_size: number
+          content_type: string
+          created_at?: string
+          id?: string
+          is_applied?: boolean
+          job_id: string
+          manifest?: Json
+          manifest_version: string
+          pet_id: string
+          storage_path: string
+          style_version: string
+          validation_status?: string
+        }
+        Update: {
+          byte_size?: number
+          content_type?: string
+          created_at?: string
+          id?: string
+          is_applied?: boolean
+          job_id?: string
+          manifest?: Json
+          manifest_version?: string
+          pet_id?: string
+          storage_path?: string
+          style_version?: string
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_avatars_job_id_pet_id_fkey"
+            columns: ["job_id", "pet_id"]
+            isOneToOne: false
+            referencedRelation: "pet_avatar_jobs"
+            referencedColumns: ["id", "pet_id"]
+          },
+          {
+            foreignKeyName: "pet_avatars_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -904,6 +1148,130 @@ export type Database = {
       save_care_setup_v1: {
         Args: { p_pet_id: string; p_request: Json }
         Returns: Json
+      }
+      apply_pet_avatar: {
+        Args: {
+          p_pet_id: string
+          p_avatar_id: string
+        }
+        Returns: Json
+      }
+      complete_resource_cleanup_v1: {
+        Args: {
+          p_bucket_id: string
+          p_storage_path: string
+        }
+        Returns: undefined
+      }
+      delete_memory: {
+        Args: {
+          p_memory_id: string
+          p_expected_revision: number
+        }
+        Returns: Json
+      }
+      expire_memory_drafts_v1: {
+        Args: {
+          p_limit?: number
+        }
+        Returns: number
+      }
+      list_account_deletion_memory_objects_v2: {
+        Args: {
+          p_user_id: string
+          p_limit?: number
+        }
+        Returns: {
+          bucket_id: string
+          name: string
+          media_asset_id: string
+        }[]
+      }
+      list_account_deletion_memory_rehomes_v2: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          media_asset_id: string
+          source_path: string
+          destination_path: string
+        }[]
+      }
+      list_pending_resource_cleanup_v1: {
+        Args: {
+          p_limit?: number
+        }
+        Returns: {
+          bucket_id: string
+          storage_path: string
+        }[]
+      }
+      prepare_memory: {
+        Args: {
+          p_client_mutation_id: string
+          p_content: string
+          p_entry_date: string
+          p_occurred_at: string
+          p_pet_ids: string[]
+          p_media: Json
+        }
+        Returns: Json
+      }
+      prepare_pet_avatar_job: {
+        Args: {
+          p_pet_id: string
+          p_client_mutation_id: string
+          p_source_asset_id: string
+          p_source_content_type: string
+          p_source_byte_size: number
+          p_consent_version: string
+          p_policy_version: string
+        }
+        Returns: Json
+      }
+      publish_memory: {
+        Args: {
+          p_memory_id: string
+          p_expected_revision: number
+        }
+        Returns: Json
+      }
+      rehome_account_deletion_memory_v2: {
+        Args: {
+          p_user_id: string
+          p_media_asset_id: string
+          p_source_path: string
+          p_destination_path: string
+        }
+        Returns: undefined
+      }
+      rollback_account_deletion_memory_v2: {
+        Args: {
+          p_user_id: string
+          p_media_asset_id: string
+        }
+        Returns: string
+      }
+      update_memory: {
+        Args: {
+          p_memory_id: string
+          p_expected_revision: number
+          p_content: string
+          p_entry_date: string
+          p_occurred_at: string
+          p_pet_ids: string[]
+          p_keep_media_ids: string[]
+        }
+        Returns: Json
+      }
+      prepare_account_deletion_memory_rehome_v2: {
+        Args: {
+          p_user_id: string
+          p_media_asset_id: string
+          p_source_path: string
+          p_destination_path: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

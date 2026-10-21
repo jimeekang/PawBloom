@@ -188,6 +188,85 @@ if (auditWriteHardeningIndex < 0) {
   }
 }
 
+const memoryMigration = migrationSources.find((migration) =>
+  migration.file.endsWith("_avatar_memories_atomic_contract.sql"),
+);
+if (!memoryMigration) {
+  failures.push("Missing atomic avatar/memory migration.");
+} else {
+  const contract = memoryMigration.sql.replace(/\s+/g, " ");
+  for (const table of ["memories", "memory_pets", "memory_media", "pet_avatar_jobs", "pet_avatars"]) {
+    if (!generatedTableBlock(table)) failures.push(`Missing generated type for public.${table}.`);
+    if (!new RegExp(`create policy [^;]+ on public\\.${table} for select to authenticated`).test(contract)) {
+      failures.push(`Missing authenticated SELECT policy for public.${table}.`);
+    }
+  }
+  for (const bucket of ["pet-avatars", "memory-media"]) {
+    if (!contract.includes(`'${bucket}'`)
+      || !contract.includes("insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) select bucket,bucket,false,l.max_file_bytes,l.mime_types")
+      || !contract.includes("create or replace function app_private.resource_storage_insert")) {
+      failures.push(`Missing private, budgeted, relational Storage contract for ${bucket}.`);
+    }
+  }
+  for (const fragment of [
+    "create or replace function app_private.lock_pet_resource_writes()",
+    "select pg_catalog.pg_advisory_xact_lock_shared(1346459468,1295070001)",
+    "revoke all on function app_private.lock_pet_resource_writes() from public,anon,authenticated",
+    "create trigger serialize_pet_resource_writes before delete on auth.users",
+    "create index memory_pets_pet_memory_idx on public.memory_pets(pet_id,memory_id)",
+    "create unique index pet_avatars_one_applied_idx",
+    "revoke all on public.memories,public.memory_pets,public.memory_media,public.pet_avatar_jobs,public.pet_avatars from anon,authenticated",
+    "create table app_private.resource_cleanup_jobs",
+    "create constraint trigger resource_storage_completion after insert or update on storage.objects deferrable initially deferred",
+    "create or replace function app_private.guard_resource_storage_completion()",
+    "create or replace function public.prepare_account_deletion_memory_rehome_v2",
+    "where id=target for update nowait",
+    "where id=target for share nowait",
+    "order by pet_id,id loop",
+    "app_private.lock_pet_members_for_delete(old.id)",
+    "create table app_private.memory_mutation_receipts",
+    "app_private.daily_photo_count(p_pet_id,target_entry.entry_date)",
+  ]) {
+    if (!contract.includes(fragment)) failures.push(`Missing avatar/memory invariant: ${fragment}`);
+  }
+  for (const table of ["public.pets", "public.pet_members", "public.memories", "public.memory_pets", "public.memory_media", "public.pet_avatar_jobs", "public.pet_avatars", "public.diary_entries", "public.media_assets", "app_private.account_deletion_jobs", "app_private.account_deletion_media_rehomes", "app_private.media_cleanup_jobs", "app_private.resource_cleanup_jobs"]) {
+    if (!contract.includes(`create trigger serialize_pet_resource_writes before insert or update or delete on ${table} for each statement execute function app_private.serialize_pet_resource_statement()`)) failures.push(`Missing pre-row resource gate: ${table}`);
+  }
+  const acquisition = contract.match(/create or replace function app_private\.lock_memory_pets\([^$]+\$\$[\s\S]*?\$\$;/)?.[0] || "";
+  const deletionLocks = contract.match(/create or replace function app_private\.lock_pet_members_for_delete\([^$]+\$\$[\s\S]*?\$\$;/)?.[0] || "";
+  for (const body of [acquisition, deletionLocks]) {
+    if (!/exception when lock_not_available then/.test(body) || !/raise exception 'release_pet_resource_lock_probe' using errcode='pz001'/.test(body)
+      || !/exception when sqlstate 'pz001' then null/.test(body)) failures.push("Pet/member lock sets must roll back a failed NOWAIT attempt and its single blocking probe.");
+    if (/deadlock_detected|40p01|pg_sleep|when others|query_canceled/.test(body)) failures.push("Resource acquisition must not swallow deadlocks, timeouts, cancellation, or busy-poll.");
+  }
+  const routineGate = contract.match(/create or replace function app_private\.lock_pet_resource_writes\(\)[^$]+\$\$[\s\S]*?\$\$;/)?.[0] || "";
+  if (!routineGate.includes("pg_advisory_xact_lock_shared") || /pg_advisory_xact_lock\(/.test(routineGate)) failures.push("Routine writes must never take the global exclusive structure lock.");
+  if (!contract.includes("create trigger serialize_pet_resource_writes before delete on auth.users for each statement execute function app_private.serialize_pet_resource_structure()")) failures.push("Auth deletion must enter the structure barrier before tuples.");
+  for (const name of ["begin_account_deletion_v1", "cancel_account_deletion_v1"]) {
+    const body = contract.match(new RegExp(`create or replace function public\\.${name}\\([^$]+\\$\\$[\\s\\S]*?\\$\\$;`))?.[0] || "";
+    if (!/begin perform app_private\.lock_pet_resource_structure\(\);/.test(body)) failures.push(`Account ${name} must enter the exclusive structure barrier first.`);
+  }
+  const exclusiveCalls = [...contract.matchAll(/perform app_private\.lock_pet_resource_structure\(\);/g)];
+  if (exclusiveCalls.length !== 3) failures.push("Exclusive structure barrier is restricted to its trigger and account begin/cancel.");
+  if (/create trigger lock_pet_members_(?:insert|update|delete)|function app_private\.lock_changed_pet_memberships/.test(contract)) failures.push("Membership DML must not reacquire pets after member tuples.");
+  for (const spec of ["pet_id,user_id on public.pet_members", "id,owner_id on public.pets", "pet_id,diary_entry_id on public.media_assets", "pet_id,id on public.pet_avatar_jobs", "pet_id,job_id,id on public.pet_avatars"]) {
+    if (!contract.includes(`create trigger a_resource_structure before update of ${spec} for each statement execute function app_private.serialize_pet_resource_structure()`)) failures.push(`Missing pre-row identity structure barrier: ${spec}`);
+  }
+  if ([...contract.matchAll(/create trigger [^;]+execute function app_private\.serialize_pet_resource_structure\(\)/g)].length !== 6) failures.push("Exclusive statement triggers are restricted to Auth deletion and five identity relocations.");
+  if (/create trigger serialize_pet_resource_writes [^;]+ on storage.objects/.test(contract)) failures.push("Storage DELETE must not acquire the app gate after prelocking an object.");
+  const preflight = contract.match(/create or replace function app_private\.resource_storage_insert\([^;]+(?:;[^$]*)*?\$\$;/)?.[0] || "";
+  if (!preflight || /lock_pet_resource_writes|lock_memory|for update|for no key update|for share|for key share/.test(preflight)) failures.push("Storage preflight must remain read-only without row/advisory locks.");
+  const completion = contract.match(/create or replace function app_private\.guard_resource_storage_completion\(\)[^$]+\$\$[\s\S]*?\$\$;/)?.[0] || "";
+  if (!/begin perform app_private\.lock_pet_resource_writes\(\); if new\.bucket_id/.test(completion)) failures.push("Actual Storage completion must acquire the gate before fresh authorization checks.");
+  if (/lock table [^;]+ in share mode/.test(contract)) failures.push("Resource gate must not be followed by conflicting SHARE table locks.");
+  if (/grant (?:all|select) on public\.pet_avatar_jobs to authenticated/.test(contract)) {
+    failures.push("Avatar provider fields must not have a table-level authenticated SELECT grant.");
+  }
+  if (/create policy [^;]+ on public\.(?:memory_pets|memory_media) for (?:insert|update|delete|all) to authenticated/.test(contract)) {
+    failures.push("Memory junction/media direct client DML must remain closed.");
+  }
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);

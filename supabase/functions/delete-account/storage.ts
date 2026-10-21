@@ -156,6 +156,7 @@ export async function rollbackAccountDeletion(
   supabase: AccountDeletionStorageClient,
   userId: string,
 ) {
+  await rollbackMemoryOwnership(supabase, userId);
   for (let pass = 0; pass < MAX_OWNER_CLEAR_PASSES; pass += 1) {
     const rehomes = await listRehomes(supabase, userId);
     if (rehomes.length === 0) {
@@ -349,4 +350,93 @@ function decodeCount(value: unknown) {
   const count = typeof value === "number" ? value : Number(value);
   if (!Number.isSafeInteger(count) || count < 0) throw new Error("Invalid account deletion Storage count.");
   return count;
+}
+
+
+export async function clearMemoryOwnership(supabase: AccountDeletionStorageClient, userId: string, jobId: string) {
+  for (let pass = 0; pass < MAX_OWNER_CLEAR_PASSES; pass += 1) {
+    const { data, error } = await supabase.rpc("list_account_deletion_memory_objects_v2", {
+      p_user_id: userId, p_limit: STORAGE_BATCH_SIZE,
+    });
+    if (error) throw error;
+    const objects = decodeMemoryObjects(data);
+    if (objects.length === 0) return;
+    for (const object of objects) {
+      const destination = `${object.name.split("/")[0]}/${jobId}/${crypto.randomUUID()}`;
+      const { error: intentError } = await supabase.rpc("prepare_account_deletion_memory_rehome_v2", {
+        p_user_id: userId, p_media_asset_id: object.media_asset_id,
+        p_source_path: object.name, p_destination_path: destination,
+      });
+      if (intentError) throw intentError;
+      const { error: copyError } = await supabase.storage.from("memory-media").copy(object.name, destination);
+      if (copyError) throw copyError;
+      const { error: rehomeError } = await supabase.rpc("rehome_account_deletion_memory_v2", {
+        p_user_id: userId, p_media_asset_id: object.media_asset_id,
+        p_source_path: object.name, p_destination_path: destination,
+      });
+      // An ambiguous response keeps both copies for durable inventory/rollback.
+      if (rehomeError) throw rehomeError;
+    }
+  }
+  throw new Error("Account deletion memory ownership preparation exceeded the safety limit.");
+}
+
+async function rollbackMemoryOwnership(supabase: AccountDeletionStorageClient, userId: string) {
+  for (let pass = 0; pass < MAX_OWNER_CLEAR_PASSES; pass += 1) {
+    const { data, error } = await supabase.rpc("list_account_deletion_memory_rehomes_v2", { p_user_id: userId });
+    if (error) throw error;
+    if (!Array.isArray(data)) throw new Error("Invalid memory rollback inventory.");
+    if (data.length === 0) return;
+    for (const raw of data) {
+      const row = raw as { media_asset_id?: unknown; destination_path?: unknown };
+      if (typeof row.media_asset_id !== "string" || typeof row.destination_path !== "string") {
+        throw new Error("Invalid memory rollback row.");
+      }
+      const { data: destination, error: rollbackError } = await supabase.rpc("rollback_account_deletion_memory_v2", {
+        p_user_id: userId, p_media_asset_id: row.media_asset_id,
+      });
+      if (rollbackError) throw rollbackError;
+      await removeObjects(supabase, "memory-media", [typeof destination === "string" ? destination : row.destination_path]);
+    }
+  }
+  throw new Error("Account deletion memory rollback exceeded the safety limit.");
+}
+
+function decodeMemoryObjects(data: unknown) {
+  if (!Array.isArray(data)) throw new Error("Invalid memory ownership inventory.");
+  return data.map((raw) => {
+    const object = raw as Partial<Record<keyof OwnedObject, unknown>>;
+    if (object.bucket_id !== "memory-media" || typeof object.name !== "string" || typeof object.media_asset_id !== "string") {
+      throw new Error("Invalid registered memory ownership row.");
+    }
+    return object as OwnedObject & { media_asset_id: string };
+  });
+}
+
+export async function drainResourceCleanup(supabase: AccountDeletionStorageClient) {
+  const { error: expiryError } = await supabase.rpc("expire_memory_drafts_v1", { p_limit: STORAGE_BATCH_SIZE });
+  if (expiryError) throw expiryError;
+  const { data, error } = await supabase.rpc("list_pending_resource_cleanup_v1", { p_limit: STORAGE_BATCH_SIZE });
+  if (error) throw error;
+  if (!Array.isArray(data)) throw new Error("Invalid resource cleanup inventory.");
+  let completed = 0;
+  let failed = 0;
+  for (const raw of data) {
+    const row = raw as { bucket_id?: unknown; storage_path?: unknown };
+    if ((row.bucket_id !== "memory-media" && row.bucket_id !== "pet-avatars") || typeof row.storage_path !== "string") {
+      throw new Error("Invalid resource cleanup row.");
+    }
+    try {
+      await removeObjects(supabase, row.bucket_id, [row.storage_path]);
+      const { error: ackError } = await supabase.rpc("complete_resource_cleanup_v1", {
+        p_bucket_id: row.bucket_id, p_storage_path: row.storage_path,
+      });
+      if (ackError) throw ackError;
+      completed += 1;
+    } catch {
+      // The durable row remains for the next authenticated worker invocation.
+      failed += 1;
+    }
+  }
+  return { completed, failed };
 }
