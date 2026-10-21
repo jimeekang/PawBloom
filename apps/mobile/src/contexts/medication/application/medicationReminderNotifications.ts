@@ -1,3 +1,5 @@
+import { startReminderReservation, cancelReminderReservationsForAccount } from "../../pet/application/reminderReservationScope";
+import { startNotificationIdentityEnrichment } from "../../pet/application/notificationIdentityEnrichment";
 import type { MedicationSchedule } from "../domain/medicationSchedule";
 import { scheduleAppliesOnDate } from "./medicationScheduleRules";
 
@@ -65,55 +67,71 @@ export function buildMedicationReminderPlan({ petName, reminderTitle, schedules,
   return [...daily.slice(0, maxPending), ...rolling];
 }
 
-export async function rescheduleMedicationReminders({ userId, petId, petName, reminderTitle, schedules, previousScheduleIds = [], fromDate, requestPermission = true }: { userId: string; petId: string; petName: string; reminderTitle: string; schedules: MedicationSchedule[]; previousScheduleIds?: string[]; fromDate: string; requestPermission?: boolean }) {
-  if (!isMedicationReminderAccountActive(userId)) return false;
-  const Notifications = await import("expo-notifications");
-  const permission = requestPermission ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
-  if (!permission.granted || !isMedicationReminderAccountActive(userId)) return false;
-
-  const scheduleIds = new Set([...previousScheduleIds, ...schedules.map((schedule) => schedule.id)]);
-  const pending = await Notifications.getAllScheduledNotificationsAsync();
-  if (!isMedicationReminderAccountActive(userId)) return false;
-  const foreignAccount = pending.filter((notification) => shouldCancelMedicationReminderForOtherAccount(notification, userId));
-  for (const notification of foreignAccount) {
-    if (!isMedicationReminderAccountActive(userId)) return false;
-    await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-  }
-  if (!isMedicationReminderAccountActive(userId)) return false;
-  const accountPending = pending.filter((notification) => !foreignAccount.includes(notification));
-  const currentPet = accountPending.filter((notification) => shouldCancelMedicationReminder(notification, petId, scheduleIds, userId));
-  const unrelatedCount = accountPending.length - currentPet.length;
-  const maxPending = Math.max(0, IOS_PENDING_NOTIFICATION_BUDGET - unrelatedCount);
-  const plan = buildMedicationReminderPlan({ petName, reminderTitle, schedules, fromDate, maxPending, notBefore: new Date() });
-  const accountPlan = plan.map((request) => ({ ...request, identifier: accountScopedMedicationReminderIdentifier(userId, request.identifier) }));
-  if (maxPending === 0 && schedules.some((schedule) => !schedule.endsOn || schedule.endsOn >= fromDate)) throw new Error("Medication reminder capacity is full.");
-  if (!hasMedicationReminderCoverage(plan, schedules, fromDate)) {
-    throw new Error("Medication reminder capacity is full.");
-  }
-
+export async function rescheduleMedicationReminders({ userId, petId, petName, reminderTitle, schedules, previousScheduleIds = [], fromDate, requestPermission = true, identityTimeoutMs }: { userId: string; petId: string; petName: string; reminderTitle: string; schedules: MedicationSchedule[]; previousScheduleIds?: string[]; fromDate: string; requestPermission?: boolean; identityTimeoutMs?: number }) {
+  const reservation = startReminderReservation("medication", userId, petId);
+  if (!isMedicationReminderAccountActive(userId)) { reservation.dispose(); return false; }
+  const hasUpcomingSchedule = schedules.some((schedule) => schedule.startsOn <= addDaysToDateKey(fromDate, ROLLING_SEARCH_DAYS - 1) && (!schedule.endsOn || schedule.endsOn >= fromDate));
+  const enrichment = hasUpcomingSchedule ? startNotificationIdentityEnrichment(petId, identityTimeoutMs) : null;
   try {
-    await installMedicationReminderPlan(accountPlan, currentPet, async (request) => {
-      await installMedicationReminderForActiveAccount(userId, request, () => Notifications.scheduleNotificationAsync({
-          identifier: request.identifier,
-          content: { title: request.title, body: request.body, data: { userId, petId, scheduleId: request.scheduleId, dateKey: request.dateKey } },
-          trigger: request.trigger.kind === "daily"
-            ? { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: request.trigger.hour, minute: request.trigger.minute }
-            : { type: Notifications.SchedulableTriggerInputTypes.DATE, date: request.trigger.date },
-        }),
-        (identifier) => Notifications.cancelScheduledNotificationAsync(identifier));
-    }, (identifier) => Notifications.cancelScheduledNotificationAsync(identifier));
-  } catch (error) {
-    if (!isMedicationReminderAccountActive(userId)) {
-      await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
-      return false;
-    }
-    throw error;
-  }
-  if (!isMedicationReminderAccountActive(userId)) {
-    await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
-    return false;
-  }
-  return true;
+    const Notifications = await import("expo-notifications");
+    const permission = requestPermission ? await Notifications.requestPermissionsAsync() : await Notifications.getPermissionsAsync();
+    if (isMedicationReminderAccountActive(userId) && !reservation.isCurrent()) return true;
+    if (!permission.granted || !isMedicationReminderAccountActive(userId)) return false;
+
+    const scheduleIds = new Set([...previousScheduleIds, ...schedules.map((schedule) => schedule.id)]);
+    const identity = await enrichment?.result;
+    if (!isMedicationReminderAccountActive(userId)) return false;
+    if (!reservation.isCurrent()) return true;
+    let cleanupAccount = false;
+    const outcome = await reservation.run(async () => {
+      const pending = await Notifications.getAllScheduledNotificationsAsync();
+      if (!reservation.isCurrent() || !isMedicationReminderAccountActive(userId)) return false;
+      const foreignAccount = pending.filter((notification) => shouldCancelMedicationReminderForOtherAccount(notification, userId));
+      for (const notification of foreignAccount) {
+        if (!reservation.isCurrent() || !isMedicationReminderAccountActive(userId)) return false;
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      }
+      if (!reservation.isCurrent() || !isMedicationReminderAccountActive(userId)) return false;
+      const accountPending = pending.filter((notification) => !foreignAccount.includes(notification));
+      const currentPet = accountPending.filter((notification) => shouldCancelMedicationReminder(notification, petId, scheduleIds, userId));
+      const unrelatedCount = accountPending.length - currentPet.length;
+      const maxPending = Math.max(0, IOS_PENDING_NOTIFICATION_BUDGET - unrelatedCount);
+      const plan = buildMedicationReminderPlan({ petName, reminderTitle, schedules, fromDate, maxPending, notBefore: new Date() });
+      const accountPlan = plan.map((request) => ({ ...request, identifier: accountScopedMedicationReminderIdentifier(userId, request.identifier) }));
+      if (maxPending === 0 && schedules.some((schedule) => !schedule.endsOn || schedule.endsOn >= fromDate)) throw new Error("Medication reminder capacity is full.");
+      if (!hasMedicationReminderCoverage(plan, schedules, fromDate)) {
+        throw new Error("Medication reminder capacity is full.");
+      }
+
+      if (!reservation.isCurrent() || !isMedicationReminderAccountActive(userId)) return false;
+      try {
+        await installMedicationReminderPlan(accountPlan, currentPet, async (request) => {
+          await installMedicationReminderForActiveAccount(userId, request, () => reservation.isCurrent() ? Notifications.scheduleNotificationAsync({
+              identifier: request.identifier,
+              content: { title: request.title, body: request.body, data: { version: 1, userId, petId, ...(identity?.petCreatedAt ? { petCreatedAt: identity.petCreatedAt } : {}), scheduleId: request.scheduleId, ...(identity?.schedules[request.scheduleId] ? { scheduleCreatedAt: identity.schedules[request.scheduleId] } : {}), dateKey: request.dateKey } },
+              trigger: request.trigger.kind === "daily"
+                ? { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: request.trigger.hour, minute: request.trigger.minute }
+                : { type: Notifications.SchedulableTriggerInputTypes.DATE, date: request.trigger.date },
+            }) : Promise.reject(new Error("Medication reminder superseded.")),
+            (identifier) => reservation.isCurrent() ? Notifications.cancelScheduledNotificationAsync(identifier) : Promise.resolve());
+          if (!reservation.isCurrent()) throw new Error("Medication reminder superseded.");
+        }, (identifier) => reservation.isCurrent() ? Notifications.cancelScheduledNotificationAsync(identifier) : Promise.resolve());
+      } catch (error) {
+        if (!reservation.isCurrent() || !isMedicationReminderAccountActive(userId)) {
+          cleanupAccount = reservation.isCurrent();
+          return false;
+        }
+        throw error;
+      }
+      if (!reservation.isCurrent() || !isMedicationReminderAccountActive(userId)) {
+        cleanupAccount = reservation.isCurrent();
+        return false;
+      }
+      return true;
+    });
+    if (cleanupAccount) await cancelMedicationRemindersForAccount(userId).catch(() => undefined);
+    return outcome || isMedicationReminderAccountActive(userId) && !reservation.isCurrent();
+  } catch (error) { if (isMedicationReminderAccountActive(userId) && !reservation.isCurrent()) return true; throw error; } finally { enrichment?.dispose(); reservation.dispose(); }
 }
 
 export async function installMedicationReminderForActiveAccount(userId: string, request: MedicationReminderPlanRequest, install: () => Promise<unknown>, cancel: (identifier: string) => Promise<unknown>) {
@@ -169,17 +187,23 @@ export function shouldCancelMedicationReminder(notification: ScheduledNotificati
 
 // Deleting a pet has to take its reminders with it (see the meal-reminder twin).
 export async function cancelMedicationRemindersForPet(userId: string, petId: string) {
-  const Notifications = await import("expo-notifications");
-  const pending = await Notifications.getAllScheduledNotificationsAsync();
-  const owned = pending.filter((notification) => shouldCancelMedicationReminder(notification, petId, new Set<string>(), userId));
-  await Promise.all(owned.map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier)));
+  const reservation = startReminderReservation("medication", userId, petId);
+  try { await reservation.run(async () => {
+    const Notifications = await import("expo-notifications");
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
+    if (!reservation.isCurrent()) return;
+    const owned = pending.filter((notification) => shouldCancelMedicationReminder(notification, petId, new Set<string>(), userId));
+    for (const notification of owned) { if (!reservation.isCurrent()) return; await Notifications.cancelScheduledNotificationAsync(notification.identifier); }
+  }); } finally { reservation.dispose(); }
 }
 
 export async function cancelMedicationRemindersForAccount(userId: string) {
-  const Notifications = await import("expo-notifications");
-  const pending = await Notifications.getAllScheduledNotificationsAsync();
-  const owned = pending.filter((notification) => shouldCancelMedicationReminderForAccount(notification, userId));
-  await Promise.all(owned.map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier)));
+  await cancelReminderReservationsForAccount("medication", userId, async () => {
+    const Notifications = await import("expo-notifications");
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
+    const owned = pending.filter((notification) => shouldCancelMedicationReminderForAccount(notification, userId));
+    await Promise.all(owned.map((notification) => Notifications.cancelScheduledNotificationAsync(notification.identifier)));
+  });
 }
 
 export function shouldCancelMedicationReminderForAccount(notification: ScheduledNotification, userId: string) {

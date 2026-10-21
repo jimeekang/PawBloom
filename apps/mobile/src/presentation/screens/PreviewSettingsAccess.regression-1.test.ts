@@ -35,3 +35,6 @@ if (!shell.includes('if (!databaseMode)') || !shell.includes('setNotice(t("pet.l
 for (const guardedLink of ["onOpenProfileCare={openPetSettings}", "onOpenPetProfiles={openPetSettings}"]) {
   if (!shell.includes(guardedLink)) throw new Error(`preview link bypasses the account gate: ${guardedLink}`);
 }
+
+if (!shell.includes('section === "profile" ? openPetSettings()') || !shell.includes('petId={route.kind === "pet" ? route.petId : undefined}')) throw new Error("detail profile section must retain preview gate and explicit target");
+if (!onboarding.includes('petId ? pets.find((pet) => pet.id === petId) ?? null : authActivePet') || !onboarding.includes('!petId && !createOnly')) throw new Error("explicit profile target must not fall back to auth's other active pet or expose a selector");

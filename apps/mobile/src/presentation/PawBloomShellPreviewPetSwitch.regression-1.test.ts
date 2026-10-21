@@ -16,15 +16,8 @@ const selectionSource = readFileSync(
 );
 const source = `${shellSource}\n${selectionSource}`;
 
-for (const required of [
-  "previewPetIndex",
-  "setPreviewPetIndex",
-  "isPreviewPet",
-  "previewPets.length > 1",
-  "ownedPetCount",
-  "countOwnedPets",
-]) {
-  if (!source.includes(required)) {
-    throw new Error(`preview pet switching contract is missing: ${required}`);
-  }
+for (const required of ["selectPetId", "accessiblePets", "isPreviewPet", "ownedPetCount", "countOwnedPets", 'key={user?.id ?? "preview"}']) {
+  if (!source.includes(required)) throw new Error(`explicit account-scoped preview selection contract is missing: ${required}`);
 }
+if (selectionSource.includes("selectNextPet") || shellSource.includes("cyclePet")) throw new Error("direct pet routes must not depend on cycling");
+if (!shellSource.includes("activePet.id === route.petId") || !shellSource.includes("resolveAccessibleRoute(routeState, accessibleIds)")) throw new Error("detail writes require current explicit pet and accessible route");

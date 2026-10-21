@@ -40,6 +40,38 @@ export const colors = {
   heroScrim: "rgba(0, 0, 0, 0.32)",
   scrimStrong: "rgba(0, 0, 0, 0.92)",
   scrimSoft: "rgba(0, 0, 0, 0.55)",
+  // Record status chips (0009 M4). Text colors keep 4.5:1 on their own
+  // backgrounds; status is never shown by color alone (icon + label).
+  successBg: "#EAF7F1",
+  successText: "#2E7A5F",
+  warningBg: "#FFF4E4",
+  warningText: "#97570F",
+  neutralBg: "#F3EFEA",
+  pendingText: "#A94A0A",
+} as const;
+
+// Warm 2D house scene and default characters (0009 M3). Scene-only colors:
+// UI chrome keeps `colors`. Characters are staging, never health signals.
+export const sceneColors = {
+  wall: "#FCEBD7",
+  wallShade: "#F8E0C6",
+  window: "#E6F5FB",
+  windowFrame: "#F1D0AC",
+  floor: "#EDC89D",
+  floorLine: "#E0B786",
+  baseboard: "#E2B88A",
+  rug: "#F7DCCB",
+  groundShadow: "rgba(110, 72, 34, 0.18)",
+  dogFur: "#E7AE72",
+  dogEar: "#B9773F",
+  catFur: "#C8BFB6",
+  catEar: "#978B80",
+  otherFur: "#A6DAC6",
+  otherEar: "#62B99C",
+  muzzle: "#FFF4E6",
+  face: "#3A2A1E",
+  blush: "#F5A79C",
+  nameTag: "rgba(255, 255, 255, 0.94)",
 } as const;
 
 export const spacing = {
@@ -99,6 +131,7 @@ export const layout = {
   inputHeight: 52,
   buttonHeight: 54,
   categoryTile: 110,
+  minTouch: 44,
 } as const;
 
 export const shadow = {

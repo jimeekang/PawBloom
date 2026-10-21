@@ -1,0 +1,15 @@
+import { deduplicateScheduledDose } from "./scheduledDoseMutation";
+import type { DoseRecord } from "../domain/medication";
+declare const require: (name: string) => any;
+const { QueryClient } = require("@tanstack/react-query"), client = new QueryClient();
+const dose: DoseRecord = { id: "queued-id", petId: "a", scheduleId: "s", doseDate: "2026-10-20", scheduledAt: "08:00", medicationName: "Med", status: "completed" };
+let inserts = 0;
+const input = { scheduleId: "s", doseDate: "2026-10-20", medicationName: "Med" };
+const create = async () => { inserts++; return { dose, queued: true }; };
+await deduplicateScheduledDose(client, "a", "u", input, create);
+client.setQueryData(["medication_doses", "today", "a", "2026-10-20", "u"], [dose]);
+const result = await deduplicateScheduledDose(client, "a", "u", input, create);
+if (inserts !== 1 || !result.queued) throw new Error("duplicate queued completion preserves queue state without network refetch");
+await deduplicateScheduledDose(client, "a", "u", { ...input, doseDate: "2026-10-21" }, create);
+if (Number(inserts) !== 2) throw new Error("different dates are independent targets");
+client.clear();

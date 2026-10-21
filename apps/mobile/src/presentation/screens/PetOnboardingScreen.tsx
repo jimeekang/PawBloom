@@ -7,8 +7,7 @@ import { t, type TranslationKey } from "../../i18n/translations";
 import { useAuth } from "../../contexts/identity/application/authContext";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
 import type { PetProfilePhotoInput } from "../../contexts/identity/application/authContextQueries";
-import type { PetRoutine, PetRoutineInput } from "../../contexts/routine/domain/petRoutine";
-import type { ActiveCareSetup, CareSetupInput } from "../../contexts/care/domain/carePlan";
+import type { PetOnboardingScreenProps } from "./PetOnboardingScreen.types";
 import { getSpeciesLabels, PetProfileFormFields, PetSelector, pickPetProfilePhoto, type PetSpeciesOption } from "./PetOnboardingHelpers";
 import { parsePetWeightInput } from "./petWeightInput";
 import { confirmDestructiveAction } from "../../design-system/confirmAction";
@@ -21,8 +20,9 @@ import { useSubscriptionEntitlement } from "../../contexts/subscription/applicat
 import { canCreatePet, entitlements } from "../../contexts/subscription/domain/entitlement";
 import { countOwnedPets } from "../../contexts/pet/domain/pet";
 
-export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved, medicationRemindersEnabled, onToggleMedicationReminders }: { mode?: "onboarding" | "manage"; routine?: PetRoutine; onSaveRoutine?: (routine: PetRoutineInput) => void | Promise<void>; careSetup?: ActiveCareSetup; onSaveCareSetup?: (input: CareSetupInput) => Promise<ActiveCareSetup>; onProfileSaved?: () => void; medicationRemindersEnabled?: boolean; onToggleMedicationReminders?: (enabled: boolean) => void } = {}) {
-  const { configured, user, pets, activePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
+export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutine, careSetup, onSaveCareSetup, onProfileSaved, medicationRemindersEnabled, onToggleMedicationReminders, petId, createOnly = false, onCreated, onCancelCreate }: PetOnboardingScreenProps = {}) {
+  const { configured, user, pets, activePet: authActivePet, selectPet, createPet, updatePet, deletePet, error, authMessage, loading, signOut } = useAuth();
+  const activePet = createOnly ? null : petId ? pets.find((pet) => pet.id === petId) ?? null : authActivePet;
   const entitlementQuery = useSubscriptionEntitlement(user?.id ?? null, configured && Boolean(user));
   const entitlement = entitlementQuery.data ?? (configured ? null : entitlements.plus);
   const entitlementLoading = Boolean(user && configured && entitlementQuery.isLoading);
@@ -48,14 +48,14 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
   const [editPhoto, setEditPhoto] = useState<PetProfilePhotoInput | undefined>();
   const activePhoto = usePetProfilePhotoUrl(activePet?.id, user?.id ?? null);
   const hasPets = pets.length > 0;
-  const shouldShowPetSelector = pets.length > 1 && !showCreateForm;
+  const shouldShowPetSelector = !petId && !createOnly && pets.length > 1 && !showCreateForm;
   const canManageActivePet = activePet ? can(activePet.role, "pet.update") && can(activePet.role, "pet.photo.update") && can(activePet.role, "pet.delete") : false;
   const canManageCareDefaults = activePet ? can(activePet.role, "routine.update") && can(activePet.role, "care.update") : false;
   const speciesLabel = getSpeciesLabels();
 
   useEffect(() => {
-    setShowCreateForm(Boolean(user) && pets.length === 0);
-  }, [pets.length, user]);
+    setShowCreateForm(Boolean(user) && (createOnly || pets.length === 0));
+  }, [createOnly, pets.length, user]);
 
   useEffect(() => {
     if (!activePet) {
@@ -94,6 +94,7 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
     resetCreateForm();
     setShowCreateForm(false);
     onProfileSaved?.();
+    onCreated?.();
   };
 
   const resetCreateForm = () => { setName(""); setBreed(""); setBirthdate(""); setWeightKg(""); setSpecies("dog"); setPhoto(undefined); };
@@ -230,7 +231,7 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
           />
 
           <PrimaryButton label={t("pet.create")} onPress={onCreate} disabled={loading} />
-          {hasPets ? <SecondaryButton label={t("pet.createCancel")} onPress={() => { resetCreateForm(); setFormErrorKey(null); setShowCreateForm(false); }} disabled={loading} /> : null}
+          {hasPets || createOnly ? <SecondaryButton label={t("pet.createCancel")} onPress={() => { resetCreateForm(); setFormErrorKey(null); setShowCreateForm(false); onCancelCreate?.(); }} disabled={loading} /> : null}
         </View>
         </SurfaceCard>
       ) : null}

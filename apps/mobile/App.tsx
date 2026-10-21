@@ -1,3 +1,5 @@
+import { useNotificationRouting } from "./src/presentation/shell/useNotificationRouting";
+import { updatePetMutationAccess } from "./src/contexts/pet/application/petMutationTarget";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
@@ -55,7 +57,9 @@ export default function App() {
 }
 
 function AppBody() {
-  const { initialized, configured, user, activePet, petLoadStatus, passwordRecoveryActive, retryPetLoad, signOut } = useAuth();
+  const { initialized, configured, user, activePet, pets, petLoadStatus, passwordRecoveryActive, retryPetLoad, signOut } = useAuth();
+  updatePetMutationAccess(user?.id ?? null, pets.map((pet) => pet.id), queryClient);
+  const notifications = useNotificationRouting({ initialized, userId: user?.id ?? null, petsReady: petLoadStatus === "ready", petIds: pets.map((pet) => pet.id) });
   const { initialized: languageInitialized } = useLanguage();
   const gate = resolveAppGate({
     authInitialized: initialized,
@@ -114,7 +118,7 @@ function AppBody() {
       </SafeAreaView>
     );
   }
-  return <PawBloomShell />;
+  return <PawBloomShell notificationTarget={notifications.target} onNotificationConsumed={notifications.consume} />;
 }
 
 const styles = StyleSheet.create({

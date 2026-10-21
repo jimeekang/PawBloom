@@ -1,27 +1,11 @@
 declare const require: (moduleName: string) => unknown;
 declare const process: { cwd(): string };
-
-const { readFileSync } = require("node:fs") as {
-  readFileSync(path: string, encoding: "utf8"): string;
-};
-
-// Regression: UX-006 — Home displayed an inert notification bell and unused action prop
-// Found by /qa on 2026-07-16
-// Report: .gstack/qa-reports/qa-report-pawbloom-ui-ux-2026-07-16.md
-
-const source = readFileSync(
-  `${process.cwd()}/apps/mobile/src/presentation/shell/ShellHeaders.tsx`,
-  "utf8",
-);
-
-if (source.includes('name="bell"') || source.includes("onManagePets")) {
-  throw new Error("Home must not advertise a notification or management action that cannot run");
+const { readFileSync } = require("node:fs") as { readFileSync(path: string, encoding: "utf8"): string };
+const source = readFileSync(`${process.cwd()}/apps/mobile/src/presentation/shell/ShellHeaders.tsx`, "utf8");
+if (source.includes('name="bell"') || source.includes("onManagePets")) throw new Error("headers must not advertise inert actions");
+for (const required of ["HouseHeaderProps", "PetDetailHeaderProps", "PetSettingsHeaderProps", "ShellTitleHeaderProps", "onPress={onAddPet}", "onPress={onRequestRecord}"]) {
+  if (!source.includes(required)) throw new Error(`missing typed header contract: ${required}`);
 }
-
-if (!source.includes("accessibilityState={{ disabled: !canSwitchPet }}")) {
-  throw new Error("the remaining pet switcher must keep its disabled state explicit");
-}
-
-if (!source.includes('accessibilityLabel={`${t("pet.selectTitle")}: ${petName}`}')) {
-  throw new Error("the pet switcher must expose the selected pet in its accessible name");
-}
+if (!source.includes("{petName}") || !source.includes("accessibilityLabel={label}") || !source.includes('t("navigation.back")')) throw new Error("pet detail must expose its selected name and a localized back control");
+const house = readFileSync(`${process.cwd()}/apps/mobile/src/presentation/screens/HouseScreen.tsx`, "utf8");
+if (!house.includes('t("house.openPet").replace("{petName}", pet.name)') || !house.includes('t("house.confirmRecord").replace("{petName}", pet.name)')) throw new Error("accessible buttons must explicitly name both pet selection and record target");

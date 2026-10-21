@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { overlayPendingMedicationDoses } from "./pendingMedicationDoses";
+import { deduplicateScheduledDose } from "./scheduledDoseMutation";
+import { getPetMutationTarget, usePetMutation } from "../../pet/application/petMutationTarget";
+import { invalidateTodayCare } from "../../pet/application/todayCareInvalidation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { isRetriableOfflineError, offlineErrorMessage } from "../../sync/application/offlineErrorPolicy";
@@ -35,16 +39,14 @@ export function shouldCountDoseAsMedicationRecorded(status: DoseStatus) {
   return status !== "pending";
 }
 export function buildMedicationDoseUpdatePayload(input: UpdateMedicationDoseInput, clientMutationId?: string): DoseUpdate {
-  const scheduledAt = buildScheduledAtForTime(input.scheduledTime);
+  const scheduledAt = input.doseDate && input.scheduledTime ? buildScheduledAtForDateTime(input.doseDate, input.scheduledTime).toISOString() : buildScheduledAtForTime(input.scheduledTime);
   const payload: DoseUpdate = { medication_name: normalizeMedicationNameForStorage(input.medicationName), reaction_note: encodeMedicationDoseCareNote(input), updated_at: new Date().toISOString() };
-
   if (clientMutationId) payload.client_mutation_id = clientMutationId;
   if (scheduledAt) payload.scheduled_at = scheduledAt;
   if (input.status) {
     payload.status = input.status;
     payload.recorded_at = buildDoseRecordedAt(input.status);
   }
-
   return payload;
 }
 export function useTodayMedicationDoses(petId: string | null, userId: string | null = null) {
@@ -54,7 +56,7 @@ export function useTodayMedicationDoses(petId: string | null, userId: string | n
     enabled: Boolean(supabase && petId && userId),
     queryFn: async () => {
       if (!supabase || !petId) return [];
-      return fetchMedicationDoses(petId, { fromDateKey: todayDateKey, toDateKey: todayDateKey, ascending: true });
+      return fetchMedicationDoses(petId, { fromDateKey: todayDateKey, toDateKey: todayDateKey, ascending: true }, userId);
     },
   });
 }
@@ -64,17 +66,17 @@ export function useMedicationDosesByDateRange(petId: string | null, fromDateKey:
     enabled: Boolean(supabase && petId && userId && fromDateKey && toDateKey),
     queryFn: async () => {
       if (!supabase || !petId) return [];
-      return fetchMedicationDoses(petId, { fromDateKey, toDateKey, ascending: false });
+      return fetchMedicationDoses(petId, { fromDateKey, toDateKey, ascending: false }, userId);
     },
   });
 }
 export function useCreateMedicationDose(petId: string | null, userId: string | null) {
   const queryClient = useQueryClient();
   const todayDateKey = useCurrentLocalDateKey();
-  return useMutation({
-    mutationFn: async (input: QuickMedicationDoseInput) => {
+  return usePetMutation({
+    mutationFn: async (input: QuickMedicationDoseInput) => deduplicateScheduledDose(queryClient, petId, userId, input, async () => {
       if (!supabase || !petId || !userId) throw new CodedError("common.loginRequired");
-      const clientMutationId = createClientMutationId();
+      const clientMutationId = (input as QuickMedicationDoseInput & { clientMutationId?: string }).clientMutationId ?? createClientMutationId();
       const now = new Date();
       const payload = buildMedicationDoseInsertPayload({ ...input, petId, userId, now, clientMutationId });
       try {
@@ -90,38 +92,38 @@ export function useCreateMedicationDose(petId: string | null, userId: string | n
         const dose = await enqueueMedicationDoseInsert({ petId, userId, formInput: { ...input }, insertPayload: payload, clientMutationId });
         return { dose, queued: true };
       }
-    },
-    onMutate: async (input) => {
-      const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
-      await queryClient.cancelQueries({ queryKey: todayKey });
+    }),
+    onMutate: (input) => {
+      const todayKey = medicationDoseKeys.today(petId, input.doseDate ?? todayDateKey, userId);
+      void queryClient.cancelQueries({ queryKey: todayKey });
       const previousToday = queryClient.getQueryData<DoseRecord[]>(todayKey);
+      if (input.scheduleId && previousToday?.some((dose) => !dose.id.startsWith("dose-optimistic-") && dose.scheduleId === input.scheduleId && dose.doseDate === input.doseDate)) return { previousToday, optimisticId: "" };
       const status = input.status ?? "pending";
-      const optimisticId = `dose-optimistic-${Date.now()}`;
+      const optimisticId = `dose-optimistic-${(input as QuickMedicationDoseInput & { clientMutationId?: string }).clientMutationId}`;
       const scheduledAt = buildScheduledAtForDateTime(input.doseDate, input.scheduledTime, new Date());
       const dose: DoseRecord = { id: optimisticId, petId: petId ?? "pending-pet", scheduleId: input.scheduleId, doseDate: input.doseDate ?? localDateKey(scheduledAt), medicationName: normalizeMedicationNameForStorage(input.medicationName), conditionName: cleanOptional(input.conditionName), dosageLabel: cleanOptional(input.dosageLabel), administeredAmount: cleanOptional(input.administeredAmount), scheduledAt: formatTime(scheduledAt.toISOString()), status, recordedAt: buildDoseRecordedAt(status) ?? undefined, reactionNote: cleanOptional(input.reactionNote) };
       queryClient.setQueryData<DoseRecord[]>(todayKey, (current) => mergeSavedDoseIntoList(current ?? [], dose));
       return { previousToday, optimisticId };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, input, context) => {
       if (!context) return;
-      const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
-      if (context.previousToday !== undefined) return void queryClient.setQueryData(todayKey, context.previousToday);
+      const todayKey = medicationDoseKeys.today(petId, input.doseDate ?? todayDateKey, userId);
       const withoutOptimisticDose = (queryClient.getQueryData<DoseRecord[]>(todayKey) ?? []).filter((item) => item.id !== context.optimisticId);
       if (withoutOptimisticDose.length > 0) queryClient.setQueryData(todayKey, withoutOptimisticDose);
       else queryClient.removeQueries({ queryKey: todayKey, exact: true });
     },
     onSuccess: (result, _input, context) => {
-      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, todayDateKey, userId), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), result.dose));
-      if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+      queryClient.setQueryData<DoseRecord[]>(medicationDoseKeys.today(petId, _input.doseDate ?? todayDateKey, userId), (current) => mergeSavedDoseIntoList((current ?? []).filter((item) => item.id !== context?.optimisticId), result.dose));
+      void invalidateTodayCare(queryClient, userId, result.queued);
     },
-  });
+  }, petId, userId, (input, target) => ({ ...input, doseDate: input.doseDate ?? target.dateKey, clientMutationId: (input as QuickMedicationDoseInput & { clientMutationId?: string }).clientMutationId ?? target.mutationId }));
 }
 export function useUpdateMedicationDose(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (input: UpdateMedicationDoseInput) => {
       if (!supabase || !petId) throw new CodedError("common.loginRequired");
-      const clientMutationId = createClientMutationId();
+      const clientMutationId = getPetMutationTarget(input)?.mutationId ?? createClientMutationId();
       const updatePayload = buildMedicationDoseUpdatePayload(input, clientMutationId);
       const currentDose = findMedicationDoseInCachedLists(queryClient, petId, userId, input.id);
       try {
@@ -142,13 +144,13 @@ export function useUpdateMedicationDose(petId: string | null, userId: string | n
     },
     onSuccess: (result) => {
       replaceMedicationDoseInCachedLists(queryClient, petId, userId, result.dose);
-      if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+      void invalidateTodayCare(queryClient, userId, result.queued);
     },
-  });
+  }, petId, userId);
 }
 export function useDeleteMedicationDose(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (id: string) => {
       if (!supabase || !petId) throw new CodedError("common.loginRequired");
       const data = await deleteMedicationDoseWithRetry(supabase, petId, id);
@@ -156,18 +158,19 @@ export function useDeleteMedicationDose(petId: string | null, userId: string | n
     },
     onSuccess: (result) => {
       removeMedicationDoseFromCachedLists(queryClient, petId, userId, result.id);
-      void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+      void invalidateTodayCare(queryClient, userId);
     },
-  });
+  }, petId, userId);
 }
 export function useUpdateMedicationDoseStatus(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
   const todayDateKey = useCurrentLocalDateKey();
   const todayKey = medicationDoseKeys.today(petId, todayDateKey, userId);
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: DoseStatus }) => {
+  return usePetMutation({
+    mutationFn: async (input: { id: string; status: DoseStatus }) => {
+      const { id, status } = input;
       if (!supabase || !petId) throw new CodedError("auth.clientMissing");
-      const clientMutationId = createClientMutationId();
+      const clientMutationId = getPetMutationTarget(input)?.mutationId ?? createClientMutationId();
       const updatePayload = buildDoseStatusUpdate(status, clientMutationId);
       const currentDose = findMedicationDoseInCachedLists(queryClient, petId, userId, id);
       try {
@@ -186,8 +189,8 @@ export function useUpdateMedicationDoseStatus(petId: string | null, userId: stri
         return { dose, queued: true };
       }
     },
-    onMutate: async ({ id, status }) => {
-      await queryClient.cancelQueries({ queryKey: todayKey });
+    onMutate: ({ id, status }) => {
+      void queryClient.cancelQueries({ queryKey: todayKey });
       const previousToday = queryClient.getQueryData<DoseRecord[]>(todayKey);
       queryClient.setQueryData<DoseRecord[]>(todayKey, (current) =>
         (current ?? []).map((item) => (item.id === id ? { ...item, status, recordedAt: buildDoseRecordedAt(status) ?? undefined } : item)),
@@ -195,22 +198,18 @@ export function useUpdateMedicationDoseStatus(petId: string | null, userId: stri
       return { previousToday };
     },
     onError: (_error, _variables, context) => {
-      if (context?.previousToday) queryClient.setQueryData(todayKey, context.previousToday);
+      if (context?.previousToday) queryClient.setQueryData<DoseRecord[]>(todayKey, (current) => (current ?? []).map((dose) => dose.id === _variables.id ? context.previousToday!.find((old) => old.id === dose.id) ?? dose : dose));
     },
-    onSuccess: (result) => {
-      queryClient.setQueryData<DoseRecord[]>(todayKey, (current) =>
-        (current ?? []).map((item) => (item.id === result.dose.id ? result.dose : item)),
-      );
-    },
+    onSuccess: (result) => { replaceMedicationDoseInCachedLists(queryClient, petId, userId, result.dose); },
     onSettled: (result) => {
-      if (!result?.queued) void queryClient.invalidateQueries({ queryKey: ["medication_doses"] });
+      void invalidateTodayCare(queryClient, userId, result?.queued);
     },
-  });
+  }, petId, userId);
 }
 function cleanOptional(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
-async function fetchMedicationDoses(petId: string, input: { fromDateKey: string; toDateKey: string; ascending: boolean }) {
+export async function fetchMedicationDoses(petId: string, input: { fromDateKey: string; toDateKey: string; ascending: boolean }, userId?: string | null) {
   const { data, error } = await supabase!
     .from("medication_doses")
     .select("id,pet_id,schedule_id,dose_date,medication_name,scheduled_at,status,recorded_at,reaction_note,created_by,client_mutation_id,created_at,updated_at")
@@ -219,7 +218,9 @@ async function fetchMedicationDoses(petId: string, input: { fromDateKey: string;
     .lte("dose_date", input.toDateKey)
     .order("scheduled_at", { ascending: input.ascending });
   if (error) throw new CodedError("care.loadFailed", error.message);
-  return (data ?? []).map(mapDoseRow);
+  const rows = data ?? [];
+  const merged = await overlayPendingMedicationDoses(rows.map(mapDoseRow), rows.map((row) => row.client_mutation_id), petId, userId, input.fromDateKey, input.toDateKey);
+  return input.ascending ? merged : [...merged].reverse();
 }
 function buildScheduledAtForTime(scheduledTime?: string) {
   const timeMatch = scheduledTime?.match(/^(\d{1,2}):(\d{2})$/);

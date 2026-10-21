@@ -1,186 +1,123 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View, StyleSheet } from "react-native";
 import { colors, font, iconSize, layout, radius, spacing, type } from "../../design-system/tokens";
-import { AppIcon } from "../../design-system/iconography";
+import { AppIcon, type AppIconName } from "../../design-system/iconography";
 import { t } from "../../i18n/translations";
-
-type HomeHeaderProps = {
-  petName: string;
-  onPetPress: () => void;
-  canSwitchPet: boolean;
+export type HouseHeaderProps = {
+  /** Opens the existing gated pet creation path. */
+  onAddPet: () => void;
+  /** Opens target selection; no record is saved until a named pet is confirmed. */
+  onRequestRecord: () => void;
 };
-
-type BackHeaderProps = {
+export type PetDetailHeaderProps = {
+  /** Name of route.petId, visible throughout recording. */
+  petName: string;
+  /** Subview to section, then detail to house, matching Android back. */
   onBack: () => void;
 };
-
-export function HomeHeader({ petName, onPetPress, canSwitchPet }: HomeHeaderProps) {
+export type PetSettingsHeaderProps = {
+  /** Leaves the dedicated creation route using the same back behavior as Android. */
+  onBack: () => void;
+};
+export type ShellTitleHeaderProps = {
+  /** Localized title matching the currently selected main tab; never an implicit pet name. */
+  title: string;
+};
+export function HouseHeader({ onAddPet, onRequestRecord }: HouseHeaderProps) {
   return (
     <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <AppIcon name="logo" size={34} color={colors.orange} />
-        <Text style={styles.brandText}>PawBloom</Text>
-      </View>
-      <View style={styles.headerActions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${t("pet.selectTitle")}: ${petName}`}
-          accessibilityState={{ disabled: !canSwitchPet }}
-          hitSlop={6}
-          style={({ pressed }) => [styles.petSwitch, pressed && canSwitchPet && styles.petSwitchPressed, !canSwitchPet && styles.petSwitchDisabled]}
-          onPress={onPetPress}
-          disabled={!canSwitchPet}
-        >
-          <AppIcon name="pet" size={iconSize.sm} color={canSwitchPet ? colors.orangeDeep : colors.textMuted} />
-          <Text style={styles.petSwitchText}>{petName}</Text>
-        </Pressable>
+      <Text style={styles.tabTitle} accessibilityRole="header" numberOfLines={1}>{t("tabs.house")}</Text>
+      <View style={styles.actions}>
+        <HeaderAction icon="add" label={t("pet.create")} onPress={onAddPet} />
+        <HeaderAction icon="memo" label={t("house.record")} primary onPress={onRequestRecord} />
       </View>
     </View>
   );
 }
-
-export function DiaryHeader() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.careTitleRow}>
-        <AppIcon name="diary" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("tabs.diary")}</Text>
-      </View>
-      <View style={styles.headerSpacer} />
-    </View>
-  );
+export function PetDetailHeader({ petName, onBack }: PetDetailHeaderProps) {
+  return <View style={styles.header}><BackButton onBack={onBack} /><Text style={styles.detailTitle} accessibilityRole="header" numberOfLines={1}>{petName}</Text><View style={styles.spacer} /></View>;
 }
-
-export function PetSettingsHeader({ onBack }: BackHeaderProps) {
-  return (
-    <View style={styles.header}>
-      <AppIconButton iconName="back" label={t("navigation.back")} onPress={onBack} />
-      <Text style={styles.screenTitle}>{t("pet.manageTitle")}</Text>
-      <View style={styles.headerSpacer}>
-        <AppIcon name="pet" size={iconSize.md} color={colors.textSoft} />
-      </View>
-    </View>
-  );
+export function PetSettingsHeader({ onBack }: PetSettingsHeaderProps) {
+  return <View style={styles.header}><BackButton onBack={onBack} /><Text style={styles.detailTitle} accessibilityRole="header" numberOfLines={1}>{t("pet.manageTitle")}</Text><View style={styles.spacer} /></View>;
 }
-
-export function CareHeader() {
+export function ShellTitleHeader({ title }: ShellTitleHeaderProps) { return <View style={styles.header}><Text style={styles.tabTitle} accessibilityRole="header" numberOfLines={1}>{title}</Text></View>; }
+export function SettingsHeader() { return <View style={styles.header}><Text style={styles.tabTitle} accessibilityRole="header" numberOfLines={1}>{t("tabs.settings")}</Text></View>; }
+function HeaderAction({ icon, label, primary = false, onPress }: { icon: AppIconName; label: string; primary?: boolean; onPress: () => void }) {
   return (
-    <View style={styles.header}>
-      <View style={styles.careTitleRow}>
-        <View style={styles.careBadge}>
-          <AppIcon name="care" size={iconSize.lg} color={colors.white} />
-        </View>
-        <Text style={styles.screenTitle}>{t("care.eyebrow")}</Text>
-      </View>
-      <View style={styles.headerSpacer} />
-    </View>
-  );
-}
-
-export function ReportsHeader() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.careTitleRow}>
-        <AppIcon name="reports" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("tabs.reports")}</Text>
-      </View>
-      <View style={styles.headerSpacer} />
-    </View>
-  );
-}
-
-export function SettingsHeader() {
-  return (
-    <View style={styles.header}>
-      <View style={styles.careTitleRow}>
-        <AppIcon name="settings" size={iconSize.lg} color={colors.orangeDeep} />
-        <Text style={styles.screenTitle}>{t("tabs.settings")}</Text>
-      </View>
-      <View style={styles.headerSpacer} />
-    </View>
-  );
-}
-
-function AppIconButton({ iconName, label, onPress }: { iconName: "back"; label: string; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.headerIconTouch, pressed && styles.headerIconTouchPressed]}>
-      <AppIcon name={iconName} size={iconSize.lg} color={colors.text} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.action, primary && styles.actionPrimary, pressed && (primary ? styles.actionPrimaryPressed : styles.actionPressed)]}>
+      <AppIcon name={icon} size={iconSize.sm} color={primary ? colors.white : colors.pendingText} />
+      <Text style={[styles.actionText, primary && styles.actionTextPrimary]} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 }
-
+function BackButton({ onBack }: { onBack: () => void }) {
+  const label = t("navigation.back");
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onBack} style={({ pressed }) => [styles.headerIconTouch, pressed && styles.actionPressed]}><AppIcon name="back" size={iconSize.lg - 4} color={colors.text} /></Pressable>;
+}
 const styles = StyleSheet.create({
   header: {
-    minHeight: 70,
+    minHeight: 64,
     paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.sm,
   },
-  brandRow: {
+  tabTitle: {
+    ...type.brand,
+    flexShrink: 1,
+  },
+  detailTitle: {
+    ...type.screenTitle,
+    fontSize: 20,
+    lineHeight: 26,
+    flex: 1,
+    textAlign: "center",
+  },
+  actions: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 0,
   },
-  brandText: {
-    ...type.brand,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  petSwitch: {
-    minHeight: 38,
+  action: {
+    minHeight: layout.minTouch,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: spacing.xxs,
   },
-  petSwitchPressed: {
+  actionPrimary: {
+    backgroundColor: colors.orangePressed,
+    borderColor: colors.orangePressed,
+  },
+  actionPressed: {
     backgroundColor: colors.surfaceWarm,
   },
-  petSwitchDisabled: {
-    opacity: 0.6,
+  actionPrimaryPressed: {
+    backgroundColor: colors.pendingText,
   },
-  petSwitchText: {
+  actionText: {
     ...type.caption,
-    color: colors.text,
-    fontWeight: font.weight.semibold,
+    color: colors.pendingText,
+    fontWeight: font.weight.bold,
   },
-  screenTitle: {
-    ...type.screenTitle,
-  },
-  careTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  careBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.sm,
-    backgroundColor: colors.salmon,
-    alignItems: "center",
-    justifyContent: "center",
+  actionTextPrimary: {
+    color: colors.white,
   },
   headerIconTouch: {
-    width: 44,
-    height: 44,
+    width: layout.minTouch,
+    height: layout.minTouch,
+    borderRadius: radius.full,
+    alignItems: "center",
     justifyContent: "center",
   },
-  headerIconTouchPressed: {
-    opacity: 0.6,
-  },
-  headerSpacer: {
-    width: 44,
-    height: 44,
-    alignItems: "flex-end",
-    justifyContent: "center",
+  spacer: {
+    width: layout.minTouch,
   },
 });

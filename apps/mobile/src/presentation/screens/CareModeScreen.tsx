@@ -22,6 +22,8 @@ type QuickMedicationUpdateHandler = NonNullable<ComponentProps<typeof QuickMedic
 
 type CareModeScreenProps = {
   petId: string;
+  /** Calendar day represented by this agenda; defaults to today for existing callers. */
+  dateKey?: string;
   doses: DoseRecord[];
   medicationAgenda?: TodayMedicationAgendaRow[];
   onAgendaStatusChange?: (row: TodayMedicationAgendaRow, status: "completed" | "skipped" | "partial") => void;
@@ -51,6 +53,7 @@ export function CareModeScreen({ canManageCare = true, canDeleteDose = true, can
 
 function CarePanel({
   petId,
+  dateKey = getLocalDateKey(),
   doses,
   medicationAgenda = [],
   onAgendaStatusChange,
@@ -132,7 +135,7 @@ function CarePanel({
             // A schedule outside its window (or off its recurrence day) still
             // lists for reference, but offering "use today" on it would create
             // a dose the plan never asked for today.
-            const appliesToday = scheduleAppliesOnDate(schedule, getLocalDateKey());
+            const appliesToday = scheduleAppliesOnDate(schedule, dateKey);
             const usable = canManageCare && appliesToday;
             return (
               <Pressable

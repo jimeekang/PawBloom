@@ -109,8 +109,10 @@ if (profileCareDefaultsPanel.includes('placeholder="YYYY-MM-DD"') || profileCare
 }
 
 const bottomNav = readFileSync(join(root, "apps/mobile/src/presentation/ui/BottomNav.tsx"), "utf8");
-if (!bottomNav.includes('"settings"') || !bottomNav.includes('"tabs.settings"')) {
-  throw new Error("settings must be a bottom navigation tab beside reports");
+const mainTabMatches = [...bottomNav.matchAll(/\{ key: "([^"]+)", labelKey: "([^"]+)"/g)];
+const expectedTabs = ["house", "care", "memories", "more"];
+if (mainTabMatches.length !== expectedTabs.length || mainTabMatches.some((match, index) => match[1] !== expectedTabs[index] || match[2] !== `tabs.${expectedTabs[index]}`)) {
+  throw new Error("bottom navigation must expose exactly house/care/memories/more with their matching labels");
 }
 
 const shellHeaders = readFileSync(join(root, "apps/mobile/src/presentation/shell/ShellHeaders.tsx"), "utf8");

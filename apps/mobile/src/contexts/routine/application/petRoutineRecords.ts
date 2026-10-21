@@ -1,4 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePetMutation } from "../../pet/application/petMutationTarget";
+import { invalidateTodayCare } from "../../pet/application/todayCareInvalidation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database, Json } from "../../../shared-kernel/supabase/database.types";
 import type { Species } from "../../pet/domain/pet";
@@ -20,18 +22,13 @@ export function usePetRoutine(petId: string | null, species: Species = "dog", us
   return useQuery({
     queryKey: petRoutineKeys.detail(petId, species, userId),
     enabled: Boolean(supabase && petId && userId),
-    queryFn: async () => {
-      if (!supabase || !petId) return null;
-      const { data, error } = await supabase.from("pet_routines").select("id,pet_id,routine,created_by,created_at,updated_at").eq("pet_id", petId).maybeSingle();
-      if (error) throw new CodedError("routine.saveFailed", error.message);
-      return data ? mapRoutineRow(data, species) : createDefaultPetRoutine(petId, species);
-    },
+    queryFn: () => fetchPetRoutine(petId!, species),
   });
 }
 
 export function useUpsertPetRoutine(petId: string | null, userId: string | null, species: Species = "dog") {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (input: PetRoutineInput) => {
       const client = supabase;
       if (!client || !petId || !userId) throw new CodedError("common.loginRequired");
@@ -68,9 +65,9 @@ export function useUpsertPetRoutine(petId: string | null, userId: string | null,
     },
     onSuccess: (routine) => {
       queryClient.setQueryData(petRoutineKeys.detail(petId, species, userId), routine);
-      void queryClient.invalidateQueries({ queryKey: petRoutineKeys.detail(petId, species, userId) });
+      void invalidateTodayCare(queryClient, userId);
     },
-  });
+  }, petId, userId);
 }
 
 function mapRoutineRow(row: RoutineRow, species: Species): PetRoutine {
@@ -87,4 +84,10 @@ function mapRoutineRow(row: RoutineRow, species: Species): PetRoutine {
     id: row.id,
     petId: row.pet_id,
   };
+}
+
+export async function fetchPetRoutine(petId: string, species: Species) {
+  const { data, error } = await supabase!.from("pet_routines").select("id,pet_id,routine,created_by,created_at,updated_at").eq("pet_id", petId).maybeSingle();
+  if (error) throw new CodedError("routine.saveFailed", error.message);
+  return data ? mapRoutineRow(data, species) : createDefaultPetRoutine(petId, species);
 }

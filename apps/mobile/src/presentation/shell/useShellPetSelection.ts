@@ -9,40 +9,26 @@ type Params = {
   externalPets?: PetProfile[];
   authActivePet: PetProfile | null;
   authPets: PetProfile[];
-  onPetNext?: () => void;
-  selectNextPet: () => void;
+  authenticated: boolean;
+  onSelectPet?: (petId: string) => void;
+  selectPet: (petId: string) => void;
 };
-
-export function useShellPetSelection({
-  language,
-  externalActivePet,
-  externalPets,
-  authActivePet,
-  authPets,
-  onPetNext,
-  selectNextPet,
-}: Params) {
+/** Selection resolves IDs only within this account's current accessible list. */
+export function findAccessiblePet(pets: readonly PetProfile[], petId: string) { return pets.find((pet) => pet.id === petId); }
+export function useShellPetSelection({ language, externalActivePet, externalPets, authActivePet, authPets, authenticated, onSelectPet, selectPet }: Params) {
   const previewPets = useMemo(() => buildSamplePets(language), [language]);
-  const [previewPetIndex, setPreviewPetIndex] = useState(0);
-  const shellPets = externalPets ?? authPets;
-  const isPreviewPet = !externalActivePet && !authActivePet;
-  const activePet = externalActivePet
-    ?? authActivePet
-    ?? previewPets[previewPetIndex % previewPets.length];
-  const canCyclePet = isPreviewPet
-    ? previewPets.length > 1
-    : externalActivePet
-      ? Boolean(onPetNext && shellPets.length > 1)
-      : authPets.length > 1;
-  const ownedPetCount = countOwnedPets(isPreviewPet ? previewPets : shellPets);
-
-  function cyclePet() {
-    if (!canCyclePet) return false;
-    if (onPetNext) onPetNext();
-    else if (isPreviewPet) setPreviewPetIndex((current) => (current + 1) % previewPets.length);
-    else selectNextPet();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const isPreviewPet = !authenticated && !externalActivePet;
+  const accessiblePets = isPreviewPet ? previewPets : externalPets ?? authPets;
+  const selectedPet = selectedId ? findAccessiblePet(accessiblePets, selectedId) : undefined;
+  const initialPet = externalActivePet ?? authActivePet;
+  const activePet = selectedPet ?? (initialPet && findAccessiblePet(accessiblePets, initialPet.id)) ?? accessiblePets[0] ?? previewPets[0];
+  const ownedPetCount = countOwnedPets(accessiblePets);
+  function selectPetId(petId: string) {
+    if (!findAccessiblePet(accessiblePets, petId)) return false;
+    setSelectedId(petId);
+    if (!isPreviewPet) (onSelectPet ?? selectPet)(petId);
     return true;
   }
-
-  return { activePet, ownedPetCount, canCyclePet, cyclePet, previewPets };
+  return { activePet, accessiblePets, ownedPetCount, selectPetId, previewPets, isPreviewPet };
 }

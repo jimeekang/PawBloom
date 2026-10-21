@@ -23,8 +23,8 @@ const mealReminders = read("contexts/routine/application/mealReminderNotificatio
 
 // The care path also gates on the reminder preference; the toggle itself moved
 // to useMedicationReminderToggle with the same guard.
-if (!shell.includes('if (!databaseMode || !userId || Platform.OS === "web" || !medicationRemindersEnabled) return savedSetup;')
-  || occurrences(shell, 'if (!databaseMode || !userId || Platform.OS === "web")') < 1) {
+if (!shell.includes('if (!mutationScope.isCurrent() || !databaseMode || !userId || Platform.OS === "web" || !medicationRemindersEnabled) return savedSetup;')
+  || occurrences(shell, 'if (!mutationScope.isCurrent() || !databaseMode || !userId || Platform.OS === "web")') < 1) {
   throw new Error("both care and routine save paths must skip reminder notices in preview/web mode (B5)");
 }
 
@@ -82,6 +82,7 @@ const nodeModule = require("node:module") as { _load: (request: string, parent?:
 const originalModuleLoad = nodeModule._load;
 nodeModule._load = function loadWithNotificationMock(request, parent, isMain) {
   if (request === "expo-notifications") return notificationsMock;
+  if (request.endsWith("/notificationPetIdentity")) return { fetchNotificationPetIdentity: async () => ({ petCreatedAt: "pet-incarnation", schedules: { "schedule-a": "schedule-incarnation-a", "schedule-b": "schedule-incarnation-b" } }) };
   return originalModuleLoad.call(this, request, parent, isMain);
 };
 

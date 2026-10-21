@@ -1,4 +1,7 @@
-import { type QueryClient, type QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { overlayPendingDiaryEntries } from "./pendingDiaryEntries";
+import { usePetMutation } from "../../pet/application/petMutationTarget";
+import { invalidateTodayCare } from "../../pet/application/todayCareInvalidation";
+import { type QueryClient, type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import { CodedError } from "../../../shared-kernel/appError";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
@@ -14,37 +17,27 @@ import { diaryEntrySelect, fetchDiaryEntryByClientMutationId, fetchDiaryRowsWith
 import { decodeDiarySummary, defaultDiarySummary, encodeDiarySummary } from "./diarySummary";
 import { createPhotoDiaryEntryAtomic, updatePhotoDiaryEntryAtomic } from "./diaryPhotoRecords";
 import { resolveDiaryUniqueConflict } from "./diaryUniqueConflict";
-
 export { buildDiaryUpdatePayload } from "./diaryRecordPayload";
 export { decodeDiarySummary, encodeDiarySummary } from "./diarySummary";
-
 type DiaryRow = Database["public"]["Tables"]["diary_entries"]["Row"];
 type DiaryInsert = Database["public"]["Tables"]["diary_entries"]["Insert"];
-
 export { diaryEntrySelect } from "./diaryRecordQueries";
-
 export type UpdateDiaryEntryInput = DiaryUpdateInput;
 export type CreateDiaryEntryResult = { entry: DiaryEntry; queued: boolean };
-
 export const diaryKeys = {
   date: (petId: string | null, dateKey: string, userId: string | null = null) => ["diary", "date", petId, dateKey, userId] as const,
   range: (petId: string | null, fromDateKey: string, toDateKey: string, userId: string | null = null) => ["diary", "range", petId, fromDateKey, toDateKey, userId] as const,
 };
-
 import { getLocalDateKey } from "../../../shared-kernel/date";
-
 export { getLocalDateKey };
-
 export function getWeekDateRange(dateKey: string) {
   const date = parseDateKey(dateKey), day = date.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
   const start = addDays(date, mondayOffset);
   return { fromDateKey: getLocalDateKey(start), toDateKey: getLocalDateKey(addDays(start, 6)) };
 }
-
 export function mapDiaryRow(row: DiaryRowWithMedia, photoUrls: string[] = []): DiaryEntry {
   const decoded = decodeDiarySummary(row.summary, row.category);
-
   return {
     id: row.id,
     petId: row.pet_id,
@@ -60,32 +53,27 @@ export function mapDiaryRow(row: DiaryRowWithMedia, photoUrls: string[] = []): D
     photoUrls,
   };
 }
-
 export function removeDiaryEntryFromList<T extends { id: string }>(entries: T[] | undefined, id: string) {
   return (entries ?? []).filter((entry) => entry.id !== id);
 }
-
 export function useDiaryEntriesByDate(petId: string | null, dateKey: string, userId: string | null = null) {
   return useQuery({
     queryKey: diaryKeys.date(petId, dateKey, userId),
     enabled: Boolean(supabase && petId && userId && dateKey),
-    queryFn: async () => (!supabase || !petId ? [] : fetchDiaryEntries(petId, dateKey, dateKey)),
+    queryFn: async () => (!supabase || !petId ? [] : fetchDiaryEntries(petId, dateKey, dateKey, userId)),
   });
 }
-
 export function useDiaryEntriesByDateRange(petId: string | null, fromDateKey: string, toDateKey: string, userId: string | null = null) {
   return useQuery({
     queryKey: diaryKeys.range(petId, fromDateKey, toDateKey, userId),
     enabled: Boolean(supabase && petId && userId && fromDateKey && toDateKey),
-    queryFn: async () => (!supabase || !petId ? [] : fetchDiaryEntries(petId, fromDateKey, toDateKey)),
+    queryFn: async () => (!supabase || !petId ? [] : fetchDiaryEntries(petId, fromDateKey, toDateKey, userId)),
   });
 }
-
 export function useTodayDiaryEntries(petId: string | null, userId: string | null = null) { return useDiaryEntriesByDate(petId, getLocalDateKey(), userId); }
-
 export function useUpdateDiaryEntry(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (input: UpdateDiaryEntryInput) => {
       if (!supabase || !petId) throw new CodedError("common.loginRequired");
       if (input.category === "photo") {
@@ -106,14 +94,13 @@ export function useUpdateDiaryEntry(petId: string | null, userId: string | null 
     onSuccess: (entry) => {
       removeDiaryEntryFromCachedLists(queryClient, petId, userId, entry.id);
       upsertDiaryEntryInCachedLists(queryClient, petId, userId, entry);
-      void queryClient.invalidateQueries({ queryKey: ["diary"] });
+      void invalidateTodayCare(queryClient, userId);
     },
-  });
+  }, petId, userId);
 }
-
 export function useDeleteDiaryEntry(petId: string | null, userId: string | null = null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (id: string) => {
       if (!supabase || !petId) throw new CodedError("common.loginRequired");
       const deleted = await deleteDiaryEntryAtomic(supabase, petId, id);
@@ -121,14 +108,13 @@ export function useDeleteDiaryEntry(petId: string | null, userId: string | null 
     },
     onSuccess: (result) => {
       removeDiaryEntryFromCachedLists(queryClient, petId, userId, result.id);
-      void queryClient.invalidateQueries({ queryKey: ["diary"] });
+      void invalidateTodayCare(queryClient, userId);
     },
-  });
+  }, petId, userId);
 }
-
 export function useCreateDiaryEntry(petId: string | null, userId: string | null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (input: CreateDiaryEntryInput) => {
       if (!supabase || !petId || !userId) throw new CodedError("common.loginRequired");
       if ((input.photos?.length ?? 0) > 5) throw new CodedError("diary.photoLimitNotice");
@@ -155,7 +141,6 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
         occurred_at: buildOccurredAtForTime(entryDate, input.occurredTime) ?? buildOccurredAt(entryDate),
         client_mutation_id: clientMutationId,
       };
-
       let insertResult;
       try {
         insertResult = await supabase.from("diary_entries").insert(payload).select(diaryEntrySelect).single();
@@ -189,16 +174,14 @@ export function useCreateDiaryEntry(petId: string | null, userId: string | null)
         }
         throw new CodedError("diary.saveFailed", error.message);
       }
-
       return { entry: mapDiaryRow({ ...data, media_assets: [] } as DiaryRowWithMedia), queued: false };
     },
     onSuccess: (result) => {
       upsertDiaryEntryInCachedLists(queryClient, petId, userId, result.entry);
-      if (!result.queued) void queryClient.invalidateQueries({ queryKey: ["diary"] });
+      void invalidateTodayCare(queryClient, userId, result.queued);
     },
-  });
+  }, petId, userId, (input, target) => ({ ...input, entryDate: input.entryDate ?? target.dateKey, clientMutationId: input.clientMutationId ?? target.mutationId }));
 }
-
 function mapQueuedDiaryEntry(payload: DiaryInsert, clientMutationId: string) {
   const queuedAt = new Date().toISOString();
   return mapDiaryRow({
@@ -211,46 +194,36 @@ function mapQueuedDiaryEntry(payload: DiaryInsert, clientMutationId: string) {
     media_assets: [],
   } as DiaryRowWithMedia);
 }
-
-async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: string) {
+export async function fetchDiaryEntries(petId: string, fromDateKey: string, toDateKey: string, userId?: string | null) {
   const rowsWithPhotos = await fetchDiaryRowsWithPhotoUrls(petId, fromDateKey, toDateKey);
-  return rowsWithPhotos.map(({ row, photoUrls }) => mapDiaryRow(row, photoUrls));
+  return overlayPendingDiaryEntries(rowsWithPhotos.map(({ row, photoUrls }) => mapDiaryRow(row, photoUrls)), rowsWithPhotos.map(({ row }) => row.client_mutation_id), petId, userId, fromDateKey, toDateKey);
 }
-
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
-
 function parseDateKey(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Date(year, (month ?? 1) - 1, day ?? 1);
 }
-
 function addDays(date: Date, days: number) { const nextDate = new Date(date); nextDate.setDate(nextDate.getDate() + days); return nextDate; }
-
 function normalizeScore(value: number | null): 1 | 2 | 3 | 4 | 5 | undefined {
   if (value === 1 || value === 2 || value === 3 || value === 4 || value === 5) return value;
   return undefined;
 }
-
 export function upsertDiaryEntryInList<T extends { id: string }>(entries: T[] | undefined, entry: T) { return [entry, ...removeDiaryEntryFromList(entries, entry.id)]; }
-
 function removeDiaryEntryFromCachedLists(queryClient: QueryClient, petId: string | null, userId: string | null, id: string) {
   for (const [queryKey, current] of queryClient.getQueriesData<DiaryEntry[]>({ queryKey: ["diary"] })) {
     if (Array.isArray(current) && isDiaryListCacheForPet(queryKey, petId, userId)) queryClient.setQueryData<DiaryEntry[]>(queryKey, removeDiaryEntryFromList(current, id));
   }
 }
-
 function upsertDiaryEntryInCachedLists(queryClient: QueryClient, petId: string | null, userId: string | null, entry: DiaryEntry) {
   for (const [queryKey, current] of queryClient.getQueriesData<DiaryEntry[]>({ queryKey: ["diary"] })) {
     if (Array.isArray(current) && isDiaryListCacheForPet(queryKey, petId, userId) && cacheIncludesEntryDate(queryKey, entry.entryDate)) queryClient.setQueryData<DiaryEntry[]>(queryKey, upsertDiaryEntryInList(current, entry));
   }
 }
-
 function isDiaryListCacheForPet(queryKey: QueryKey, petId: string | null, userId: string | null) {
   return queryKey[0] === "diary" && (queryKey[1] === "date" || queryKey[1] === "range") && queryKey[2] === petId && queryKey.at(-1) === userId;
 }
-
 function cacheIncludesEntryDate(queryKey: QueryKey, entryDate: string) {
   if (queryKey[1] === "date") return queryKey[3] === entryDate;
   return typeof queryKey[3] === "string" && typeof queryKey[4] === "string" && queryKey[3] <= entryDate && entryDate <= queryKey[4];

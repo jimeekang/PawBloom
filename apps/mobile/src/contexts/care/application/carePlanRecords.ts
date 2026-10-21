@@ -1,4 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePetMutation } from "../../pet/application/petMutationTarget";
+import { invalidateTodayCare } from "../../pet/application/todayCareInvalidation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../shared-kernel/supabase/client";
 import type { Database } from "../../../shared-kernel/supabase/database.types";
 import { mapMedicationSchedules, normalizeMedicationLocalTime } from "../../medication/application/medicationScheduleRecords";
@@ -37,15 +39,16 @@ export function useActiveCareSetup(petId: string | null, userId: string | null =
 
 export function useCreateCareSetup(petId: string | null, userId: string | null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return usePetMutation({
     mutationFn: async (input: CareSetupInput) => {
       if (!supabase || !petId || !userId) throw new CodedError("common.loginRequired");
       return saveCareSetupRecords(petId, input);
     },
     onSuccess: (setup) => {
       queryClient.setQueryData(carePlanKeys.active(petId, userId), setup);
+      void invalidateTodayCare(queryClient, userId);
     },
-  });
+  }, petId, userId, (input, target) => ({ ...input, clientMutationId: input.clientMutationId ?? target.mutationId }));
 }
 
 // Reminder restoration needs every pet's schedules, not just the active pet's
@@ -56,7 +59,7 @@ export async function fetchActiveCareSchedulesForPet(petId: string): Promise<Car
   return setup.schedules;
 }
 
-async function fetchActiveCareSetup(petId: string) {
+export async function fetchActiveCareSetup(petId: string) {
   const [conditions, plans, medications, schedules] = await Promise.all([
     supabase!.from("conditions").select("id,pet_id,name,status,vet_instructions,starts_on,ends_on,created_by,created_at,updated_at").eq("pet_id", petId).eq("status", "active").order("created_at", { ascending: false }),
     supabase!.from("care_plans").select("id,pet_id,condition_id,title,instructions,starts_on,ends_on,created_by,created_at,updated_at").eq("pet_id", petId).order("created_at", { ascending: false }),

@@ -47,6 +47,23 @@ export const icon = {
   close: { family: "ion", name: "close" },
   eye: { family: "ion", name: "eye-outline" },
   eyeOff: { family: "ion", name: "eye-off-outline" },
+  // 0009 four-tab shell and house controls
+  today: { family: "ion", name: "today-outline" },
+  todayFilled: { family: "ion", name: "today" },
+  memories: { family: "ion", name: "images-outline" },
+  memoriesFilled: { family: "ion", name: "images" },
+  more: { family: "ion", name: "ellipsis-horizontal-circle-outline" },
+  moreFilled: { family: "ion", name: "ellipsis-horizontal-circle" },
+  pause: { family: "ion", name: "pause" },
+  play: { family: "ion", name: "play" },
+  lockOpen: { family: "ion", name: "lock-open-outline" },
+  forward: { family: "ion", name: "chevron-forward" },
+  edit: { family: "ion", name: "create-outline" },
+  profile: { family: "ion", name: "person-circle-outline" },
+  retry: { family: "ion", name: "refresh-outline" },
+  partial: { family: "ion", name: "contrast-outline" },
+  skipped: { family: "ion", name: "play-skip-forward-outline" },
+  alert: { family: "ion", name: "alert-circle-outline" },
 } as const satisfies Record<string, IconDefinition>;
 
 export type AppIconName = keyof typeof icon;
