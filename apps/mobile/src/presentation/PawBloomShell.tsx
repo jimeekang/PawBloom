@@ -1,3 +1,4 @@
+import { AppearanceRoute, CharacterSaveReaction, useAppearanceOnboarding } from "./shell/AppearanceRoute";
 import { useAllPetsTodayCare } from "./care/useAllPetsTodayCare";
 import { useShellMutationScope } from "./shell/useShellMutationScope";
 import type { NotificationOpenTarget } from "./shell/notificationRouting";
@@ -56,17 +57,14 @@ import { houseRoute, reduceAppRoute, resolveAccessibleRoute, type AppRoute, type
 import { useDiaryMemories } from "../contexts/diary/application/diaryMemories";
 import { canOpenDiaryMemory } from "./shell/diaryMemoryNavigation";
 type PawBloomShellProps = { notificationTarget?: NotificationOpenTarget | null; onNotificationConsumed?: () => void; activePet?: PetProfile | null; pets?: PetProfile[]; onPetNext?: () => void; onSelectPet?: (petId: string) => void };
-export function PawBloomShell(props: PawBloomShellProps = {}) {
-  const { user } = useAuth();
-  return <PawBloomSession key={user?.id ?? "preview"} {...props} />;
-}
+export function PawBloomShell(props: PawBloomShellProps = {}) { const { user } = useAuth(); return <PawBloomSession key={user?.id ?? "preview"} {...props} />; }
 function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet: externalActivePet, pets: externalPets, onSelectPet }: PawBloomShellProps) {
   const { configured, user, activePet: authActivePet, pets: authPets, selectPet, signOut } = useAuth();
   const { language } = useLanguage();
   const { activePet, accessiblePets, ownedPetCount, selectPetId, previewPets } = useShellPetSelection({ language, externalActivePet, externalPets, authActivePet, authPets, authenticated: Boolean(user), onSelectPet, selectPet });
   const [routeState, setRouteState] = useState<AppRoute>(houseRoute);
   const accessibleIds = accessiblePets.map((pet) => pet.id);
-  const route = resolveAccessibleRoute(routeState, accessibleIds);
+  const route = resolveAccessibleRoute(routeState, accessibleIds, accessiblePets.filter((pet) => pet.role === "owner").map((pet) => pet.id));
   const dispatchRoute = (action: AppRouteAction) => setRouteState((current) => reduceAppRoute(current, action, accessibleIds));
   useEffect(() => { if (route !== routeState) setRouteState(route); }, [route, routeState]);
   const detailReady = route.kind === "pet" && activePet.id === route.petId;
@@ -94,6 +92,7 @@ function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet
     setNotice(databaseMode ? t("today.databaseNotice") : t("today.previewNotice"));
     dispatchRoute(action);
   }
+  useAppearanceOnboarding(userId, accessiblePets, (petId) => { selectPetId(petId); navigate({ type: "appearance", petId, onboarding: true }); });
   useAndroidBackNavigation({ route, onBack: () => navigate({ type: "back" }) });
   const routine = useRoutineDefaults({ activePetId: activePet.id, activePetSpecies: activePet.species, databaseMode, livePetId, userId, fallbackPet: previewPets[0], onNotice: mutationScope.guard(setNotice), onSaved: mutationScope.guard(() => showSaveFeedback("routine")) });
   const care = useCareSetupState({ activePetId: activePet.id, databaseMode, livePetId, userId, onNotice: mutationScope.guard(setNotice), onSaved: mutationScope.guard(() => showSaveFeedback("careSetup")) });
@@ -217,7 +216,6 @@ function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet
     diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day");
     openPet(petId, { view: "diary", dateKey: getLocalDateKey() });
   }
-  function handleSignOut() { void confirmAndSignOut(signOut); }
   function openPetSettings() {
     if (!databaseMode) { setNotice(t("pet.loginRequired"), "info"); return; }
     if (route.kind === "pet") navigate({ type: "section", section: "profile" });
@@ -237,10 +235,10 @@ function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet
         <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <OfflineConflictNotice key={userId ?? "signed-out"} userId={userId} pets={authPets} />
           {careView !== "default" && nonHomeNotice ? <View style={styles.petSettingsNotice}><NoticeBanner text={nonHomeNotice} icon={notice.tone === "error" ? "close" : "check"} tone={notice.tone} /></View> : null}
-          {route.kind === "main" && route.tab === "house" || route.kind === "record-target" ? <HouseScreen pets={accessiblePets} userId={userId} recordTargetSelection={route.kind === "record-target"} careStates={allPetsTodayCare.petStates} memoryStates={memories.petStates} onOpenPet={(petId, section) => openPet(petId, undefined, section)} onCancelRecordTarget={route.kind === "record-target" ? () => navigate({ type: "back" }) : undefined} onRecordPet={openNewDiary} onAddPet={openAddPet} /> : null}
+          {route.kind === "main" && route.tab === "house" || route.kind === "record-target" ? <HouseScreen pets={accessiblePets} userId={userId} recordTargetSelection={route.kind === "record-target"} careStates={allPetsTodayCare.petStates} memoryStates={memories.petStates} onOpenPet={(petId, section) => openPet(petId, undefined, section)} onCancelRecordTarget={route.kind === "record-target" ? () => navigate({ type: "back" }) : undefined} onRecordPet={openNewDiary} onAddPet={openAddPet} onEditAppearance={(petId) => navigate({ type: "appearance", petId })} /> : null}
           {route.kind === "main" && route.tab === "care" ? <TodayCareScreen dateKey={allPetsTodayCare.dateKey} pets={accessiblePets} status={allPetsTodayCare.status} petStates={allPetsTodayCare.petStates} onOpenPet={openPet} onRetryPet={allPetsTodayCare.retryPet} /> : null}
           {route.kind === "main" && route.tab === "memories" ? <MemoriesScreen pets={accessiblePets} petStates={memories.petStates} onOpenDiaryEntry={openTimelineEntry} onRetryPet={memories.retryPet} /> : null}
-          {detailReady && route.kind === "pet" ? <PetDetailScreen pet={activePet} route={route} onSectionChange={(section) => section === "profile" ? openPetSettings() : navigate({ type: "section", section })} onCareViewChange={(destination) => navigate({ type: "careView", destination })} /> : null}
+          {detailReady && route.kind === "pet" ? <PetDetailScreen pet={activePet} route={route} userId={userId} onEditAppearance={() => navigate({ type: "appearance", petId: route.petId, returnTo: "profile" })} onSectionChange={(section) => section === "profile" ? openPetSettings() : navigate({ type: "section", section })} onCareViewChange={(destination) => navigate({ type: "careView", destination })} /> : null}
           {detailReady && route.kind === "pet" && route.section === "memories" ? <MemoriesScreen pets={accessiblePets} petId={route.petId} petStates={memories.petStates} onOpenDiaryEntry={openTimelineEntry} onRetryPet={memories.retryPet} /> : null}
           {route.kind === "pet-create" || detailReady && route.kind === "pet" && route.section === "profile" && databaseMode ? <PetOnboardingScreen mode="manage" petId={route.kind === "pet" ? route.petId : undefined} createOnly={route.kind === "pet-create"} onCreated={() => navigate({ type: "tab", tab: "house" })} onCancelCreate={() => navigate({ type: "tab", tab: "house" })} routine={routine.activeRoutine} onSaveRoutine={saveRoutineAndRefreshMealReminders} careSetup={care.activeCareSetup} onSaveCareSetup={saveCareSetupAndRefreshReminders} onProfileSaved={() => showSaveFeedback("petProfile")} medicationRemindersEnabled={medicationRemindersEnabled} onToggleMedicationReminders={(enabled) => void toggleMedicationReminders(enabled)} /> : null}
           {careView === "default" ? <HomeScreen pet={activePet} userId={userId} checklist={checklist} entries={diary.activeEntries} doses={medication.activeDoses} medicationAgenda={medication.medicationAgenda} walkEnabled={routine.activeRoutine.walk.enabled !== false} includeMedication showMedicationSummary={hasCareRecords} notice={homeNotice} noticeTone={notice.tone} todayStatus={diary.todayDiaryStatus === "error" || medication.todayDosesStatus === "error" ? "error" : diary.todayDiaryStatus === "loading" || medication.todayDosesStatus === "loading" ? "loading" : "ready"} onRetryToday={() => { diary.refetchTodayDiary(); medication.refetchTodayDoses(); }} onChecklistToggle={toggleChecklist} onViewTimelineAll={() => { diary.setTimelineEditEntry(null); diary.setSelectedDiaryDate(getLocalDateKey()); diary.setDiaryFilter("day"); dispatchRoute({ type: "careView", destination: { view: "diary" } }); }} onTimelineEntryPress={openTimelineEntry} /> : null}
@@ -250,9 +248,11 @@ function PawBloomSession({ notificationTarget, onNotificationConsumed, activePet
           </View>
           {careView === "medication" ? <MedicationDestinationScreen key={`${activePet.id}:${route.kind === "pet" && route.destination.view === "medication" ? route.destination.dateKey ?? getLocalDateKey() : getLocalDateKey()}`} dateKey={route.kind === "pet" && route.destination.view === "medication" ? route.destination.dateKey ?? getLocalDateKey() : getLocalDateKey()} scheduleId={route.kind === "pet" && route.destination.view === "medication" ? route.destination.scheduleId : undefined} userId={userId} petId={activePet.id} doses={medication.doses} onAgendaStatusChange={medication.saveAgendaStatus} onAddDose={medication.addMedicationDose} onUpdateDose={medication.updateDoseRecord} onDeleteDose={medication.deleteDoseRecord} onSaveCareSetup={saveCareSetupAndRefreshReminders} onUseSchedule={useCareSchedule} onOpenProfileCare={openPetSettings} onGenerateReport={() => dispatchRoute({ type: "careView", destination: { view: "reports" } })} conditionScore={diary.latestConditionScore} careSetup={care.activeCareSetup} careStatus={care.careSetupStatus} onRetryCare={care.refetchCareSetup} canManageCare={canManageCare} canDeleteDose={canDeleteDose} canManageReports={canGenerateReport || canShareReport} /> : null}
           {careView === "reports" ? <ReportsScreen report={reportWorkflow.report} reportSummary={reportSummary} canGenerate={reportWorkflow.canGenerate} canConfirm={reportWorkflow.canConfirm} canShare={reportWorkflow.canShare} blockedReason={reportWorkflow.blockedReason} error={reportWorkflow.error} pendingAction={reportWorkflow.pendingAction} isBusy={reportWorkflow.isBusy} onGenerate={() => void reportWorkflow.generate()} onConfirm={() => void reportWorkflow.confirm()} onShare={() => void reportWorkflow.share()} onRevoke={() => reportWorkflow.revoke()} onReset={reportWorkflow.reset} onNewDiary={() => dispatchRoute({ type: "careView", destination: { view: "diary" } })} onRetryLoad={reportWorkflow.retryLoad} formatDiarySummary={getDiaryEntryDisplaySummary} /> : null}
-          {route.kind === "main" && route.tab === "more" ? <SettingsHubScreen email={user?.email} configured={configured} userId={userId} pets={accessiblePets} onOpenPetProfile={(petId) => { if (!databaseMode) { setNotice(t("pet.loginRequired"), "info"); return; } if (selectPetId(petId)) navigate({ type: "openPet", petId, section: "profile" }); }} onOpenPetProfiles={openPetSettings} onSignOut={handleSignOut} /> : null}
+          {route.kind === "main" && route.tab === "more" ? <SettingsHubScreen email={user?.email} configured={configured} userId={userId} pets={accessiblePets} onOpenPetProfile={(petId) => { if (!databaseMode) { setNotice(t("pet.loginRequired"), "info"); return; } if (selectPetId(petId)) navigate({ type: "openPet", petId, section: "profile" }); }} onOpenPetProfiles={openPetSettings} onSignOut={() => void confirmAndSignOut(signOut)} /> : null}
         </ScrollView>
         <BottomNav activeTab={route.kind === "main" ? route.tab : "house"} onChange={(tab) => navigate({ type: "tab", tab })} />
+        {route.kind === "appearance" ? <AppearanceRoute key={`${userId}:${route.petId}`} pet={accessiblePets.find((pet) => pet.id === route.petId && pet.role === "owner")} userId={userId} onboarding={route.onboarding} onClose={() => navigate({ type: "back" })} /> : null}
+        {saveFeedback?.tone === "success" && ["diary", "checklist", "medication", "medicationStatus"].includes(saveFeedback.kind) ? <CharacterSaveReaction key={saveFeedback.id} eventId={saveFeedback.id} pet={activePet} userId={userId} /> : null}
         <SaveFeedbackBar feedback={saveFeedback} onDismiss={hideSaveFeedback} />
       </View>
     </SafeAreaView>

@@ -1,3 +1,6 @@
+import { PetAvatar, usePetPhoto } from "../house/PetAvatar";
+import { usePetAppearance } from "../../contexts/avatar/application/usePetAppearance";
+import { CharacterSvg } from "../../contexts/avatar/ui/CharacterSvg";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
@@ -17,6 +20,8 @@ export type PetDetailScreenProps = {
   onCareViewChange: (destination: CareDestination) => void;
   /** Existing screen composition; child editors retain their own save contracts. */
   children?: ReactNode;
+  userId?: string | null;
+  onEditAppearance?: () => void;
 };
 
 const careViews: { view: CareDestination["view"]; labelKey: TranslationKey; icon: AppIconName }[] = [
@@ -26,7 +31,9 @@ const careViews: { view: CareDestination["view"]; labelKey: TranslationKey; icon
   { view: "reports", labelKey: "petDetail.report", icon: "reports" },
 ];
 
-export function PetDetailScreen({ pet, route, onSectionChange, onCareViewChange, children }: PetDetailScreenProps) {
+export function PetDetailScreen({ pet, route, onSectionChange, onCareViewChange, children, userId = null, onEditAppearance }: PetDetailScreenProps) {
+  const { appearance } = usePetAppearance(userId, pet.id, pet.species);
+  const photo = usePetPhoto(pet.id, userId);
   const viewsRef = useRef<ScrollView>(null);
   const viewX = useRef(new Map<string, number>()).current;
   const activeView = route.section === "care" ? route.destination.view : null;
@@ -59,12 +66,22 @@ export function PetDetailScreen({ pet, route, onSectionChange, onCareViewChange,
           })}
         </ScrollView>
       ) : null}
+      {route.section === "profile" ? <View style={styles.characterCard}>
+        <CharacterSvg species={pet.species} appearance={appearance} size={88} />
+        <Text style={styles.characterName}>{pet.name}</Text>
+        {pet.role === "owner" && onEditAppearance ? <Pressable accessibilityRole="button" onPress={onEditAppearance} style={styles.characterEdit}><Text style={styles.viewTextActive}>{t("character.edit")}</Text></Pressable> : null}
+        {photo ? <View style={styles.photoCard}><PetAvatar pet={pet} userId={userId} size={44} /><Text style={styles.meta}>{t("character.photo")}</Text></View> : null}
+      </View> : null}
       {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  characterCard: { alignItems: "center", padding: spacing.lg, gap: spacing.sm, backgroundColor: colors.surfaceWarm, borderRadius: radius.xl },
+  characterName: { ...type.sectionTitle },
+  characterEdit: { minHeight: layout.minTouch, justifyContent: "center", paddingHorizontal: spacing.lg, borderRadius: radius.full, borderWidth: 1, borderColor: colors.borderStrong },
+  photoCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "stretch", padding: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.md },
   wrap: { gap: spacing.md, paddingTop: spacing.xxs, paddingBottom: spacing.sm },
   meta: { ...type.caption, color: colors.textMuted },
   views: { gap: spacing.xs, paddingRight: spacing.sm },

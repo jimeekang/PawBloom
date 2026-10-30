@@ -74,6 +74,15 @@ export const sceneColors = {
   nameTag: "rgba(255, 255, 255, 0.94)",
 } as const;
 
+/** Character paints only; expressions never encode health or care completion. */
+export const characterColors = {
+  coat: { white: "#FFF8ED", cream: "#EDD5B1", ginger: "#DF9B57", brown: "#AD7959", gray: "#B8B1AC", black: "#48434A", lilac: "#C3AFBF", chocolate: "#715345" },
+  shade: { white: "#D9D3C9", cream: "#C9B596", ginger: "#BE844A", brown: "#93674C", gray: "#9C9692", black: "#3D393F", lilac: "#A695A2", chocolate: "#60473B" },
+  eye: { amber: "#D3A24E", green: "#82AA7C", blue: "#7EAEC9", copper: "#B97B48", odd: "#7EAEC9" },
+  collar: { none: "transparent", red: "#C77065", blue: "#729BB6", yellow: "#DBB45E", green: "#7F9F84" },
+  inner: "#E3ACAA", nose: "#B97679", ink: "#342C32", highlight: "#FFFFFF", blush: "#E89991", bell: "#E9C468", outline: "#B49C82",
+} as const;
+
 export const spacing = {
   xxs: 4,
   xs: 6,

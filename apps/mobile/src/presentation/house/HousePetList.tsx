@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize, radius, spacing, type } from "../../design-system/tokens";
@@ -39,45 +39,44 @@ export type HousePetListProps = {
 /** Always-present name list: picks overlapping pets and works without dragging. */
 export function HousePetList({ rows, userId, careStates, mode, selectedPetId, onPress, registerNode }: HousePetListProps) {
   return (
-    <View style={styles.list} accessibilityRole={mode === "record" ? "radiogroup" : undefined}>
+    <ScrollView horizontal={mode === "browse"} showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.list, mode === "browse" && styles.chips]} accessibilityRole={mode === "record" ? "radiogroup" : undefined}>
       {rows.map(({ pet, openLabel }) => {
         const checked = mode === "record" && selectedPetId === pet.id;
-        const line = petCareLine(careStates.find((state) => state.petId === pet.id));
         return (
           <Pressable
             key={pet.id}
             ref={(node: unknown) => registerNode(pet.id, node)}
             accessibilityRole={mode === "record" ? "radio" : "button"}
             accessibilityLabel={mode === "record" ? pet.name : openLabel}
-            accessibilityHint={mode === "record" ? undefined : line}
+            accessibilityHint={mode === "record" ? undefined : petCareLine(careStates.find((state) => state.petId === pet.id))}
             accessibilityState={mode === "record" ? { checked } : undefined}
             aria-checked={mode === "record" ? checked : undefined}
             onPress={() => onPress(pet.id)}
-            style={({ pressed }) => [styles.row, checked && styles.rowChecked, pressed && styles.rowPressed]}
+            style={({ pressed }) => [styles.row, mode === "browse" && styles.chip, checked && styles.rowChecked, pressed && styles.rowPressed]}
           >
-            <PetAvatar pet={pet} userId={userId} size={44} />
+            <PetAvatar pet={pet} userId={userId} size={mode === "browse" ? 34 : 44} characterOnly={mode === "browse"} />
             <View style={styles.body}>
               <Text style={styles.name} numberOfLines={2}>{pet.name}</Text>
-              {mode === "browse" ? <Text style={styles.meta} numberOfLines={2}>{line}</Text> : null}
             </View>
             {mode === "record"
               ? <View style={[styles.radio, checked && styles.radioChecked]}>{checked ? <AppIcon name="check" size={iconSize.xs} color={colors.white} /> : null}</View>
-              : <AppIcon name="forward" size={iconSize.sm} color={colors.textSoft} />}
+              : null}
           </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  chips: { flexDirection: "row" },
+  chip: { minHeight: 50, maxWidth: 190, borderRadius: radius.full, gap: spacing.sm },
   list: { gap: spacing.sm },
   row: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   rowChecked: { borderColor: colors.orange, borderWidth: 2, backgroundColor: colors.surfacePeach },
   rowPressed: { backgroundColor: colors.surfaceWarm },
   body: { flex: 1, minWidth: 0, gap: 2 },
   name: { ...type.bodyStrong },
-  meta: { ...type.caption },
   radio: { width: 24, height: 24, borderRadius: radius.full, borderWidth: 2, borderColor: colors.borderStrong, alignItems: "center", justifyContent: "center", marginRight: spacing.xxs },
   radioChecked: { borderColor: colors.orange, backgroundColor: colors.orange },
 });

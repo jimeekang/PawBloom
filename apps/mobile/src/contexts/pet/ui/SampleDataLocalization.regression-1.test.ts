@@ -46,3 +46,8 @@ const localizedDoses = relocalizeSampleDoses(editedDoses, "en");
 if (localizedDoses[0].medicationName !== "Probiotic" || localizedDoses[0].reactionNote !== "Custom reaction note") {
   throw new Error("sample medication names may localize, but user-edited notes must remain unchanged");
 }
+
+for (const language of ["ko", "en"] as const) {
+  const pets = buildSamplePets(language);
+  if (pets.length !== 4 || pets.filter((pet) => pet.species === "dog").length !== 1 || pets.filter((pet) => pet.species === "cat").length !== 3 || new Set(pets.map((pet) => pet.id)).size !== 4) throw new Error("character preview must contain one dog and three distinct cats");
+}

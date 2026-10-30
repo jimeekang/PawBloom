@@ -7,11 +7,12 @@ import { AppIcon } from "../../design-system/iconography";
 import { colors, iconSize } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import type { PetSection } from "../navigation/appRoute";
+import { NearbyCare } from "../house/NearbyCare";
 import { HousePetList } from "../house/HousePetList";
 import { HouseScene } from "../house/HouseScene";
 import { PetSummarySheet } from "../house/PetSummarySheet";
 import { useHouseLayout } from "../house/useHouseLayout";
-import { useHouseMotionEnabled } from "../house/useHouseMotionEnabled";
+import { useHouseMotionState } from "../house/useHouseMotionEnabled";
 import { DefaultPetCharacter } from "../house/DefaultPetCharacter";
 import type { TodayCarePetState } from "./TodayCareScreen";
 import { styles } from "./HouseScreen.styles";
@@ -33,15 +34,19 @@ export type HouseScreenProps = {
   onRecordPet: (petId: string) => void;
   /** Preserves existing account and first-owned-pet creation gates. */
   onAddPet: () => void;
+  onEditAppearance?: (petId: string) => void;
   /** Leaves record-target selection without saving; the cancel button shows only when provided. */
   onCancelRecordTarget?: () => void;
 };
 
-export function HouseScreen({ pets, userId, recordTargetSelection = false, careStates = [], memoryStates = [], onOpenPet, onRecordPet, onAddPet, onCancelRecordTarget }: HouseScreenProps) {
+export function HouseScreen({ pets, userId, recordTargetSelection = false, careStates = [], memoryStates = [], onOpenPet, onRecordPet, onAddPet, onEditAppearance, onCancelRecordTarget }: HouseScreenProps) {
   const house = useHouseLayout(userId, pets.map((pet) => pet.id));
   const [motionPaused, setMotionPaused] = useState(false);
   const [positionsLocked, setPositionsLocked] = useState(false);
-  const motionEnabled = useHouseMotionEnabled(true, motionPaused);
+  const motion = useHouseMotionState(true, motionPaused);
+  const [tap, setTap] = useState({ petId: "", sequence: 0 });
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (tapTimer.current) clearTimeout(tapTimer.current); }, []);
   const [summaryPetId, setSummaryPetId] = useState<string | null>(null);
   const [recordPetId, setRecordPetId] = useState<string | null>(null);
   const opener = useRef<{ petId: string; from: "scene" | "list" } | null>(null);
@@ -51,12 +56,14 @@ export function HouseScreen({ pets, userId, recordTargetSelection = false, careS
   // One pet is unambiguous; otherwise the user must pick before the named confirm appears.
   const recordTarget = rows.find((row) => row.pet.id === recordPetId) ?? (rows.length === 1 ? rows[0] : undefined);
 
-  useEffect(() => { setRecordPetId(null); setSummaryPetId(null); }, [recordTargetSelection]);
+  useEffect(() => { if (tapTimer.current) clearTimeout(tapTimer.current); setRecordPetId(null); setSummaryPetId(null); }, [recordTargetSelection]);
 
   function openSummary(petId: string, from: "scene" | "list") {
     if (recordTargetSelection) { setRecordPetId(petId); return; }
     opener.current = { petId, from };
-    setSummaryPetId(petId);
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    setTap((current) => ({ petId, sequence: current.sequence + 1 }));
+    tapTimer.current = setTimeout(() => setSummaryPetId(petId), motion.reduced ? 120 : 320);
   }
   function closeSummary() {
     const origin = opener.current;
@@ -100,16 +107,21 @@ export function HouseScreen({ pets, userId, recordTargetSelection = false, careS
         pets={pets}
         userId={userId}
         layout={house.layout}
-        motionEnabled={motionEnabled}
+        motionEnabled={motion.enabled}
+        reducedMotion={motion.reduced}
+        interactionPaused={recordTargetSelection || Boolean(summaryPetId)}
+        tappedPetId={tap.petId}
+        tapSequence={tap.sequence}
         positionsLocked={positionsLocked || recordTargetSelection}
         selectedPetId={recordTargetSelection ? recordTarget?.pet.id ?? null : summaryPetId}
         showSelection={recordTargetSelection}
         onPetTap={(petId) => openSummary(petId, "scene")}
         onMovePet={house.movePet}
         registerPetNode={(petId, node) => sceneNodes.set(petId, node)}
-        toolbar={controls}
       />
       {recordTargetSelection ? null : <>
+        <NearbyCare pets={pets} userId={userId} careStates={careStates} onOpenPet={onOpenPet} />
+        <View style={styles.tools}>{controls}</View>
         <Text style={styles.hint}>{t(positionsLocked ? "house.gestureHintLocked" : "house.gestureHint")}</Text>
         <Text style={styles.sectionTitle} accessibilityRole="header">{t("house.listTitle")}</Text>
         <HousePetList rows={rows} userId={userId} careStates={careStates} mode="browse" selectedPetId={summaryPetId} onPress={(petId) => openSummary(petId, "list")} registerNode={(petId, node) => listNodes.set(petId, node)} />
@@ -121,6 +133,8 @@ export function HouseScreen({ pets, userId, recordTargetSelection = false, careS
           careState={careStates.find((state) => state.petId === summaryPet.id)}
           memoryState={memoryStates.find((state) => state.petId === summaryPet.id)}
           quickRecordLabel={t("house.confirmRecord").replace("{petName}", summaryPet.name)}
+          reducedMotion={motion.reduced}
+          onEditAppearance={summaryPet.role === "owner" && onEditAppearance ? () => leaveSummary(() => onEditAppearance(summaryPet.id)) : undefined}
           onClose={closeSummary}
           onOpenSection={(section) => leaveSummary(() => onOpenPet(summaryPet.id, section))}
           onQuickRecord={() => leaveSummary(() => onRecordPet(summaryPet.id))}

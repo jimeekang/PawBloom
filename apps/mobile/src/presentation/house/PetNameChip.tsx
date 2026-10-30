@@ -1,4 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useAuth } from "../../contexts/identity/application/authContext";
+import { PetAvatar } from "./PetAvatar";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { AppIcon, type AppIconName } from "../../design-system/iconography";
 import { colors, font, iconSize, radius, spacing, type } from "../../design-system/tokens";
@@ -6,10 +8,11 @@ import { colors, font, iconSize, radius, spacing, type } from "../../design-syst
 export type StatusTone = "pending" | "success" | "warning" | "neutral";
 
 /** Names the exact pet on shared lists; the species glyph never pretends to be the pet's photo. */
-export function PetNameChip({ pet }: { pet: Pick<PetProfile, "name" | "species"> }) {
+export function PetNameChip({ pet }: { pet: Pick<PetProfile, "id" | "name" | "species"> }) {
+  const { user } = useAuth();
   return (
     <View style={styles.petChip}>
-      <AppIcon name={pet.species === "cat" ? "cat" : pet.species === "dog" ? "pet" : "logo"} size={iconSize.xs - 2} color={colors.textMuted} />
+      <PetAvatar pet={pet} userId={user?.id ?? null} size={24} />
       <Text style={styles.petChipText} numberOfLines={1}>{pet.name}</Text>
     </View>
   );

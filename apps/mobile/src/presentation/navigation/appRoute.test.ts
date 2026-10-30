@@ -1,4 +1,4 @@
-import { reduceAppRoute, resolveAccessibleRoute, houseRoute, type AppRoute } from "./appRoute";
+import { reduceAppRoute, resolveAccessibleRoute, getBackNavigation, houseRoute, type AppRoute } from "./appRoute";
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 const ids = ["pet-a", "pet-b"];
 let route: AppRoute = houseRoute;
@@ -30,3 +30,11 @@ for (const section of ["care", "memories", "profile"] as const) {
   const selected = reduceAppRoute(houseRoute, { type: "openPet", petId: "pet-b", section }, ids);
   assert(selected.kind === "pet" && selected.petId === "pet-b" && selected.section === section, `openPet preserves explicit ${section} for B`);
 }
+
+const appearanceRoute = reduceAppRoute(houseRoute, { type: "appearance", petId: "a", returnTo: "profile" }, ["a"]);
+if (appearanceRoute.kind !== "appearance" || appearanceRoute.petId !== "a") throw new Error("builder keeps exact pet ID");
+if (resolveAccessibleRoute(appearanceRoute, []).kind !== "main") throw new Error("revoked builder returns home");
+const appearanceBack = getBackNavigation(appearanceRoute).nextRoute;
+if (appearanceBack.kind !== "pet" || appearanceBack.petId !== "a" || appearanceBack.section !== "profile") throw new Error("builder returns to same profile");
+
+if (resolveAccessibleRoute(appearanceRoute, ["a"], []).kind !== "main") throw new Error("lost ownership closes builder even if pet remains readable");

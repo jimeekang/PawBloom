@@ -1,32 +1,35 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, PanResponder, Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PanResponderInstance } from "react-native";
+import { Animated, PanResponder, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent, type PanResponderInstance } from "react-native";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
-import { AppIcon } from "../../design-system/iconography";
-import { colors, iconSize, layout as layoutTokens, radius, spacing } from "../../design-system/tokens";
+import { colors, layout as layoutTokens, radius, spacing } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { canHandleHouseTap, houseGestureReducer, initialHouseGestureState, isHouseWanderingPaused, type HouseGestureAction, type HouseGestureState } from "./houseGesture";
-import { clampHousePoint, type HouseLayout, type HousePoint } from "./houseLayout";
+import { clampHousePoint, houseColumnCount, type HouseLayout, type HousePoint } from "./houseLayout";
 import { HouseBackdrop } from "./HouseBackdrop";
-import { HouseCharacter } from "./HouseCharacter";
+import { HouseScenePageButton as PageButton } from "./HouseScenePager";
+import { HouseCharacter, HouseCharacterName } from "./HouseCharacter";
+import { CharacterMotionView } from "../../contexts/avatar/ui/CharacterMotionView";
 import { defaultCharacterCanvas } from "./DefaultPetCharacter";
-
 /** Long-press timing is owned here; the reducer never reads the clock. */
 export const HOUSE_LONG_PRESS_MS = 420;
 const TAP_SLOP_PX = 10;
 const PAN_SLOP_PX = 8;
 const SLOT_WIDTH = 120;
-const HEAD_SIZE = 56;
-const MIN_COLUMN_SPACING = 128;
+const HEAD_SIZE = 68;
+const MIN_COLUMN_SPACING = 144;
 const ROOM_GROW_TOLERANCE = 0.1;
 const SAFE_MIN = 0.08, SAFE_SPAN = 0.84;
 const CENTER: HousePoint = { x: 0.5, y: 0.5 }, ORIGIN: HousePoint = { x: 0, y: 0 };
-
 export type HouseSceneProps = {
   pets: readonly PetProfile[];
   userId: string | null;
   /** Normalized positions from useHouseLayout. */
   layout: HouseLayout;
   motionEnabled: boolean;
+  reducedMotion?: boolean;
+  interactionPaused?: boolean;
+  tappedPetId?: string | null;
+  tapSequence?: number;
   /** Locked spots (and record-target mode) keep taps but never start a drag. */
   positionsLocked: boolean;
   /** Summary-open pet or record target; its wandering pauses. */
@@ -41,29 +44,26 @@ export type HouseSceneProps = {
   /** Controls rendered at the start of the toolbar under the room. */
   toolbar?: ReactNode;
 };
-
 /** Room size grows sideways only when columns would crowd; characters never shrink. */
 export function getHouseSceneGeometry(viewportWidth: number, petCount: number) {
   const width = Math.max(1, Math.round(viewportWidth));
   const height = Math.round(Math.min(380, Math.max(310, width * 0.95)));
-  const columns = Math.max(1, Math.ceil(Math.sqrt(petCount)));
-  const needed = Math.ceil(SLOT_WIDTH + MIN_COLUMN_SPACING * SAFE_SPAN * columns);
+  const columns = houseColumnCount(petCount);
+  const needed = SLOT_WIDTH + MIN_COLUMN_SPACING * (columns - 1);
   // A sliver of overflow is absorbed by slightly tighter spacing instead of a pannable room.
   const contentWidth = needed <= width * (1 + ROOM_GROW_TOLERANCE) ? width : needed;
   const floorTop = Math.round(height * 0.38);
   const canvasHeight = defaultCharacterCanvas(HEAD_SIZE, true).height;
-  const feetTop = floorTop + 18, feetBottom = height - 34;
+  const feetTop = floorTop + 18, feetBottom = height - 32;
   return { width, height, contentWidth, floorTop, canvasHeight, feetTop, spanX: (contentWidth - SLOT_WIDTH) / SAFE_SPAN, spanY: (feetBottom - feetTop) / SAFE_SPAN };
 }
 type Geometry = ReturnType<typeof getHouseSceneGeometry>;
-
 /** Slot top-left for a normalized point; clampHousePoint keeps it inside the room. */
 export function toHouseScenePosition(point: HousePoint, geometry: Geometry) {
   const safe = clampHousePoint(point);
   return { x: (safe.x - SAFE_MIN) * geometry.spanX, y: geometry.feetTop + (safe.y - SAFE_MIN) * geometry.spanY - geometry.canvasHeight };
 }
-
-export function HouseScene({ pets, userId, layout, motionEnabled, positionsLocked, selectedPetId, showSelection, onPetTap, onMovePet, registerPetNode, toolbar }: HouseSceneProps) {
+export function HouseScene({ pets, userId, layout, motionEnabled, reducedMotion = true, interactionPaused = false, tappedPetId, tapSequence, positionsLocked, selectedPetId, showSelection, onPetTap, onMovePet, registerPetNode, toolbar }: HouseSceneProps) {
   const windowSize = useWindowDimensions();
   const [viewport, setViewport] = useState(() => Math.min(430, windowSize.width) - layoutTokens.screenPadding * 2);
   const geometry = getHouseSceneGeometry(viewport, pets.length);
@@ -75,9 +75,9 @@ export function HouseScene({ pets, userId, layout, motionEnabled, positionsLocke
   const dragOrigin = useRef<HousePoint>(CENTER), panStart = useRef(0), panOffset = useRef(0);
   const panX = useRef(new Animated.Value(0)).current;
   const positions = useRef(new Map<string, Animated.ValueXY>()).current;
+  const wanderOffsets = useRef(new Map<string, Animated.Value>()).current;
   const responders = useRef(new Map<string, PanResponderInstance>()).current;
   const [edges, setEdges] = useState({ atStart: true, atEnd: true });
-
   function dispatch(action: HouseGestureAction) {
     const prev = gesture.current, next = houseGestureReducer(prev, action);
     gesture.current = next;
@@ -93,6 +93,11 @@ export function HouseScene({ pets, userId, layout, motionEnabled, positionsLocke
   function positionFor(petId: string) {
     let value = positions.get(petId);
     if (!value) { value = new Animated.ValueXY(toHouseScenePosition(live.current.layout[petId] ?? CENTER, live.current.geometry)); positions.set(petId, value); }
+    return value;
+  }
+  function wanderFor(petId: string) {
+    let value = wanderOffsets.get(petId);
+    if (!value) { value = new Animated.Value(0); wanderOffsets.set(petId, value); }
     return value;
   }
   function begin(petId?: string) {
@@ -167,7 +172,6 @@ export function HouseScene({ pets, userId, layout, motionEnabled, positionsLocke
     onPanResponderRelease: () => handlers.current.finish("end"),
     onPanResponderTerminate: () => handlers.current.finish("cancel"),
   })).current;
-
   const petKey = pets.map((pet) => pet.id).join("|");
   useEffect(() => {
     for (const pet of pets) {
@@ -175,17 +179,16 @@ export function HouseScene({ pets, userId, layout, motionEnabled, positionsLocke
       if (state.mode === "dragging" && state.petId === pet.id) continue;
       positionFor(pet.id).setValue(toHouseScenePosition(layout[pet.id] ?? CENTER, geometry));
     }
-    for (const id of [...positions.keys()]) if (!pets.some((pet) => pet.id === id)) { positions.delete(id); responders.delete(id); }
+    for (const id of [...positions.keys()]) if (!pets.some((pet) => pet.id === id)) { positions.delete(id); responders.delete(id); wanderOffsets.delete(id); }
     const clamped = clampPan(panOffset.current);
     if (clamped !== panOffset.current) { panOffset.current = clamped; panX.setValue(clamped); }
     syncEdges();
   }, [layout, petKey, geometry.width, geometry.contentWidth, geometry.height]);
   useEffect(() => () => clearTimer(), []);
-
   function page(direction: -1 | 1) {
     const target = clampPan(panOffset.current - direction * geometry.width * 0.75);
     panOffset.current = target;
-    Animated.timing(panX, { toValue: target, duration: 260, useNativeDriver: false }).start();
+    Animated.timing(panX, { toValue: target, duration: reducedMotion ? 0 : 260, useNativeDriver: false }).start();
     syncEdges();
   }
   function onLayout(event: LayoutChangeEvent) {
@@ -214,33 +217,33 @@ export function HouseScene({ pets, userId, layout, motionEnabled, positionsLocke
                 accessibilityHint={positionsLocked ? t("house.characterHintLocked") : t("house.characterHint")}
                 accessibilityActions={[{ name: "activate", label: t("house.openSummary") }]}
                 onAccessibilityAction={(event) => { if (event.nativeEvent.actionName === "activate") onPetTap(pet.id); }}
-                style={[styles.slot, { zIndex: dragging ? 1000 : Math.round(point.y * 100) }, { transform: [...positionFor(pet.id).getTranslateTransform(), { scale: depth }] }]}
+                style={[styles.slot, { height: geometry.canvasHeight + 32, zIndex: dragging ? 1000 : Math.round(point.y * 100) }, { transform: [...positionFor(pet.id).getTranslateTransform(), { scale: depth }] }]}
               >
-                <HouseCharacter pet={pet} userId={userId} size={HEAD_SIZE} motionEnabled={motionEnabled} wanderPaused={isHouseWanderingPaused(gestureView, pet.id, selectedPetId ?? undefined)} lifted={dragging} selected={showSelection && selectedPetId === pet.id} />
+                <HouseCharacter pet={pet} userId={userId} size={HEAD_SIZE} motionEnabled={motionEnabled} reducedMotion={reducedMotion} tap={tappedPetId === pet.id ? tapSequence : 0} wanderPaused={interactionPaused || gestureView.mode === "dragging" || isHouseWanderingPaused(gestureView, pet.id, selectedPetId ?? undefined)} lifted={dragging} wanderOffset={wanderFor(pet.id)} />
               </Animated.View>
             );
           })}
+          {ordered.map((pet) => {
+            const point = clampHousePoint(layout[pet.id] ?? CENTER), depth = 0.86 + 0.14 * ((point.y - SAFE_MIN) / SAFE_SPAN);
+            return <Animated.View key={`name-${pet.id}`} testID={`house-name-${pet.id}`} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+              style={[styles.slot, { zIndex: 2000, height: geometry.canvasHeight + 32, paddingTop: geometry.canvasHeight, transform: [...positionFor(pet.id).getTranslateTransform(), { scale: depth }] }]}>
+              <CharacterMotionView testID={`house-name-wander-${pet.id}`} sources={[wanderFor(pet.id)]} style={{ maxWidth: "100%", transform: [{ translateX: wanderFor(pet.id) }] }}>
+                <HouseCharacterName pet={pet} selected={showSelection && selectedPetId === pet.id} />
+              </CharacterMotionView>
+            </Animated.View>;
+          })}
         </Animated.View>
       </View>
-      <View style={styles.toolbar}>
+      {toolbar || scrollable ? <View style={styles.toolbar}>
         <View style={styles.toolbarStart}>{toolbar}</View>
         {scrollable ? <View style={styles.pager}>
           <PageButton label={t("house.pageLeft")} icon="back" disabled={edges.atStart} onPress={() => page(-1)} />
           <PageButton label={t("house.pageRight")} icon="forward" disabled={edges.atEnd} onPress={() => page(1)} />
         </View> : null}
-      </View>
+      </View> : null}
     </View>
   );
 }
-
-function PageButton({ label, icon, disabled, onPress }: { label: string; icon: "back" | "forward"; disabled: boolean; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.pageButton, pressed && styles.pressed, disabled && styles.disabled]}>
-      <AppIcon name={icon} size={iconSize.sm} color={colors.text} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   scene: { borderRadius: radius.xl, overflow: "hidden", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceWarm },
@@ -248,7 +251,4 @@ const styles = StyleSheet.create({
   toolbar: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   toolbarStart: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   pager: { flexDirection: "row", gap: spacing.xs },
-  pageButton: { width: layoutTokens.minTouch, height: layoutTokens.minTouch, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
-  pressed: { backgroundColor: colors.surfaceWarm },
-  disabled: { opacity: 0.4 },
 });

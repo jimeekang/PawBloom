@@ -1,3 +1,4 @@
+import { beginAppearanceOnboarding } from "../shell/appearanceOnboarding";
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { DangerButton, NoticeBanner, PrimaryButton, SecondaryButton, SurfaceCard } from "../../design-system/components";
@@ -78,25 +79,25 @@ export function PetOnboardingScreen({ mode = "onboarding", routine, onSaveRoutin
       setFormErrorKey("pet.weightInvalid");
       return;
     }
-    const createError = await createPet({
+    const finishCharacterStep = beginAppearanceOnboarding(user!.id, pets.map((pet) => pet.id));
+    let createError;
+    try { createError = await createPet({
       name,
       species,
       breed,
       birthdate,
       weightKg: weight.value,
       profilePhoto: photo,
-    });
-
+    }); } catch { finishCharacterStep(false); setFormErrorKey("pet.createFailed"); return; }
+    finishCharacterStep(!createError);
     if (createError) {
       return;
     }
-
     resetCreateForm();
     setShowCreateForm(false);
     onProfileSaved?.();
     onCreated?.();
   };
-
   const resetCreateForm = () => { setName(""); setBreed(""); setBirthdate(""); setWeightKg(""); setSpecies("dog"); setPhoto(undefined); };
 
   const onAddAnother = () => {

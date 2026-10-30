@@ -20,4 +20,4 @@ for (const required of ["selectPetId", "accessiblePets", "isPreviewPet", "ownedP
   if (!source.includes(required)) throw new Error(`explicit account-scoped preview selection contract is missing: ${required}`);
 }
 if (selectionSource.includes("selectNextPet") || shellSource.includes("cyclePet")) throw new Error("direct pet routes must not depend on cycling");
-if (!shellSource.includes("activePet.id === route.petId") || !shellSource.includes("resolveAccessibleRoute(routeState, accessibleIds)")) throw new Error("detail writes require current explicit pet and accessible route");
+if (!shellSource.includes("activePet.id === route.petId") || !shellSource.includes("resolveAccessibleRoute(routeState, accessibleIds,")) throw new Error("detail writes require current explicit pet and accessible route");

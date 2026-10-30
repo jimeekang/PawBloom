@@ -29,6 +29,7 @@ export function HouseBackdrop({ width, viewport, height, floorTop }: HouseBackdr
         </View>
       ))}
       <View style={[styles.floor, { top: floorTop, height: floorHeight }]} />
+      {Array.from({ length: pages }, (_, page) => <View key={`light-${page}`} style={[styles.daylight, { left: page * pageWidth + pageWidth * 0.48, top: floorTop + 10, width: windowWidth * 1.3, height: floorHeight * 0.46, transform: [{ skewX: "-28deg" }] }]} />)}
       {Array.from({ length: planks }, (_, index) => (
         <View key={`plank-${index}`} style={[styles.plank, { top: floorTop + 10 + (index + 1) * (floorHeight / (planks + 1)) }]} />
       ))}
@@ -41,6 +42,7 @@ export function HouseBackdrop({ width, viewport, height, floorTop }: HouseBackdr
 }
 
 const styles = StyleSheet.create({
+  daylight: { position: "absolute", backgroundColor: sceneColors.window, opacity: 0.22 },
   wall: {
     position: "absolute",
     left: 0,

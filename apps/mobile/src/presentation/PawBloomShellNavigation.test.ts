@@ -39,6 +39,7 @@ const mocks: Record<string, any> = {
 };
 nodeModule._load = function(request: string, parent: unknown, isMain: boolean) {
   if (request === "react") return { ...realReact, ...Object.fromEntries(Object.keys(harness.hooks).map((name) => [name, (...args: any[]) => (harness.hooks as any)[name](...args)])) };
+  if (request === "react-native-svg") return { __esModule: true, default: stub, Path: stub };
   if (request === "react-native-safe-area-context") return { SafeAreaView: stub };
   if (request.endsWith("/carePlanRecords")) return { ...originalLoad.call(this, request, parent, isMain), useActiveCareSetup: () => ({ data: undefined, isLoading: true }), useCreateCareSetup: () => ({}) };
   if (request.endsWith("/medicationDoseRecords")) return { useTodayMedicationDoses: () => ({ data: undefined, isLoading: true }), ...Object.fromEntries(["useCreateMedicationDose", "useUpdateMedicationDose", "useDeleteMedicationDose", "useUpdateMedicationDoseStatus"].map((key) => [key, () => ({})])) };
@@ -50,6 +51,14 @@ try {
   let tree = renderSession();
   assert(findElements(tree, (node) => node.type === banner && node.props.text === t("today.previewNotice")).length === 1, "initial house renders the existing preview storage warning");
   assert(named(tree, "HouseScreen").props.onCancelRecordTarget === undefined, "normal house has no record cancellation");
+  assert(!findElements(tree, (node) => node.type?.name === "CharacterSaveReaction").length, "opening the shell never celebrates without a save");
+  for (const kind of ["diary", "checklist", "medication", "medicationStatus", "routine", "careSetup", "petProfile"]) {
+    checklistParams.showSaveFeedback(kind); tree = renderSession();
+    const reactions = findElements(tree, (node) => node.type?.name === "CharacterSaveReaction");
+    assert(reactions.length === (["diary", "checklist", "medication", "medicationStatus"].includes(kind) ? 1 : 0), `${kind}: only record success renders the character reaction`);
+    findElements(tree, (node) => node.props?.feedback?.kind === kind && node.props.onDismiss)[0].props.onDismiss(); tree = renderSession();
+    assert(!findElements(tree, (node) => node.type?.name === "CharacterSaveReaction").length, "dismissed feedback removes its character reaction");
+  }
   named(tree, "HouseHeader").props.onRequestRecord(); tree = renderSession();
   assert(named(tree, "HouseScreen").props.recordTargetSelection && shows(tree, t("today.previewNotice")), "direct record target selection keeps the preview warning");
   const cancelRecord = named(tree, "HouseScreen").props.onCancelRecordTarget;

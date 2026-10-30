@@ -29,6 +29,18 @@ try {
   assert(preview.selectPetId(previewId), "preview selects second pet by ID");
   assert(useShellPetSelection(previewParams).activePet.id === previewId, "preview selection remains stable");
   assert(selectedAuth.join() === "b", "preview selection never mutates auth");
+  const localSelections: string[] = [];
+  for (const count of [0, 1, 3, 4, 6]) {
+    const pets = Array.from({ length: count }, (_, i) => ({ ...a, id: `fixture-${i}` }));
+    const fixtureParams = { ...previewParams, externalActivePet: a, externalPets: pets, onSelectPet: (id: string) => localSelections.push(id) };
+    const fixture = useShellPetSelection(fixtureParams);
+    assert(fixture.accessiblePets.length === count && !fixture.isPreviewPet, "external fixture uses supplied pets, including an empty list");
+    if (count) {
+      assert(fixture.selectPetId(pets[count - 1].id), "fixture pet remains selectable");
+      assert(useShellPetSelection(fixtureParams).activePet.id === pets[count - 1].id, "fixture selection updates locally");
+    }
+  }
+  assert(localSelections.length === 4 && selectedAuth.join() === "b", "fixture callback prevents any auth selection writes");
   selected = null; // PawBloomSession account key creates fresh hook state.
   assert(useShellPetSelection({ ...params, authActivePet: b, authPets: [b] }).activePet.id === "b", "new account does not inherit selected preview ID");
 } finally { nodeModule._load = originalLoad; }

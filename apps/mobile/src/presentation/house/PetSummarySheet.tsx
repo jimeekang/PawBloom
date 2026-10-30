@@ -1,4 +1,5 @@
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import { AccessibilityInfo, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, findNodeHandle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { DiaryMemoryPetState } from "../../contexts/diary/application/diaryMemories";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
@@ -9,7 +10,9 @@ import type { PetSection } from "../navigation/appRoute";
 import { memoryText } from "../screens/MemoriesScreen";
 import type { TodayCarePetState } from "../screens/TodayCareScreen";
 import { petCareLine } from "./HousePetList";
-import { PetAvatar } from "./PetAvatar";
+import { PetAvatar, usePetPhoto } from "./PetAvatar";
+import { usePetAppearance } from "../../contexts/avatar/application/usePetAppearance";
+import { CharacterSvg } from "../../contexts/avatar/ui/CharacterSvg";
 
 export type PetSummarySheetProps = {
   pet: PetProfile;
@@ -21,29 +24,41 @@ export type PetSummarySheetProps = {
   onClose: () => void;
   onOpenSection: (section: PetSection) => void;
   onQuickRecord: () => void;
+  onEditAppearance?: () => void;
+  reducedMotion?: boolean;
 };
 
 /** Short tap result: who this is, today's facts, recent memories, and the ways in. */
-export function PetSummarySheet({ pet, userId, careState, memoryState, quickRecordLabel, onClose, onOpenSection, onQuickRecord }: PetSummarySheetProps) {
+export function PetSummarySheet({ pet, userId, careState, memoryState, quickRecordLabel, onClose, onOpenSection, onQuickRecord, onEditAppearance, reducedMotion = true }: PetSummarySheetProps) {
+  const { appearance } = usePetAppearance(userId, pet.id, pet.species);
+  const photo = usePetPhoto(pet.id, userId);
+  const closeNode = useRef<View>(null);
+  function focusClose() {
+    if (Platform.OS === "web") { (closeNode.current as unknown as { focus?: () => void })?.focus?.(); return; }
+    const tag = findNodeHandle(closeNode.current);
+    if (tag) AccessibilityInfo.setAccessibilityFocus(tag);
+  }
   const insets = useSafeAreaInsets();
   const meta = [pet.breed, pet.ageLabel !== "--" ? pet.ageLabel : ""].filter(Boolean).join(" · ");
   const memories = memoryState?.status === "ready"
     ? [...memoryState.items].filter((item) => item.entry.petId === pet.id).sort((a, b) => `${b.entry.entryDate} ${b.entry.occurredAt}`.localeCompare(`${a.entry.entryDate} ${a.entry.occurredAt}`)).slice(0, 3)
     : [];
   return (
-    <Modal transparent visible animationType="slide" onRequestClose={onClose}>
+    <Modal transparent visible animationType={reducedMotion ? "none" : "slide"} onRequestClose={onClose} onShow={focusClose}>
       <View style={styles.backdrop}>
         <Pressable accessibilityRole="button" accessibilityLabel={t("house.summaryClose")} focusable={false} style={StyleSheet.absoluteFill} onPress={onClose} />
         <View accessibilityViewIsModal aria-modal accessibilityLabel={pet.name} style={styles.sheet}>
           <View style={styles.handle} />
           <ScrollView contentContainerStyle={[styles.content, { paddingBottom: layout.screenPadding + insets.bottom }]} bounces={false}>
             <View style={styles.header}>
-              <PetAvatar pet={pet} userId={userId} size={64} />
+              <CharacterSvg species={pet.species} appearance={appearance} size={75} withBody />
               <View style={styles.headerText}>
                 <Text style={styles.name} accessibilityRole="header" numberOfLines={2}>{pet.name}</Text>
-                {meta ? <Text style={styles.meta} numberOfLines={1}>{meta}</Text> : null}
+                {meta ? <Text style={styles.meta} numberOfLines={2}>{meta}</Text> : null}
+                {onEditAppearance ? <Pressable accessibilityRole="button" onPress={onEditAppearance} style={styles.edit}><Text style={styles.editText}>{t("character.edit")}</Text></Pressable> : null}
+                {photo ? <PetAvatar pet={pet} userId={userId} size={32} /> : null}
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel={t("house.summaryClose")} onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
+              <Pressable ref={closeNode} accessibilityRole="button" accessibilityLabel={t("house.summaryClose")} onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
                 <AppIcon name="close" size={iconSize.md} color={colors.text} />
               </Pressable>
             </View>
@@ -90,6 +105,8 @@ const styles = StyleSheet.create({
   sheet: { width: "100%", maxWidth: 430, maxHeight: "86%", alignSelf: "center", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.appBackground, ...shadow.card },
   handle: { alignSelf: "center", width: 40, height: 4, borderRadius: radius.full, backgroundColor: colors.borderStrong, marginTop: spacing.sm },
   content: { padding: layout.screenPadding, paddingTop: spacing.md, gap: spacing.md },
+  edit: { minHeight: layout.minTouch, justifyContent: "center" },
+  editText: { ...type.caption, color: colors.pendingText },
   header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
   name: { ...type.brand, fontSize: 22, lineHeight: 28 },

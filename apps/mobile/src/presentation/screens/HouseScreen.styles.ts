@@ -2,6 +2,7 @@ import { StyleSheet } from "react-native";
 import { colors, font, layout, radius, sceneColors, spacing, type } from "../../design-system/tokens";
 
 export const styles = StyleSheet.create({
+  tools: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   screen: { gap: spacing.md, paddingTop: spacing.xxs },
   recordPanel: { gap: spacing.sm },
   hint: { ...type.caption, color: colors.textMuted },
