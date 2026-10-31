@@ -76,6 +76,7 @@ export const sceneColors = {
 
 /** Character paints only; expressions never encode health or care completion. */
 export const characterColors = {
+  pixelOutline: "#351C2F", pixelEarInner: "#F59789", pixelPaw: "#F2A0A0", pixelHighlight: "#9FE3D6",
   coat: { white: "#FFF8ED", cream: "#EDD5B1", ginger: "#DF9B57", brown: "#AD7959", gray: "#B8B1AC", black: "#48434A", lilac: "#C3AFBF", chocolate: "#715345" },
   shade: { white: "#D9D3C9", cream: "#C9B596", ginger: "#BE844A", brown: "#93674C", gray: "#9C9692", black: "#3D393F", lilac: "#A695A2", chocolate: "#60473B" },
   eye: { amber: "#D3A24E", green: "#82AA7C", blue: "#7EAEC9", copper: "#B97B48", odd: "#7EAEC9" },

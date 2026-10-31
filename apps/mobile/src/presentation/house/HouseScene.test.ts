@@ -2,14 +2,15 @@ import { createDefaultHouseLayout } from "./houseLayout";
 import { createHookHarness, findElements } from "../testHookHarness";
 declare const require: (name: string) => any;
 const modules = require("node:module"), original = modules._load, react = require("react"), rn = require("react-native");
+let screenWidth=390;
 const harness = createHookHarness(), Character = () => null, Name = () => null;
 class Value { constructor(public value: any) {} setValue(value: any) { this.value = value; } }
 class ValueXY extends Value { getTranslateTransform() { return [{ translateX: this.value.x }, { translateY: this.value.y }]; } }
 modules._load = function(name: string, parent: unknown, main: boolean) {
   if (name === "react") return { ...react, ...harness.hooks };
-  if (name === "react-native") return { ...rn, Animated: { Value, ValueXY, View: "AnimatedView" }, PanResponder: { create: (handlers: unknown) => ({ panHandlers: handlers }) }, useWindowDimensions: () => ({ width: 390 }) };
-  if (name.endsWith("/HouseCharacter")) return { HouseCharacter: Character, HouseCharacterName: Name };
-  if (name.endsWith("/DefaultPetCharacter")) return { defaultCharacterCanvas: (size: number) => ({ width: size * 1.2, height: size * 1.6 }) };
+  if (name === "react-native") return { ...rn, Animated: { Value, ValueXY, View: "AnimatedView" }, PanResponder: { create: (handlers: unknown) => ({ panHandlers: handlers }) }, useWindowDimensions: () => ({ width: screenWidth }) };
+  if (name.endsWith("/HouseCharacter")) return { HouseCharacter: Character, HouseCharacterName: Name, houseNameTagHeight: 24, houseNameTagOffset: 4 };
+  if (name.endsWith("/DefaultPetCharacter")) return { defaultCharacterCanvas: (size: number) => ({ width: size, height: size }), characterGroundOffset:(size:number)=>size*45/48 };
   return original.call(this, name, parent, main);
 };
 try {
@@ -19,7 +20,19 @@ try {
     const points = ids.map((id) => toHouseScenePosition(layout[id], geometry));
     for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
       // Full-size bounds include the complete body/name and ±16px wander on both sides.
-      assert(Math.abs(points[i].x - points[j].x) >= 68 * 1.2 + 32 || Math.abs(points[i].y - points[j].y) >= geometry.canvasHeight + 32, `${count} pets at ${width}px: faces and names have separate default slots`);
+      assert(Math.abs(points[i].x - points[j].x) >= geometry.characterSize + 32 || Math.abs(points[i].y - points[j].y) >= geometry.canvasHeight + 32, `${count} pets at ${width}px: faces and names have separate default slots`);
+    }
+  }
+  for (const width of [320, 335, 350, 390]) for (const size of [72, 96]) for (const count of [1, 2, 4, 6]) {
+    const ids = Array.from({ length: count }, (_, i) => `pet-${i}`), layout = createDefaultHouseLayout(ids), geometry = getHouseSceneGeometry(width, count, size);
+    // Extremes of the safe range, not only default slots: dragging can park a pet in any corner.
+    for (const point of [...ids.map((id) => layout[id]), { x: 0, y: 0 }, { x: 1, y: 1 }]) {
+      const slot = toHouseScenePosition(point, geometry), center = Math.round((slot.x + 60) * 1e6) / 1e6;
+      // Mirrored poses stay inside the square canvas, so ±size/2 plus the 16px wander bounds every pixel.
+      assert(center - size / 2 - 16 >= 8 && center + size / 2 + 16 <= geometry.contentWidth - 8, `${count} pets ${size}px at ${width}px: sprite keeps 8px from the side walls`);
+      assert(center - 60 - 16 >= 8 && center + 60 + 16 <= geometry.contentWidth - 8, `${count} pets at ${width}px: a full-width name tag stays inside the room`);
+      assert(slot.y + geometry.groundOffset + 4 + 24 <= geometry.height - 8, `${count} pets at ${width}px: the bottom name tag keeps 8px from the floor edge`);
+      assert(slot.y >= 8, `${count} pets at ${width}px: ears stay below the ceiling`);
     }
   }
   const pets = ["back", "front"].map((id) => ({ id, name: id, species: "cat" }));
@@ -40,6 +53,13 @@ try {
     const nextTree = harness.render(() => HouseScene(props));
     assert(findElements(nextTree, (node) => node.type === Character && node.props.pet.id === pet.id)[0].props.wanderOffset === character.props.wanderOffset, "rerenders preserve the shared driver");
   }
+  assert(findElements(tree,(node)=>node.type===Character).every(node=>node.props.size===96), "390px room uses exact 2x size96");
+  for(const node of [...slots,...labels]) assert(flatten(node.props.style).transform.every((part:any)=>!("scale" in part)), "depth affects zIndex only, never pixel multiplier");
+  const g=getHouseSceneGeometry(358,2,96),point={x:.5,y:.5},position=toHouseScenePosition(point,g);
+  assert(g.canvasHeight===96&&g.groundOffset===90&&Math.abs(position.y+90-(g.feetTop+(.5-.08)*g.spanY))<1e-9,"logical row44 bottom remains the normalized foot anchor");
+  for (const narrow of [360, 375]) { screenWidth=narrow;const narrowTree=harness.render(()=>HouseScene(props));
+  assert(findElements(narrowTree,(node)=>node.type===Character).every(node=>node.props.size===72),`${narrow}px phone uses exact1.5x size72`); }
+  screenWidth=390;
   const previous = findElements(tree, (node) => node.type === Character && node.props.pet.id === "front")[0].props.wanderOffset;
   props.pets = pets.slice(0, 1); harness.render(() => HouseScene(props));
   props.pets = pets; const readded = harness.render(() => HouseScene(props));

@@ -1,8 +1,8 @@
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet } from "react-native";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { usePetProfilePhotoUrl } from "../../contexts/pet/application/profilePhotoUrl";
-import { colors, sceneColors } from "../../design-system/tokens";
-import { CharacterSvg } from "../../contexts/avatar/ui/CharacterSvg";
+import { colors } from "../../design-system/tokens";
+import { CharacterHeadAvatar } from "../../contexts/avatar/ui/CharacterHeadAvatar";
 import { usePetAppearance } from "../../contexts/avatar/application/usePetAppearance";
 
 export type PetAvatarProps = {
@@ -14,18 +14,14 @@ export type PetAvatarProps = {
 };
 
 /** Profile photo when one exists, otherwise the species default face. Decorative: the caller shows the name. */
-export function PetAvatar({ pet, userId, size = 40, characterOnly = false }: PetAvatarProps) {
+export function PetAvatar({ pet, userId, size = 48, characterOnly = false }: PetAvatarProps) {
   const photoUrl = usePetPhoto(pet.id, userId);
   const { appearance } = usePetAppearance(userId, pet.id, pet.species);
   const frame = { width: size, height: size, borderRadius: size / 2 };
   if (photoUrl && !characterOnly) {
     return <Image source={{ uri: photoUrl }} accessibilityIgnoresInvertColors style={[styles.photo, frame]} />;
   }
-  return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.face, frame]}>
-      <CharacterSvg species={pet.species} appearance={appearance} size={size * 0.82} />
-    </View>
-  );
+  return <CharacterHeadAvatar species={pet.species} appearance={appearance} size={size} />;
 }
 
 /** Shared photo lookup for avatar and house character (existing profile photo path). */
@@ -39,13 +35,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceWarm,
     borderWidth: 2,
     borderColor: colors.white,
-  },
-  face: {
-    backgroundColor: sceneColors.wall,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.border,
   },
 });

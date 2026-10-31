@@ -1,43 +1,65 @@
-import { createHookHarness } from "../../../presentation/testHookHarness";
-declare const require: (name: string) => any;
-const moduleApi = require("node:module"), original = moduleApi._load, react = require("react");
-const harness = createHookHarness();
-let started = 0, stopped = 0, stateUpdates = 0;
-class Value { value: number; constructor(initial: number) { this.value = initial; } setValue(next: number) { this.value = next; } }
-const animations: any[] = [];
-const animation = (kind: string, children?: unknown) => { const item = { kind, children, running: false, start() { this.running = true; started++; }, stop() { if (this.running) { this.running = false; stopped++; } } }; animations.push(item); return item; };
-moduleApi._load = function(name: string, parent: unknown, main: boolean) {
-  if (name === "react") return { ...react, ...harness.hooks, useState: (initial: unknown) => { const [state, set] = harness.hooks.useState(initial); return [state, (next: unknown) => { stateUpdates++; set(next); }]; } };
-  if (name === "react-native") return { Platform: { OS: "web" }, Easing: { inOut: (v: unknown) => v, quad: () => undefined }, Animated: { Value, delay: (ms: number) => animation("delay", ms), timing: (value: Value, options: unknown) => animation("timing", { value, options }), spring: (value: Value, options: unknown) => animation("spring", { value, options }), loop: (child: unknown) => animation("loop", child), sequence: (children: unknown) => animation("sequence", children), parallel: (children: unknown) => animation("parallel", children) } };
-  return original.call(this, name, parent, main);
+import { createHookHarness } from '../../../presentation/testHookHarness';
+import { createAnimatedTestHarness } from './animatedTestHarness';
+declare const require: (name:string) => any;
+const modules=require('node:module'),original=modules._load,react=require('react');
+const animated=createAnimatedTestHarness(),harness=createHookHarness();
+let stateUpdates=0,renders=0;
+modules._load=function(name:string,parent:unknown,main:boolean) {
+  if(name==='react') return {...react,...harness.hooks,useState:(initial:unknown)=>{const[state,set]=harness.hooks.useState(initial);return[state,(next:unknown)=>{stateUpdates++;set(next);}];}};
+  if(name==='react-native') return {Platform:{OS:'ios'},Easing:{linear:(v:number)=>v},Animated:animated.Animated,AppState:animated.AppState};
+  return original.call(this,name,parent,main);
 };
 try {
-  const { useCharacterMotion } = require("./useCharacterMotion");
-  const sharedWander = new Value(0);
-  const options = { id: "cat-a", enabled: true, paused: false, reduced: false, wanderOffset: sharedWander };
-  const render = () => harness.render(() => useCharacterMotion(options));
-  const result = render();
-  assert(result.values.wander === sharedWander, "character and scene label use the same Animated.Value");
-  assert(animations.filter((a) => a.kind === "loop" && a.running).length === 6, "all six idle loops start");
-  assert(stateUpdates === 0, "starting idle never updates React state");
-  const count = started;
-  render(); assert(started === count, "stable render does not restart loops");
-  result.values.wander.setValue(12); result.values.sit.setValue(1);
-  options.paused = true; render();
-  assert(result.values.wander.value === 0 && result.values.sit.value === 0, "drag/selection pauses and resets wander/sit");
-  assert(sharedWander.value === 0, "drag/selection also resets the shared name offset");
-  assert(animations.filter((a) => a.kind === "loop" && a.running).length === 4, "local idle remains during drag");
-  options.paused = false; render(); sharedWander.setValue(12);
-  options.enabled = false; render();
-  assert(sharedWander.value === 0, "motion off returns character and name to the same anchor");
-  assert(!animations.some((a) => a.kind === "loop" && a.running), "toggle off or background stops all idle loops");
-  assert(result.values.blink.value === 1 && result.values.tail.value === 0 && result.values.breathe.value === 0, "neutral pose restored");
-  options.enabled = true; render(); sharedWander.setValue(-16); options.reduced = true; render();
-  assert(sharedWander.value === 0, "reduced motion resets the shared name offset");
-  assert(!animations.some((a) => a.kind === "loop" && a.running), "OS reduction blocks all loops even if enabled is stale");
-  options.reduced = false; render();
-  assert(animations.filter((a) => a.kind === "loop" && a.running).length === 6, "resume starts loops");
-  sharedWander.setValue(16); harness.unmount(); assert(!animations.some((a) => a.running) && sharedWander.value === 0, "unmount stops all loops and springs and resets the shared driver");
-  assert(stopped > 6 && stateUpdates === 0, "idle lifecycle stays outside React state");
-} finally { moduleApi._load = original; }
-function assert(value: unknown, message: string): void { if (!value) throw new Error(message); }
+  const {useCharacterMotion}=require('./useCharacterMotion'),{characterFrameOpacities}=require('./characterClipMotion');
+  const shared=new animated.Animated.Value(0);
+  const options={id:'cat-a',enabled:true,paused:true,reduced:false,tap:0,saved:0,reveal:false,lifted:false,wanderOffset:shared};
+  const config:any={species:'cat',clock:animated.clock};
+  const render=()=>harness.render(()=>{renders++;return useCharacterMotion(options,config);});
+  let result=render();
+  assert(result.values.wander===shared&&result.pose==='sit','scene driver shared; daytime idle sit');
+  const starts=animated.animations.length;render();assert(animated.animations.length===starts,'stable parent render does not restart native work');
+  const blinkDelay=Math.min(...[...animated.pending.values()].map(timer=>timer.at))-animated.clock.now().getTime();
+  assert(blinkDelay>=2400&&blinkDelay<=4000,'seed interval is within 2.4–4.0 seconds');
+  animated.advance(blinkDelay);result=render();assert(result.pose==='blink'&&result.frames.length===4,'seed idle delay plays one four-frame blink');
+  const blink=animated.animations.filter(a=>a.kind==='timing'&&a.value===result.values.frame).pop()!;
+  assert(blink.options.toValue===4&&blink.options.duration===400&&blink.options.useNativeDriver&&blink.options.isInteraction===false,'linear 10fps blink uses native driver');
+  const beforeRender=renders,beforeState=stateUpdates;
+  for(const value of [0,.01,.5,.99,1,1.5,1.99,2.5,3.99,4]) animated.frame(result.values.frame,value);
+  assert(renders===beforeRender&&stateUpdates===beforeState,'actual frame progress never renders React or calls setState');
+  animated.advance(400);result=render();assert(result.pose==='sit','blink returns to current idle');
+  options.paused=false;result=render();animated.advance(1600);result=render();assert(result.pose==='walkRight','wander starts side clip');
+  const walk=animated.animations.filter(a=>a.kind==='timing'&&a.value===result.values.frame).pop()!;
+  assert(walk.options.duration===500,'four-frame walk is 8fps');
+  options.paused=true;result=render();assert(shared.__getValue()===0&&result.pose==='sit','paused stops only wander and resets shared name offset');
+  options.tap++;result=render();assert(result.pose==='wave','tap selects wave');
+  animated.advance(340);options.paused=false;result=render();
+  const resumed=animated.animations.filter(a=>a.kind==='timing'&&a.value===result.values.frame).pop()!;
+  assert(result.pose==='wave'&&Math.abs(result.values.frame.__getValue()-340*6/1000)<1e-9&&Math.abs(resumed.options.duration-(4-340*6/1000)*1000/6)<1e-6,'a gate change mid-wave resumes the clip instead of restarting it');
+  options.paused=true;result=render();
+  options.saved++;result=render();assert(result.pose==='stretch','saved has priority over old tap');
+  options.lifted=true;result=render();assert(result.pose==='run','lifted overrides reaction');
+  options.lifted=false;options.reveal=true;result=render();assert(result.pose==='jump','reveal jump overrides saved');
+  options.reduced=true;result=render();assert(result.pose==='sit'&&result.frames.length===1&&shared.__getValue()===0,'reduced motion fixes sit and no translation');
+  options.tap++;result=render();
+  const running=animated.animations.filter(a=>a.kind==='timing'&&a.running);
+  assert(running.length>0&&running.every(a=>a.value===result.values.opacity),'reduced tap animates opacity only');
+  options.reduced=false;options.enabled=false;options.reveal=false;options.tap++;result=render();assert(result.pose==='wave','enabled=false preserves active local single-shot reactions');
+  const stale=[...animated.history];animated.appState('background');result=render();assert(result.pose==='sit'&&!animated.animations.some(a=>a.running)&&animated.pending.size===0,'background stops all loops and timers');
+  const frozen=stateUpdates;stale.forEach(fn=>fn());assert(stateUpdates===frozen,'stopped timer callbacks cannot restore stale clip');
+  animated.setDate(new Date(2026,9,30,21,59,59));options.enabled=true;animated.appState('active');result=render();assert(result.pose==='sit','reactivated clock uses current local time');
+  animated.advance(1000);result=render();assert(result.pose==='sleep','22:00 boundary switches to sleep');
+  const sleep=animated.animations.filter(a=>a.kind==='timing'&&a.value===result.values.frame).pop()!;assert(sleep.options.duration===2000,'sleep runs 2fps');
+  config.pose='sit';result=render();assert(result.pose==='sit','builder explicit sit overrides night and keeps blink idle');
+  config.pose='stretch';result=render();assert(result.pose==='stretch','explicit preview pose overrides night idle');
+  options.reduced=true;config.pose='sleep';result=render();
+  assert(result.pose==='sleep'&&result.values.frame.__getValue()===0&&!animated.animations.some(a=>a.running&&a.value===result.values.frame),'reduced builder pose chip shows a still first frame of the chosen pose');
+  options.reduced=false;
+  config.pose=undefined;animated.setDate(new Date(2026,9,31,5,59,59));result=render();
+  // Re-activation forces boundary recomputation after the injected clock moves.
+  animated.appState('background');render();animated.appState('active');result=render();animated.advance(1000);result=render();assert(result.pose==='sit','06:00 boundary returns to day idle');
+  const n0=animated.nodes,raw=new animated.Animated.Value(0);characterFrameOpacities(raw,4);assert(animated.nodes-n0===8,'one four-frame native arithmetic graph creates exactly eight nodes');
+  const sixBefore=animated.nodes;for(let i=0;i<6;i++)characterFrameOpacities(new animated.Animated.Value(0),4);assert(animated.nodes-sixBefore===48,'six four-frame graphs create 48 arithmetic nodes');
+  harness.unmount();assert(animated.pending.size===0&&!animated.animations.some(a=>a.running),'unmount cancels timers and native work');
+  console.log('Motion: native step graph 8/pet, 48/six; frame progress 0 React renders/0 setState.');
+} finally {harness.unmount();modules._load=original;}
+function assert(value:unknown,message:string):asserts value {if(!value)throw new Error(message);}

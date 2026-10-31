@@ -1,3 +1,5 @@
+import { getPixelFrame } from "../domain/pixelFrames";
+import { characterPixelPaths } from "../ui/pixelPaths";
 import { defaultAppearance } from "../domain/appearance";
 import { appearanceStorageKey, parseStoredAppearance, type AppearanceStorage } from "../domain/appearanceStorage";
 import { readAppearance, saveAppearance } from "./appearanceRepository";
@@ -26,3 +28,9 @@ assert((await readAppearance("a", "p", "cat", storage)).collar === "blue", "last
 let previewWrites = 0;
 await saveAppearance(null, "preview", "cat", base, { ...storage, setItem: async () => { previewWrites++; } });
 assert(previewWrites === 0, "preview never persists under an account");
+
+const oldV2 = { ...base, version: 1 as const, furLength: "long" as const, build: "round" as const, earShape: "folded" as const, eyeColor: "odd" as const };
+await saveAppearance("existing-owner", "v2-pet", "cat", oldV2, storage);
+const restoredV2 = await readAppearance("existing-owner", "v2-pet", "cat", storage);
+assert(JSON.stringify(restoredV2) === JSON.stringify(oldV2), "durable v2 payload restores without schema migration or field loss");
+assert(characterPixelPaths(getPixelFrame("cat"), restoredV2).length > 0, "restored v2 fur/build payload renders through the actual pixel path builder");

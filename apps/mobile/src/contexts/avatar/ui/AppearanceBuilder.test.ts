@@ -11,14 +11,30 @@ modules._load = function(name: string, parent: unknown, main: boolean) {
   if (name === "react") return { ...react, ...Object.fromEntries(Object.keys(harness.hooks).map((key) => [key, (...args: any[]) => (harness.hooks as any)[key](...args)])) };
   if (name === "react-native") return { ...rn, useWindowDimensions: () => ({ width: 360, height: 640 }) };
   if (name.endsWith("/CharacterSvg")) return { CharacterSvg: preview };
+  if (name === "react-native-svg") return { __esModule: true, default: "Svg", Defs: "Defs", LinearGradient: "LinearGradient", Rect: "Rect", Stop: "Stop" };
   if (name.endsWith("/components")) return { PrimaryButton: button, NoticeBanner: notice };
   return original.call(this, name, parent, main);
 };
 try {
   const { AppearanceBuilder } = require("./AppearanceBuilder");
-  const props = { pet: { id: "cat", name: "열두글자이름을사용하는아이", breed: "", species: "cat" }, initialAppearance: defaultAppearance(), motionEnabled: false, reducedMotion: true, onboarding: true, onClose: () => closed++, onSave: async (appearance: unknown) => { if (fail) throw new Error("storage full"); saved = appearance; } };
+  const props = { pet: { id: "cat", name: "열두글자이름을사용하는아이", breed: "", species: "cat" }, initialAppearance: {...defaultAppearance(),furLength:"long",build:"round"}, motionEnabled: false, reducedMotion: true, onboarding: true, onClose: () => closed++, onSave: async (appearance: unknown) => { if (fail) throw new Error("storage full"); saved = appearance; } };
   const render = () => harness.render(() => AppearanceBuilder(props));
   let tree = render();
+  const characterPreview=()=>findElements(tree,node=>node.type===preview&&node.props.withBody)[0];
+  const rows=findElements(tree,node=>node.type?.name==="ChipScrollRow");
+  assert(rows.length===2&&rows.every(row=>findElements(row.props.children,node=>node.type?.name==="Choice").length>=4),"pose and tab chips scroll inside edge-bleeding rows that reveal more chips");
+  const heads=findElements(tree,node=>node.type?.name==="CharacterHeadAvatar");
+  assert(heads.length===6&&heads.every(head=>head.props.size===52),"presets use the shared circular head framing");
+  assert(characterPreview().props.size===96&&characterPreview().props.pose==="sit"&&characterPreview().props.motion.paused,"small builder previews exact2x sit with idle blink, no wander");
+  for(const [key,pose]of [["walk","walkRight"],["sleep","sleep"],["stretch","stretch"],["sit","sit"]]){
+    const chip=choice(tree,t(`character.pose.${key}` as any),t("character.pose"));chip.props.onPress();tree=render();
+    const selected=choice(tree,t(`character.pose.${key}` as any),t("character.pose"));
+    assert(selected.type(selected.props).props.accessibilityState.selected&&selected.type(selected.props).props.accessibilityRole==="button"&&characterPreview().props.pose===pose,"pose chip has named selected state and drives preview");
+  }
+  choice(tree,t("character.earShape")).props.onPress();tree=render();
+  assert(findElements(tree,node=>node.type?.name==="Choice"&&node.props.group===t("character.earShape")).length===3,"cat ear tab contains three ears and no fur controls");
+  choice(tree,t("character.tail")).props.onPress();tree=render();
+  assert(findElements(tree,node=>node.type?.name==="Choice"&&node.props.group===t("character.tail")).length===3,"tail tab contains three tails and no build controls");
   choice(tree, t("character.color")).props.onPress(); tree = render();
   assert(!findElements(tree, (node) => node.props?.group === t("character.accentColor")).length, "solid hides the unused accent choices");
   const gray = choice(tree, t("character.coatColor.gray"), t("character.coatColor"));
@@ -50,7 +66,7 @@ try {
   assert(!saved && !closed && findElements(tree, (node) => node.type === notice && node.props.text === t("character.saveFailed")).length === 1, "failed save keeps editor and reports error");
   assert(!findElements(tree, (node) => node.type === button)[0].props.disabled, "failed save can retry");
   fail = false; findElements(tree, (node) => node.type === button)[0].props.onPress(); await Promise.resolve(); await Promise.resolve();
-  assert(saved.coatColor === "ginger" && saved.faceMark === "blaze" && closed === 1, "reduced motion saves exact choices and returns without reveal delay");
+  assert(saved.furLength === "long" && saved.build === "round" && saved.coatColor === "ginger" && saved.faceMark === "blaze" && closed === 1, "reduced motion saves exact choices and returns without reveal delay");
   harness.unmount(); harness = createHookHarness(); props.pet.species = "dog";
   tree = render(); choice(tree, t("character.pattern")).props.onPress(); tree = render();
   choice(tree, t("character.coatPattern.bicolor"), t("character.coatPattern")).props.onPress(); tree = render();

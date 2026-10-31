@@ -133,6 +133,7 @@ export function HouseScreen({ pets, userId, recordTargetSelection = false, careS
           careState={careStates.find((state) => state.petId === summaryPet.id)}
           memoryState={memoryStates.find((state) => state.petId === summaryPet.id)}
           quickRecordLabel={t("house.confirmRecord").replace("{petName}", summaryPet.name)}
+          motionEnabled={motion.enabled}
           reducedMotion={motion.reduced}
           onEditAppearance={summaryPet.role === "owner" && onEditAppearance ? () => leaveSummary(() => onEditAppearance(summaryPet.id)) : undefined}
           onClose={closeSummary}

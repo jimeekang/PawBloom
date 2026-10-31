@@ -4,21 +4,18 @@ import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { colors, layout as layoutTokens, radius, spacing } from "../../design-system/tokens";
 import { t } from "../../i18n/translations";
 import { canHandleHouseTap, houseGestureReducer, initialHouseGestureState, isHouseWanderingPaused, type HouseGestureAction, type HouseGestureState } from "./houseGesture";
-import { clampHousePoint, houseColumnCount, type HouseLayout, type HousePoint } from "./houseLayout";
+import { clampHousePoint, type HouseLayout, type HousePoint } from "./houseLayout";
+import { FULL_SIZE_MIN_WIDTH, ROOM_BORDER, SLOT_WIDTH, getHouseSceneGeometry, toHouseScenePosition } from "./houseSceneGeometry";
 import { HouseBackdrop } from "./HouseBackdrop";
 import { HouseScenePageButton as PageButton } from "./HouseScenePager";
 import { HouseCharacter, HouseCharacterName } from "./HouseCharacter";
 import { CharacterMotionView } from "../../contexts/avatar/ui/CharacterMotionView";
-import { defaultCharacterCanvas } from "./DefaultPetCharacter";
 /** Long-press timing is owned here; the reducer never reads the clock. */
 export const HOUSE_LONG_PRESS_MS = 420;
+/** Geometry lives in houseSceneGeometry.ts; re-exported for existing callers and tests. */
+export { getHouseSceneGeometry, toHouseScenePosition };
 const TAP_SLOP_PX = 10;
 const PAN_SLOP_PX = 8;
-const SLOT_WIDTH = 120;
-const HEAD_SIZE = 68;
-const MIN_COLUMN_SPACING = 144;
-const ROOM_GROW_TOLERANCE = 0.1;
-const SAFE_MIN = 0.08, SAFE_SPAN = 0.84;
 const CENTER: HousePoint = { x: 0.5, y: 0.5 }, ORIGIN: HousePoint = { x: 0, y: 0 };
 export type HouseSceneProps = {
   pets: readonly PetProfile[];
@@ -44,29 +41,10 @@ export type HouseSceneProps = {
   /** Controls rendered at the start of the toolbar under the room. */
   toolbar?: ReactNode;
 };
-/** Room size grows sideways only when columns would crowd; characters never shrink. */
-export function getHouseSceneGeometry(viewportWidth: number, petCount: number) {
-  const width = Math.max(1, Math.round(viewportWidth));
-  const height = Math.round(Math.min(380, Math.max(310, width * 0.95)));
-  const columns = houseColumnCount(petCount);
-  const needed = SLOT_WIDTH + MIN_COLUMN_SPACING * (columns - 1);
-  // A sliver of overflow is absorbed by slightly tighter spacing instead of a pannable room.
-  const contentWidth = needed <= width * (1 + ROOM_GROW_TOLERANCE) ? width : needed;
-  const floorTop = Math.round(height * 0.38);
-  const canvasHeight = defaultCharacterCanvas(HEAD_SIZE, true).height;
-  const feetTop = floorTop + 18, feetBottom = height - 32;
-  return { width, height, contentWidth, floorTop, canvasHeight, feetTop, spanX: (contentWidth - SLOT_WIDTH) / SAFE_SPAN, spanY: (feetBottom - feetTop) / SAFE_SPAN };
-}
-type Geometry = ReturnType<typeof getHouseSceneGeometry>;
-/** Slot top-left for a normalized point; clampHousePoint keeps it inside the room. */
-export function toHouseScenePosition(point: HousePoint, geometry: Geometry) {
-  const safe = clampHousePoint(point);
-  return { x: (safe.x - SAFE_MIN) * geometry.spanX, y: geometry.feetTop + (safe.y - SAFE_MIN) * geometry.spanY - geometry.canvasHeight };
-}
 export function HouseScene({ pets, userId, layout, motionEnabled, reducedMotion = true, interactionPaused = false, tappedPetId, tapSequence, positionsLocked, selectedPetId, showSelection, onPetTap, onMovePet, registerPetNode, toolbar }: HouseSceneProps) {
   const windowSize = useWindowDimensions();
   const [viewport, setViewport] = useState(() => Math.min(430, windowSize.width) - layoutTokens.screenPadding * 2);
-  const geometry = getHouseSceneGeometry(viewport, pets.length);
+  const geometry = getHouseSceneGeometry(viewport, pets.length, windowSize.width < FULL_SIZE_MIN_WIDTH ? 72 : 96);
   const live = useRef({ geometry, layout, positionsLocked, onPetTap, onMovePet });
   live.current = { geometry, layout, positionsLocked, onPetTap, onMovePet };
   const gesture = useRef<HouseGestureState>(initialHouseGestureState);
@@ -183,7 +161,7 @@ export function HouseScene({ pets, userId, layout, motionEnabled, reducedMotion 
     const clamped = clampPan(panOffset.current);
     if (clamped !== panOffset.current) { panOffset.current = clamped; panX.setValue(clamped); }
     syncEdges();
-  }, [layout, petKey, geometry.width, geometry.contentWidth, geometry.height]);
+  }, [layout, petKey, geometry.width, geometry.contentWidth, geometry.height, geometry.groundOffset]);
   useEffect(() => () => clearTimer(), []);
   function page(direction: -1 | 1) {
     const target = clampPan(panOffset.current - direction * geometry.width * 0.75);
@@ -203,7 +181,7 @@ export function HouseScene({ pets, userId, layout, motionEnabled, reducedMotion 
         <Animated.View style={{ width: geometry.contentWidth, height: geometry.height, transform: [{ translateX: panX }] }}>
           <HouseBackdrop width={geometry.contentWidth} viewport={geometry.width} height={geometry.height} floorTop={geometry.floorTop} />
           {ordered.map((pet) => {
-            const point = clampHousePoint(layout[pet.id] ?? CENTER), depth = 0.86 + 0.14 * ((point.y - SAFE_MIN) / SAFE_SPAN);
+            const point = clampHousePoint(layout[pet.id] ?? CENTER);
             const dragging = gestureView.mode === "dragging" && gestureView.petId === pet.id;
             return (
               <Animated.View
@@ -217,16 +195,16 @@ export function HouseScene({ pets, userId, layout, motionEnabled, reducedMotion 
                 accessibilityHint={positionsLocked ? t("house.characterHintLocked") : t("house.characterHint")}
                 accessibilityActions={[{ name: "activate", label: t("house.openSummary") }]}
                 onAccessibilityAction={(event) => { if (event.nativeEvent.actionName === "activate") onPetTap(pet.id); }}
-                style={[styles.slot, { height: geometry.canvasHeight + 32, zIndex: dragging ? 1000 : Math.round(point.y * 100) }, { transform: [...positionFor(pet.id).getTranslateTransform(), { scale: depth }] }]}
+                style={[styles.slot, { height: geometry.canvasHeight + 32, zIndex: dragging ? 1000 : Math.round(point.y * 100) }, { transform: [...positionFor(pet.id).getTranslateTransform()] }]}
               >
-                <HouseCharacter pet={pet} userId={userId} size={HEAD_SIZE} motionEnabled={motionEnabled} reducedMotion={reducedMotion} tap={tappedPetId === pet.id ? tapSequence : 0} wanderPaused={interactionPaused || gestureView.mode === "dragging" || isHouseWanderingPaused(gestureView, pet.id, selectedPetId ?? undefined)} lifted={dragging} wanderOffset={wanderFor(pet.id)} />
+                <HouseCharacter pet={pet} userId={userId} size={geometry.characterSize} motionEnabled={motionEnabled} reducedMotion={reducedMotion} tap={tappedPetId === pet.id ? tapSequence : 0} wanderPaused={interactionPaused || gestureView.mode === "dragging" || isHouseWanderingPaused(gestureView, pet.id, selectedPetId ?? undefined)} lifted={dragging} wanderOffset={wanderFor(pet.id)} />
               </Animated.View>
             );
           })}
           {ordered.map((pet) => {
-            const point = clampHousePoint(layout[pet.id] ?? CENTER), depth = 0.86 + 0.14 * ((point.y - SAFE_MIN) / SAFE_SPAN);
+            const point = clampHousePoint(layout[pet.id] ?? CENTER);
             return <Animated.View key={`name-${pet.id}`} testID={`house-name-${pet.id}`} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-              style={[styles.slot, { zIndex: 2000, height: geometry.canvasHeight + 32, paddingTop: geometry.canvasHeight, transform: [...positionFor(pet.id).getTranslateTransform(), { scale: depth }] }]}>
+              style={[styles.slot, { zIndex: 2000, height: geometry.canvasHeight + 32, paddingTop: geometry.groundOffset, transform: [...positionFor(pet.id).getTranslateTransform()] }]}>
               <CharacterMotionView testID={`house-name-wander-${pet.id}`} sources={[wanderFor(pet.id)]} style={{ maxWidth: "100%", transform: [{ translateX: wanderFor(pet.id) }] }}>
                 <HouseCharacterName pet={pet} selected={showSelection && selectedPetId === pet.id} />
               </CharacterMotionView>
@@ -246,7 +224,7 @@ export function HouseScene({ pets, userId, layout, motionEnabled, reducedMotion 
 }
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
-  scene: { borderRadius: radius.xl, overflow: "hidden", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceWarm },
+  scene: { borderRadius: radius.xl, overflow: "hidden", borderWidth: ROOM_BORDER, borderColor: colors.border, backgroundColor: colors.surfaceWarm },
   slot: { position: "absolute", left: 0, top: 0, width: SLOT_WIDTH, alignItems: "center" },
   toolbar: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   toolbarStart: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

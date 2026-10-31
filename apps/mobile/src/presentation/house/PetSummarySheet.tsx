@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { AccessibilityInfo, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, findNodeHandle } from "react-native";
+import { AccessibilityInfo, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, findNodeHandle, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { DiaryMemoryPetState } from "../../contexts/diary/application/diaryMemories";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
@@ -26,10 +26,12 @@ export type PetSummarySheetProps = {
   onQuickRecord: () => void;
   onEditAppearance?: () => void;
   reducedMotion?: boolean;
+  motionEnabled?: boolean;
 };
 
 /** Short tap result: who this is, today's facts, recent memories, and the ways in. */
-export function PetSummarySheet({ pet, userId, careState, memoryState, quickRecordLabel, onClose, onOpenSection, onQuickRecord, onEditAppearance, reducedMotion = true }: PetSummarySheetProps) {
+export function PetSummarySheet({ pet, userId, careState, memoryState, quickRecordLabel, onClose, onOpenSection, onQuickRecord, onEditAppearance, reducedMotion = true, motionEnabled = false }: PetSummarySheetProps) {
+  const dimensions = useWindowDimensions();
   const { appearance } = usePetAppearance(userId, pet.id, pet.species);
   const photo = usePetPhoto(pet.id, userId);
   const closeNode = useRef<View>(null);
@@ -51,12 +53,12 @@ export function PetSummarySheet({ pet, userId, careState, memoryState, quickReco
           <View style={styles.handle} />
           <ScrollView contentContainerStyle={[styles.content, { paddingBottom: layout.screenPadding + insets.bottom }]} bounces={false}>
             <View style={styles.header}>
-              <CharacterSvg species={pet.species} appearance={appearance} size={75} withBody />
+              <CharacterSvg species={pet.species} appearance={appearance} size={dimensions.width < 375 ? 72 : 96} withBody motion={{ id: pet.id, enabled: motionEnabled, paused: true, reduced: reducedMotion }} />
               <View style={styles.headerText}>
                 <Text style={styles.name} accessibilityRole="header" numberOfLines={2}>{pet.name}</Text>
                 {meta ? <Text style={styles.meta} numberOfLines={2}>{meta}</Text> : null}
                 {onEditAppearance ? <Pressable accessibilityRole="button" onPress={onEditAppearance} style={styles.edit}><Text style={styles.editText}>{t("character.edit")}</Text></Pressable> : null}
-                {photo ? <PetAvatar pet={pet} userId={userId} size={32} /> : null}
+                {photo ? <PetAvatar pet={pet} userId={userId} size={24} /> : null}
               </View>
               <Pressable ref={closeNode} accessibilityRole="button" accessibilityLabel={t("house.summaryClose")} onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
                 <AppIcon name="close" size={iconSize.md} color={colors.text} />

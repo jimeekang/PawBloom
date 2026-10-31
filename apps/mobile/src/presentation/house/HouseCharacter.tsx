@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View, type Animated } from "react-native";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { usePetAppearance } from "../../contexts/avatar/application/usePetAppearance";
-import { CharacterSvg } from "../../contexts/avatar/ui/CharacterSvg";
+import { CharacterMotionView } from "../../contexts/avatar/ui/CharacterMotionView";
+import { CharacterSvg, characterGroundOffset } from "../../contexts/avatar/ui/CharacterSvg";
 import { AppIcon } from "../../design-system/iconography";
 import { colors, font, iconSize, radius, sceneColors, spacing, type } from "../../design-system/tokens";
 
@@ -14,9 +15,12 @@ export type HouseCharacterProps = {
 export function HouseCharacter({ pet, userId, size, motionEnabled, reducedMotion = true, wanderPaused, lifted, tap, wanderOffset }: HouseCharacterProps) {
   const { appearance } = usePetAppearance(userId, pet.id, pet.species);
   return <View pointerEvents="none" style={styles.wrap}>
+    <CharacterMotionView pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" sources={wanderOffset ? [wanderOffset] : []} style={[styles.groundShadow, { width: size * .92, height: size * .12, top: characterGroundOffset(size) - size * .06, opacity: lifted ? .6 : 1, transform: [{ translateX: wanderOffset ?? 0 }, { scale: lifted ? .8 : 1 }] }]} />
     <CharacterSvg species={pet.species} appearance={appearance} size={size} withBody motion={{ id: pet.id, enabled: motionEnabled, reduced: reducedMotion, paused: wanderPaused, lifted, tap, wanderOffset }} />
   </View>;
 }
+/** Name tag box below the feet line; the scene keeps it inside the room. */
+export const houseNameTagHeight = 24, houseNameTagOffset = spacing.xxs;
 /** Scene owns the overlay so a nearer character cannot paint over another pet's name. */
 export function HouseCharacterName({ pet, selected }: { pet: Pick<PetProfile, "name">; selected: boolean }) {
   return <View style={[styles.nameTag, selected && styles.nameTagSelected]}>
@@ -25,8 +29,9 @@ export function HouseCharacterName({ pet, selected }: { pet: Pick<PetProfile, "n
   </View>;
 }
 const styles = StyleSheet.create({
+  groundShadow: { position: "absolute", borderRadius: radius.full, backgroundColor: sceneColors.groundShadow },
   wrap: { width: "100%", alignItems: "center" },
-  nameTag: { marginTop: spacing.xxs, maxWidth: "100%", minHeight: 24, paddingHorizontal: spacing.sm, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: sceneColors.nameTag, flexDirection: "row", alignItems: "center", gap: spacing.xxs },
+  nameTag: { marginTop: houseNameTagOffset, maxWidth: "100%", minHeight: houseNameTagHeight, paddingHorizontal: spacing.sm, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: sceneColors.nameTag, flexDirection: "row", alignItems: "center", gap: spacing.xxs },
   nameTagSelected: { borderWidth: 2, borderColor: colors.orange },
   nameText: { ...type.caption, flexShrink: 1, color: colors.text, fontWeight: font.weight.semibold },
 });

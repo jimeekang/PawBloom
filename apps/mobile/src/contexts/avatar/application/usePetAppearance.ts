@@ -5,7 +5,7 @@ import { previewAppearance, readAppearance, saveAppearance } from "./appearanceR
 export function usePetAppearance(userId: string | null, petId: string, species: CharacterSpecies) {
   const client = useQueryClient();
   const queryKey = ["appearance", userId, petId, species] as const;
-  const query = useQuery({ queryKey, queryFn: () => readAppearance(userId, petId, species), staleTime: Infinity, retry: false });
+  const query = useQuery({ queryKey, queryFn: () => readAppearance(userId, petId, species), initialData: userId === null ? () => previewAppearance(petId, species) : undefined, staleTime: Infinity, retry: false });
   return {
     appearance: query.data ?? (userId ? normalizeAppearance(null, species) : previewAppearance(petId, species)),
     loading: query.isPending,

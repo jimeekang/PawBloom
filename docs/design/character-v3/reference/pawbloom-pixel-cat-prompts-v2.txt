@@ -1,0 +1,78 @@
+Generated using: built-in image_gen tool; transparent_background=true.
+Identity reference: pawbloom-pixel-cat-angles-motion-v1.png.
+Status: visual keyframe concepts; per-frame registration and pixel-edge cleanup have not been validated for production animation.
+No user cat photo supplied; the brown tabby is the reference-based example.
+
+WALK SHEET: 4 columns x 4 rows.
+Row 1: facing right; row 2: facing left; row 3: facing front; row 4: facing away.
+Columns: sequential walking phases.
+
+ACTION SHEET: 4 columns x 4 rows.
+Row 1: idle blink; row 2: paw wave; row 3: sleeping; row 4: stretch.
+Columns: sequential action keyframes.
+
+=== WALK PROMPT ===
+
+Use case: identity-preserve / stylized-concept.
+Asset type: transparent 2D pixel-cat four-direction walking keyframe sheet.
+
+Using the provided image as the exact character identity and style reference, redraw the SAME golden-brown tabby kitten as a single transparent sprite sheet. Keep its large rounded head, huge dark round eyes with tiny mint and white glints, pointed coral-inner ears, tiny pink nose, ivory muzzle and chest bib, short legs, ivory socks, brown forehead M marking, dark brown flank stripes, plump body and thick dark-tipped ringed tail. It must be instantly recognized as this specific reference cat.
+
+Make the pixels noticeably CHUNKY, as though each entire sprite was drawn on a 48 x 48 logical pixel canvas and enlarged using nearest-neighbor. A limited joyful palette of honey, caramel, ivory, salmon, mint and deep plum. Use clean square pixel clusters and consistent single-logical-pixel deep plum outlines. Charming colorful 1990s handheld virtual-pet / 16-bit game style. Flat pixel shading with 2 or 3 shades only. Absolutely NO soft edges, painterly detail, gradients, anti-aliasing, 3D effects or glossy illustration.
+
+The output must have a GENUINELY TRANSPARENT alpha background. No white/cream painted background, no checkerboard drawn into the image, no drop shadows, no ground shapes, no scenery, no text, no header, no labels, no grid lines, no watermarks or decoration. Only cat sprites.
+
+Composition: an EXACT evenly spaced 4 columns x 4 rows, 16 sprite positions on a square canvas. Each cell is exactly a quarter of the image width and height. Position each cat within its own cell, completely separated from its neighbors, with a generous transparent margin. For each row, lock the head/body dimensions, center and paw contact baseline across all four frames. In-place walking: do not translate the character across cells or change its size between steps.
+
+Rows are distinct directions:
+Row 1: right-facing TRUE SIDE PROFILE, four walking phases from left to right.
+Row 2: left-facing TRUE SIDE PROFILE, four walking phases from left to right.
+Row 3: directly FRONT-FACING cat walking toward the viewer, four walking phases from left to right; keep face forward and chest bib visible.
+Row 4: directly BACK-FACING cat walking away from the viewer, four walking phases from left to right. Back of head, backs of ears, back stripes and tail only. NEVER show eyes, nose, mouth or chest bib on the back view.
+
+For each row the four phases are: 1. contact with near foreleg forward and near hindleg backward; 2. passing with forelegs close under body and a hind paw slightly lifted; 3. opposite contact with the OTHER foreleg forward and opposite hindleg backward; 4. opposite passing. Visibly different short-leg positions and subtle tail curves while the cat keeps its fixed scale and facing. Maintain natural QUADRUPED feline anatomy with four legs and one tail. Front and back directions must have distinct paws alternating forward, rather than four identical sitting cats.
+
+This is a carefully organized transparent movement keyframe reference, not a presentation poster. All 16 cats must stay fully visible inside their own equally sized cells.
+
+=== ACTION PROMPT ===
+
+Use case: identity-preserve / stylized-concept.
+Asset type: transparent colorful pixel-cat everyday animation keyframe sheet.
+
+Use the provided image as the exact cat identity and pixel-art design reference. Depict only the SAME adorable golden-brown tabby cat with huge round shiny eyes, mint eye glints, warm brown M forehead stripes and flank stripes, ivory muzzle/chest bib, four white sock paws, coral-pink inner ears, tiny pink nose, short legs, large rounded head, plump quadruped kitten body, and a thick ringed tail. Maintain the reference proportions and markings in every frame.
+
+Style: colorful 1990s Tamagotchi-inspired true low-resolution PIXEL GAME SPRITES. Each character looks designed on a 48x48 or 64x64 logical pixel grid, enlarged using nearest-neighbor. Very crisp square pixel clusters, staircase silhouettes, consistent one-logical-pixel dark plum outline, limited honey-orange/caramel/ivory/coral/mint palette with 2-3 flat shade steps. No photographic fur, painterly shading, gradients, vector curves, 3D, anti-aliasing, blur, glow, color fringes or edge halos. Opaque crisp cat pixels, clean transparent pixels outside.
+
+Output: genuine TRANSPARENT alpha background. No painted checkerboard, no solid background, no drop shadows, no ground, no props, no text, no labels, no frame borders, no logo, no UI.
+Composition: square canvas, an EXACT spacious 4 columns x 4 rows grid, 16 frames. Each invisible cell is one quarter of total width/height. All cats completely contained inside their own cell with generous clear padding. Cat scale and registration fixed across each row; consistent paw baseline. Do not overlap any cells. Each row is one readable everyday action sequence, advancing left to right:
+
+ROW 1 / IDLE BLINK, cat sitting directly front facing in all four cells:
+1. neutral seated, round eyes open, tail curled beside body.
+2. same exact seated pose, eyes half closed.
+3. same exact seated pose, eyes gently closed into little curved pixel eyelids.
+4. same exact seated pose, eyes open again, tail tip subtly moved.
+All four must use the SAME size and registration.
+
+ROW 2 / PAW WAVE, cat sitting front facing in all four cells:
+1. both front paws on floor, eyes open.
+2. lift the cat's OWN RIGHT front paw to shoulder height (viewer left).
+3. same paw raised a little higher, pink paw pads facing viewer, cheerful small closed smile.
+4. lower the same front paw back toward floor.
+Keep the OTHER front paw grounded, no human arms and no extra limbs.
+
+ROW 3 / SLEEP BREATH, the same curled sleeping cat in true right-facing side view across all four cells:
+1. curled tightly with eyes closed and nose tucked beside striped tail.
+2. same curled pose with ribcage just one logical pixel higher to suggest breathing.
+3. same curled pose with ears subtly relaxed and ribcage returned to baseline.
+4. same sleeping position with a tiny tail-tip flick.
+These are deliberately subtle consistent sleep keyframes. No Z letters, bubbles, symbols or blankets.
+
+ROW 4 / STRETCH, right-facing side view across all four cells:
+1. cat standing normally on four short paws.
+2. front paws slide slightly forward, head lowers, hindquarters begin to rise.
+3. full feline play-bow stretch: straight forelegs reaching to the right, chest down, rear raised, ringed tail gently curved up.
+4. front paws draw slightly back under the chest as the cat starts returning to standing.
+Do not let the longest stretch exceed its cell; use enough padding for every row.
+
+This is a coherent everyday motion keyframe sheet for a single individual cat, with genuine transparent background and zero presentation elements.
+

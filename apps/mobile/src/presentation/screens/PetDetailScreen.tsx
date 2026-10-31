@@ -67,7 +67,7 @@ export function PetDetailScreen({ pet, route, onSectionChange, onCareViewChange,
         </ScrollView>
       ) : null}
       {route.section === "profile" ? <View style={styles.characterCard}>
-        <CharacterSvg species={pet.species} appearance={appearance} size={88} />
+        <CharacterSvg species={pet.species} appearance={appearance} size={96} />
         <Text style={styles.characterName}>{pet.name}</Text>
         {pet.role === "owner" && onEditAppearance ? <Pressable accessibilityRole="button" onPress={onEditAppearance} style={styles.characterEdit}><Text style={styles.viewTextActive}>{t("character.edit")}</Text></Pressable> : null}
         {photo ? <View style={styles.photoCard}><PetAvatar pet={pet} userId={userId} size={44} /><Text style={styles.meta}>{t("character.photo")}</Text></View> : null}

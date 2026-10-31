@@ -54,7 +54,7 @@ export function HousePetList({ rows, userId, careStates, mode, selectedPetId, on
             onPress={() => onPress(pet.id)}
             style={({ pressed }) => [styles.row, mode === "browse" && styles.chip, checked && styles.rowChecked, pressed && styles.rowPressed]}
           >
-            <PetAvatar pet={pet} userId={userId} size={mode === "browse" ? 34 : 44} characterOnly={mode === "browse"} />
+            <PetAvatar pet={pet} userId={userId} size={mode === "browse" ? 24 : 48} characterOnly={mode === "browse"} />
             <View style={styles.body}>
               <Text style={styles.name} numberOfLines={2}>{pet.name}</Text>
             </View>

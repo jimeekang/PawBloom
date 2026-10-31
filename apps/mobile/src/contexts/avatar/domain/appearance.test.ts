@@ -1,5 +1,5 @@
 import { appearanceSchema, automaticAccent, changeAppearance, defaultAppearance, normalizeAppearance, presetAppearances, randomAppearance } from "./appearance";
-import { characterGeometry } from "./dogCharacterGeometry";
+
 
 const assert = (condition: unknown, message: string) => { if (!condition) throw new Error(message); };
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -10,9 +10,6 @@ for (const species of ["cat", "dog", "other"] as const) {
     const result = randomAppearance(species, seed);
     assert(appearanceSchema.safeParse(result).success, "random obeys schema");
     assert(same(result, randomAppearance(species, seed)), "seed is deterministic");
-    const geometry = characterGeometry(species, result);
-    assert(Object.keys(geometry).length === 6, "six layers");
-    assert(!JSON.stringify(geometry).includes("NaN"), "finite geometry");
   }
   assert(presetAppearances(species).length === 6, "six presets");
 }
@@ -35,15 +32,6 @@ for (const faceMark of ["none", "blaze", "maskedEyes", "whiteMuzzle"] as const) 
   const restored = normalizeAppearance({ version: 1, faceMark, coatPattern: "bicolor" });
   for (const pattern of ["solid", "tabby", "bicolor", "calico", "pointed", "tabbyWhite"]) assert(changeAppearance(restored, "coatPattern", pattern, "cat", false).faceMark === faceMark, "all existing v1 face choices survive every pattern change without a schema migration");
 }
-const base = defaultAppearance();
-for (const change of [{ build: "round" }, { tail: "short" }, { furLength: "long" }, { earShape: "folded" }, { coatPattern: "calico" }, { faceMark: "blaze" }, { collar: "red" }] as const) assert(!same(characterGeometry("cat", base), characterGeometry("cat", normalizeAppearance({ ...base, ...change }))), `geometry responds to ${JSON.stringify(change)}`);
-assert(!same(characterGeometry("cat", base), characterGeometry("cat", base, true)), "smile only via explicit visual event");
-const dog = defaultAppearance("dog");
-assert(!same(characterGeometry("dog", dog), characterGeometry("dog", { ...dog, faceMark: "whiteMuzzle" })), "dog white muzzle is a visible choice");
-
-for (const earShape of ["pointed", "floppy"] as const) {
-  const solid = characterGeometry("dog", { ...dog, coatPattern: "solid", earShape });
-  const bicolor = characterGeometry("dog", { ...dog, coatPattern: "bicolor", earShape });
-  assert(solid.backEar[0]!.fill === "coat" && solid.head[0]!.fill === "coat", "solid dog ears match the coat, including the rear ear");
-  assert(bicolor.backEar[0]!.fill === "accent" && bicolor.head[0]!.fill === "accent", "bicolor dog ears keep their contrasting accent");
-}
+// Existing v2 payloads stay version 1, including renderer-inactive fur/build choices.
+const savedV2 = { ...defaultAppearance(), furLength: "long", build: "round", tail: "fluffy", eyeColor: "odd" };
+assert(same(normalizeAppearance(JSON.parse(JSON.stringify(savedV2))), savedV2), "v2 appearance restores without migration or dropping fields");

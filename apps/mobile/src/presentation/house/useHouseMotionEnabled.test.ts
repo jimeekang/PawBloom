@@ -8,10 +8,12 @@ moduleApi._load = function(name: string, parent: unknown, main: boolean) {
   return original.call(this, name, parent, main);
 };
 try {
-  const { isHouseMotionEnabled, useHouseMotionEnabled } = require("./useHouseMotionEnabled");
+  const { isHouseMotionEnabled, useHouseMotionEnabled, useHouseMotionState } = require("./useHouseMotionEnabled");
   for (const visible of [false, true]) for (const active of [false, true]) for (const reduced of [false, true]) for (const paused of [false, true]) assert(isHouseMotionEnabled({ tabVisible: visible, appState: active ? "active" : "background", reduceMotion: reduced, userPaused: paused }) === (visible && active && !reduced && !paused), "truth matrix");
   const render = () => harness.render(() => useHouseMotionEnabled(true, false));
-  assert(!render(), "OS unknown fails closed"); motionListener!(false); assert(render(), "OS event enables"); initial(true); await Promise.resolve(); assert(render(), "late initial preference cannot override newer event");
+  const state = () => harness.render(() => useHouseMotionState(true, false));
+  assert(!render() && !state().settled, "OS unknown fails closed and is not settled, so one-shot reactions wait");
+  motionListener!(false); assert(render() && state().settled && !state().reduced, "OS event enables and settles"); initial(true); await Promise.resolve(); assert(render(), "late initial preference cannot override newer event");
   appListener!("background"); assert(!render(), "background pauses"); appListener!("active"); assert(render(), "foreground resumes");
   harness.unmount(); assert(removed === 2, "both listeners removed");
 } finally { moduleApi._load = original; }

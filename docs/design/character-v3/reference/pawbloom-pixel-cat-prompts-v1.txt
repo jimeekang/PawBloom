@@ -1,0 +1,48 @@
+Generated using: built-in image_gen tool
+Reference: https://au.pinterest.com/pin/983755112839585960/
+Deliverables: concept sheets; animation keyframes, not a validated production sprite atlas.
+No user cat photo was supplied; coat variants are illustrative examples.
+
+=== SHEET 1: ANGLES + MOTION ===
+
+Use case: stylized-concept.
+Asset type: character concept and multi-angle motion reference sheet for a colorful retro virtual-pet game.
+
+Create a gorgeous, legible 2D PIXEL ART cat character sprite reference sheet. This is the first PawBloom character redesign preview.
+Input image 1 is a STYLE AND ANATOMY reference only: a round, short-legged brown tabby cat with huge round eyes, triangular ears, a white muzzle and bib, little white paws, pink paw pads, and a thick ringed tail. Translate its appealing silhouette into ORIGINAL true pixel game art. Do not copy the reference illustration layout, props, watermark, or painted rendering.
+
+Character identity: ONE AND THE SAME adorable golden-brown tabby cat throughout the whole sheet. A large round head, plump little feline body, very short legs, broad pointed ears with coral-pink inner ears, huge dark round eyes with two crisp turquoise/white glint pixels, a tiny pink nose, small white muzzle, ivory chest bib, four ivory sock paws. Dark warm-brown M-shaped forehead markings, two cheek stripes on each side, three back stripes, striped chunky tail with a dark tip. Keep coat pattern and proportions consistent in every angle and pose. Quadruped feline anatomy; naturally sits and briefly raises paws like a real cute kitten.
+
+Art direction: joyful colorful late-1990s handheld virtual-pet game meets polished 16-bit console sprite craft. Very visible square pixels, crisp staircase contours, deliberate pixel clusters, flat indexed colors, 2-3 shade levels per material, consistent 1-logical-pixel dark plum outline. Each sprite should look natively drawn on an approximately 48x48 to 64x64 pixel canvas, then enlarged using nearest-neighbor. Simple readable game sprites, not detailed pixel paintings. Rich honey-orange fur, burnt-caramel stripes, creamy ivory, salmon-pink ears and paws, subtle mauve shadows. Friendly, cute and lively. No blur, no anti-aliasing, no gradients, no smooth vector curves, no 3D, no fur rendering, no painterly shading.
+
+Composition: a refined SQUARE reference board, approximately 1536x1536. Solid warm off-white background. Small crisp pixel-letter header "PAWBLOOM" and subtitle "PIXEL CAT / ANGLES + MOTION". A spacious perfectly aligned 4-column x 4-row grid of 16 individual full-body sprites, each centered in its own invisible cell with equal scale, generous gaps, no cropping and no overlap. Individual sprites must be large enough to inspect. Very subtle pale peach, mint and lavender flat accents in the header ONLY, not behind every sprite. Use tiny readable pixel labels under each sprite.
+
+EXACT sixteen cells, left to right then top to bottom:
+Row 1 character views: "FRONT" front-facing standing with four short legs; "3/4 VIEW" front three-quarter standing; "LEFT" true left profile facing left; "RIGHT" true right profile facing right.
+Row 2 additional angles/states: "BACK" straight rear view with back of ears, back stripes, and tail, NO eyes or face visible; "SIT" front-facing seated; "BLINK" same front-facing seated eyes gently closed; "SLEEP" curled asleep in side view, nose tucked against ringed tail.
+Row 3 an actual consecutive walking cycle all facing RIGHT: "WALK 01" forepaw reaching forward hind paw back; "WALK 02" passing pose paws close under body; "WALK 03" opposite forepaw forward and opposite hind paw back; "WALK 04" second passing pose. These must show genuinely different leg positions while preserving the same body size, ground baseline and character identity.
+Row 4 action keyframes: "RUN" right-facing little running cat with stretched stride; "JUMP" three-quarter happy cat briefly airborne with tucked hind paws; "STRETCH" side view cat's front paws reaching out and bottom raised; "PAW WAVE" front-facing seated with ONE front paw raised showing pink toe beans.
+
+Every cell depicts ONLY the same cat, with at most a tiny crisp pixel ground shadow. No laptops, clothing, furniture, boxes, handheld gadgets, bowls or scenery. No extra limbs. No duplicate front views in place of side/back angles. No photoreal source images.
+The final result is a delightful and coherent actual pixel cat character design board, showcasing both the character turnaround and lively animation keyframes.
+
+=== SHEET 2: COAT VARIANTS ===
+
+Use case: stylized-concept.
+Asset type: coat-identity examples for a photo-to-pixel-cat virtual pet game.
+
+Use input image 1 as the approved pixel art style reference. Create a NEW second character sheet in the same charming visual family, showcasing FOUR distinct realistic CAT COAT IDENTITIES translated into colorful, compact 2D game sprites. This is a set of hypothetical coat examples, not actual uploaded pet photos.
+
+Primary art requirement: authentic chunky late-1990s Tamagotchi-inspired full-color PIXEL ART, even simpler and chunkier than the reference. Each character is designed on a consistent 48x48 logical pixel grid with large visible square pixel clusters, then enlarged by an integer factor with nearest-neighbor. Discrete square pixels and staircase outlines. Crisp single-pixel dark plum outlines, flat limited colors with just 2-3 shades. No anti-aliasing, no smooth curves, no gradient shading, no painterly fur, no 3D render, no vector-style illustration.
+
+Keep the same short-legged, plump kitten species and proportions as input: huge round head and dark shiny round eyes, small triangular ears, tiny pink nose, squat quadruped body, tiny paws, and thick curved cat tail. Whimsical and colorful, with ivory, honey orange, coral, mint and lavender complementing natural cat coats. The cats themselves have distinctive plausible coat patterns, not arbitrary rainbow fur.
+
+Composition: square approximately 1536x1536 clean sprite-design board on a flat warm ivory background. Top a neat small pixel-type header "PAWBLOOM" and subtitle "YOUR CAT, IN PIXELS". A spacious aligned grid of 4 columns x 4 rows = 16 cats total. Column labels "FRONT", "SIDE", "BACK", "ACTION". Every sprite at the same logical scale, fully visible with ample separation. NO cell boxes or heavy table lines. Tiny color chips and a short pixel caption at the left margin for each row, not overlapping cats. The image is mostly cat sprites, minimal typography.
+
+Row 1 "GINGER": an orange tabby with vivid honey-orange fur, darker orange M forehead and side stripes, cream muzzle/chest, white toes, rich amber irises, ringed orange tail. Columns: FRONT seated; SIDE right-facing standing; BACK facing away showing stripes and ringed tail with NO face/eyes visible; ACTION right-facing running with all four feline legs in a dynamic stride.
+Row 2 "TUXEDO": a black-and-white cat with deep charcoal fur edged with subtle violet shadows, asymmetrical white face blaze, white muzzle/chest bib, white sock paws, bright mint-green irises and a solid charcoal tail. Columns: FRONT seated; SIDE right-facing standing with the white bib visible; BACK facing away showing mostly black back with white rear socks and NO face/eyes visible; ACTION sitting and raising one paw to show pink toe beans.
+Row 3 "CALICO": white base coat, clearly asymmetric tangerine patch on the cat's OWN left ear and cheek (viewer right in front view), charcoal patch around the cat's OWN right ear (viewer left in front view), orange patch on one flank, charcoal patch near the rump, white chest and legs, golden eyes, mixed orange/black tail. Preserve left/right placement when turning. Columns: FRONT seated; SIDE right-facing standing; BACK facing away showing consistent patches and NO face/eyes visible; ACTION three-quarter playful airborne jump with tucked hind legs.
+Row 4 "SILVER TABBY": silvery light gray fur, darker slate stripes, pale lilac shadow pixels, white muzzle/chest, white paws, clear sky-blue irises, dark gray ringed tail. Columns: FRONT seated; SIDE right-facing standing; BACK facing away showing stripes and NO face/eyes visible; ACTION curled up peacefully sleeping with eyes closed and striped tail wrapped around the body.
+
+Each row is the SAME individual cat across all four views. Distinct coat, marking placement, eye hue, face proportions and tail pattern must be retained across the row. Clear actual side and rear views; never put a front face on a rear-facing cat. Do not add human poses or clothes. No source photos, no cameras, no upload interface, no smartphone mockup, no game console, no scenery or accessories. Cats only with tiny pixel ground shadows. The result should clearly communicate how DIFFERENT uploaded real cats could each retain their unique appearance in this one consistent colorful retro pixel style.
+
