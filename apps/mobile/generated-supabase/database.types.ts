@@ -966,8 +966,8 @@ export type Database = {
       }
       pet_avatars: {
         Row: {
-          byte_size: number
-          content_type: string
+          byte_size: number | null
+          content_type: string | null
           created_at: string
           id: string
           is_applied: boolean
@@ -975,13 +975,13 @@ export type Database = {
           manifest: Json
           manifest_version: string
           pet_id: string
-          storage_path: string
+          storage_path: string | null
           style_version: string
           validation_status: string
         }
         Insert: {
-          byte_size: number
-          content_type: string
+          byte_size?: number | null
+          content_type?: string | null
           created_at?: string
           id?: string
           is_applied?: boolean
@@ -989,13 +989,13 @@ export type Database = {
           manifest?: Json
           manifest_version: string
           pet_id: string
-          storage_path: string
+          storage_path?: string | null
           style_version: string
           validation_status?: string
         }
         Update: {
-          byte_size?: number
-          content_type?: string
+          byte_size?: number | null
+          content_type?: string | null
           created_at?: string
           id?: string
           is_applied?: boolean
@@ -1003,7 +1003,7 @@ export type Database = {
           manifest?: Json
           manifest_version?: string
           pet_id?: string
-          storage_path?: string
+          storage_path?: string | null
           style_version?: string
           validation_status?: string
         }
@@ -1029,6 +1029,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_pet_avatar_job_v1: {
+        Args: { p_job_id: string; p_requester_id: string }
+        Returns: Json
+      }
+      finish_pet_avatar_job_v1: {
+        Args: {
+          p_error_code: string
+          p_job_id: string
+          p_provider_raw: Json
+          p_requester_id: string
+          p_result: Json
+        }
+        Returns: Json
+      }
+      queue_pet_avatar_source_cleanup_v1: {
+        Args: { p_job_id: string; p_requester_id: string }
+        Returns: undefined
+      }
       complete_media_cleanup_v1: {
         Args: { p_storage_paths: string[] }
         Returns: number

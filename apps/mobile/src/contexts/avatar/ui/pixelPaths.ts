@@ -26,20 +26,26 @@ export function pixelGridPaths(grid: PixelPaintGrid, palette: Record<PixelPaint,
 export function characterAppearanceKey(appearance: Appearance) {
   return Object.keys(appearance).sort().map((key) => `${key}:${String(appearance[key as keyof Appearance])}`).join('|');
 }
-const MAX_ENTRIES_PER_FRAME = 64;
-const pathCache = new WeakMap<PixelFrame, Map<string, PixelPath[]>>();
+/** Total entries across every frame, species, crop and appearance (≈30 frames × 2 crops × a few pets). */
+export const PIXEL_PATH_CACHE_LIMIT = 256;
+const frameIds = new WeakMap<PixelFrame, number>();
+let nextFrameId = 0;
+const pathCache = new Map<string, PixelPath[]>();
 /**
  * Composition runs once per frame × species × crop × appearance. Clip switches (blink, walk, wave) and
- * re-renders reuse the paths; frames are static objects, so the WeakMap never pins them. Callers must not mutate.
+ * re-renders reuse the paths. One least-recently-used map bounds the total, so random-button churn in the
+ * builder cannot grow memory per frame. Frames are keyed by a WeakMap id, never pinned. Callers must not mutate.
  */
 export function characterPixelPaths(frame: PixelFrame, appearance: Appearance, species: CharacterSpecies = 'cat', withBody = true): PixelPath[] {
-  let byFrame = pathCache.get(frame);
-  if (!byFrame) { byFrame = new Map(); pathCache.set(frame, byFrame); }
-  const key = `${species}/${withBody ? 'body' : 'head'}/${characterAppearanceKey(appearance)}`, hit = byFrame.get(key);
-  if (hit) return hit;
+  let frameId = frameIds.get(frame);
+  if (frameId === undefined) { frameId = nextFrameId++; frameIds.set(frame, frameId); }
+  const key = `${frameId}/${species}/${withBody ? 'body' : 'head'}/${characterAppearanceKey(appearance)}`, hit = pathCache.get(key);
+  if (hit) { pathCache.delete(key); pathCache.set(key, hit); return hit; } // refresh recency (Map keeps insertion order)
   const grid = composePixelFrame(frame, appearance, species);
   const paths = withBody ? pixelGridPaths(grid, characterPalette(appearance), 48) : pixelGridPaths(maskCharacterHead(grid, species), characterPalette(appearance), characterHeadCrop(species).rows);
-  if (byFrame.size >= MAX_ENTRIES_PER_FRAME) byFrame.clear(); // random-button churn stays bounded
-  byFrame.set(key, paths);
+  if (pathCache.size >= PIXEL_PATH_CACHE_LIMIT) pathCache.delete(pathCache.keys().next().value!);
+  pathCache.set(key, paths);
   return paths;
 }
+/** Test/diagnostic hook: current entry count. */
+export function pixelPathCacheSize() { return pathCache.size; }

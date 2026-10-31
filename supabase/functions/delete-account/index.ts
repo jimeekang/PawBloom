@@ -2,7 +2,7 @@ import { corsHeaders, errorResponse, jsonResponse } from "../_shared/http.ts";
 import { requireUser, serviceClient, type ServiceClient } from "../_shared/supabase.ts";
 import {
   beginAccountDeletion,
-  drainResourceCleanup,
+  tryDrainResourceCleanup,
   claimAccountDeletionOperation,
   clearDeletingUserOwnership,
   clearMemoryOwnership,
@@ -145,6 +145,7 @@ async function finishStorageCleanup(
   supabase: AccountDeletionStorageClient,
   userId: string,
   job: AccountDeletionJob,
+  resources?: Awaited<ReturnType<typeof tryDrainResourceCleanup>>,
 ) {
   await purgeOwnedPetMedia(supabase, job.owned_pet_ids);
   await removeDeletingUserOwnedObjects(supabase, userId);
@@ -155,7 +156,12 @@ async function finishStorageCleanup(
     || state.temporary_object_count !== 0) {
     throw new Error("Account deletion Storage cleanup is incomplete.");
   }
-  await drainResourceCleanup(supabase);
+  const drained = await tryDrainResourceCleanup(supabase);
+  if (resources) {
+    resources.completed += drained.completed;
+    resources.failed += drained.failed;
+    resources.drainFailed ||= drained.drainFailed;
+  }
   await completeAccountDeletion(supabase, userId);
 }
 
@@ -174,6 +180,8 @@ async function drainDeletionJobs(
       || !/^[0-9a-f-]{36}$/i.test(payload.target_user_id)))) {
     return errorResponse("Invalid worker request", 400);
   }
+  // Drain the bounded photo/resource queue before potentially long account recovery work.
+  const resources = await tryDrainResourceCleanup(storageClient);
   // Administrative recovery and verification can target exactly one account.
   // The scheduler omits the target and drains the ordinary durable queue.
   const targetUserId = payload.target_user_id as string | undefined;
@@ -202,7 +210,7 @@ async function drainDeletionJobs(
         if (!error || !isUserNotFound(error)) throw error ?? new Error("Unable to verify account deletion state.");
         await markAuthDeleted(storageClient, pendingJob.user_id);
       }
-      await finishStorageCleanup(storageClient, pendingJob.user_id, job);
+      await finishStorageCleanup(storageClient, pendingJob.user_id, job, resources);
       completed += 1;
     } catch (error) {
       failed += 1;
@@ -211,7 +219,6 @@ async function drainDeletionJobs(
       if (acquired) await releaseAccountDeletionOperation(storageClient, pendingJob.user_id, operationId);
     }
   }
-  const resources = await drainResourceCleanup(storageClient);
   return jsonResponse({ ok: true, completed, restored, failed, resources });
 }
 

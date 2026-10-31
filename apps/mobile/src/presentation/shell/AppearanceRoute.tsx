@@ -2,6 +2,7 @@ import { Modal, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { usePetAppearance } from "../../contexts/avatar/application/usePetAppearance";
 import { AppearanceBuilder } from "../../contexts/avatar/ui/AppearanceBuilder";
+import { AvatarPhotoGeneration } from "../../contexts/avatar/ui/AvatarPhotoGeneration";
 import type { PetProfile } from "../../contexts/pet/domain/pet";
 import { NoticeBanner, SecondaryButton } from "../../design-system/components";
 import { colors, spacing } from "../../design-system/tokens";
@@ -23,7 +24,8 @@ function AccessibleAppearanceRoute({ pet, userId, onboarding, onClose }: { pet: 
         <NoticeBanner text={t(state.failed ? "character.loadFailed" : "app.loading")} tone={state.failed ? "error" : "progress"} icon={state.failed ? "close" : "time"} />
         {state.failed ? <SecondaryButton label={t("diary.listRetry")} onPress={() => void state.retry()} /> : null}
         <SecondaryButton label={t("navigation.back")} onPress={onClose} />
-      </View> : <AppearanceBuilder key={`${userId}:${pet.id}:${pet.species}`} pet={pet} initialAppearance={state.appearance} onSave={state.save} onClose={onClose} onboarding={onboarding} motionEnabled={motion.enabled} reducedMotion={motion.reduced} />}
+      </View> : <AppearanceBuilder key={`${userId}:${pet.id}:${pet.species}`} pet={pet} initialAppearance={state.appearance} onSave={state.save} onClose={onClose} onboarding={onboarding} motionEnabled={motion.enabled} reducedMotion={motion.reduced}
+        photoGeneration={({ load, disabled }) => <AvatarPhotoGeneration userId={userId} pet={pet} disabled={disabled} motionEnabled={motion.enabled} reducedMotion={motion.reduced} onLoad={load} />} />}
     </SafeAreaView>
   </Modal>;
 }

@@ -47,6 +47,28 @@ try {
   // Background is still a hard stop.
   values.wander.setValue(5); controller.update({...base},{...config,active:false});
   assert(!animated.animations.some(a=>a.running)&&values.wander.__getValue()===0&&values.opacity.__getValue()===1,'inactive app stops everything and resets');
+  // A tap while walking left: the reaction faces forward, then the walk resumes from home.
+  const facing={frame:new A.Value(0),wander:new A.Value(0),direction:new A.Value(1),lift:new A.Value(0),opacity:new A.Value(1)};
+  let latest='sit';const walker=createCharacterMotionController(facing,(pose:string)=>{latest=pose;});
+  // Read through a function: assertions must not let TypeScript narrow the observed pose to a literal.
+  const shown=()=>latest;
+  animated.setDate(new Date(2026,9,30,14,0,0));walker.update({...base,id:'left-walker'},config);
+  for(let i=0;i<20000&&facing.direction.__getValue()!==-1;i+=50)animated.advance(50);
+  assert(facing.direction.__getValue()===-1&&shown()==='walkRight','fixture reaches the leftward walk step');
+  walker.update({...base,id:'left-walker',tap:1},config);
+  assert(shown()==='wave'&&facing.direction.__getValue()===1,'a tap mid left-walk waves facing forward, not mirrored');
+  const {characterReactionDuration}=require('./characterMotionController'),wave=characterReactionDuration('cat','wave');
+  animated.advance(wave/2);walker.update({...base,id:'left-walker',tap:1,paused:true},config);
+  assert(shown()==='wave'&&facing.direction.__getValue()===1,'a gate change mid-reaction stays forward-facing');
+  walker.update({...base,id:'left-walker',tap:1},config);
+  animated.advance(wave/2+1);
+  assert(shown()==='sit'&&facing.direction.__getValue()===1,'reaction end returns to a forward idle');
+  let resumed=false;for(let i=0;i<20000&&!resumed;i+=50){animated.advance(50);resumed=shown()==='walkRight';}
+  const step=on(facing.wander,'timing').pop()!;
+  assert(resumed&&facing.direction.__getValue()===1&&step.running&&step.options.toValue===16,'wander resumes with the first rightward step');
+  walker.update({...base,id:'left-walker',tap:1,saved:1},config);
+  assert(shown()==='stretch'&&facing.direction.__getValue()===1,'a save reaction mid-walk also faces forward');
+  walker.stop();
   console.log('Motion continuity: lift/fade/wander survive unrelated updates; drop springs; reduced reveal is instant.');
 } finally { modules._load=original; }
 function assert(value:unknown,message:string):asserts value {if(!value)throw new Error(message);}

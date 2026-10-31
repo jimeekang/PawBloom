@@ -1,6 +1,8 @@
 import { getPixelClip, getPixelFrame, pixelBounds, pixelPoses, pixelSlots, type PixelFrame } from './pixelFrames';
-import { tracedPixelFrames, tracedCoatMasks } from './pixelFrames.generated';
-import { correctedPixelFrameIds, pixelFrameCorrectionReasons } from './pixelFrames.overrides';
+import { tracedPixelFrames, tracedCoatMasks } from '../../../../../../scripts/pixel-frames/pixelFrames.generated';
+import { correctedPixelFrameIds, pixelFrameCorrectionReasons, pixelFrameOverrides } from '../../../../../../scripts/pixel-frames/pixelFrames.overrides';
+
+import { tracedCoatMasks as bakedCoatMasks } from './pixelFrames.baked';
 
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 function throws(fn: () => void, reason: string) { let error = ''; try { fn(); } catch (e) { error = String(e); } assert(error.includes(reason), `negative fixture must detect ${reason}: ${error}`); }
@@ -67,3 +69,12 @@ throws(() => checkFrame({ ...good, rows: good.rows.map(row => row.replace(/[ikh]
 throws(() => checkFrame(change(getPixelFrame('cat','walkBack'), 24,20,'n')), 'back face');
 console.log(`Pixel quality: 31 cat + 13 dog + other; ${correctedPixelFrameIds.length} documented overrides; 7 negative fixtures.`);
 
+
+// Re-running the build source must reproduce every baked frame and coat mask.
+for (const source of tracedPixelFrames) {
+  const expected = pixelFrameOverrides[`${source.pose}:${source.index}`] ?? source;
+  assert(JSON.stringify(getPixelFrame('cat',source.pose,source.index)) === JSON.stringify(expected), 'baked cat frame equals source pipeline');
+}
+assert(JSON.stringify(tracedCoatMasks) === JSON.stringify(bakedCoatMasks), 'baked coat masks equal trace pipeline');
+const { execFileSync } = require('node:child_process') as { execFileSync(file: string, args: string[]): unknown };
+execFileSync('node',['scripts/bake-pixel-frames.mjs','--check']);

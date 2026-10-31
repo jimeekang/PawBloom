@@ -15,6 +15,10 @@ async function testResourceWorker() {
         data: [
           { bucket_id: "memory-media", storage_path: "memory/ok" },
           { bucket_id: "pet-avatars", storage_path: "pet/retry" },
+          { bucket_id: "pet-avatars", storage_path: "pet/gone" },
+          { bucket_id: "pet-avatars", storage_path: "pet/gone-numeric" },
+          { bucket_id: "pet-avatars", storage_path: "pet/forbidden" },
+          { bucket_id: "pet-avatars", storage_path: "pet/server" },
         ], error: null,
       };
       if (name === "list_account_deletion_memory_objects_v2") return {
@@ -31,7 +35,7 @@ async function testResourceWorker() {
     storage: { from: (bucket: string) => ({
       remove: async (paths: string[]) => {
         calls.push(`remove:${bucket}:${paths.join(",")}`);
-        return { error: paths.includes("pet/retry") ? new Error("Storage unavailable") : null };
+        return { error: paths.includes("pet/retry") ? new Error("Storage unavailable") : paths.includes("pet/gone") ? { statusCode: "404" } : paths.includes("pet/gone-numeric") ? { status: 404 } : paths.includes("pet/forbidden") ? { status: 403 } : paths.includes("pet/server") ? { statusCode: 503 } : null };
       },
       copy: async (source: string, destination: string) => {
         calls.push(`copy:${bucket}:${source}:${destination}`);
@@ -41,8 +45,12 @@ async function testResourceWorker() {
     }) },
   } satisfies AccountDeletionStorageClient;
   const result = await drainResourceCleanup(client);
-  if (result.completed !== 1 || result.failed !== 1) throw new Error("cleanup must retain a retryable failure");
+  if (result.completed !== 3 || result.failed !== 3) throw new Error("cleanup must retain a retryable failure");
   if (!calls.includes("complete_resource_cleanup_v1:memory/ok")
+    || !calls.includes("complete_resource_cleanup_v1:pet/gone")
+    || !calls.includes("complete_resource_cleanup_v1:pet/gone-numeric")
+    || calls.includes("complete_resource_cleanup_v1:pet/forbidden")
+    || calls.includes("complete_resource_cleanup_v1:pet/server")
     || calls.includes("complete_resource_cleanup_v1:pet/retry")) throw new Error("worker ACKed failed Storage removal");
   if (!calls[0]?.startsWith("expire_memory_drafts_v1")) throw new Error("draft expiry must feed the cleanup inventory");
 

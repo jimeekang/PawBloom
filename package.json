@@ -23,8 +23,9 @@
     "verify:release": "node scripts/verify-release.mjs",
     "verify:docs": "node scripts/verify-docs.mjs",
     "codex:check": "node scripts/codex-environment-check.mjs",
-    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:presentation && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:offline && npm run verify:release && npm run verify:docs",
-    "test:db": "node supabase/tests/run-db-tests.cjs"
+    "verify": "npm run typecheck && npm run verify:architecture && npm run verify:i18n && npm run verify:presentation && npm run verify:ai-safety && npm run verify:secrets && npm run verify:supabase && npm run verify:avatar-contract && npm run verify:offline && npm run verify:release && npm run verify:docs",
+    "test:db": "node supabase/tests/run-db-tests.cjs",
+    "verify:avatar-contract": "node scripts/verify-avatar-contract.mjs"
   },
   "engines": {
     "node": ">=22.0.0",

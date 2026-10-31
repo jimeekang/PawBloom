@@ -93,3 +93,20 @@ edit_policy: exclusive
 - 오프라인(비행기 모드)에서 저장→큐 적재→복귀 동기화가 되는가 (networkMode always).
 - 서울(UTC+9) 기기 23:30에 다이어리·투약 저장이 성공하는가 (시간대 RLS — db push 후).
 - 자정 경과 후 다이어리 선택 날짜·리포트 7일 창이 새 날을 따라오는가.
+
+## 5. 캐릭터 v3 + 사진→캐릭터(M2) QA (2026-10-31)
+
+| 항목 | 상태 |
+| --- | --- |
+| 픽셀 렌더 회귀 | 331d958 대비 24,000 composePixelFrame 비교, `cat:blink:2`(의도한 눈 감음 도장)만 변경 |
+| 번들 다이어트 | `pixelFrames.baked.ts` 단일 import, `bake-pixel-frames.mjs --check`가 verify:presentation에 포함 |
+| 캡처 | `character-v3/ui-fix-*.png`(U1), `ui-ai-*.png`(U2, 상태 mock — 실제 생성 UI e2e 미실행) |
+| 실제 생성 | 로컬 함수 serve + Claude 실호출 성공(cat, request_id 저장). UI 경유 e2e·실기기 picker 미확인 |
+
+다음 QA pass에서 재확인:
+- 동의 시트 → 진행 → 결과 → 적용/다듬기/다시 만들기를 로그인 세션에서 실제로 1회 이상 수행한다.
+- 오류 12코드가 EN/KO 문구와 복구 버튼(다시 시도/다른 사진/닫기)으로 표시되고 provider 원문이 보이지 않는다.
+- 왼쪽 걷기 중 탭 반응 후 좌우 반전이 남지 않는다. 장면 탭 요약창은 600ms 이내, 동작 줄이기 120ms.
+- 시트 닫기·picker 취소 후 포커스가 "사진으로 만들기" 진입 버튼으로 돌아온다.
+- 높이 700px 미만 화면에서 사진 진입 행과 72px 미리보기, 옵션 영역이 겹치지 않는다.
+- 개 캐릭터의 wave 클립 부재(알려진 한계)가 탭 반응·요약 타이밍을 깨지 않는다.

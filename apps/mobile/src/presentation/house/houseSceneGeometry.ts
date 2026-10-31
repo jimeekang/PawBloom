@@ -1,5 +1,6 @@
 import { houseColumnCount, clampHousePoint, type HousePoint } from "./houseLayout";
-import { characterWanderReach } from "../../contexts/avatar/ui/characterMotionController";
+import { characterReactionDuration, characterWanderReach } from "../../contexts/avatar/ui/characterMotionController";
+import type { CharacterSpecies } from "../../contexts/avatar/domain/appearance";
 import { houseNameTagHeight, houseNameTagOffset } from "./HouseCharacter";
 import { defaultCharacterCanvas, characterGroundOffset } from "./DefaultPetCharacter";
 
@@ -36,4 +37,17 @@ export type HouseSceneGeometry = ReturnType<typeof getHouseSceneGeometry>;
 export function toHouseScenePosition(point: HousePoint, geometry: HouseSceneGeometry) {
   const safe = clampHousePoint(point);
   return { x: geometry.inset - SLOT_WIDTH / 2 + (safe.x - SAFE_MIN) * geometry.spanX, y: geometry.feetTop + (safe.y - SAFE_MIN) * geometry.spanY - geometry.groundOffset };
+}
+/** Reduced motion has no wave to wait for; the sheet opens right after the tap. */
+const SUMMARY_DELAY_REDUCED_MS = 120;
+/** List taps: the scene may be scrolled away, so keep the short acknowledgement delay. */
+const SUMMARY_DELAY_LIST_MS = 320;
+/** Scene-tap timer cap: timer plus the sheet's first render (~30ms on web) must land within 650ms of the tap.
+ * The wave's fourth frame starts at 500ms, so every wave pose shows before the sheet slides up from below. */
+const SUMMARY_DELAY_SCENE_MAX_MS = 600;
+/** A scene tap waits for the pet's wave clip (4 frames at 6fps) before the summary sheet's backdrop covers it. */
+export function summaryOpenDelay(species: CharacterSpecies, from: "scene" | "list", reduced: boolean) {
+  if (reduced) return SUMMARY_DELAY_REDUCED_MS;
+  if (from === "list") return SUMMARY_DELAY_LIST_MS;
+  return Math.min(SUMMARY_DELAY_SCENE_MAX_MS, Math.max(SUMMARY_DELAY_LIST_MS, characterReactionDuration(species, "wave")));
 }

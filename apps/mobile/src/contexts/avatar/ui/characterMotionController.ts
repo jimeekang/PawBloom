@@ -9,6 +9,10 @@ export type CharacterMotionValues = { frame: Animated.Value; wander: Animated.Va
 const native = Platform.OS !== 'web';
 /** Largest sideways wander offset; scenes reserve this on both sides of every slot. */
 export const characterWanderReach = 16;
+/** One-shot reaction length in ms (jump is a fixed hop); screens time follow-ups (e.g. the summary sheet) from it. */
+export function characterReactionDuration(species: CharacterSpecies, pose: 'wave' | 'stretch' | 'jump') {
+  return pose === 'jump' ? 600 : getPixelClip(species,pose).length*1000/(characterClipFps[pose] ?? 6);
+}
 export function createCharacterMotionController(values: CharacterMotionValues, setPose: (pose: PixelPose) => void) {
   let options: CharacterMotionOptions, config: CharacterMotionConfig = {}, pose: PixelPose = 'sit';
   let clock = systemCharacterClock, generation = 0;
@@ -81,6 +85,8 @@ export function createCharacterMotionController(values: CharacterMotionValues, s
     idleTimers.add(timer(() => { play('blink'); idleTimers.add(timer(idle,400)); },2400+hashSeed(options.id)%1601));
   }
   function base() {
+    // Only a walk step may face left; reactions, lifts and rests always face forward. walk() sets its own direction.
+    values.direction.setValue(1);
     // Reduced motion and background stay still; an explicitly chosen preview pose shows its first frame, never sit-for-all.
     if (options.reduced || config.active === false) { play(resolvedPose() ?? 'sit'); settleWander(); return; }
     if (options.lifted) { play('run'); settleWander(); return; }
@@ -117,7 +123,7 @@ export function createCharacterMotionController(values: CharacterMotionValues, s
     setLift(next.lifted ? 1 : 0);
     const rank = (pose: PixelPose) => pose === 'jump' ? 3 : pose === 'stretch' ? 2 : 1;
     if (event && (!reaction || reaction.until <= clock.now().getTime() || rank(event) >= rank(reaction.pose))) {
-      const duration = event === 'jump' ? 600 : getPixelClip(config.species ?? 'cat',event).length*1000/(characterClipFps[event] ?? 6);
+      const duration = characterReactionDuration(config.species ?? 'cat',event);
       reaction = next.reduced ? undefined : { pose: event, start: clock.now().getTime(), until: clock.now().getTime()+duration };
       fade(event === 'jump');
     }

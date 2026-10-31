@@ -2,7 +2,7 @@ import { isPixelEye, pixelEyeRegions, type PixelEyeRegion } from './pixelEyes';
 import { defaultAppearance, presetAppearances, randomAppearance } from './appearance';
 import { getPixelClip, pixelPoses, type PixelFrame } from './pixelFrames';
 import { appearancePixelMasks, coatPixelMask, composePixelFrame, dogBicolorPixelMask } from './pixelMasks';
-import { blockPixel, cleanPatternPaint, joinedPixel } from './pixelPatternCleanup';
+import { blockPixel, cleanPatternPaint, joinedPixel } from './pixelMasks';
 const directions = [[1,0],[-1,0],[0,1],[0,-1]];
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 function noSingletons(rows: readonly (readonly string[] | string)[], slots: readonly string[], id: string, eyes: readonly PixelEyeRegion[] = []) {

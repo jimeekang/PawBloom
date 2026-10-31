@@ -79,6 +79,13 @@ try {
   assert(!findElements(tree, (node) => node.props?.group === t("character.faceMark")).length, "other hides unsupported face marks");
   const skip = findElements(tree, (node) => node.props?.children?.props?.children === t("character.skip"))[0];
   assert(skip, "onboarding provides skip"); skip.props.onPress(); assert(closed === 2, "skip returns without another save");
+  harness.unmount(); harness = createHookHarness(); props.pet.species = "cat";
+  let controls: any; (props as any).photoGeneration = (next: any) => { controls = next; return null; };
+  tree = render();
+  assert(controls && controls.disabled === false, "photo generation slot renders with live controls");
+  assert(findElements(tree, (node) => node.type === preview && node.props.withBody)[0].props.size === 72, "short phones step the preview down to exact 1.5x when the photo entry is shown");
+  controls.load({ ...defaultAppearance("cat"), coatColor: "black" }); tree = render();
+  assert(findElements(tree, (node) => node.type === preview && node.props.withBody)[0].props.appearance.coatColor === "black", "a generated appearance loads into the builder preview for refining");
   harness.unmount();
 } finally { modules._load = original; }
 function choice(tree: any, label: string, group?: string) { const result = findElements(tree, (node) => node.type?.name === "Choice" && node.props.label === label && (!group || node.props.group === group))[0]; if (!result) throw new Error(`Missing choice ${label}`); return result; }

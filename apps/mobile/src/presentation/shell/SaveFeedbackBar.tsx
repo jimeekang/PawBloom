@@ -5,7 +5,9 @@ import { colors, iconSize, layout, radius, shadow, spacing, type } from "../../d
 import { t } from "../../i18n/translations";
 import type { SaveFeedback } from "./saveFeedback";
 
-const headerOffset = 76;
+/** Toast frame below the screen header; the save-reaction pet anchors to its bottom edge. */
+export const saveFeedbackTop = 76;
+export const saveFeedbackMinHeight = 86;
 
 export function SaveFeedbackBar({ feedback, onDismiss }: { feedback: SaveFeedback | null; onDismiss: () => void }) {
   useEffect(() => {
@@ -44,9 +46,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: layout.screenPadding,
     right: layout.screenPadding,
-    top: headerOffset,
+    top: saveFeedbackTop,
     zIndex: 20,
-    minHeight: 86,
+    minHeight: saveFeedbackMinHeight,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.summaryBorder,

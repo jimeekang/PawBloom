@@ -230,6 +230,8 @@ Codex 구현·검증 항목:
 
 ## 릴리스 전 확인
 
+- `PAWBLOOM_REQUIRE_SDK_TEST=1 npm run test:db`로 실제 SDK 테스트 미실행을 차단한다.
+
 - Android 실제 기기에서 preview build를 확인한다.
 - iOS는 TestFlight 또는 development build로 확인한다.
 - Store screenshot은 최종 UI 기준으로 다시 캡처한다.

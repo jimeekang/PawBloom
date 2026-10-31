@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { NoticeBanner, PrimaryButton } from "../../../design-system/components";
 import { AppIcon } from "../../../design-system/iconography";
@@ -23,16 +23,18 @@ export type AppearanceBuilderProps = {
   pet: { id: string; name: string; breed: string; species: CharacterSpecies };
   initialAppearance: Appearance; motionEnabled: boolean; reducedMotion: boolean; onboarding?: boolean;
   onSave: (appearance: Appearance) => Promise<void>; onClose: () => void;
+  /** Optional photo-generation entry; `load` replaces the edited appearance (refine or apply), `disabled` while saving. */
+  photoGeneration?: (controls: { load: (appearance: Appearance) => void; disabled: boolean }) => ReactNode;
 };
 
-export function AppearanceBuilder({ pet, initialAppearance, motionEnabled, reducedMotion, onboarding = false, onSave, onClose }: AppearanceBuilderProps) {
+export function AppearanceBuilder({ pet, initialAppearance, motionEnabled, reducedMotion, onboarding = false, onSave, onClose, photoGeneration }: AppearanceBuilderProps) {
   const [previewPose, setPreviewPose] = useState<CharacterPose>("sit");
   const [appearance, setAppearance] = useState(initialAppearance);
   const [tab, setTab] = useState("preset"), [tap, setTap] = useState(0);
   const [saving, setSaving] = useState(false), [revealing, setRevealing] = useState(false), [failed, setFailed] = useState(false);
   const explicitAccent = useRef(initialAppearance.accentColor !== automaticAccent(initialAppearance.coatColor, initialAppearance.coatPattern));
   const mounted = useRef(true), timer = useRef<ReturnType<typeof setTimeout> | null>(null), inFlight = useRef(false);
-  const dimensions = useWindowDimensions();
+  const dimensions = useWindowDimensions(); // short phones: the photo entry takes a row, so the preview steps down to exact 1.5x
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (timer.current) clearTimeout(timer.current); }; }, []);
   useEffect(() => { if (revealing && reducedMotion) { if (timer.current) clearTimeout(timer.current); onClose(); } }, [revealing, reducedMotion]);
   const presets = presetAppearances(pet.species);
@@ -60,8 +62,9 @@ export function AppearanceBuilder({ pet, initialAppearance, motionEnabled, reduc
         <Text style={styles.title} numberOfLines={2} accessibilityRole="header">{onboarding ? t("character.onboarding") : t("character.title").replace("{petName}", pet.name)}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={t("character.random")} disabled={saving} onPress={() => replace(randomAppearance(pet.species, Date.now()))} style={styles.textButton}><Text style={styles.link}>{t("character.random")}</Text></Pressable>
       </View>
+      {photoGeneration?.({ load: replace, disabled: saving })}
       <Pressable accessibilityRole="button" accessibilityLabel={`${pet.name}, ${t("character.preview")}`} onPress={() => setTap((value) => value + 1)} style={styles.preview}>
-        <CharacterSvg species={pet.species} appearance={appearance} size={dimensions.height < 700 ? 96 : 144} pose={previewPose} withBody motion={{ id: pet.id, enabled: motionEnabled && !saving, reduced: reducedMotion, paused: true, tap, reveal: revealing }} />
+        <CharacterSvg species={pet.species} appearance={appearance} size={dimensions.height < 700 ? (photoGeneration ? 72 : 96) : 144} pose={previewPose} withBody motion={{ id: pet.id, enabled: motionEnabled && !saving, reduced: reducedMotion, paused: true, tap, reveal: revealing }} />
         <Text style={styles.petName} numberOfLines={2}>{pet.name}{pet.breed ? ` · ${pet.breed}` : ""}</Text>
         <Text style={styles.caption} accessibilityLiveRegion="polite">{t(revealing ? "character.creating" : "character.preview")}</Text>
       </Pressable>

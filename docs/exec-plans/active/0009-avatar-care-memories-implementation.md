@@ -7,7 +7,7 @@ edit_policy: exclusive
 # 0009 아바타·실제 케어·공동 추억 구현 계획
 
 - 작성: 2026-10-18. 사용자가 승인한 채팅 방향을 실행 가능한 문서로 반영한다.
-- 상태: **M1 로컬 완료(원격 미적용), M3·M4 로직 완료, 화면 진행 중 (2026-10-21)**. 재개는 §13. 단계 상태는 [0003](0003-weekly-execution-checklist.md)만 갱신한다.
+- 상태: **M1 로컬 완료(원격 미적용), M2 서버·앱 application 로컬 검증 완료, 최종 전체 게이트·리뷰 대기, M3·M4 로직 완료 (2026-10-31)**. M2 전체 UI·원격 출시는 완료하지 않았다. 재개는 §13. 단계 상태는 [0003](0003-weekly-execution-checklist.md)만 갱신한다.
 - 정본: [제품](../../product/PRODUCT_SPEC.md), [화면 UX](../../design/AVATAR_HOME_UX.md), [로드맵](0002-mvp-roadmap.md).
 - 이 문서는 다음 구현의 진입점이다. 0007/0008/APP_FIX의 완료 이력과 남은 안전·출시 검증은 승계한다.
 - 기존 소유 frontmatter(owner_role/domain/edit_policy)를 유지한다. 이번 요청은 해당 문서의 내용 갱신이며 라우팅 정책 변경이 아니다.
@@ -83,7 +83,15 @@ petId + 적용 asset → 우리 집(개인 배치) → 아이 요약/상세
 
 ## 5. M2 — 사진 생성·교체
 
-예정: `contexts/avatar/{domain,application,infrastructure,ui}/`, `generate-pet-avatar` 요청/상태·적용 계약.
+2026-10-31 서버·앱 application 구현 및 로컬 검증 완료. 전체 UI·최종 전체 게이트·원격 출시는 별도다.
+
+- Claude(Anthropic) API `claude-sonnet-5-5`가 사진의 외형을 기존 appearance 옵션으로 고른다. `messages.parse`·structured output·effort high를 사용하며 이미지 생성은 하지 않는다.
+- migration `20261031090000_pet_avatars_parametric.sql`은 `parametric-v3` manifest 저장·적용과 NULL storage 경로의 cleanup 생략을 지원한다.
+- `generate-pet-avatar`는 JWT·owner·job 소유·이미지를 검증하며 사용자당 최근 24시간 10회로 제한한다. 준비 RPC → private 업로드 → 함수 호출 → 확인 후 적용 순서다.
+- 생성 완료 후 원본 사진 객체를 즉시 삭제한다. 사진·프롬프트는 DB에 저장하지 않고 제공자 기록은 모델·중단 사유·사용량·요청 ID로 제한한다.
+- 앱은 생성 결과의 enum·신뢰도를 검증하고 미적용 24시간 결과를 복구한다. 생김새 읽기는 유효한 로컬 → 서버 적용 manifest → 기본값 순이다. 실제 Claude 생성·DB 적용·원본 삭제와 앱 경계 테스트 결과는 §13에 기록한다.
+
+교체·복구 요구:
 
 - `PetOnboardingScreen.tsx`, 기존 프로필 사진 선택 경로에서 기존/신규 pet 모두 진입한다.
 - 입력 크기·MIME·이미지 decode·pet 소유·저장 위치·재시도 한도는 서버 검증한다.
@@ -182,7 +190,20 @@ DB/Storage 테스트는 별도 로컬 환경에서 실행하고 기존 verify에
 - 신규 미추적 문서는 verify:docs의 추적 파일 대상 밖이므로 같은 frontmatter·300줄 제한과 로컬 링크를 별도 검사했다.
 - 생성 서비스·신규 DB/서버/화면은 미구현이다. 이 결과를 M0~M6 기능 완료·기기 QA·원격 적용으로 해석하지 않는다.
 
-## 13. 진행 현황과 재개 (2026-10-21)
+## 13. 진행 현황과 재개 (2026-10-31)
+
+### 2026-10-31 — M2 C1 서버·앱 application 로컬 검증 완료
+
+- C1은 Claude API 옵션 선택, parametric migration·생성 함수, 앱 application 계약·복구, enum 동기 검사·비밀 설정을 구현했다. 캐릭터 프레임 bake·닫힌 눈 도장 수정도 같은 패킷 범위다.
+- 수정 migration의 로컬 `migration up`·`db reset`과 전체 `npm run test:db`가 exit 0이다. 권한·한도·parametric 적용·동시성·Storage HTTP·함수 단위 테스트를 통과했고 데이터 보존 재시작 후 Storage/runtime v1.80.2 정상 상태에서 재확인했다.
+- 실제 Claude 호출은 cat·confidence 0.86, 입력 1,561/출력 193토큰, 4,115ms로 성공했다. SQL로 `parametric-v3`·`is_applied=true`·asset 3개 열 NULL·job ready·소스 객체 0건·provider_raw 4개 키만 저장됨을 확인했다.
+- 실제 오류 경로는 다른 사용자 JWT 404, ready 재호출 200·동일 avatar 유지, 매직바이트 불일치 400이다. 정상·잘못된 사진 모두 소스 삭제를 확인했다. Deno SDK import와 JWT 검증 프로브 401/400도 확인했다.
+- 앱 application 계약·오류 매핑·소유자 차단·늦은 응답·캐시 갱신·손상 로컬의 서버 복구 테스트와 타입 검사를 통과했다. 서버·앱 application 로컬 검증 완료를 전체 UI·실기기·원격 출시 완료로 해석하지 않는다.
+- 최종 코드에서 `npm run verify` exit 0(테스트 198개 파일), `npm run test:db` exit 0(SQL 8·shell 3·TS 2)을 확인했다. reviewer는 C1 추가지시 범위를 재검토해 필수 수정 0건으로 승인했다. integrator 최종 통합 판정은 별도다.
+- 원격 적용에 필요한 작업: migration 적용 → `generate-pet-avatar` 및 변경된 `delete-account` 함수 배포, Supabase Dashboard → Edge Functions → Secrets에 서버 비밀 `CLAUDE_API_KEY` 등록, 변경된 개인정보처리방침 재게시. 원격 적용·배포·게시에는 별도 승인이 필요하며 아직 수행하지 않았다.
+- C1 로컬 게이트·reviewer 확인은 완료했다. 다음은 현재 worktree의 U2 UI 작업 후 integrator 통합 판정이며, UI 패킷 완료·실기기·원격 확인은 별도다.
+
+### 2026-10-21 — 이전 진행 기록
 
 `/orchestration`으로 실행했다. 실행 범위는 M1+M3+M4이며 M2(생성)는 제공자 미정이라 보류했다.
 P1(DB)과 P2(셸·로직)는 Codex에서 구현한 뒤 reviewer의 필수 수정 0건으로 끝났고, P3(UI)는 진행 중에 멈췄다.
@@ -205,7 +226,7 @@ P1(DB)과 P2(셸·로직)는 Codex에서 구현한 뒤 reviewer의 필수 수정
 - M5 클라이언트 계약: RPC는 `prepare_memory`·`publish_memory`·`update_memory`·`delete_memory`·`prepare_pet_avatar_job`·`apply_pet_avatar`이며 모두 jsonb를 반환한다.
   새 5개 테이블은 client SELECT만 허용한다. `pet_avatar_jobs`는 `select *`를 쓰지 않는다. 추억 집계는 memoryId 기준으로 한다.
 
-### 새 worktree에서 재개
+### 2026-10-21 당시 새 worktree 재개 절차(과거 기록)
 
 ```bash
 git worktree add ../PawBloom-avatar-ui -b avatar-ui main

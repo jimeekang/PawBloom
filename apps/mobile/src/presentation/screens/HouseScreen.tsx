@@ -12,6 +12,7 @@ import { HousePetList } from "../house/HousePetList";
 import { HouseScene } from "../house/HouseScene";
 import { PetSummarySheet } from "../house/PetSummarySheet";
 import { useHouseLayout } from "../house/useHouseLayout";
+import { summaryOpenDelay } from "../house/houseSceneGeometry";
 import { useHouseMotionState } from "../house/useHouseMotionEnabled";
 import { DefaultPetCharacter } from "../house/DefaultPetCharacter";
 import type { TodayCarePetState } from "./TodayCareScreen";
@@ -63,7 +64,8 @@ export function HouseScreen({ pets, userId, recordTargetSelection = false, careS
     opener.current = { petId, from };
     if (tapTimer.current) clearTimeout(tapTimer.current);
     setTap((current) => ({ petId, sequence: current.sequence + 1 }));
-    tapTimer.current = setTimeout(() => setSummaryPetId(petId), motion.reduced ? 120 : 320);
+    const species = pets.find((pet) => pet.id === petId)?.species ?? "cat";
+    tapTimer.current = setTimeout(() => setSummaryPetId(petId), summaryOpenDelay(species, from, motion.reduced));
   }
   function closeSummary() {
     const origin = opener.current;

@@ -8,8 +8,9 @@ const trackedFiles = execFileSync("git", ["ls-files"], { encoding: "utf8" })
 const failures = [];
 
 const jwtPattern = /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/g;
+const anthropicKeyPattern = /sk-ant-[A-Za-z0-9_-]{20,}/;
 const secretAssignmentPattern =
-  /^\s*(?:EXPO_PUBLIC_SUPABASE_(?:PUBLISHABLE_)?KEY|SUPABASE_(?:ANON_KEY|PUBLISHABLE_KEY|SERVICE_ROLE_KEY|SECRET_KEY)|OPENAI_API_KEY)\s*=\s*([^\s#]+)/gm;
+  /^\s*(?:EXPO_PUBLIC_SUPABASE_(?:PUBLISHABLE_)?KEY|SUPABASE_(?:ANON_KEY|PUBLISHABLE_KEY|SERVICE_ROLE_KEY|SECRET_KEY)|OPENAI_API_KEY|CLAUDE_API_KEY|ANTHROPIC_API_KEY)\s*=\s*([^\s#]+)/gm;
 
 const allowedPlaceholderValues = new Set([
   "your-publishable-key",
@@ -27,6 +28,9 @@ for (const file of trackedFiles) {
 
   if (jwtPattern.test(content)) {
     failures.push(`${file}: contains a JWT-like token`);
+  }
+  if (anthropicKeyPattern.test(content)) {
+    failures.push(`${file}: contains an Anthropic API-key-like token`);
   }
 
   for (const match of content.matchAll(secretAssignmentPattern)) {

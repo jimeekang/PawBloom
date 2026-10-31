@@ -323,7 +323,10 @@ async function removeObjects(supabase: AccountDeletionStorageClient, bucket: str
     const { error } = await supabase.storage
       .from(bucket)
       .remove(paths.slice(start, start + STORAGE_BATCH_SIZE));
-    if (error) throw error;
+    const status = error && typeof error === "object"
+      ? String((error as { statusCode?: unknown; status?: unknown }).statusCode ?? (error as { status?: unknown }).status)
+      : null;
+    if (error && status !== "404") throw error;
   }
 }
 
@@ -439,4 +442,16 @@ export async function drainResourceCleanup(supabase: AccountDeletionStorageClien
     }
   }
   return { completed, failed };
+}
+
+// This global queue is supplemental; its failure must not block an account's own verified cleanup.
+export async function tryDrainResourceCleanup(supabase: AccountDeletionStorageClient) {
+  try {
+    const result = await drainResourceCleanup(supabase);
+    if (result.failed > 0) console.warn("Supplemental resource cleanup deferred");
+    return { ...result, drainFailed: result.failed > 0 };
+  } catch {
+    console.warn("Supplemental resource cleanup deferred");
+    return { completed: 0, failed: 1, drainFailed: true };
+  }
 }

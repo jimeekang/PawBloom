@@ -267,6 +267,31 @@ if (!memoryMigration) {
   }
 }
 
+// Edge imports must stay reproducible; a bare tag/range can silently change SDK behavior.
+function pinnedEdgeSpecifier(specifier) {
+  const packageName = specifier.replace(/^(?:npm:|https:\/\/esm\.sh\/)/, "");
+  return /^(?:@[^/@]+\/)?[^/@]+@(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:\/[^?#]*)?(?:\?[^#]*)?$/.test(packageName);
+}
+for (const [specifier, expected] of [
+  ["npm:@anthropic-ai/sdk@1.3.0/helpers/zod", true], ["npm:zod@4.6.7", true],
+  ["https://esm.sh/@supabase/supabase-js@2.108.2", true], ["npm:zod", false],
+  ["npm:zod@^4.6.7", false], ["npm:zod@latest", false], ["npm:zod@4", false], ["npm:zod@4.6", false],
+  ["npm:zod@4.6.7-beta", false], ["https://esm.sh/@supabase/supabase-js", false],
+]) {
+  if (pinnedEdgeSpecifier(specifier) !== expected) throw new Error("Edge import pin check fixture failed.");
+}
+function edgeFiles(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const path = join(directory, entry.name);
+    return entry.isDirectory() ? edgeFiles(path) : /\.[cm]?[jt]sx?$/.test(entry.name) ? [path] : [];
+  });
+}
+for (const file of edgeFiles(join(process.cwd(), "supabase/functions"))) {
+  for (const match of readFileSync(file, "utf8").matchAll(/["'`]((?:npm:|https:\/\/esm\.sh\/)[^"'`\s]+)["'`]/g)) {
+    if (!pinnedEdgeSpecifier(match[1])) failures.push(`Edge import needs an exact @x.y.z version: ${file}: ${match[1]}`);
+  }
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);

@@ -113,3 +113,11 @@ type PixelFrame = { pose: PixelPose; index: number; width: 48; height: 48; rows:
 - 개 전용 픽셀 시트 생성 여부와 시점. 생성 전까지 개는 최소 세트다.
 - `walkFront`·`walkBack`을 집에서 쓸지(현재는 빌더 프리뷰만).
 - 계절 목걸이·소품 등 꾸미기(첫 버전 없음), `pets.appearance` 서버 저장(v2 §9 승계).
+
+## 8. 사진→캐릭터 생성 (M2, 2026-10-31)
+
+- 방식: 이미지 생성 모델이 아니라 **옵션 선택**이다. 서버 함수 `generate-pet-avatar`가 사진 1장을 Claude API(`claude-sonnet-5-5`, effort high, structured output)에 보내 §2 appearance enum(`coatColor`·`coatPattern`·`accentColor`·`eyeColor`·`earShape`·`furLength`·`build`·`tail`·`faceMark`·`collar`)과 `species`·`confidence`를 받는다. 렌더는 기존 픽셀 파이프라인 그대로다.
+- 흐름: 빌더 "사진으로 만들기" → 동의(`avatar-ai-2026-10-31`) → 선택 → RPC `prepare_pet_avatar_job` → `pet-avatars` 업로드 → 함수 호출(동기) → 결과 카드(픽셀 미리보기) → 적용(`apply_pet_avatar` + 로컬 저장) / 다듬기 / 다시 만들기.
+- 저장: `pet_avatars`에 `manifest_version='parametric-v3'`, `manifest.appearance`로 기록하고 storage 경로는 NULL(migration `20261031090000`). 원본 사진은 전송 전에 메타데이터를 지우고, 결과 생성 직후(중간에 멈추면 늦어도 2시간 안에) 삭제한다. 한도는 직전 24시간 10회다. 로컬 생김새가 없을 때만 서버의 적용본을 읽는다.
+- 서버 enum 사본(`supabase/functions/generate-pet-avatar/contract.ts`)은 `scripts/verify-avatar-contract.mjs`가 도메인과 글자 단위로 비교한다. 오류는 `avatar_*` 코드 12종으로만 표시한다(안전 규칙은 `docs/product/AI_SAFETY.md`).
+- 눈 감음(`blink:2`) 도장은 2026-10-31에 10×3 ∩ 모양(`..kkkkkk..` / `.kkkkkkkk.` / `kkk....kkk`)으로 고정했다. 작은 크기에서 막대처럼 보이던 문제의 수정이다.

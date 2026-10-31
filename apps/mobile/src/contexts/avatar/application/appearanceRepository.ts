@@ -1,14 +1,25 @@
 import { normalizeAppearance, presetAppearances, type Appearance, type CharacterSpecies } from "../domain/appearance";
 import { appearanceStorageKey, parseStoredAppearance, type AppearanceStorage } from "../domain/appearanceStorage";
 import { localAppearanceStorage } from "../infrastructure/localAppearanceStorage";
+import { avatarGenerationApi } from "../infrastructure/avatarGenerationApi";
+import { parseAvatarRow } from "../domain/avatarGeneration";
 
 export function previewAppearance(petId: string, species: CharacterSpecies): Appearance {
   const index = ({ "pet-demo-mochi": 0, "pet-demo-luna": 4, "pet-demo-cheese": 0, "pet-demo-coco": 2 } as Record<string, number>)[petId];
   return index === undefined ? normalizeAppearance(null, species) : presetAppearances(species)[index];
 }
-export async function readAppearance(userId: string | null, petId: string, species: CharacterSpecies, storage = localAppearanceStorage): Promise<Appearance> {
+export async function readAppearance(userId: string | null, petId: string, species: CharacterSpecies, storage = localAppearanceStorage, readApplied = (id: string) => avatarGenerationApi.find(id, true)): Promise<Appearance> {
   if (!userId) return previewAppearance(petId, species);
-  return parseStoredAppearance(await storage.getItem(appearanceStorageKey(userId, petId)), userId, petId, species);
+  const local = await storage.getItem(appearanceStorageKey(userId, petId));
+  try {
+    const stored = JSON.parse(local ?? "null");
+    if (stored?.version === 1 && stored.userId === userId && stored.petId === petId) return parseStoredAppearance(local, userId, petId, species);
+  } catch { /* A corrupt local envelope must not block the applied server appearance. */ }
+  try {
+    const applied = parseAvatarRow(await readApplied(petId), petId, true);
+    if (applied) return normalizeAppearance(applied.appearance, species);
+  } catch { /* A missing remote cache must not hide the default character offline. */ }
+  return normalizeAppearance(null, species);
 }
 const writes = new WeakMap<AppearanceStorage, Map<string, Promise<Appearance>>>();
 /** Commit the cache only after durable success; failures retain the previous appearance. */

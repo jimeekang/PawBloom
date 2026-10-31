@@ -33,3 +33,6 @@ verify_jwt = true
 
 [functions.manage-pet-members]
 verify_jwt = true
+
+[functions.generate-pet-avatar]
+verify_jwt = true

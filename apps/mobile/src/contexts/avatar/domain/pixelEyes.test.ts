@@ -2,8 +2,8 @@ import { defaultAppearance, type CharacterSpecies } from './appearance';
 import { getPixelClip, getPixelFrame, pixelPoses, type PixelFrame } from './pixelFrames';
 import { isPixelEye, pixelEyeRegions, type PixelEyeRegion } from './pixelEyes';
 import { appearancePixelMasks, composePixelFrame } from './pixelMasks';
-import { cleanPatternPaint } from './pixelPatternCleanup';
-import { replacePixelSilhouette } from './pixelReplacements';
+import { cleanPatternPaint } from './pixelMasks';
+import { replacePixelSilhouette } from './pixelFrames';
 function assert(value:unknown,message:string): asserts value { if(!value)throw Error(message); }
 function fails(fn:()=>void,reason:string){let error='';try{fn();}catch(e){error=String(e);}assert(error.includes(reason),`negative fixture must detect ${reason}: ${error}`);}
 function bounds(cells: readonly (readonly [number,number,...unknown[]])[]){assert(cells.length,'visible eye data');return{left:Math.min(...cells.map(c=>c[0]!)),right:Math.max(...cells.map(c=>c[0]!)),top:Math.min(...cells.map(c=>c[1]!)),bottom:Math.max(...cells.map(c=>c[1]!))};}
@@ -142,3 +142,10 @@ for(const [pose,index] of [['sit',0],['blink',0],['blink',3]] as const){
 }
 
 for(const color of ['k','o','m'])fails(()=>wholeEyeBounds(edit([[eye.right+1,eye.top+4,color]]).rows,eye),'whole-grid visible eye boundary');
+
+const closedBlink = getPixelFrame('cat','blink',2);
+const closedStamp = ['bbkkkkkkbb','bkkkkkkkkb','kkkbbbbkkk'];
+const closedRegions = pixelEyeRegions(closedBlink,'cat');
+assert(JSON.stringify(closedRegions.map(({left,top,right,bottom,kind})=>[left,top,right,bottom,kind])) === JSON.stringify([[10,21,19,23,'closed'],[24,21,33,23,'closed']]), 'closed blink ROI remains fixed');
+for (const eye of closedRegions) closedStamp.forEach((row,dy)=>assert(closedBlink.rows[eye.top+dy]!.slice(eye.left,eye.right+1) === row, 'closed blink exactly matches lead 10x3 stamp; dots are opaque surrounding fur'));
+for (let y=19;y<=25;y++) for(let x=8;x<=35;x++) if(!isPixelEye(closedRegions,x,y)) assert(closedBlink.rows[y]![x]!=='k', 'closed blink has no leftover eye outline beyond its ROI');
