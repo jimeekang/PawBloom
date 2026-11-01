@@ -5,9 +5,9 @@ insert into public.pets(id,owner_id,name,species) select pet_id,owner_id,'Capaci
 select set_config('request.jwt.claim.sub',owner_id::text,true) from avatar_capacity;
 do $$ declare f record;r jsonb;begin
  select * into f from avatar_capacity;
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',5242881,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',5242881,'avatar-ai-2026-11-01','privacy-2026-11-01');
  update avatar_capacity set large_job=(r->>'job_id')::uuid;
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',5242880,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',5242880,'avatar-ai-2026-11-01','privacy-2026-11-01');
  update avatar_capacity set exact_job=(r->>'job_id')::uuid;
 end; $$;
 select set_config('request.jwt.claim.sub','',true);
@@ -34,10 +34,10 @@ select set_config('request.jwt.claim.sub',owner_id::text,true) from avatar_capac
 do $$ declare f record;r jsonb;large uuid;i integer;begin
  select * into f from avatar_capacity;
  for i in 1..9 loop
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  perform public.claim_pet_avatar_job_v1((r->>'job_id')::uuid,f.owner_id);
  end loop;
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',5242881,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',5242881,'avatar-ai-2026-11-01','privacy-2026-11-01');
  large:=(r->>'job_id')::uuid;
  r:=public.claim_pet_avatar_job_v1(large,f.owner_id);
  if r->>'error'<>'avatar_image_too_large' then raise exception 'quota preempted oversize validation';end if;

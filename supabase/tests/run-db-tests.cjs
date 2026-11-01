@@ -4,8 +4,7 @@ const cp = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 process.chdir(root);
 const files = fs.readdirSync(__dirname).sort();
-const fixtureVersions = { '@anthropic-ai/sdk': '1.3.0', zod: '4.6.7', '@opentelemetry/api': '1.10.0',
-  standardwebhooks: '1.1.1', '@stablelib/base64': '1.0.1', 'fast-sha256': '1.3.0', 'json-schema-to-ts': '3.1.1' };
+const fixtureVersions = { openai: '7.38.0', zod: '4.6.7' };
 const originalFixtureEnv = process.env.PAWBLOOM_SDK_FIXTURE_ROOT;
 const defaultFixtureRoot = path.join(root, 'supabase/.temp/sdk-fixtures');
 function selectSdkFixture(candidate) {
@@ -68,7 +67,7 @@ require.extensions['.ts'] = (module, file) => module._compile(ts.transpileModule
 const Module = require('node:module');
 const originalResolve = Module._resolveFilename;
 Module._resolveFilename = function(request, parent, ...rest) {
-  const normalized = request.replace(/^npm:@anthropic-ai\/sdk@1\.3\.0(?=\/|$)/, '@anthropic-ai/sdk').replace(/^npm:zod(?:@4\.6\.7)?$/, 'zod');
+  const normalized = request.replace(/^npm:openai@7\.38\.0(?=\/|$)/, 'openai').replace(/^npm:zod(?:@4\.6\.7)?$/, 'zod');
   const dependency = fixtureRoot && Object.keys(fixtureVersions).find(name => normalized === name || normalized.startsWith(name + '/'));
   const resolved = dependency ? path.join(fixtureRoot, dependency, fixtureVersions[dependency], normalized.slice(dependency.length))
     : (request === 'npm:zod' || request === 'npm:zod@4.6.7') ? path.join(root, 'apps/mobile/node_modules/zod') : request;

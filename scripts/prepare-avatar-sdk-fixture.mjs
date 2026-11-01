@@ -7,10 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const temporaryRoot = join(root, 'supabase/.temp');
 const destination = join(temporaryRoot, 'sdk-fixtures');
-const packages = {
-  '@anthropic-ai/sdk': '1.3.0', zod: '4.6.7', '@opentelemetry/api': '1.10.0',
-  standardwebhooks: '1.1.1', '@stablelib/base64': '1.0.1', 'fast-sha256': '1.3.0', 'json-schema-to-ts': '3.1.1',
-};
+// openai has no runtime dependencies; zod is the contract's own pinned validator.
+const packages = { openai: '7.38.0', zod: '4.6.7' };
 const packagePaths = Object.entries(packages).map(([name, version]) => `${name}/${version}`);
 const secretName = name => name === '.env' || name.startsWith('.env.');
 function fail(message) { throw new Error(message); }
@@ -51,7 +49,7 @@ function validateFixture(directory) {
     const entryPath = resolve(packageRoot, entry);
     if (!entryPath.startsWith(`${packageRoot}${sep}`) || !statSync(entryPath).isFile() || statSync(entryPath).size === 0) fail(`Fixture entrypoint is missing or unsafe: ${name}`);
   }
-  for (const file of ['@anthropic-ai/sdk/1.3.0/helpers/zod.js', 'zod/4.6.7/v4/index.cjs']) {
+  for (const file of ['openai/7.38.0/resources/responses/responses.js', 'zod/4.6.7/v4/index.cjs']) {
     if (!statSync(join(directory, file)).isFile()) fail(`Fixture helper entrypoint is missing: ${file}`);
   }
 }
@@ -118,7 +116,7 @@ try {
     try { lstatSync(destination); fail('Fixture destination appeared during preparation; refusing to replace it.'); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
     renameSync(stagingPackages, destination);
-    console.log('Avatar SDK fixture prepared in supabase/.temp/sdk-fixtures (7 exact public packages, no network).');
+    console.log('Avatar SDK fixture prepared in supabase/.temp/sdk-fixtures (2 exact public packages, no network).');
   }
 } catch (error) {
   console.error(`Avatar SDK fixture preparation stopped: ${error.message}`);

@@ -5,7 +5,7 @@ insert into auth.users(id,email) select id,id::text||'@avatar-authority.test' fr
 insert into public.pets(id,owner_id,name,species) select pet_id,owner_id,'Avatar authority','cat' from avatar_authority;
 set local role authenticated;
 select set_config('request.jwt.claim.sub',owner_id::text,true) from avatar_authority;
-update avatar_authority set job_id=(public.prepare_pet_avatar_job(pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31')->>'job_id')::uuid;
+update avatar_authority set job_id=(public.prepare_pet_avatar_job(pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01')->>'job_id')::uuid;
 reset role;
 select set_config('request.jwt.claim.sub','',true);
 select set_config('request.jwt.claims','{}',true);

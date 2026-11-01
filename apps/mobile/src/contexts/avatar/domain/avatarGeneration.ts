@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { appearanceSchema, type Appearance, type CharacterSpecies } from "./appearance";
 
-export const AVATAR_AI_CONSENT_VERSION = "avatar-ai-2026-10-31";
-export const AVATAR_AI_POLICY_VERSION = "privacy-2026-10-31";
+export const AVATAR_AI_CONSENT_VERSION = "avatar-ai-2026-11-01";
+export const AVATAR_AI_POLICY_VERSION = "privacy-2026-11-01";
 export type AvatarGenerationErrorCode = "avatar_owner_required" | "avatar_invalid_input" | "avatar_daily_limit" | "avatar_image_too_large" | "avatar_image_invalid" | "avatar_provider_refused" | "avatar_provider_failed" | "avatar_no_pet_found" | "avatar_in_progress" | "avatar_not_found" | "avatar_network" | "avatar_unknown";
 export type AvatarGenerationResult = { jobId: string; avatarId: string; species: CharacterSpecies; appearance: Appearance; confidence: number; createdAt: string };
 export type AvatarPhotoInput = { uri: string; contentType: "image/jpeg" | "image/png" | "image/webp"; byteSize: number };

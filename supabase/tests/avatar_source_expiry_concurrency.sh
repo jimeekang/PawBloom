@@ -11,7 +11,7 @@ def obj(text):return next(json.loads(line) for line in sql(text).splitlines() if
 owner,a,b=[str(uuid.uuid4()) for _ in range(3)]
 sql(f"insert into auth.users(id,email) values('{owner}','{owner}@expiry-race.test');update public.subscription_entitlements set plan='family' where user_id='{owner}';insert into public.pets(id,owner_id,name,species) values('{a}','{owner}','Expiry A','cat'),('{b}','{owner}','Expiry B','cat');")
 def prepare_sql(pet):
- return f"select public.prepare_pet_avatar_job('{pet}','{uuid.uuid4()}','{uuid.uuid4()}','image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');"
+ return f"select public.prepare_pet_avatar_job('{pet}','{uuid.uuid4()}','{uuid.uuid4()}','image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');"
 def owner_sql(command):return f"set local role authenticated;select set_config('request.jwt.claim.sub','{owner}',true);"+command
 def prepare(pet):return obj('begin;'+owner_sql(prepare_sql(pet))+'commit;')['job_id']
 def claim_sql(job):return f"select public.claim_pet_avatar_job_v1('{job}','{owner}');"

@@ -8,7 +8,7 @@ select set_config('request.jwt.claim.sub',owner_id::text,true) from quota_fixtur
 do $$ declare f record;r jsonb;i integer;begin
  select * into f from quota_fixture;
  for i in 1..11 loop
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  update quota_fixture set jobs=array_append(jobs,(r->>'job_id')::uuid);
  end loop;
 end; $$;
@@ -42,7 +42,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub',owner_id::text,true) from quota_fixture;
 do $$ declare f record;r jsonb;begin
  select * into f from quota_fixture;
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  update quota_fixture set jobs=array[(r->>'job_id')::uuid];
 end; $$;
 reset role;

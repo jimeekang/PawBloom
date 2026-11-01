@@ -273,7 +273,7 @@ function pinnedEdgeSpecifier(specifier) {
   return /^(?:@[^/@]+\/)?[^/@]+@(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:\/[^?#]*)?(?:\?[^#]*)?$/.test(packageName);
 }
 for (const [specifier, expected] of [
-  ["npm:@anthropic-ai/sdk@1.3.0/helpers/zod", true], ["npm:zod@4.6.7", true],
+  ["npm:openai@7.38.0", true], ["npm:zod@4.6.7", true], ["npm:openai@7", false],
   ["https://esm.sh/@supabase/supabase-js@2.108.2", true], ["npm:zod", false],
   ["npm:zod@^4.6.7", false], ["npm:zod@latest", false], ["npm:zod@4", false], ["npm:zod@4.6", false],
   ["npm:zod@4.6.7-beta", false], ["https://esm.sh/@supabase/supabase-js", false],

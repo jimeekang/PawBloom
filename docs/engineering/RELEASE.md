@@ -231,6 +231,7 @@ Codex 구현·검증 항목:
 ## 릴리스 전 확인
 
 - `PAWBLOOM_REQUIRE_SDK_TEST=1 npm run test:db`로 실제 SDK 테스트 미실행을 차단한다.
+- 사진→캐릭터 제공자 전환(2026-11-01, OpenAI): migration `20261101090000` 적용 후 이전 동의 버전(`avatar-ai-2026-10-31`)을 보내는 구버전 앱과 대기 중이던 구버전 job은 `avatar_invalid_input`이 된다(미출시라 수용). 배포 순서는 Secrets에 `OPENAI_API_KEY` 등록 → migration → 함수 배포 → 개인정보처리방침 재게시 → 원격 `CLAUDE_API_KEY` 삭제(`supabase secrets unset CLAUDE_API_KEY`)다.
 
 - Android 실제 기기에서 preview build를 확인한다.
 - iOS는 TestFlight 또는 development build로 확인한다.

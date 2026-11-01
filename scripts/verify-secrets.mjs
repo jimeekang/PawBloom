@@ -9,6 +9,7 @@ const failures = [];
 
 const jwtPattern = /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/g;
 const anthropicKeyPattern = /sk-ant-[A-Za-z0-9_-]{20,}/;
+const openaiKeyPattern = /sk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{40,}/;
 const secretAssignmentPattern =
   /^\s*(?:EXPO_PUBLIC_SUPABASE_(?:PUBLISHABLE_)?KEY|SUPABASE_(?:ANON_KEY|PUBLISHABLE_KEY|SERVICE_ROLE_KEY|SECRET_KEY)|OPENAI_API_KEY|CLAUDE_API_KEY|ANTHROPIC_API_KEY)\s*=\s*([^\s#]+)/gm;
 
@@ -31,6 +32,9 @@ for (const file of trackedFiles) {
   }
   if (anthropicKeyPattern.test(content)) {
     failures.push(`${file}: contains an Anthropic API-key-like token`);
+  }
+  if (openaiKeyPattern.test(content)) {
+    failures.push(`${file}: contains an OpenAI API-key-like token`);
   }
 
   for (const match of content.matchAll(secretAssignmentPattern)) {

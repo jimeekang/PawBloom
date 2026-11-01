@@ -1,6 +1,6 @@
 # PawBloom Privacy Policy
 
-Effective date: 2026-10-31
+Effective date: 2026-11-01
 
 PawBloom ("PawBloom", "we", "us") is a bilingual pet diary and care-record app.
 This policy explains what personal information the app collects, how we use and
@@ -47,8 +47,8 @@ our own backend and are **not** sent to any third-party AI service.
 
 The only exception is the optional **character-from-photo** feature. When you
 explicitly consent and choose a photo for it, our backend removes the photo's
-metadata (such as location) and sends that single image to Anthropic's Claude API
-(Anthropic PBC, United States) solely to pick the appearance options (fur colour,
+metadata (such as location) and sends that single image to the OpenAI API
+(OpenAI OpCo, LLC, United States) solely to pick the appearance options (fur colour,
 pattern, eye colour, ears and similar) of your pet's pixel character. We delete
 the photo from our storage as soon as the result is ready, or within 2 hours if
 generation stops part-way; we store neither the photo nor the AI's text. No
@@ -69,15 +69,17 @@ is sent and you can still design the character yourself.
   using PawBloom you consent to your information being transferred to, stored in,
   and processed in that region for the purpose of providing the app, for as long
   as your account exists (until account deletion).
-- **Character-from-photo transfer and processor.** We entrust Anthropic PBC
-  (548 Market St, PMB 90375, San Francisco, CA 94104, United States;
-  privacy@anthropic.com) with the processing in section 3 as our processor.
+- **Character-from-photo transfer and processor.** We entrust OpenAI OpCo, LLC
+  (1455 3rd Street, San Francisco, CA 94158, United States; privacy@openai.com)
+  with the processing in section 3 as our processor.
   Item: the one image you selected, with metadata removed. When and how: each time
-  you run the feature, over an encrypted (HTTPS) connection. Retention: Anthropic
-  deletes API inputs and outputs within 30 days, or up to 2 years if its automated
-  safety systems flag a request as violating its Usage Policy. Under Anthropic's
-  commercial terms, API inputs are not used to train its models. You can refuse by
-  not using the feature; the rest of the app works the same.
+  you run the feature, over an encrypted (HTTPS) connection. Retention: we send
+  each request with response storage turned off (`store: false`), so OpenAI keeps
+  no stored response; OpenAI may keep API inputs and outputs in abuse-monitoring
+  logs for up to 30 days. OpenAI may retain content flagged for child-safety
+  violations longer where required by law. Under OpenAI's business terms, API data
+  is not used to train its models unless the customer opts in.
+  You can refuse by not using the feature; the rest of the app works the same.
 
 ## 5. Offline copy and reminders
 
@@ -144,7 +146,7 @@ For any privacy question or request, contact us at kjm12081@gmail.com.
 
 # PawBloom 개인정보처리방침 (한국어)
 
-시행일: 2026-10-31
+시행일: 2026-11-01
 
 PawBloom("PawBloom", "회사")는 이중 언어 반려동물 다이어리·케어 기록 앱입니다.
 본 방침은 앱이 수집하는 개인정보, 그 이용·보관 방법, 이용자의 권리를 설명합니다.
@@ -185,7 +187,7 @@ PawBloom("PawBloom", "회사")는 이중 언어 반려동물 다이어리·케�
 
 유일한 예외는 선택 기능인 **사진으로 캐릭터 만들기**입니다. 이용자가 명시적으로
 동의하고 사진 1장을 고르면, 회사 백엔드가 위치 등 촬영 정보(메타데이터)를 지운
-이미지만 Anthropic의 Claude API(Anthropic PBC, 미국)로 전송해 반려동물 픽셀
+이미지만 OpenAI API(OpenAI OpCo, LLC, 미국)로 전송해 반려동물 픽셀
 캐릭터의 외형 옵션(털 색, 무늬, 눈 색, 귀 등)을 고르는 데에만 사용합니다. 결과가
 준비되면 즉시, 생성이 중간에 멈추면 늦어도 2시간 안에 사진을 회사 저장소에서
 삭제하며, 사진과 AI 응답 원문은 저장하지 않습니다. 건강·다이어리·계정 정보는
@@ -207,14 +209,15 @@ PawBloom("PawBloom", "회사")는 이중 언어 반려동물 다이어리·케�
   국가/지역: Sydney, Australia (AWS ap-southeast-2); 이전 목적: 서비스 제공을 위한 저장·처리;
   보유 기간: 계정 삭제 시까지.
 - **사진으로 캐릭터 만들기 국외 이전·처리위탁.** 이 기능을 이용할 때만 다음과
-  같이 이전·위탁합니다 — 이전받는 자(수탁자): Anthropic PBC(연락처
-  privacy@anthropic.com, 548 Market St, PMB 90375, San Francisco, CA 94104,
-  미국); 위탁 업무·이전 목적: 제3조의 캐릭터 외형 옵션 선택; 이전 항목: 이용자가
-  고른 이미지 1장(메타데이터 제거); 이전 일시·방법: 기능 실행 시마다 암호화된
-  네트워크(HTTPS)로 전송; 보유 기간: 수신 후 30일 내 삭제(자동 안전 시스템이
-  이용정책 위반으로 판정한 요청은 최대 2년); Anthropic 상용 약관에 따라 모델
-  학습에 사용하지 않음. 거부 방법·불이익: 이 기능을 쓰지 않으면 전송되지 않으며
-  다른 기능 이용에는 영향이 없습니다.
+  같이 이전·위탁합니다 — 이전받는 자(수탁자): OpenAI OpCo, LLC(연락처
+  privacy@openai.com, 1455 3rd Street, San Francisco, CA 94158, 미국); 위탁
+  업무·이전 목적: 제3조의 캐릭터 외형 옵션 선택; 이전 항목: 이용자가 고른 이미지
+  1장(메타데이터 제거); 이전 일시·방법: 기능 실행 시마다 암호화된 네트워크(HTTPS)로
+  전송; 보유 기간: 응답 저장을 끈 상태(`store: false`)로 요청해 OpenAI에 응답이
+  저장되지 않으며, 남용 모니터링 로그로 최대 30일 보관될 수 있음(아동 안전 위반으로
+  판정된 콘텐츠는 법령상 필요한 경우 더 오래 보관될 수 있음); OpenAI 비즈니스
+  약관에 따라 고객이 동의하지 않으면 모델 학습에 사용하지 않음. 거부 방법·불이익:
+  이 기능을 쓰지 않으면 전송되지 않으며 다른 기능 이용에는 영향이 없습니다.
 
 ## 5. 오프라인 사본과 알림
 

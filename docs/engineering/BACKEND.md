@@ -6,7 +6,7 @@ edit_policy: exclusive
 
 # 백엔드 엔지니어링
 
-Supabase Edge Functions는 서버에서만 처리해야 하는 workflow를 담당한다. 모바일 앱은 service role key나 Claude(Anthropic) API key를 **절대 직접 사용하지 않는다** — 이런 secret은 서버 환경(Edge Function)에만 존재하고, 클라이언트는 인증된 요청만 보낸다.
+Supabase Edge Functions는 서버에서만 처리해야 하는 workflow를 담당한다. 모바일 앱은 service role key나 OpenAI API key를 **절대 직접 사용하지 않는다** — 이런 secret은 서버 환경(Edge Function)에만 존재하고, 클라이언트는 인증된 요청만 보낸다.
 
 ## Edge Functions
 
@@ -80,13 +80,13 @@ AI(또는 템플릿) 출력의 허용·금지 범위, 필수 고지 문구, 표�
 - `generate-pet-avatar`는 JWT·현재 owner·job requester·동의 버전·사진 크기/MIME/매직바이트와 사용자별 최근 24시간 롤링 10회 한도를 검증한다.
 - 소유권은 만료 처리보다 먼저 확인한다. queued 사진이 5 MiB를 넘으면 claim에서 한도를 소비하지 않고 실패하며, ready 재호출도 추가 한도를 소비하지 않는다.
 - 앱은 `prepare_pet_avatar_job` → private `pet-avatars` 업로드 → 함수 동기 호출을 수행한다. `ready` job 재호출은 기존 결과를 돌려준다.
-- 서버만 Claude(Anthropic) API의 `claude-sonnet-5-5`를 호출한다. Edge 의존성은 SDK `1.3.0`·zod `4.6.7`로 고정한다. 사진에서 외형 옵션을 고르는 창작 처리이며 건강·감정·통증·나이·품종을 판정하지 않는다.
-- `messages.create`에 structured output format을 전달하고 응답의 stop_reason을 JSON/schema 파싱보다 먼저 확인한다. refusal은 재시도하지 않고 다른 제공자 실패는 시도당 60초·최대 2회로 제한한다. 사용하지 않는 rationale은 요청·저장에서 제외한다.
+- 서버만 OpenAI Responses API의 `gpt-6.1-sol`(reasoning effort `high`, `store: false`)을 호출한다. Edge 의존성은 `openai` SDK `7.38.0`·zod `4.6.7`로 고정하고 base URL은 `https://api.openai.com/v1`로 고정한다. 사진에서 외형 옵션을 고르는 창작 처리이며 건강·감정·통증·나이·품종을 판정하지 않는다.
+- `responses.create`에 strict `json_schema`(`text.format`)와 `input_image`(`detail: "high"`, 최대 2,500 패치)를 전달하고, 응답 status·refusal 항목을 JSON/schema 파싱보다 먼저 확인한다. refusal 항목·`incomplete`의 `content_filter`·`image_content_policy_violation`은 재시도하지 않고 `avatar_provider_refused`로 끝낸다. 다른 실패(`max_output_tokens`·`failed`·파싱)는 시도당 60초·최대 2회로 제한한다. 사용하지 않는 rationale은 요청·저장에서 제외한다.
 - 응답의 appearance enum은 앱 계약과 검증 스크립트로 동기화한다. 결과는 `parametric-v3` manifest로 저장하며 이미지 결과 파일은 만들지 않는다.
-- 사진·프롬프트는 DB에 저장하지 않는다. 제공자 기록은 model·stop_reason·usage·request_id만 남기고 생성 완료 후 소스 사진 객체를 삭제한다. 비밀·provider 원문·사진은 응답/로그로 내보내지 않는다.
+- 사진·프롬프트는 DB에 저장하지 않는다. 제공자 기록은 model·stop_reason(status 또는 incomplete 사유)·usage(입력/출력 토큰, 출력에 reasoning 포함)·request_id(`x-request-id`)만 남기고 생성 완료 후 소스 사진 객체를 삭제한다. 비밀·provider 원문·사진은 응답/로그로 내보내지 않는다.
 - 서버는 제공자 전송 직전에 JPEG APP1·APP3–13·APP15·COM, PNG tEXt·zTXt·iTXt·eXIf, WebP EXIF·XMP 메타데이터를 제거한다. JPEG APP2(ICC_PROFILE)·APP14(Adobe), PNG iCCP·sRGB·gAMA·cHRM, WebP ICCP 색 정보는 보존하며 VP8X ICC flag를 실제 ICCP 존재와 맞춘다. EXIF orientation은 제거하고 별도 회전 보정은 하지 않는다. 정리 로그에는 실제 제거된 종류·개수·바이트 수만 남긴다. 색 정보·픽셀 payload 보존, 멱등성과 malformed 거부를 단위 테스트로 확인한다.
 - 결과 적용은 사용자 확인 뒤 `apply_pet_avatar` owner 전용 원자 명령으로 수행한다. 적용 전 기존 캐릭터를 유지하며, 앱은 미적용 최신 24시간 결과를 복구한다.
-- `CLAUDE_API_KEY`는 서버 전용이다. 원격 환경은 Supabase Dashboard → Edge Functions → Secrets에서 등록한다. 로컬은 `supabase functions serve generate-pet-avatar --env-file <서버-비밀-파일-경로>`로 전달하며 JWT 검증을 유지한다. 비밀 파일은 출력·복사하거나 저장소에 추가하지 않는다.
+- `OPENAI_API_KEY`는 서버 전용이다. 원격 환경은 Supabase Dashboard → Edge Functions → Secrets에서 등록한다. 로컬은 `supabase functions serve generate-pet-avatar --env-file <서버-비밀-파일-경로>`로 전달하며 JWT 검증을 유지한다. 비밀 파일은 출력·복사하거나 저장소에 추가하지 않는다.
 
 ### 미완료 소스 사진 정리와 운영 조건
 
@@ -97,8 +97,9 @@ AI(또는 템플릿) 출력의 허용·금지 범위, 필수 고지 문구, 표�
 
 ### 개별 검증 증거
 
-- 실제 SDK·가짜 fetch의 텍스트 refusal 테스트는 호출 1회로 거부를 반환했다. 관련 TypeScript 테스트 5개는 skip 0건으로 통과했다.
-- 실제 PNG 호출은 3,764ms·confidence 0.82, EXIF JPEG 호출은 2,105ms·confidence 0.85이며 각각 입력 1,497/출력 117토큰이었다. 양쪽 모두 request_id·provider_raw 4개 키만 저장하고 DB 적용·소스 0건·rationale 미저장을 확인했다.
+- 2026-11-01 OpenAI 전환: 실제 SDK `7.38.0`·가짜 fetch 테스트에서 refusal 항목·content_filter·이미지 정책 위반(본문·HTTP 400)은 호출 1회로 거부, max_output_tokens·JSON·schema는 2회 후 결과를 확인했다.
+- OpenAI 실측(2026-11-01, 로컬): EXIF·꼬리 데이터를 붙인 고양이 JPEG 279,680바이트 → APP1 3개·APP13 1개·trailer 제거 후 262,401바이트 전송, cat·confidence 0.98, 입력 3,484/출력 222토큰(reasoning 포함), 6,166ms. request_id·provider_raw 4개 키 저장, DB 적용, 소스 객체 0건을 확인했다.
+- 아래 실측은 이전 Claude 제공자 기준이다. 실제 PNG 호출은 3,764ms·confidence 0.82, EXIF JPEG 호출은 2,105ms·confidence 0.85이며 각각 입력 1,497/출력 117토큰이었다. 양쪽 모두 request_id·provider_raw 4개 키만 저장하고 DB 적용·소스 0건·rationale 미저장을 확인했다.
 - 실제 JPEG는 APP1 2개 180바이트·APP13 1개 58바이트를 제거해 22,302→22,064바이트로 전송했다. PNG/WebP metadata 제거·픽셀 payload 보존·malformed 검증도 통과했다. 이 개별 경로 증거와 전체 게이트·reviewer/integrator 최종 판정·원격 출시 판단은 최종 보고에서 구분한다.
 
 ### 공동 추억 명령

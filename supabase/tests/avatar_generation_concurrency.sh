@@ -14,7 +14,7 @@ paths=[]
 try:
  jobs=[]
  for _ in range(11):
-  r=obj(f"begin;set local role authenticated;select set_config('request.jwt.claim.sub','{owner}',true);select public.prepare_pet_avatar_job('{pet}','{uuid.uuid4()}','{uuid.uuid4()}','image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');commit;")
+  r=obj(f"begin;set local role authenticated;select set_config('request.jwt.claim.sub','{owner}',true);select public.prepare_pet_avatar_job('{pet}','{uuid.uuid4()}','{uuid.uuid4()}','image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');commit;")
   jobs.append(r['job_id']);paths.append(r['source_path'])
  def claim(job):return obj(f"begin;set local role service_role;select public.claim_pet_avatar_job_v1('{job}','{owner}');commit;")
  for job in jobs[:9]:assert claim(job)['status']=='processing'

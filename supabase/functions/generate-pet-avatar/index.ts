@@ -1,6 +1,6 @@
 import { corsHeaders, jsonResponse } from "../_shared/http.ts";
 import { requireUser, serviceClient } from "../_shared/supabase.ts";
-import { callClaude } from "./claude.ts";
+import { callOpenAI } from "./openai.ts";
 import { AvatarError } from "./contract.ts";
 import { generateAvatar, type GenerationStore } from "./handler.ts";
 
@@ -51,6 +51,6 @@ Deno.serve(async (request: Request) => {
       if (error) throw error;
     },
   };
-  const result = await generateAvatar(input, user.id, store, callClaude);
+  const result = await generateAvatar(input, user.id, store, callOpenAI);
   return jsonResponse(result.body, result.status, { "Cache-Control": "no-store" });
 });

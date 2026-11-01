@@ -9,13 +9,13 @@ select set_config('request.jwt.claim.sub',owner_id::text,true) from expiry_fixtu
 do $$ declare f record;label text;r jsonb;begin
  select * into f from expiry_fixture;
  foreach label in array array['queued_old','queued_59m','queued_exact','processing_old','processing_59m','processing_exact','created_old_started_fresh','processing_no_start','ready_old','failed_old','cancelled_old'] loop
- r:=public.prepare_pet_avatar_job(f.old_pet,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.old_pet,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  insert into expiry_cases values(label,(r->>'job_id')::uuid);
  end loop;
 end; $$;
 -- Other-requester rows must never be swept, even when an owned pet is in the lock set.
 insert into public.pet_avatar_jobs(id,pet_id,requester_id,client_mutation_id,source_path,source_content_type,source_byte_size,consent_version,policy_version)
-select j.id,f.old_pet,f.other_id,gen_random_uuid(),f.old_pet::text||'/'||j.id::text||'/'||gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31' from expiry_fixture f,lateral(select gen_random_uuid() id) j;
+select j.id,f.old_pet,f.other_id,gen_random_uuid(),f.old_pet::text||'/'||j.id::text||'/'||gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01' from expiry_fixture f,lateral(select gen_random_uuid() id) j;
 insert into expiry_cases select 'other_requester',id from public.pet_avatar_jobs where requester_id=(select other_id from expiry_fixture);
 do $$ declare f record;r jsonb;before_count integer;after_count integer;begin
  select * into f from expiry_fixture;
@@ -35,7 +35,7 @@ do $$ declare f record;r jsonb;before_count integer;after_count integer;begin
  update public.pet_avatar_jobs set status='failed' where id=(select job_id from expiry_cases where label='failed_old');
  update public.pet_avatar_jobs set status='cancelled' where id=(select job_id from expiry_cases where label='cancelled_old');
  select count(*) into before_count from app_private.avatar_mutation_receipts where started_at is not null and requester_key=app_private.requester_key(f.owner_id);
- perform public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ perform public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  if exists(select 1 from expiry_cases c join public.pet_avatar_jobs j on j.id=c.job_id where c.label in('queued_old','processing_old','processing_no_start')
  and (j.status<>'failed' or j.error_code<>'avatar_provider_failed' or j.completed_at is null)) then raise exception 'old source did not expire';end if;
  if (select count(*) from app_private.resource_cleanup_jobs q join public.pet_avatar_jobs j on q.storage_path=j.source_path join expiry_cases c on c.job_id=j.id where c.label in('queued_old','processing_old','processing_no_start'))<>3 then raise exception 'expiry cleanup not atomic';end if;
@@ -49,7 +49,7 @@ do $$ declare f record;r jsonb;before_count integer;after_count integer;begin
  if exists(select 1 from app_private.avatar_mutation_receipts r join expiry_cases c on c.job_id=r.job_id where c.label='queued_old' and r.started_at is not null) then raise exception 'queued expiry consumed quota';end if;
  if not exists(select 1 from app_private.avatar_mutation_receipts r join expiry_cases c on c.job_id=r.job_id where c.label='processing_old' and r.started_at=statement_timestamp()-interval '2 hours') then raise exception 'processing expiry rewrote admission';end if;
  -- Repeat within the same statement: exact-boundary rows still must not expire.
- perform public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ perform public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  if (select count(*) from app_private.resource_cleanup_jobs q join public.pet_avatar_jobs j on q.storage_path=j.source_path join expiry_cases c on c.job_id=j.id where c.label in('queued_old','processing_old','processing_no_start'))<>3 then raise exception 'duplicate expiry cleanup';end if;
 end; $$;
 -- Retrying the original mutation returns the same now-expired job, with hash conflicts still rejected.

@@ -18,7 +18,7 @@ PawBloom 신규 개발자를 위한 로컬 개발 환경 구축 문서. 0002 MVP
 
 셋업 단계에서 반드시 지켜야 하는 boundary 규칙:
 
-- Mobile app은 Supabase service role key와 Claude(Anthropic) API key를 **절대 포함하지
+- Mobile app은 Supabase service role key와 OpenAI API key를 **절대 포함하지
   않는다.** AI 호출은 Supabase Edge Function에서만 수행한다.
 - Supabase generated DB type 원본은
   `apps/mobile/generated-supabase/database.types.ts`에 두고, shared-kernel의
@@ -150,7 +150,7 @@ npm.cmd run verify
   generated 원본 경로에 덮어쓴다. schema 변경 시마다 재실행한다.
 
 관련 config/파일: `supabase/config.toml`, `supabase/migrations/**`.
-실제 SDK 회귀 테스트는 로컬 Edge 캐시가 준비된 뒤 아래 순서로 실행한다(공개 패키지만 gitignore 경로에 복사, 새 설치·네트워크 없음).
+실제 SDK 회귀 테스트는 로컬 Edge 캐시(`openai@7.38.0`·`zod@4.6.7`, 함수를 로컬에서 한 번 serve하면 채워짐)가 준비된 뒤 아래 순서로 실행한다(공개 패키지만 gitignore 경로에 복사, 새 설치·네트워크 없음).
 
 ```powershell
 node scripts/prepare-avatar-sdk-fixture.mjs
@@ -161,7 +161,7 @@ fixture가 없으면 SDK 테스트는 명시적으로 SKIP된다. 릴리스 검�
 
 ### 4-1. 사진→캐릭터 생성 서버 비밀
 
-Claude(Anthropic) API 키는 서버 전용 `CLAUDE_API_KEY`로 등록한다. 원격 프로젝트는
+OpenAI API 키는 서버 전용 `OPENAI_API_KEY`로 등록한다. 원격 프로젝트는
 Supabase Dashboard → Edge Functions → Secrets에서 등록한다. 앱 환경변수에는 넣지 않는다.
 로컬에서는 서버 비밀 파일의 경로만 전달한다.
 

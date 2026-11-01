@@ -20,6 +20,9 @@ export const AvatarResultSchema = z.object({
   confidence: z.number().min(0).max(1),
 }).strict();
 export type AvatarResult = z.infer<typeof AvatarResultSchema>;
+// Strict Structured Outputs: every key required, additionalProperties false, enum + min/max only.
+const { $schema: _dialect, ...avatarJsonSchema } = z.toJSONSchema(AvatarResultSchema);
+export const AvatarResultJsonSchema: Record<string, unknown> = avatarJsonSchema;
 export type AvatarErrorCode = "avatar_owner_required" | "avatar_invalid_input" | "avatar_daily_limit"
   | "avatar_image_too_large" | "avatar_image_invalid" | "avatar_provider_refused" | "avatar_provider_failed"
   | "avatar_no_pet_found" | "avatar_in_progress" | "avatar_not_found" | "avatar_job_closed" | "avatar_unknown";

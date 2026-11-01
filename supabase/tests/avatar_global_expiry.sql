@@ -8,11 +8,11 @@ select set_config('request.jwt.claim.sub',owner_id::text,true) from global_expir
 do $$ declare f record;label text;r jsonb;begin
  select * into f from global_expiry_fixture;
  foreach label in array array['queued_old','source_exact','source_59m','processing_old','processing_exact','processing_9m','late_claim','processing_fallback','ready','failed','cancelled','orphan'] loop
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  insert into global_expiry_cases values(label,(r->>'job_id')::uuid);
  end loop;
  perform set_config('request.jwt.claim.sub',f.other_id::text,true);
- r:=public.prepare_pet_avatar_job(f.other_pet,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.other_pet,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  insert into global_expiry_cases values('other_requester',(r->>'job_id')::uuid);
 end; $$;
 select set_config('request.jwt.claim.sub','',true);

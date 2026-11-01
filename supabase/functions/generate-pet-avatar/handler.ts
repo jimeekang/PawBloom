@@ -1,5 +1,5 @@
 import { AvatarError, errorStatus, parseJobId, readyResponse, validateImage, type AvatarErrorCode } from "./contract.ts";
-import { generateWithRetry, ProviderError, type ClaudeAdapter, type ProviderRaw } from "./provider.ts";
+import { generateWithRetry, ProviderError, type ProviderAdapter, type ProviderRaw } from "./provider.ts";
 export type AvatarJob = { id: string; pet_id: string; source_path: string; source_content_type: string; source_byte_size: number; status: string; error?: AvatarErrorCode };
 export type StoredAvatar = Parameters<typeof readyResponse>[0];
 export type GenerationStore = {
@@ -11,7 +11,7 @@ export type GenerationStore = {
   removeSource(path: string): Promise<void>;
   acknowledgeCleanup(path: string): Promise<void>;
 };
-export async function generateAvatar(input: unknown, requesterId: string, store: GenerationStore, adapter: ClaudeAdapter) {
+export async function generateAvatar(input: unknown, requesterId: string, store: GenerationStore, adapter: ProviderAdapter) {
   let job: AvatarJob | null = null;
   let claimed = false;
   let raw: ProviderRaw | null = null;

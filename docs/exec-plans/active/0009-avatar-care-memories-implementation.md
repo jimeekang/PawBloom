@@ -7,7 +7,7 @@ edit_policy: exclusive
 # 0009 아바타·실제 케어·공동 추억 구현 계획
 
 - 작성: 2026-10-18. 사용자가 승인한 채팅 방향을 실행 가능한 문서로 반영한다.
-- 상태: **M1 로컬 완료(원격 미적용), M2 서버·앱 application 로컬 검증 완료, 최종 전체 게이트·리뷰 대기, M3·M4 로직 완료 (2026-10-31)**. M2 전체 UI·원격 출시는 완료하지 않았다. 재개는 §13. 단계 상태는 [0003](0003-weekly-execution-checklist.md)만 갱신한다.
+- 상태: **M1 로컬 완료(원격 미적용), M2 서버·앱 application 로컬 검증 완료, 최종 전체 게이트·리뷰 대기, M3·M4 로직 완료 (2026-10-31)**. 2026-11-01 사진→캐릭터 제공자를 OpenAI `gpt-6.1-sol`(동의 `avatar-ai-2026-11-01`)로 로컬 전환했다(원격 미적용). M2 전체 UI·원격 출시는 완료하지 않았다. 재개는 §13. 단계 상태는 [0003](0003-weekly-execution-checklist.md)만 갱신한다.
 - 정본: [제품](../../product/PRODUCT_SPEC.md), [화면 UX](../../design/AVATAR_HOME_UX.md), [로드맵](0002-mvp-roadmap.md).
 - 이 문서는 다음 구현의 진입점이다. 0007/0008/APP_FIX의 완료 이력과 남은 안전·출시 검증은 승계한다.
 - 기존 소유 frontmatter(owner_role/domain/edit_policy)를 유지한다. 이번 요청은 해당 문서의 내용 갱신이며 라우팅 정책 변경이 아니다.
@@ -85,7 +85,7 @@ petId + 적용 asset → 우리 집(개인 배치) → 아이 요약/상세
 
 2026-10-31 서버·앱 application 구현 및 로컬 검증 완료. 전체 UI·최종 전체 게이트·원격 출시는 별도다.
 
-- Claude(Anthropic) API `claude-sonnet-5-5`가 사진의 외형을 기존 appearance 옵션으로 고른다. `messages.parse`·structured output·effort high를 사용하며 이미지 생성은 하지 않는다.
+- OpenAI Responses API `gpt-6.1-sol`(2026-11-01 전환, 이전 Claude `claude-sonnet-5-5`)이 사진의 외형을 기존 appearance 옵션으로 고른다. strict structured output·reasoning effort high·`store: false`를 사용하며 이미지 생성은 하지 않는다.
 - migration `20261031090000_pet_avatars_parametric.sql`은 `parametric-v3` manifest 저장·적용과 NULL storage 경로의 cleanup 생략을 지원한다.
 - `generate-pet-avatar`는 JWT·owner·job 소유·이미지를 검증하며 사용자당 최근 24시간 10회로 제한한다. 준비 RPC → private 업로드 → 함수 호출 → 확인 후 적용 순서다.
 - 생성 완료 후 원본 사진 객체를 즉시 삭제한다. 사진·프롬프트는 DB에 저장하지 않고 제공자 기록은 모델·중단 사유·사용량·요청 ID로 제한한다.
@@ -200,7 +200,7 @@ DB/Storage 테스트는 별도 로컬 환경에서 실행하고 기존 verify에
 - 실제 오류 경로는 다른 사용자 JWT 404, ready 재호출 200·동일 avatar 유지, 매직바이트 불일치 400이다. 정상·잘못된 사진 모두 소스 삭제를 확인했다. Deno SDK import와 JWT 검증 프로브 401/400도 확인했다.
 - 앱 application 계약·오류 매핑·소유자 차단·늦은 응답·캐시 갱신·손상 로컬의 서버 복구 테스트와 타입 검사를 통과했다. 서버·앱 application 로컬 검증 완료를 전체 UI·실기기·원격 출시 완료로 해석하지 않는다.
 - 최종 코드에서 `npm run verify` exit 0(테스트 198개 파일), `npm run test:db` exit 0(SQL 8·shell 3·TS 2)을 확인했다. reviewer는 C1 추가지시 범위를 재검토해 필수 수정 0건으로 승인했다. integrator 최종 통합 판정은 별도다.
-- 원격 적용에 필요한 작업: migration 적용 → `generate-pet-avatar` 및 변경된 `delete-account` 함수 배포, Supabase Dashboard → Edge Functions → Secrets에 서버 비밀 `CLAUDE_API_KEY` 등록, 변경된 개인정보처리방침 재게시. 원격 적용·배포·게시에는 별도 승인이 필요하며 아직 수행하지 않았다.
+- 원격 적용에 필요한 작업(2026-11-01 OpenAI 전환 기준): Supabase Dashboard → Edge Functions → Secrets에 서버 비밀 `OPENAI_API_KEY` 등록 → migration 적용 → `generate-pet-avatar` 및 변경된 `delete-account` 함수 배포 → 변경된 개인정보처리방침 재게시 → 원격 `CLAUDE_API_KEY` 삭제(`supabase secrets unset CLAUDE_API_KEY`). 원격 적용·배포·게시에는 별도 승인이 필요하며 아직 수행하지 않았다.
 - C1 로컬 게이트·reviewer 확인은 완료했다. 다음은 현재 worktree의 U2 UI 작업 후 integrator 통합 판정이며, UI 패킷 완료·실기기·원격 확인은 별도다.
 
 ### 2026-10-21 — 이전 진행 기록

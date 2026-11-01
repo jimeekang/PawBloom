@@ -8,7 +8,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub',owner_id::text,true) from avatar_fixture;
 do $$ declare f record;r jsonb;begin
  select * into f from avatar_fixture;
- r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-10-31','privacy-2026-10-31');
+ r:=public.prepare_pet_avatar_job(f.pet_id,gen_random_uuid(),gen_random_uuid(),'image/png',24,'avatar-ai-2026-11-01','privacy-2026-11-01');
  update avatar_fixture set job_id=(r->>'job_id')::uuid;
  begin perform public.claim_pet_avatar_job_v1((r->>'job_id')::uuid,f.owner_id);raise exception 'authenticated called admission';exception when insufficient_privilege then null;end;
  begin perform public.finish_pet_avatar_job_v1((r->>'job_id')::uuid,f.owner_id,null,null,'avatar_provider_failed');raise exception 'authenticated finalized';exception when insufficient_privilege then null;end;
@@ -28,7 +28,7 @@ do $$ declare f record;r jsonb;begin
  if r->>'error'<>'avatar_in_progress' then raise exception 'concurrent duplicate admitted';end if;
  perform public.finish_pet_avatar_job_v1(f.job_id,f.owner_id,
  '{"species":"cat","confidence":0.9,"appearance":{"version":1,"coatColor":"gray","coatPattern":"solid","accentColor":"black","eyeColor":"amber","earShape":"pointed","furLength":"short","build":"regular","tail":"long","faceMark":"none","collar":"none"},"rationale":"MUST NOT STORE"}',
- '{"model":"untrusted","stop_reason":"end_turn","usage":{"input_tokens":123,"output_tokens":456,"secret":"PRIVATE"},"request_id":"req-1","photo":"PRIVATE","prompt":"PRIVATE"}',null);
+ '{"model":"untrusted","stop_reason":"completed","usage":{"input_tokens":123,"output_tokens":456,"secret":"PRIVATE"},"request_id":"req-1","photo":"PRIVATE","prompt":"PRIVATE"}',null);
  r:=public.claim_pet_avatar_job_v1(f.job_id,f.owner_id);
  if r->>'status'<>'ready' then raise exception 'ready retry changed status';end if;
  update avatar_fixture set avatar_id=(select id from public.pet_avatars where job_id=f.job_id);
@@ -39,7 +39,8 @@ do $$ declare f record;r jsonb;begin
  if not exists(select 1 from app_private.resource_cleanup_jobs q join public.pet_avatar_jobs j on q.storage_path=j.source_path where j.id=f.job_id) then raise exception 'source deletion not durable';end if;
  select provider_raw into r from public.pet_avatar_jobs where id=f.job_id;
  if (select array_agg(k order by k) from jsonb_object_keys(r) k)<>array['model','request_id','stop_reason','usage']
- or r->>'model'<>'claude-sonnet-5-5' or r::text like '%PRIVATE%' then raise exception 'provider_raw allowlist failure: %',r;end if;
+ or r->>'model'<>'gpt-6.1-sol' or r::text like '%PRIVATE%' then raise exception 'provider_raw allowlist failure: %',r;end if;
+ if (select manifest->'provider' from public.pet_avatars where id=f.avatar_id) is distinct from '{"name":"openai","model":"gpt-6.1-sol"}'::jsonb then raise exception 'manifest provider not openai';end if;
  if (select manifest::text from public.pet_avatars where id=f.avatar_id) like '%MUST NOT STORE%' then raise exception 'rationale stored';end if;
  insert into public.pet_avatars(pet_id,job_id,style_version,manifest_version,manifest,validation_status)
  select pet_id,job_id,style_version,manifest_version,manifest,validation_status from public.pet_avatars where id=f.avatar_id;
